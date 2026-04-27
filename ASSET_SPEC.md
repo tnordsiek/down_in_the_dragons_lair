@@ -1,16 +1,16 @@
 ﻿# ASSET_SPEC
 
 ## Zweck
-Diese Datei f�hrt alle vorgesehenen austauschbaren Medien- und Pr�sentationselemente f�r V1 als Asset-Manifest.
+Diese Datei führt alle vorgesehenen austauschbaren Medien- und Präsentationselemente für V1 als Asset-Manifest.
 
 Ziel:
 - von Anfang an stabile Asset-IDs verwenden
 - Platzhalter und finale Assets sauber austauschbar halten
 - visuelle und akustische Anforderungen zentral dokumentieren
-- Implementierung, UI und sp�tere Art-/Audio-Ersetzung entkoppeln
+- Implementierung, UI und spätere Art-/Audio-Ersetzung entkoppeln
 
 ## Geltungsbereich
-Dieses Dokument ist normativ f�r:
+Dieses Dokument ist normativ für:
 - verwendete Asset-Kategorien
 - stabile Asset-IDs
 - technische Asset-Anforderungen
@@ -19,21 +19,22 @@ Dieses Dokument ist normativ f�r:
 Dieses Dokument definiert keine Spielregeln und keine Produktlogik.
 
 ## Grundregeln
-- Code und UI referenzieren Assets �ber stabile `assetId`-Werte, nicht �ber harte Dateinamen.
-- Platzhalter-Assets sind in V1 zul�ssig, solange sie sp�ter ohne Logik�nderung austauschbar bleiben.
-- Sichtbare Namen, Grafiken und Sounds m�ssen separat von der Spiellogik austauschbar bleiben.
-- Asset-Mappings sollen sp�ter maschinenlesbar in einer Daten-Datei abbildbar sein.
+- Code und UI referenzieren Assets über stabile `assetId`-Werte, nicht über harte Dateinamen.
+- Platzhalter-Assets sind in V1 zulässig, solange sie später ohne Logikänderung austauschbar bleiben.
+- Sichtbare Namen, Grafiken und Sounds müssen separat von der Spiellogik austauschbar bleiben.
+- Asset-Mappings sollen später maschinenlesbar in einer Daten-Datei abbildbar sein.
+- Für V1 sollen einfache funktionale Platzhalter bevorzugt werden, wenn sie Implementierungszeit sparen und keine UI- oder Testlogik blockieren.
 
 ## Asset-Felder
 Jeder Asset-Eintrag sollte mindestens diese Felder pflegen:
 - `assetId`: stabile technische ID
 - `category`: z. B. `icon`, `tile`, `token`, `portrait`, `ui`, `background`, `fx`, `audio`
-- `purpose`: wof�r das Asset verwendet wird
+- `purpose`: wofür das Asset verwendet wird
 - `usedBy`: UI-Bereich oder Spielsystem
 - `format`: z. B. `svg`, `png`, `webp`, `mp3`, `ogg`, `wav`
 - `placeholderAllowed`: `true` oder `false`
 - `replaceableAfterV1`: `true` oder `false`
-- `spec`: Kurzbeschreibung von Gr��e, Verhalten oder Qualit�tsanforderung
+- `spec`: Kurzbeschreibung von Größe, Verhalten oder Qualitätsanforderung
 
 Optionale Zusatzfelder:
 - `variants`
@@ -44,10 +45,10 @@ Optionale Zusatzfelder:
 - `aspectRatio`
 - `volumeRole`
 
-## Kategorien f�r V1
+## Kategorien für V1
 
 ### 1. Tile-Grafiken
-F�r die Darstellung des Boards und der unterschiedlichen Tile-Typen.
+Für die Darstellung des Boards und der unterschiedlichen Tile-Typen.
 
 Beispiele:
 - `tile_start_cross_healing`
@@ -64,12 +65,12 @@ Beispiele:
 
 Spezifikation:
 - bevorzugt `svg`
-- quadratisches Seitenverh�ltnis
-- rotierbar ohne Qualit�tsverlust
+- quadratisches Seitenverhältnis
+- rotierbar ohne Qualitätsverlust
 - Platzhalter in V1 erlaubt
 
 ### 2. Token- und Feldinhalte
-F�r Monster, Schatztruhen, lose Gegenst�nde und Zustandsmarker.
+Für Monster, Schatztruhen, lose Gegenstände und Zustandsmarker.
 
 Beispiele:
 - `token_treasure_chest`
@@ -93,11 +94,11 @@ Beispiele:
 Spezifikation:
 - bevorzugt `svg`
 - transparenter Hintergrund
-- auch in kleinen Gr��en lesbar
+- auch in kleinen Größen lesbar
 - Platzhalter in V1 erlaubt
 
 ### 3. Helden-Assets
-F�r Spieleridentit�t, Auswahl und Statusanzeige.
+Für Spieleridentität, Auswahl und Statusanzeige.
 
 Beispiele:
 - `hero_mage_portrait`
@@ -119,7 +120,7 @@ Spezifikation:
 - sichtbarer Anzeigename muss separat austauschbar bleiben
 
 ### 4. UI- und Layout-Assets
-F�r Bedienung, Panels und generische Oberfl�chenelemente.
+Für Bedienung, Panels und generische Oberflächenelemente.
 
 Beispiele:
 - `ui_logo_wordmark`
@@ -134,12 +135,12 @@ Beispiele:
 - `ui_icon_log`
 
 Spezifikation:
-- m�glichst stilistisch konsistent
+- möglichst stilistisch konsistent
 - Icons bevorzugt als `svg`
 - dekorative Elemente austauschbar halten
 
-### 5. Hintergr�nde und Atmosph�re
-F�r Startscreen, Hauptansicht und Endscreen.
+### 5. Hintergründe und Atmosphäre
+Für Startscreen, Hauptansicht und Endscreen.
 
 Beispiele:
 - `bg_start_screen`
@@ -149,10 +150,10 @@ Beispiele:
 
 Spezifikation:
 - darf in V1 als einfacher Platzhalter starten
-- keine Abh�ngigkeit der Logik von konkreten Assets
+- keine Abhängigkeit der Logik von konkreten Assets
 
 ### 6. Soundeffekte und Audio
-Ja, Soundeffekte sollen hier ausdr�cklich mitgef�hrt werden.
+Ja, Soundeffekte sollen hier ausdrücklich mitgeführt werden.
 
 Beispiele:
 - `sfx_button_click`
@@ -169,14 +170,14 @@ Beispiele:
 - `sfx_game_over`
 
 Spezifikation:
-- bevorzugt `ogg` oder `mp3`, bei Bedarf zus�tzlich `wav` als Quelle
+- bevorzugt `ogg` oder `mp3`, bei Bedarf zusätzlich `wav` als Quelle
 - kurze, klar trennbare Einzelereignisse
-- Lautst�rke und Trigger von Logik entkoppeln
+- Lautstärke und Trigger von Logik entkoppeln
 - Platzhalter in V1 erlaubt
-- Audio muss in V1 technisch vorbereitet, aber nicht zwingend vollst�ndig implementiert sein
+- Audio muss in V1 technisch vorbereitet, aber nicht zwingend vollständig implementiert sein
 
 ### 7. Musik
-Optional f�r V1, aber bereits austauschbar modellierbar.
+Optional für V1, aber bereits austauschbar modellierbar.
 
 Beispiele:
 - `music_menu_loop`
@@ -184,20 +185,24 @@ Beispiele:
 - `music_end_screen`
 
 Spezifikation:
-- loop-f�hig
+- loop-fähig
 - separat ein-/ausschaltbar
 - darf in V1 fehlen oder stumm bleiben
 
 ## Empfohlene erste V1-Pflichtliste
-Diese Assets sollten fr�h mit stabilen IDs vorgesehen werden:
+Diese Assets sollten früh mit stabilen IDs vorgesehen werden:
 - alle Tile-Grafiken
 - alle Monster-/Truhen-Token
 - alle Heldentoken oder Heldenportraits
 - zentrale UI-Icons
-- zentrale Soundeffekte f�r Platzieren, Kampf, Truhe, Heilung und Spielende
+- zentrale Soundeffekte für Platzieren, Kampf, Truhe, Heilung und Spielende
+
+Hinweis:
+- Diese Pflichtliste verlangt stabile IDs, aber keine finalen Illustrationen.
+- Einfache geometrische, farbcodierte oder textbasierte Platzhalter sind für V1 ausdrücklich ausreichend.
 
 ## Implementierungshinweis
-Sp�tere Code-Struktur kann z. B. so aussehen:
+Spätere Code-Struktur kann z. B. so aussehen:
 
 ```ts
 type AssetSpec = {
@@ -212,8 +217,8 @@ type AssetSpec = {
 }
 ```
 
-Die eigentliche Runtime-Zuordnung kann sp�ter z. B. in `src/data/assets.ts` erfolgen.
+Die eigentliche Runtime-Zuordnung kann später z. B. in `src/data/assets.ts` erfolgen.
 
-F�r den Projektstart wird zus�tzlich eine maschinenlesbare Datei `assets.manifest.json` im Repository gef�hrt.
+Für den Projektstart wird zusätzlich eine maschinenlesbare Datei `assets.manifest.json` im Repository geführt.
 
 

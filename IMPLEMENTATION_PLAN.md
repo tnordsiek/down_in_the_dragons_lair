@@ -31,6 +31,7 @@ Enthalten:
 - maschinenlesbares Asset-Manifest anlegen
 - Linting und Formatting einrichten
 - Startscreen-Platzhalter rendern
+- einfache Platzhaltergrafiken früh zulassen, um Implementierungsfluss und Tests nicht zu blockieren
 
 Definition of Done:
 - Projekt startet lokal erfolgreich
@@ -188,6 +189,7 @@ Enthalten:
 - Endscreen mit Ranking
 - UI-Grafiken und eventuelle Soundeffekte ausschließlich über Asset-IDs anbinden
 - Audio-Anbindung für spätere Aktivierung vorbereiten, auch wenn V1 noch mit Platzhaltern oder ohne aktive Wiedergabe startet
+- funktionale Platzhaltergrafiken sind für V1 ausreichend, solange Austauschbarkeit und Lesbarkeit gewahrt bleiben
 
 Definition of Done:
 - ein Nutzer kann ohne Debug-Eingriffe eine komplette Partie spielen

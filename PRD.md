@@ -68,6 +68,7 @@ V1 ist erfolgreich, wenn:
 - Aktionslog pro Zug
 - gute Bedienbarkeit mit Maus; Tastatur-Support optional
 - verwendete Grafik- und Audioelemente müssen über austauschbare Asset-IDs angebunden sein
+- für V1 sind einfache funktionale Platzhaltergrafiken ausdrücklich zulässig, wenn sie die Implementierung beschleunigen und später austauschbar bleiben
 
 ## 9. Nicht-funktionale Anforderungen
 - Browser-first
