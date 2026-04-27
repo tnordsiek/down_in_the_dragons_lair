@@ -1,18 +1,12 @@
-# ARCHITECTURE
+﻿# ARCHITECTURE
 
 ## 1. Zielbild
 Die Anwendung soll als clientseitiges Webspiel mit klarer Trennung zwischen Spielengine, KI und Oberfläche implementiert werden. Der Schwerpunkt liegt auf einer robusten, testbaren Engine. Die Core-Engine soll so geschnitten werden, dass ein späterer Android-Port nach V1 möglich bleibt.
 
 Dieses Dokument ist normativ für technische Zielarchitektur, Modulgrenzen, Zustandsmodell, technische Prinzipien und Teststrategie. Es definiert keine neuen Produktanforderungen zusätzlich zum `PRD.md` und keine Regelentscheidungen zusätzlich zu `GAME_RULES.md` und `RULE_EDGE_CASES.md`.
 
-## 2. Empfehlung für V1-Stack
-- React 19
-- TypeScript
-- Vite 8
-- Zustand für App- und Spielzustand
-- Tailwind CSS für UI-Styling
-- Vitest für Unit- und Integrationstests
-- Playwright für E2E-Tests
+## 2. Technische Umsetzung des festgelegten V1-Stacks
+Die konkrete Stack-Entscheidung liegt im `PRD.md`. Diese Architektur ist auf eine Umsetzung mit React, TypeScript, Vite, Zustand, Tailwind CSS, Vitest und Playwright ausgelegt.
 
 ## 3. Architekturprinzipien
 - Engine ist framework-unabhängig
@@ -155,7 +149,7 @@ UI besteht idealerweise aus:
 - Partieende anzeigen
 
 ## 13. Plattformstrategie nach V1
-- Browser ist Primärplattform in V1
+- V1 folgt der im `PRD.md` festgelegten Browser-first- und GitHub-Pages-Ausrichtung
 - Android ist bewusst Post-V1
 - Engine, Datenmodelle und Serialisierung sollen ohne DOM- oder Browser-Abhängigkeiten entworfen werden
 - eine spätere Android-App kann UI-seitig separat umgesetzt werden, solange sie dieselbe Engine nutzt
@@ -167,3 +161,4 @@ UI besteht idealerweise aus:
 4. UI-Grundgerüst
 5. KI-Heuristiken
 6. Persistenz und Polishing
+

@@ -1,10 +1,12 @@
-# AI_CONCEPT
+﻿# AI_CONCEPT
 
 ## 1. Ziel
 Die KI in V1 soll regelkonform, stabil und ausreichend nachvollziehbar spielen. Sie muss nicht menschlich täuschen oder optimales Spiel garantieren.
 
 ## 2. Grundansatz
 Heuristikbasierte Entscheidungslogik auf Basis legaler Aktionen.
+
+Die KI soll von Anfang an so aufgebaut werden, dass Balancing-Werte und Prioritäten später ohne strukturelle Umbauten angepasst werden können.
 
 ## 3. KI-Prioritäten
 1. illegale oder offensichtlich tödliche Züge vermeiden
@@ -54,3 +56,10 @@ interface AiAgent {
 
 ### Stufe 3
 - Berücksichtigung von Punktestand und Endgame
+
+## 7. Balancing-Vorbereitung
+- Bewertungsgewichte, Risikoschwellen und einfache Zielprioritäten sollen datengetrieben oder zentral konfigurierbar angelegt werden
+- falls für V1 konkrete Werte benötigt werden und keine explizite Vorgabe vorliegt, darf eine plausible Startkonfiguration vorgeschlagen und verwendet werden
+- Werte zuerst konservativ und testfreundlich wählen
+- solche vorgeschlagenen Werte sollen klar von harten Regeln getrennt bleiben
+

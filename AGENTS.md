@@ -1,4 +1,4 @@
-# AGENTS.md
+﻿# AGENTS.md
 
 Scope: entire repository.
 
@@ -70,3 +70,4 @@ Blocker format:
 ```
 
 Priority: correctness to requirements > consistency with decisions > testability > stability > maintainability > small commits.
+

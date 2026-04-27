@@ -1,4 +1,4 @@
-# LEGAL_AND_IP_NOTES
+﻿# LEGAL_AND_IP_NOTES
 
 ## Ziel
 Das Projekt soll als eigenständiges Produkt mit eigener Identität entwickelt werden.
@@ -23,5 +23,8 @@ Das Projekt soll als eigenständiges Produkt mit eigener Identität entwickelt w
 ## Praktische Arbeitsregel für Codex
 Verwende im Code nur technische IDs und ein separates sichtbares Naming-Layer. Die sichtbaren Namen werden später originär und ausschließlich projektintern formuliert.
 
+Für V1 dürfen sichtbare Platzhalternamen den Klassentypen entsprechen, solange die Benennungsschicht getrennt bleibt und spätere originäre Anzeigenamen ohne Engine-Änderung eingesetzt werden können.
+
 ## Self-contained documentation rule
 Do not look up, cite, copy, or import external game materials, names, artwork, flavor text, or product language. The documents in this repository are the sole implementation source of truth.
+

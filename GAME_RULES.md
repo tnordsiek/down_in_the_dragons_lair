@@ -1,4 +1,4 @@
-# GAME_RULES – Version 1
+﻿# GAME_RULES – Version 1
 
 ## 1. Grundprinzip
 V1 definiert die maßgebliche Spielmechanik dieses Projekts. Diese Datei ist die maßgebliche spielbare Spezifikation für die Engine.
@@ -25,8 +25,12 @@ Das Spiel endet sofort, wenn der Drache besiegt wird. Gewinner ist der Spieler m
 - Monster- und Schatzplättchen gemeinsam in einen Beutel bzw. eine virtuelle Draw-Struktur legen
 - jeder Spieler erhält 5 Lebenspunkte
 - jeder Spieler erhält genau einen Helden
+- Helden sind pro Partie eindeutig
+- der menschliche Spieler wählt seinen Helden zuerst
+- die KI-Spieler erhalten anschließend zufällig verbleibende Helden ohne Duplikate
 - alle Helden starten auf dem Startfeld
 - Startspieler wird per Würfel bestimmt
+- bei Gleichstand um den Startspieler wird der Wurf zwischen den betroffenen Spielern wiederholt
 
 ## 6. Zugstruktur
 Jeder Zug hat maximal 4 Schritte. Ein Schritt ist eine Bewegung auf ein angrenzendes Feld oder eine Teleport-Nutzung nach den Regeln.
@@ -178,3 +182,4 @@ Sobald der Drache besiegt wurde:
 - Partie sofort beenden
 - Punkte aller Spieler berechnen
 - Gewinner mit höchster Punktzahl bestimmen
+

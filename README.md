@@ -1,4 +1,4 @@
-# Down in the Dragon's Lair
+﻿# Down in the Dragon's Lair
 
 Browserbasiertes Dungeon-Brettspiel mit eigener IP und einer klar definierten, projektspezifischen Spielmechanik für V1.
 
@@ -22,6 +22,7 @@ Dieses Repository definiert die fachliche und technische Grundlage, auf der Code
 - `IMPLEMENTATION_PLAN.md` – normative Umsetzungsreihenfolge und Milestones
 - `RULE_EDGE_CASES.md` – normative Edge-Case-Entscheidungen
 - `LEGAL_AND_IP_NOTES.md` – normative IP- und Quellen-Leitplanken
+- `ASSET_SPEC.md` – normatives Asset-Manifest für Grafik-, UI- und Audioelemente
 - `AGENTS.md` – Arbeitsmodus und Ausführungsregeln für Codex
 
 ## Dokumentenrollen
@@ -30,6 +31,7 @@ Dieses Repository definiert die fachliche und technische Grundlage, auf der Code
 - `IMPLEMENTATION_PLAN.md` beschreibt das Umsetzungs-`wie` und die Reihenfolge.
 - Bei Regeldetails entscheiden `GAME_RULES.md`, `GAME_DATA_MODEL.md` und `RULE_EDGE_CASES.md`.
 - Für IP- und Quellenfragen gilt `LEGAL_AND_IP_NOTES.md`.
+- Für austauschbare Grafik-, UI- und Audioelemente gilt `ASSET_SPEC.md`.
 
 ## Einstieg
 - Lies zuerst `AGENTS.md`.
@@ -37,4 +39,3 @@ Dieses Repository definiert die fachliche und technische Grundlage, auf der Code
 - Für die Umsetzungsreihenfolge lies `IMPLEMENTATION_PLAN.md`.
 - Für Regel- und Datenfragen arbeite von `GAME_RULES.md` und `GAME_DATA_MODEL.md` aus.
 
-Die in diesem Repository dokumentierten Entscheidungen sind die alleinige Grundlage für Implementierung, Tests, UI-Texte und Assets.

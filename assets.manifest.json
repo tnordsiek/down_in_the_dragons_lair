@@ -1,0 +1,125 @@
+﻿{
+  "version": 1,
+  "notes": [
+    "Dieses Manifest ist die maschinenlesbare Ergänzung zu ASSET_SPEC.md.",
+    "Alle Einträge verwenden stabile assetId-Werte statt harter Dateinamen.",
+    "Platzhalter sind in V1 zulässig, solange die IDs stabil bleiben."
+  ],
+  "assets": [
+    {
+      "assetId": "tile_start_cross_healing",
+      "category": "tile",
+      "purpose": "Starttile mit Heilwirkung",
+      "usedBy": ["board"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Quadratisch, rotierbar ohne Qualitätsverlust"
+    },
+    {
+      "assetId": "tile_room_corner",
+      "category": "tile",
+      "purpose": "Raumtile Ecke",
+      "usedBy": ["board"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Quadratisch, rotierbar ohne Qualitätsverlust"
+    },
+    {
+      "assetId": "token_treasure_chest",
+      "category": "token",
+      "purpose": "Schatztruhen-Token",
+      "usedBy": ["board", "ui"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Transparenter Hintergrund, in kleiner Größe lesbar"
+    },
+    {
+      "assetId": "token_dragon",
+      "category": "token",
+      "purpose": "Dragon-Token",
+      "usedBy": ["board", "ui"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Transparenter Hintergrund, in kleiner Größe lesbar"
+    },
+    {
+      "assetId": "hero_warlock_token",
+      "category": "portrait",
+      "purpose": "Warlock-Spielfigur oder Porträt",
+      "usedBy": ["board", "setup", "status_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Als Board-Token und Statusanzeige verwendbar"
+    },
+    {
+      "assetId": "ui_icon_move",
+      "category": "ui",
+      "purpose": "Bewegungssymbol",
+      "usedBy": ["action_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Klares kleines Interface-Icon"
+    },
+    {
+      "assetId": "ui_icon_attack",
+      "category": "ui",
+      "purpose": "Kampfsymbol",
+      "usedBy": ["combat_panel", "action_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Klares kleines Interface-Icon"
+    },
+    {
+      "assetId": "bg_start_screen",
+      "category": "background",
+      "purpose": "Hintergrund für den Startscreen",
+      "usedBy": ["start_screen"],
+      "format": "webp",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Breites Hintergrundmotiv oder einfacher Platzhalter"
+    },
+    {
+      "assetId": "sfx_tile_place",
+      "category": "audio",
+      "purpose": "Geräusch beim Platzieren eines Tiles",
+      "usedBy": ["board", "audio_system"],
+      "format": "ogg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Kurzer Einzelton, später austauschbar",
+      "volumeRole": "sfx"
+    },
+    {
+      "assetId": "sfx_combat_roll",
+      "category": "audio",
+      "purpose": "Geräusch beim Kampfwurf",
+      "usedBy": ["combat_panel", "audio_system"],
+      "format": "ogg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Kurzer Einzelton, später austauschbar",
+      "volumeRole": "sfx"
+    },
+    {
+      "assetId": "music_menu_loop",
+      "category": "audio",
+      "purpose": "Optionale Menümusik",
+      "usedBy": ["start_screen", "audio_system"],
+      "format": "ogg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Loopfähig, darf in V1 auch stumm oder ungenutzt bleiben",
+      "loop": true,
+      "volumeRole": "music"
+    }
+  ]
+}
+

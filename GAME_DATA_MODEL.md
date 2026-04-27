@@ -1,4 +1,4 @@
-# GAME_DATA_MODEL
+﻿# GAME_DATA_MODEL
 
 ## 1. Designziel
 Alle Spielinhalte sollen datengetrieben beschrieben werden, damit Engine und UI generisch arbeiten können. Regeln, Tiles, Token, Monster, Belohnungen und Heldenfähigkeiten müssen unabhängig von der Darstellung modelliert sein.
@@ -28,6 +28,34 @@ interface Inventory {
   spells: SpellItem[]
   keyCount: 0 | 1
 }
+```
+
+### 2.2a BoardPosition
+```ts
+interface BoardPosition {
+  boardX: number
+  boardY: number
+}
+```
+
+### 2.2b Item-Basistypen
+Lose Gegenstände auf Tiles und Gegenstände im Inventar sollen über klar getrennte Item-Typen modelliert werden.
+
+```ts
+type WeaponBonus = 1 | 2 | 3
+type SpellKind = 'flame' | 'healing'
+
+interface WeaponItem {
+  type: 'weapon'
+  bonus: WeaponBonus
+}
+
+interface SpellItem {
+  type: 'spell'
+  spellKind: SpellKind
+}
+
+type Item = WeaponItem | SpellItem | { type: 'key' }
 ```
 
 ### 2.3 Tile-Grundmodell
@@ -94,8 +122,8 @@ interface MonsterDefinition {
 ### 2.7 RewardDefinition
 ```ts
 type RewardDefinition =
-  | { type: 'weapon'; bonus: 1 | 2 | 3 }
-  | { type: 'spell'; spellKind: 'flame' | 'healing' }
+  | { type: 'weapon'; bonus: WeaponBonus }
+  | { type: 'spell'; spellKind: SpellKind }
   | { type: 'key' }
   | { type: 'treasure'; points: number }
 ```
@@ -188,6 +216,10 @@ Die Helden bekommen in der eigenen IP neue Namen. Technisch werden zunächst fun
 ### hero_warlock
 - darf 1 Lebenspunkt opfern, um +1 Kampfstärke zu erhalten
 - darf zu Zugbeginn für alle 4 Schritte die Position mit einem anderen Helden tauschen
+- der Tausch ist mit jedem anderen Helden auf dem Brett erlaubt
+- landet er durch den Tausch auf einem Feld mit Schatztruhe, gelten die normalen Regeln zum Öffnen der Truhe
+- landet er durch den Tausch auf einem Monsterfeld, beginnt sofort ein Kampf
+- bei Unentschieden oder Niederlage nach einem solchen Tauschkampf wird er zufällig auf ein angrenzendes begehbares Feld verschoben; ist dieses nicht frei, wird das nächste freie Feld verwendet
 
 ### hero_thief
 - gewinnt Unentschieden im Kampf
@@ -273,4 +305,8 @@ Eine Platzierung ist legal, wenn die Eintrittsseite mit einer offenen Gegenseite
 Für die UI soll eine Mapping-Schicht vorgesehen werden:
 - technische IDs bleiben stabil
 - sichtbare Namen kommen aus einem separaten Lokalisierungs-/Naming-Layer
+- in V1 dürfen die Klassentypen zunächst direkt als sichtbare Namen verwendet werden
+- in V1 dürfen bei Monstern, Items und Zaubern ebenfalls die internen Bezeichnungen direkt als sichtbare Namen verwendet werden
+- die UI muss dennoch so aufgebaut sein, dass diese Anzeigenamen später ohne Änderung der technischen IDs ersetzt werden können
 - Regeln, Datenmodell und Tests referenzieren bis zur finalen Benennungsschicht bevorzugt die technischen IDs
+

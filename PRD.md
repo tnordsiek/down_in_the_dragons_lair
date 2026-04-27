@@ -1,4 +1,4 @@
-# PRD – Down in the Dragon's Lair
+﻿# PRD – Down in the Dragon's Lair
 
 ## 1. Produktübersicht
 Down in the Dragon's Lair ist ein im Browser spielbares Fantasy-Dungeon-Spiel mit eigener Markenidentität. Die Spielmechanik für Version 1 ist in diesem Repository vollständig definiert. Ziel ist eine lokal spielbare Einzelspieler-Erfahrung gegen KI-Gegner.
@@ -7,6 +7,8 @@ Dieses Dokument ist normativ für Produktanforderungen, Scope, UX und nicht-funk
 
 ## 2. Produktziel
 Das Produkt soll eine komplette Partie von Startaufbau bis Endwertung digital abbilden. Ein Benutzer kann einen Helden wählen, die Anzahl der KI-Gegner konfigurieren und die Partie vollständig im Browser spielen.
+
+Der Benutzer legt die Anzahl der KI-Gegner fest. Helden sind pro Partie eindeutig; nach der Wahl des menschlichen Helden werden die übrigen benötigten Helden zufällig und ohne Duplikate den KI-Spielern zugewiesen.
 
 ## 3. Zielgruppe
 - Familien und Gelegenheitsspieler
@@ -65,6 +67,7 @@ V1 ist erfolgreich, wenn:
 - Kampfergebnisse mit vollständiger Formel
 - Aktionslog pro Zug
 - gute Bedienbarkeit mit Maus; Tastatur-Support optional
+- verwendete Grafik- und Audioelemente müssen über austauschbare Asset-IDs angebunden sein
 
 ## 9. Nicht-funktionale Anforderungen
 - Browser-first
@@ -73,10 +76,16 @@ V1 ist erfolgreich, wenn:
 - deterministische Tests möglich
 - klare Trennung zwischen Engine und UI
 - hoher Anteil automatisierbarer Unit-Tests
+- Build und Asset-Pfade müssen mit GitHub Pages kompatibel sein
 
 ## 10. Bereits festgelegte Produktentscheidungen
 - Produktname: `Down in the Dragon's Lair`
 - technischer V1-Stack: React, TypeScript, Vite, Zustand, Tailwind, Vitest, Playwright
+- Standard-Paketmanager für V1: `npm`
 - Save/Load in V1: automatische lokale Wiederaufnahme einer laufenden Partie
 - eigene sichtbare Namen für Helden, Monster und Items; technische IDs bleiben getrennt
+- für V1 dürfen die Klassentypen als sichtbare Namen verwendet werden; die Anzeigenamen müssen später austauschbar bleiben
+- für V1 dürfen auch bei Monstern, Items und Zaubern die internen Bezeichnungen als sichtbare Anzeigenamen verwendet werden; die Anzeigenamen müssen später austauschbar bleiben
 - Browser-first in V1, Android als Post-V1-Option
+- Veröffentlichungsziel für V1: GitHub Pages
+
