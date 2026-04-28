@@ -9,18 +9,18 @@ Update it when:
 - tests or build verification change the confidence level
 
 ## Current milestone
-- Milestone 2 ready to start
+- Milestone 3 ready to start
 
 ## Last completed
-- Milestone 1 project scaffold implemented and verified
+- Milestone 2 core data model implemented and verified
 
 ## In progress
 - none
 
 ## Next steps
-1. Define core domain types and technical IDs from `GAME_DATA_MODEL.md`
-2. Model inventory, rewards, monsters, heroes, tile blueprints and tile pool data
-3. Add token-bag data, reward mappings, serializable `GameState` foundations and seeded RNG
+1. Create initial game setup using the core data model
+2. Define turn phases, action types and transition interfaces
+3. Implement board representation, movement validation and exploration flow
 
 ## Open decisions
 - none currently documented
@@ -33,7 +33,7 @@ Update it when:
 - `npm run lint` passed
 - `npm run format` passed
 - `npm run build` passed
-- `npm run test:e2e` passed after installing Playwright Chromium locally
+- `npm run test:e2e` passed
 
 ## Notes
 - Update this file before stopping if work is incomplete and not yet committed.
