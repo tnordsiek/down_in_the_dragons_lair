@@ -191,6 +191,7 @@ export interface GameState {
   tokenBag: Token[];
   activePlayerIndex: number;
   remainingSteps: number;
+  lastMoveFrom?: BoardPosition;
   combat?: CombatContext;
   eventLog: GameEvent[];
   victory?: VictoryState;
@@ -219,6 +220,27 @@ export type PlacePendingTileAction = {
   rotation: Rotation;
 };
 
+export type ResolveRoomTokenAction = {
+  type: 'resolveRoomToken';
+};
+
+export type ResolveCombatAction = {
+  type: 'resolveCombat';
+  dice?: [number, number];
+  flameSpellCount?: number;
+  curseTargetPlayerId?: string;
+};
+
+export type OpenChestAction = {
+  type: 'openChest';
+};
+
+export type UseHealingSpellAction = {
+  type: 'useHealingSpell';
+  targetPlayerId: string;
+  healingPosition: BoardPosition;
+};
+
 export type EndTurnAction = {
   type: 'endTurn';
 };
@@ -228,4 +250,8 @@ export type GameAction =
   | MovePlayerAction
   | DeclareExplorationDirectionAction
   | PlacePendingTileAction
+  | ResolveRoomTokenAction
+  | ResolveCombatAction
+  | OpenChestAction
+  | UseHealingSpellAction
   | EndTurnAction;

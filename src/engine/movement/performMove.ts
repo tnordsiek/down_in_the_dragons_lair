@@ -30,6 +30,7 @@ export function moveActivePlayer(
     ...state,
     phase: remainingSteps > 0 ? 'await_move' : 'turn_end',
     players,
+    lastMoveFrom: activePlayer.position,
     remainingSteps,
   };
 }

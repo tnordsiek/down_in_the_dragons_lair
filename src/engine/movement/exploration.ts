@@ -104,6 +104,7 @@ export function placePendingTile(
     board: [...state.board, placedTile],
     tileStack: [...returnedSkippedTiles, ...state.tileStack],
     pendingTile: undefined,
+    lastMoveFrom: pendingTile.origin,
     remainingSteps,
     rng: rng.snapshot(),
   };

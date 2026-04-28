@@ -1,15 +1,18 @@
 import type { GameState } from '../core/types';
+import { applyHealingIfOnHealingTile } from '../rules/healing';
 
 export function endTurn(state: GameState): GameState {
+  const healedState = applyHealingIfOnHealingTile(state);
   const activePlayerIndex =
-    (state.activePlayerIndex + 1) % state.players.length;
+    (healedState.activePlayerIndex + 1) % healedState.players.length;
 
   return {
-    ...state,
+    ...healedState,
     phase: 'turn_start',
     activePlayerIndex,
     remainingSteps: 4,
     pendingTile: undefined,
+    lastMoveFrom: undefined,
     combat: undefined,
   };
 }

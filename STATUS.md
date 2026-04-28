@@ -9,18 +9,18 @@ Update it when:
 - tests or build verification change the confidence level
 
 ## Current milestone
-- Milestone 4 ready to start
+- Milestone 5 ready to start
 
 ## Last completed
-- Milestone 3 game setup, board movement and exploration foundations implemented and verified
+- Milestone 4 combat, rewards, room tokens, healing, curse and dragon scoring implemented and verified
 
 ## In progress
 - none
 
 ## Next steps
-1. Implement room token resolution and bag draw logic
-2. Add combat context, dice flow and base combat outcome resolution
-3. Apply rewards, retreat, health loss, healing, curse, dragon end and scoring
+1. Define hero ability hooks or equivalent rule extension points
+2. Implement all six V1 hero abilities with curse bypass
+3. Add dedicated regression tests per hero
 
 ## Open decisions
 - none currently documented
