@@ -21,8 +21,10 @@ Work loop:
 7. Fix failures; do not ignore red tests/builds/lints.
 8. Verify implementation against docs.
 9. Update docs/status only when required by changed behavior, resolved decisions, edge cases or completed milestones.
-10. Commit one coherent, tested unit of work.
-11. Repeat.
+10. Update `STATUS.md` before stopping if work is incomplete or the next resume would benefit from a clearer checkpoint.
+11. Use `HANDOFF.md` when stopping mid-problem, after failed attempts, or when the next session needs concise recovery context.
+12. Commit one coherent, tested unit of work.
+13. Repeat.
 
 Rules:
 - Follow existing architecture, style, naming, patterns and test structure.
@@ -68,6 +70,11 @@ Blocker format:
 ### Suggested resolution
 <concrete decision needed>
 ```
+
+Resume guidance:
+- `STATUS.md` is the primary quick-resume file.
+- `HANDOFF.md` is the temporary deep-context file for interrupted work.
+- If both exist, read `STATUS.md` first, then `HANDOFF.md`.
 
 Priority: correctness to requirements > consistency with decisions > testability > stability > maintainability > small commits.
 
