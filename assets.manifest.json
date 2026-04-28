@@ -1,9 +1,9 @@
-﻿{
+{
   "version": 1,
   "notes": [
-    "Dieses Manifest ist die maschinenlesbare Ergänzung zu ASSET_SPEC.md.",
-    "Alle Einträge verwenden stabile assetId-Werte statt harter Dateinamen.",
-    "Platzhalter sind in V1 zulässig, solange die IDs stabil bleiben."
+    "Dieses Manifest ist die maschinenlesbare Ergaenzung zu ASSET_SPEC.md.",
+    "Alle Eintraege verwenden stabile assetId-Werte statt harter Dateinamen.",
+    "Platzhalter sind in V1 zulaessig, solange die IDs stabil bleiben."
   ],
   "assets": [
     {
@@ -14,17 +14,107 @@
       "format": "svg",
       "placeholderAllowed": true,
       "replaceableAfterV1": true,
-      "spec": "Quadratisch, rotierbar ohne Qualitätsverlust"
+      "spec": "Quadratisch, rotierbar ohne Qualitaetsverlust"
     },
     {
-      "assetId": "tile_room_corner",
+      "assetId": "tile_tunnel_straight",
       "category": "tile",
-      "purpose": "Raumtile Ecke",
+      "purpose": "Gerades Tunnel-Tile",
       "usedBy": ["board"],
       "format": "svg",
       "placeholderAllowed": true,
       "replaceableAfterV1": true,
-      "spec": "Quadratisch, rotierbar ohne Qualitätsverlust"
+      "spec": "Quadratisch, rotierbar ohne Qualitaetsverlust"
+    },
+    {
+      "assetId": "tile_tunnel_corner",
+      "category": "tile",
+      "purpose": "Tunnel-Ecke",
+      "usedBy": ["board"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Quadratisch, rotierbar ohne Qualitaetsverlust"
+    },
+    {
+      "assetId": "tile_tunnel_t_junction",
+      "category": "tile",
+      "purpose": "Tunnel-T-Kreuzung",
+      "usedBy": ["board"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Quadratisch, rotierbar ohne Qualitaetsverlust"
+    },
+    {
+      "assetId": "tile_tunnel_cross",
+      "category": "tile",
+      "purpose": "Tunnel-Kreuzung",
+      "usedBy": ["board"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Quadratisch, rotierbar ohne Qualitaetsverlust"
+    },
+    {
+      "assetId": "tile_room_straight",
+      "category": "tile",
+      "purpose": "Gerades Raum-Tile",
+      "usedBy": ["board"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Quadratisch, rotierbar ohne Qualitaetsverlust"
+    },
+    {
+      "assetId": "tile_room_corner",
+      "category": "tile",
+      "purpose": "Raum-Ecke",
+      "usedBy": ["board"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Quadratisch, rotierbar ohne Qualitaetsverlust"
+    },
+    {
+      "assetId": "tile_room_t_junction",
+      "category": "tile",
+      "purpose": "Raum-T-Kreuzung",
+      "usedBy": ["board"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Quadratisch, rotierbar ohne Qualitaetsverlust"
+    },
+    {
+      "assetId": "tile_room_cross",
+      "category": "tile",
+      "purpose": "Raum-Kreuzung",
+      "usedBy": ["board"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Quadratisch, rotierbar ohne Qualitaetsverlust"
+    },
+    {
+      "assetId": "tile_healing_corner",
+      "category": "tile",
+      "purpose": "Heilquellen-Ecke",
+      "usedBy": ["board"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Quadratisch, rotierbar ohne Qualitaetsverlust"
+    },
+    {
+      "assetId": "tile_teleport_straight",
+      "category": "tile",
+      "purpose": "Gerades Teleport-Tile",
+      "usedBy": ["board"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Quadratisch, rotierbar ohne Qualitaetsverlust"
     },
     {
       "assetId": "token_treasure_chest",
@@ -34,27 +124,354 @@
       "format": "svg",
       "placeholderAllowed": true,
       "replaceableAfterV1": true,
-      "spec": "Transparenter Hintergrund, in kleiner Größe lesbar"
+      "transparentBackground": true,
+      "spec": "Transparenter Hintergrund, in kleiner Groesse lesbar"
+    },
+    {
+      "assetId": "token_giant_rat",
+      "category": "token",
+      "purpose": "Monster-Token giant_rat",
+      "usedBy": ["board", "combat_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "transparentBackground": true,
+      "spec": "Transparenter Hintergrund, in kleiner Groesse lesbar"
+    },
+    {
+      "assetId": "token_giant_spider",
+      "category": "token",
+      "purpose": "Monster-Token giant_spider",
+      "usedBy": ["board", "combat_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "transparentBackground": true,
+      "spec": "Transparenter Hintergrund, in kleiner Groesse lesbar"
+    },
+    {
+      "assetId": "token_mummy",
+      "category": "token",
+      "purpose": "Monster-Token mummy",
+      "usedBy": ["board", "combat_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "transparentBackground": true,
+      "spec": "Transparenter Hintergrund, in kleiner Groesse lesbar"
+    },
+    {
+      "assetId": "token_skeleton_turnkey",
+      "category": "token",
+      "purpose": "Monster-Token skeleton_turnkey",
+      "usedBy": ["board", "combat_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "transparentBackground": true,
+      "spec": "Transparenter Hintergrund, in kleiner Groesse lesbar"
+    },
+    {
+      "assetId": "token_skeleton_warrior",
+      "category": "token",
+      "purpose": "Monster-Token skeleton_warrior",
+      "usedBy": ["board", "combat_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "transparentBackground": true,
+      "spec": "Transparenter Hintergrund, in kleiner Groesse lesbar"
+    },
+    {
+      "assetId": "token_skeleton_king",
+      "category": "token",
+      "purpose": "Monster-Token skeleton_king",
+      "usedBy": ["board", "combat_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "transparentBackground": true,
+      "spec": "Transparenter Hintergrund, in kleiner Groesse lesbar"
+    },
+    {
+      "assetId": "token_fallen",
+      "category": "token",
+      "purpose": "Monster-Token fallen",
+      "usedBy": ["board", "combat_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "transparentBackground": true,
+      "spec": "Transparenter Hintergrund, in kleiner Groesse lesbar"
     },
     {
       "assetId": "token_dragon",
       "category": "token",
-      "purpose": "Dragon-Token",
-      "usedBy": ["board", "ui"],
+      "purpose": "Monster-Token dragon",
+      "usedBy": ["board", "combat_panel", "end_screen"],
       "format": "svg",
       "placeholderAllowed": true,
       "replaceableAfterV1": true,
-      "spec": "Transparenter Hintergrund, in kleiner Größe lesbar"
+      "transparentBackground": true,
+      "spec": "Transparenter Hintergrund, in kleiner Groesse lesbar"
+    },
+    {
+      "assetId": "item_weapon_1",
+      "category": "token",
+      "purpose": "Waffen-Item mit Bonus +1",
+      "usedBy": ["inventory", "board"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "transparentBackground": true,
+      "spec": "Kleines Inventar-Icon"
+    },
+    {
+      "assetId": "item_weapon_2",
+      "category": "token",
+      "purpose": "Waffen-Item mit Bonus +2",
+      "usedBy": ["inventory", "board"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "transparentBackground": true,
+      "spec": "Kleines Inventar-Icon"
+    },
+    {
+      "assetId": "item_weapon_3",
+      "category": "token",
+      "purpose": "Waffen-Item mit Bonus +3",
+      "usedBy": ["inventory", "board"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "transparentBackground": true,
+      "spec": "Kleines Inventar-Icon"
+    },
+    {
+      "assetId": "item_spell_flame",
+      "category": "token",
+      "purpose": "Flame-Spell-Item",
+      "usedBy": ["inventory", "combat_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "transparentBackground": true,
+      "spec": "Kleines Inventar-Icon"
+    },
+    {
+      "assetId": "item_spell_healing",
+      "category": "token",
+      "purpose": "Healing-Spell-Item",
+      "usedBy": ["inventory", "action_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "transparentBackground": true,
+      "spec": "Kleines Inventar-Icon"
+    },
+    {
+      "assetId": "item_key",
+      "category": "token",
+      "purpose": "Key-Item",
+      "usedBy": ["inventory", "board"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "transparentBackground": true,
+      "spec": "Kleines Inventar-Icon"
+    },
+    {
+      "assetId": "status_curse",
+      "category": "token",
+      "purpose": "Fluch-Statusmarker",
+      "usedBy": ["status_panel", "board"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "transparentBackground": true,
+      "spec": "Kleiner Statusmarker"
+    },
+    {
+      "assetId": "status_unconscious",
+      "category": "token",
+      "purpose": "Ohnmacht-Statusmarker",
+      "usedBy": ["status_panel", "board"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "transparentBackground": true,
+      "spec": "Kleiner Statusmarker"
+    },
+    {
+      "assetId": "hero_mage_portrait",
+      "category": "portrait",
+      "purpose": "Hero-Portrait hero_mage",
+      "usedBy": ["setup", "status_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Austauschbares Heldenportrait"
+    },
+    {
+      "assetId": "hero_warrior_portrait",
+      "category": "portrait",
+      "purpose": "Hero-Portrait hero_warrior",
+      "usedBy": ["setup", "status_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Austauschbares Heldenportrait"
+    },
+    {
+      "assetId": "hero_warlock_portrait",
+      "category": "portrait",
+      "purpose": "Hero-Portrait hero_warlock",
+      "usedBy": ["setup", "status_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Austauschbares Heldenportrait"
+    },
+    {
+      "assetId": "hero_thief_portrait",
+      "category": "portrait",
+      "purpose": "Hero-Portrait hero_thief",
+      "usedBy": ["setup", "status_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Austauschbares Heldenportrait"
+    },
+    {
+      "assetId": "hero_swordsman_portrait",
+      "category": "portrait",
+      "purpose": "Hero-Portrait hero_swordsman",
+      "usedBy": ["setup", "status_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Austauschbares Heldenportrait"
+    },
+    {
+      "assetId": "hero_oracle_portrait",
+      "category": "portrait",
+      "purpose": "Hero-Portrait hero_oracle",
+      "usedBy": ["setup", "status_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Austauschbares Heldenportrait"
+    },
+    {
+      "assetId": "hero_mage_token",
+      "category": "portrait",
+      "purpose": "Board-Token hero_mage",
+      "usedBy": ["board", "status_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Kleines Heldentoken fuer das Board"
+    },
+    {
+      "assetId": "hero_warrior_token",
+      "category": "portrait",
+      "purpose": "Board-Token hero_warrior",
+      "usedBy": ["board", "status_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Kleines Heldentoken fuer das Board"
     },
     {
       "assetId": "hero_warlock_token",
       "category": "portrait",
-      "purpose": "Warlock-Spielfigur oder Porträt",
-      "usedBy": ["board", "setup", "status_panel"],
+      "purpose": "Board-Token hero_warlock",
+      "usedBy": ["board", "status_panel"],
       "format": "svg",
       "placeholderAllowed": true,
       "replaceableAfterV1": true,
-      "spec": "Als Board-Token und Statusanzeige verwendbar"
+      "spec": "Kleines Heldentoken fuer das Board"
+    },
+    {
+      "assetId": "hero_thief_token",
+      "category": "portrait",
+      "purpose": "Board-Token hero_thief",
+      "usedBy": ["board", "status_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Kleines Heldentoken fuer das Board"
+    },
+    {
+      "assetId": "hero_swordsman_token",
+      "category": "portrait",
+      "purpose": "Board-Token hero_swordsman",
+      "usedBy": ["board", "status_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Kleines Heldentoken fuer das Board"
+    },
+    {
+      "assetId": "hero_oracle_token",
+      "category": "portrait",
+      "purpose": "Board-Token hero_oracle",
+      "usedBy": ["board", "status_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Kleines Heldentoken fuer das Board"
+    },
+    {
+      "assetId": "ui_logo_wordmark",
+      "category": "ui",
+      "purpose": "Wortmarke oder kompaktes Logo fuer den Startscreen",
+      "usedBy": ["start_screen", "header"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Eigenstaendiges Logo-Asset, in V1 als Platzhalter darstellbar"
+    },
+    {
+      "assetId": "ui_button_primary",
+      "category": "ui",
+      "purpose": "Primaerer Button-Stil",
+      "usedBy": ["action_panel", "setup"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Austauschbares UI-Element oder Stilreferenz"
+    },
+    {
+      "assetId": "ui_button_secondary",
+      "category": "ui",
+      "purpose": "Sekundaerer Button-Stil",
+      "usedBy": ["action_panel", "setup"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Austauschbares UI-Element oder Stilreferenz"
+    },
+    {
+      "assetId": "ui_panel_frame",
+      "category": "ui",
+      "purpose": "Panel-Rahmen",
+      "usedBy": ["status_panel", "combat_panel", "event_log"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Austauschbares UI-Rahmenelement"
+    },
+    {
+      "assetId": "ui_modal_frame",
+      "category": "ui",
+      "purpose": "Modal-Rahmen",
+      "usedBy": ["setup", "loot_resolution", "end_screen"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Austauschbares UI-Rahmenelement"
     },
     {
       "assetId": "ui_icon_move",
@@ -77,9 +494,39 @@
       "spec": "Klares kleines Interface-Icon"
     },
     {
+      "assetId": "ui_icon_heal",
+      "category": "ui",
+      "purpose": "Heilungssymbol",
+      "usedBy": ["action_panel", "status_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Klares kleines Interface-Icon"
+    },
+    {
+      "assetId": "ui_icon_inventory",
+      "category": "ui",
+      "purpose": "Inventarsymbol",
+      "usedBy": ["inventory", "status_panel"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Klares kleines Interface-Icon"
+    },
+    {
+      "assetId": "ui_icon_log",
+      "category": "ui",
+      "purpose": "Logsymbol",
+      "usedBy": ["event_log"],
+      "format": "svg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Klares kleines Interface-Icon"
+    },
+    {
       "assetId": "bg_start_screen",
       "category": "background",
-      "purpose": "Hintergrund für den Startscreen",
+      "purpose": "Hintergrund fuer den Startscreen",
       "usedBy": ["start_screen"],
       "format": "webp",
       "placeholderAllowed": true,
@@ -87,39 +534,202 @@
       "spec": "Breites Hintergrundmotiv oder einfacher Platzhalter"
     },
     {
+      "assetId": "bg_game_table",
+      "category": "background",
+      "purpose": "Hintergrund fuer die Hauptspielansicht",
+      "usedBy": ["board", "game_screen"],
+      "format": "webp",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Ruhiger Hintergrund fuer gute Board-Lesbarkeit"
+    },
+    {
+      "assetId": "bg_end_screen",
+      "category": "background",
+      "purpose": "Hintergrund fuer den Endscreen",
+      "usedBy": ["end_screen"],
+      "format": "webp",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Breites Hintergrundmotiv oder einfacher Platzhalter"
+    },
+    {
+      "assetId": "bg_panel_texture",
+      "category": "background",
+      "purpose": "Panel-Hintergrund oder Textur",
+      "usedBy": ["status_panel", "action_panel", "event_log"],
+      "format": "webp",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Subtile Textur ohne Logikabhaengigkeit"
+    },
+    {
+      "assetId": "sfx_button_click",
+      "category": "audio",
+      "purpose": "Gerauesch bei Button-Aktionen",
+      "usedBy": ["audio_system", "ui"],
+      "format": "ogg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Kurzer Einzelton, spaeter austauschbar",
+      "volumeRole": "sfx"
+    },
+    {
       "assetId": "sfx_tile_place",
       "category": "audio",
-      "purpose": "Geräusch beim Platzieren eines Tiles",
+      "purpose": "Gerauesch beim Platzieren eines Tiles",
       "usedBy": ["board", "audio_system"],
       "format": "ogg",
       "placeholderAllowed": true,
       "replaceableAfterV1": true,
-      "spec": "Kurzer Einzelton, später austauschbar",
+      "spec": "Kurzer Einzelton, spaeter austauschbar",
+      "volumeRole": "sfx"
+    },
+    {
+      "assetId": "sfx_chest_open",
+      "category": "audio",
+      "purpose": "Gerauesch beim Oeffnen einer Truhe",
+      "usedBy": ["board", "audio_system"],
+      "format": "ogg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Kurzer Einzelton, spaeter austauschbar",
+      "volumeRole": "sfx"
+    },
+    {
+      "assetId": "sfx_monster_reveal",
+      "category": "audio",
+      "purpose": "Gerauesch beim Aufdecken eines Monsters",
+      "usedBy": ["board", "audio_system"],
+      "format": "ogg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Kurzer Einzelton, spaeter austauschbar",
       "volumeRole": "sfx"
     },
     {
       "assetId": "sfx_combat_roll",
       "category": "audio",
-      "purpose": "Geräusch beim Kampfwurf",
+      "purpose": "Gerauesch beim Kampfwurf",
       "usedBy": ["combat_panel", "audio_system"],
       "format": "ogg",
       "placeholderAllowed": true,
       "replaceableAfterV1": true,
-      "spec": "Kurzer Einzelton, später austauschbar",
+      "spec": "Kurzer Einzelton, spaeter austauschbar",
+      "volumeRole": "sfx"
+    },
+    {
+      "assetId": "sfx_combat_win",
+      "category": "audio",
+      "purpose": "Gerauesch bei Kampfsieg",
+      "usedBy": ["combat_panel", "audio_system"],
+      "format": "ogg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Kurzer Einzelton, spaeter austauschbar",
+      "volumeRole": "sfx"
+    },
+    {
+      "assetId": "sfx_combat_draw",
+      "category": "audio",
+      "purpose": "Gerauesch bei Kampfgleichstand",
+      "usedBy": ["combat_panel", "audio_system"],
+      "format": "ogg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Kurzer Einzelton, spaeter austauschbar",
+      "volumeRole": "sfx"
+    },
+    {
+      "assetId": "sfx_combat_loss",
+      "category": "audio",
+      "purpose": "Gerauesch bei Kampfniederlage",
+      "usedBy": ["combat_panel", "audio_system"],
+      "format": "ogg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Kurzer Einzelton, spaeter austauschbar",
+      "volumeRole": "sfx"
+    },
+    {
+      "assetId": "sfx_heal",
+      "category": "audio",
+      "purpose": "Gerauesch bei Heilung",
+      "usedBy": ["board", "audio_system"],
+      "format": "ogg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Kurzer Einzelton, spaeter austauschbar",
+      "volumeRole": "sfx"
+    },
+    {
+      "assetId": "sfx_curse_apply",
+      "category": "audio",
+      "purpose": "Gerauesch beim Anwenden eines Fluchs",
+      "usedBy": ["combat_panel", "audio_system"],
+      "format": "ogg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Kurzer Einzelton, spaeter austauschbar",
+      "volumeRole": "sfx"
+    },
+    {
+      "assetId": "sfx_teleport",
+      "category": "audio",
+      "purpose": "Gerauesch bei Teleportnutzung",
+      "usedBy": ["board", "audio_system"],
+      "format": "ogg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Kurzer Einzelton, spaeter austauschbar",
+      "volumeRole": "sfx"
+    },
+    {
+      "assetId": "sfx_game_over",
+      "category": "audio",
+      "purpose": "Gerauesch beim Partieende",
+      "usedBy": ["end_screen", "audio_system"],
+      "format": "ogg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Kurzer Einzelton, spaeter austauschbar",
       "volumeRole": "sfx"
     },
     {
       "assetId": "music_menu_loop",
       "category": "audio",
-      "purpose": "Optionale Menümusik",
+      "purpose": "Optionale Menuemusik",
       "usedBy": ["start_screen", "audio_system"],
       "format": "ogg",
       "placeholderAllowed": true,
       "replaceableAfterV1": true,
-      "spec": "Loopfähig, darf in V1 auch stumm oder ungenutzt bleiben",
+      "spec": "Loopfaehig, darf in V1 auch stumm oder ungenutzt bleiben",
+      "loop": true,
+      "volumeRole": "music"
+    },
+    {
+      "assetId": "music_game_loop",
+      "category": "audio",
+      "purpose": "Optionale Spielmusik",
+      "usedBy": ["game_screen", "audio_system"],
+      "format": "ogg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Loopfaehig, darf in V1 auch stumm oder ungenutzt bleiben",
+      "loop": true,
+      "volumeRole": "music"
+    },
+    {
+      "assetId": "music_end_screen",
+      "category": "audio",
+      "purpose": "Optionale Endscreen-Musik",
+      "usedBy": ["end_screen", "audio_system"],
+      "format": "ogg",
+      "placeholderAllowed": true,
+      "replaceableAfterV1": true,
+      "spec": "Loopfaehig, darf in V1 auch stumm oder ungenutzt bleiben",
       "loop": true,
       "volumeRole": "music"
     }
   ]
 }
-
