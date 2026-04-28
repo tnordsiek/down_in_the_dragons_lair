@@ -38,4 +38,5 @@ Dieses Repository definiert die fachliche und technische Grundlage, auf der Code
 - Für Produktvorgaben lies `PRD.md`.
 - Für die Umsetzungsreihenfolge lies `IMPLEMENTATION_PLAN.md`.
 - Für Regel- und Datenfragen arbeite von `GAME_RULES.md` und `GAME_DATA_MODEL.md` aus.
+- Verwende für die lokale Entwicklung die in `.nvmrc` festgelegte Node-Version.
 

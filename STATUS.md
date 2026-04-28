@@ -9,7 +9,7 @@ Update it when:
 - tests or build verification change the confidence level
 
 ## Current milestone
-- not started
+- Milestone 1 ready to start
 
 ## Last completed
 - repository documentation prepared for autonomous implementation
@@ -33,3 +33,4 @@ Update it when:
 
 ## Notes
 - Update this file before stopping if work is incomplete and not yet committed.
+- Repository documentation is prepared; no documented blocker prevents starting implementation.

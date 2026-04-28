@@ -83,6 +83,7 @@ V1 ist erfolgreich, wenn:
 - Produktname: `Down in the Dragon's Lair`
 - technischer V1-Stack: React, TypeScript, Vite, Zustand, Tailwind, Vitest, Playwright
 - Standard-Paketmanager für V1: `npm`
+- Ziel-Node-Version für V1-Tooling: Node 22 LTS
 - Save/Load in V1: automatische lokale Wiederaufnahme einer laufenden Partie
 - eigene sichtbare Namen für Helden, Monster und Items; technische IDs bleiben getrennt
 - für V1 dürfen die Klassentypen als sichtbare Namen verwendet werden; die Anzeigenamen müssen später austauschbar bleiben
