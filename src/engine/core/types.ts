@@ -154,6 +154,7 @@ export interface PendingTileDraw {
   direction: TileSide;
   blueprintId: TileBlueprintId;
   legalRotations: Rotation[];
+  skippedBlueprintIds: TileBlueprintId[];
 }
 
 export interface CombatContext {
@@ -195,3 +196,36 @@ export interface GameState {
   victory?: VictoryState;
   rng: SerializedRngState;
 }
+
+export type StartGameAction = {
+  type: 'startGame';
+  humanHeroId: HeroId;
+  aiCount: number;
+  seed: string;
+};
+
+export type MovePlayerAction = {
+  type: 'movePlayer';
+  direction: TileSide;
+};
+
+export type DeclareExplorationDirectionAction = {
+  type: 'declareExplorationDirection';
+  direction: TileSide;
+};
+
+export type PlacePendingTileAction = {
+  type: 'placePendingTile';
+  rotation: Rotation;
+};
+
+export type EndTurnAction = {
+  type: 'endTurn';
+};
+
+export type GameAction =
+  | StartGameAction
+  | MovePlayerAction
+  | DeclareExplorationDirectionAction
+  | PlacePendingTileAction
+  | EndTurnAction;

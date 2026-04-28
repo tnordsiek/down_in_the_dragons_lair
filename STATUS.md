@@ -9,18 +9,18 @@ Update it when:
 - tests or build verification change the confidence level
 
 ## Current milestone
-- Milestone 3 ready to start
+- Milestone 4 ready to start
 
 ## Last completed
-- Milestone 2 core data model implemented and verified
+- Milestone 3 game setup, board movement and exploration foundations implemented and verified
 
 ## In progress
 - none
 
 ## Next steps
-1. Create initial game setup using the core data model
-2. Define turn phases, action types and transition interfaces
-3. Implement board representation, movement validation and exploration flow
+1. Implement room token resolution and bag draw logic
+2. Add combat context, dice flow and base combat outcome resolution
+3. Apply rewards, retreat, health loss, healing, curse, dragon end and scoring
 
 ## Open decisions
 - none currently documented
