@@ -42,7 +42,9 @@ export function resolveCombat(
   const activePlayer = state.players[state.activePlayerIndex];
   const rng = restoreSeededRng(state.rng);
   const initialDice = options.dice ?? [rng.rollDie(6), rng.rollDie(6)];
-  const dice = resolveSwordsmanDice(activePlayer, initialDice, options);
+  const dice = resolveSwordsmanDice(activePlayer, initialDice, options, () =>
+    rng.rollDie(6),
+  );
   const warlockSacrificeBonus = canUseWarlockSacrifice(activePlayer, options)
     ? 1
     : 0;
@@ -292,6 +294,7 @@ function resolveSwordsmanDice(
   player: Player,
   dice: [number, number],
   options: ResolveCombatOptions,
+  rollDie: () => number,
 ): [number, number] {
   if (!hasActiveHeroAbility(player, 'hero_swordsman')) {
     return dice;
@@ -303,13 +306,7 @@ function resolveSwordsmanDice(
     let resolvedDie = die;
 
     while (resolvedDie === 1) {
-      const next = rerolls.shift();
-
-      if (next === undefined) {
-        throw new Error('Swordsman one reroll result is required');
-      }
-
-      resolvedDie = next;
+      resolvedDie = rerolls.shift() ?? rollDie();
     }
 
     return resolvedDie;

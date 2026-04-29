@@ -1,3 +1,7 @@
+import { useEffect } from 'react';
+
+import { chooseHeuristicAiAction } from '../../ai/heuristicAgent';
+import { getLegalAiActions } from '../../ai/legalActions';
 import type { Rotation, TileSide } from '../../engine/core/types';
 import { useSetupStore } from '../../state/setupStore';
 import { ActionPanel } from '../components/ActionPanel';
@@ -12,9 +16,30 @@ export function GameScreen() {
   const dispatch = useSetupStore((store) => store.dispatch);
   const resetGame = useSetupStore((store) => store.resetGame);
 
+  useEffect(() => {
+    if (!state) {
+      return;
+    }
+
+    const activePlayer = state.players[state.activePlayerIndex];
+    const isAiTurn = activePlayer.kind === 'ai' && state.phase !== 'game_over';
+
+    if (!isAiTurn) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      dispatch(chooseHeuristicAiAction(state, getLegalAiActions(state)));
+    }, 200);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [dispatch, state]);
+
   if (!state) {
     return null;
   }
+
+  const activePlayer = state.players[state.activePlayerIndex];
 
   const handleMove = (direction: TileSide) => {
     dispatch({ type: 'movePlayer', direction });
@@ -47,9 +72,7 @@ export function GameScreen() {
               <h1 className="font-display text-3xl text-amber-100">
                 Down in the Dragon&apos;s Lair
               </h1>
-              <p className="mt-1 text-sm text-stone-400">
-                {state.players[state.activePlayerIndex].id}
-              </p>
+              <p className="mt-1 text-sm text-stone-400">{activePlayer.id}</p>
             </div>
             <button
               className="border border-stone-600 px-3 py-2 text-sm text-stone-100"

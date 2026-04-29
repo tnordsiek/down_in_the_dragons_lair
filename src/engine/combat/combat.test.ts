@@ -53,6 +53,29 @@ describe('combat resolution', () => {
     expect(activePlayer.skipNextTurn).toBe(true);
   });
 
+  it('recovers 1 HP after skipping an unconscious turn', () => {
+    const state = withActivePlayer(
+      createCombatState('giant_rat'),
+      (player) => ({
+        ...player,
+        hp: 0,
+        skipNextTurn: true,
+      }),
+    );
+    const activePlayerId = state.players[state.activePlayerIndex].id;
+    const ended = endTurn(state);
+    const recoveredPlayer = ended.players.find(
+      (player) => player.id === activePlayerId,
+    );
+
+    expect(recoveredPlayer).toEqual(
+      expect.objectContaining({
+        hp: 1,
+        skipNextTurn: false,
+      }),
+    );
+  });
+
   it('leaves overflow equipment on the combat tile', () => {
     const state = withActivePlayer(
       createCombatState('giant_rat'),

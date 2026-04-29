@@ -9,24 +9,24 @@ Update it when:
 - tests or build verification change the confidence level
 
 ## Current milestone
-- Milestone 7 ready to start
+- Milestone 8 ready to start
 
 ## Last completed
-- Milestone 6 playable UI implemented and verified
+- Milestone 7 heuristic AI V1 implemented and verified
 
 ## In progress
 - none
 
 ## Next steps
-1. Derive legal action sets for AI players from the engine
-2. Implement deterministic heuristic AI decisions for movement, exploration, combat and loot
-3. Add seed-based AI game tests
+1. Implement localStorage persistence for complete `GameState`
+2. Add auto-resume and new-game/resume flow
+3. Add schema-version handling and UX polish
 
 ## Open decisions
 - none currently documented
 
 ## Known risks
-- The UI is playable manually for all turns; automated AI turn execution is intentionally deferred to Milestone 7.
+- AI regression coverage verifies legal seeded multi-step play and deterministic dragon endgame completion; exhaustive start-to-dragon completion for arbitrary seeds remains heuristic-dependent.
 
 ## Last verification
 - `npm run test` passed
