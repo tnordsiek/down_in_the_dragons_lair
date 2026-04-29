@@ -9,24 +9,24 @@ Update it when:
 - tests or build verification change the confidence level
 
 ## Current milestone
-- Milestone 6 ready to start
+- Milestone 7 ready to start
 
 ## Last completed
-- Milestone 5 hero abilities implemented and verified
+- Milestone 6 playable UI implemented and verified
 
 ## In progress
 - none
 
 ## Next steps
-1. Connect start/setup UI to the engine setup flow
-2. Render board state, players, legal movement and exploration choices
-3. Surface combat, loot, inventory, event log and endscreen states
+1. Derive legal action sets for AI players from the engine
+2. Implement deterministic heuristic AI decisions for movement, exploration, combat and loot
+3. Add seed-based AI game tests
 
 ## Open decisions
 - none currently documented
 
 ## Known risks
-- none currently documented
+- The UI is playable manually for all turns; automated AI turn execution is intentionally deferred to Milestone 7.
 
 ## Last verification
 - `npm run test` passed

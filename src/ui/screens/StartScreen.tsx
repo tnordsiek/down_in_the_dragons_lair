@@ -1,9 +1,16 @@
 import { useAsset } from '../../data/assets';
+import { heroDefinitions, heroIds } from '../../data/heroes';
+import type { HeroId } from '../../engine/core/types';
 import { useSetupStore } from '../../state/setupStore';
 
 export function StartScreen() {
   const heroId = useSetupStore((state) => state.selectedHeroId);
   const aiCount = useSetupStore((state) => state.aiCount);
+  const seed = useSetupStore((state) => state.seed);
+  const setSelectedHeroId = useSetupStore((state) => state.setSelectedHeroId);
+  const setAiCount = useSetupStore((state) => state.setAiCount);
+  const setSeed = useSetupStore((state) => state.setSeed);
+  const startGame = useSetupStore((state) => state.startGame);
   const background = useAsset('bg_start_screen');
   const logo = useAsset('ui_logo_wordmark');
 
@@ -21,7 +28,7 @@ export function StartScreen() {
           >
             D
           </div>
-          <p className="text-sm text-stone-300">Milestone 1 scaffold</p>
+          <p className="text-sm text-stone-300">Local browser game</p>
         </header>
 
         <div className="grid gap-8 py-12 md:grid-cols-[1.2fr_0.8fr] md:items-end">
@@ -30,29 +37,61 @@ export function StartScreen() {
               Down in the Dragon&apos;s Lair
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-stone-200">
-              A deterministic browser dungeon board game foundation with
-              replaceable asset IDs, ready for the rule engine.
+              Choose a hero, set the opposition, and enter the dungeon.
             </p>
           </div>
 
           <div className="border border-stone-700 bg-stone-900/80 p-5">
             <h2 className="text-base font-semibold text-amber-100">
-              Setup placeholder
+              Game Setup
             </h2>
-            <dl className="mt-4 grid gap-3 text-sm text-stone-300">
-              <div className="flex justify-between gap-4">
-                <dt>Selected hero</dt>
-                <dd className="font-mono text-stone-100">{heroId}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt>AI opponents</dt>
-                <dd className="font-mono text-stone-100">{aiCount}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt>Asset source</dt>
-                <dd className="font-mono text-stone-100">manifest</dd>
-              </div>
-            </dl>
+            <div className="mt-4 grid gap-4">
+              <label className="grid gap-2 text-sm text-stone-300">
+                Hero
+                <select
+                  className="border border-stone-600 bg-stone-950 px-3 py-2 text-stone-100"
+                  value={heroId}
+                  onChange={(event) =>
+                    setSelectedHeroId(event.target.value as HeroId)
+                  }
+                >
+                  {heroIds.map((id) => (
+                    <option key={id} value={id}>
+                      {heroDefinitions[id].displayName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-2 text-sm text-stone-300">
+                AI Opponents
+                <input
+                  className="accent-amber-300"
+                  max={4}
+                  min={1}
+                  type="range"
+                  value={aiCount}
+                  onChange={(event) => setAiCount(Number(event.target.value))}
+                />
+                <span className="font-mono text-stone-100">{aiCount}</span>
+              </label>
+
+              <label className="grid gap-2 text-sm text-stone-300">
+                Seed
+                <input
+                  className="border border-stone-600 bg-stone-950 px-3 py-2 font-mono text-stone-100"
+                  value={seed}
+                  onChange={(event) => setSeed(event.target.value)}
+                />
+              </label>
+
+              <button
+                className="bg-amber-300 px-4 py-3 font-semibold text-stone-950"
+                onClick={startGame}
+              >
+                Start Game
+              </button>
+            </div>
           </div>
         </div>
       </section>

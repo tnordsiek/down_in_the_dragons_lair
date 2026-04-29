@@ -15,23 +15,23 @@ export const heroDisplayNames = {
 } as const satisfies Record<HeroId, string>;
 
 export const monsterDisplayNames = {
-  giant_rat: 'giant_rat',
-  giant_spider: 'giant_spider',
-  mummy: 'mummy',
-  skeleton_turnkey: 'skeleton_turnkey',
-  skeleton_warrior: 'skeleton_warrior',
-  skeleton_king: 'skeleton_king',
-  fallen: 'fallen',
-  dragon: 'dragon',
+  giant_rat: 'Giant Rat',
+  giant_spider: 'Giant Spider',
+  mummy: 'Mummy',
+  skeleton_turnkey: 'Skeleton Turnkey',
+  skeleton_warrior: 'Skeleton Warrior',
+  skeleton_king: 'Skeleton King',
+  fallen: 'Fallen',
+  dragon: 'Dragon',
 } as const satisfies Record<MonsterId, string>;
 
 export const spellDisplayNames = {
-  flame: 'flame',
-  healing: 'healing',
+  flame: 'Flame',
+  healing: 'Healing',
 } as const satisfies Record<SpellKind, string>;
 
 export const weaponDisplayNames = {
-  1: 'weapon_1',
-  2: 'weapon_2',
-  3: 'weapon_3',
+  1: 'Weapon +1',
+  2: 'Weapon +2',
+  3: 'Weapon +3',
 } as const satisfies Record<WeaponBonus, string>;
