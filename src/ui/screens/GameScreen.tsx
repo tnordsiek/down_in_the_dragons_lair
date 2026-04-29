@@ -76,6 +76,7 @@ export function GameScreen() {
             </div>
             <button
               className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
+              title="Return to setup. The current saved game remains resumable."
               onClick={resetGame}
             >
               New Game

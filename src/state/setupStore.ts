@@ -6,25 +6,43 @@ import {
   getLegalExplorationDirections,
   getLegalKnownMoveDirections,
 } from '../engine/movement/movement';
+import {
+  clearPersistedGameState,
+  loadPersistedGameState,
+  savePersistedGameState,
+} from './persistence';
 
 type SetupState = {
   selectedHeroId: HeroId;
   aiCount: number;
   seed: string;
   gameState?: GameState;
+  hasSavedGame: boolean;
   lastError?: string;
+  persistenceError?: string;
   setSelectedHeroId: (heroId: HeroId) => void;
   setAiCount: (aiCount: number) => void;
   setSeed: (seed: string) => void;
   startGame: () => void;
+  resumeSavedGame: () => void;
   dispatch: (action: GameAction) => void;
   resetGame: () => void;
+  clearSavedGame: () => void;
 };
+
+const persistedGameState = loadPersistedGameState();
+const initialGameState =
+  persistedGameState?.ok === true ? persistedGameState.state : undefined;
+const initialPersistenceError =
+  persistedGameState?.ok === false ? persistedGameState.error : undefined;
 
 export const useSetupStore = create<SetupState>((set) => ({
   selectedHeroId: 'hero_mage',
   aiCount: 1,
   seed: 'v1-local-seed',
+  gameState: initialGameState,
+  hasSavedGame: initialGameState !== undefined,
+  persistenceError: initialPersistenceError,
   setSelectedHeroId: (selectedHeroId) => set({ selectedHeroId }),
   setAiCount: (aiCount) => set({ aiCount }),
   setSeed: (seed) => set({ seed }),
@@ -36,10 +54,44 @@ export const useSetupStore = create<SetupState>((set) => ({
         aiCount: state.aiCount,
         seed: state.seed,
       });
+      const persistedState = appendUiEvent(gameState, 'New game started');
+
+      savePersistedGameState(persistedState);
 
       return {
-        gameState: appendUiEvent(gameState, 'New game started'),
+        gameState: persistedState,
+        hasSavedGame: true,
         lastError: undefined,
+        persistenceError: undefined,
+      };
+    }),
+  resumeSavedGame: () =>
+    set(() => {
+      const persistedState = loadPersistedGameState();
+
+      if (!persistedState) {
+        return {
+          gameState: undefined,
+          hasSavedGame: false,
+          persistenceError: undefined,
+          lastError: 'No saved game found',
+        };
+      }
+
+      if (!persistedState.ok) {
+        return {
+          gameState: undefined,
+          hasSavedGame: false,
+          persistenceError: persistedState.error,
+          lastError: persistedState.error,
+        };
+      }
+
+      return {
+        gameState: persistedState.state,
+        hasSavedGame: true,
+        lastError: undefined,
+        persistenceError: undefined,
       };
     }),
   dispatch: (action) =>
@@ -50,14 +102,37 @@ export const useSetupStore = create<SetupState>((set) => ({
           actionMessage(action),
         );
 
-        return { gameState, lastError: undefined };
+        savePersistedGameState(gameState);
+
+        return {
+          gameState,
+          hasSavedGame: true,
+          lastError: undefined,
+          persistenceError: undefined,
+        };
       } catch (error) {
         return {
           lastError: error instanceof Error ? error.message : String(error),
         };
       }
     }),
-  resetGame: () => set({ gameState: undefined, lastError: undefined }),
+  resetGame: () =>
+    set(() => ({
+      gameState: undefined,
+      hasSavedGame: loadPersistedGameState()?.ok === true,
+      lastError: undefined,
+    })),
+  clearSavedGame: () =>
+    set(() => {
+      clearPersistedGameState();
+
+      return {
+        gameState: undefined,
+        hasSavedGame: false,
+        lastError: undefined,
+        persistenceError: undefined,
+      };
+    }),
 }));
 
 function appendUiEvent(state: GameState, message: string): GameState {

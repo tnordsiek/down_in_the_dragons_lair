@@ -7,10 +7,15 @@ export function StartScreen() {
   const heroId = useSetupStore((state) => state.selectedHeroId);
   const aiCount = useSetupStore((state) => state.aiCount);
   const seed = useSetupStore((state) => state.seed);
+  const hasSavedGame = useSetupStore((state) => state.hasSavedGame);
+  const lastError = useSetupStore((state) => state.lastError);
+  const persistenceError = useSetupStore((state) => state.persistenceError);
   const setSelectedHeroId = useSetupStore((state) => state.setSelectedHeroId);
   const setAiCount = useSetupStore((state) => state.setAiCount);
   const setSeed = useSetupStore((state) => state.setSeed);
   const startGame = useSetupStore((state) => state.startGame);
+  const resumeSavedGame = useSetupStore((state) => state.resumeSavedGame);
+  const clearSavedGame = useSetupStore((state) => state.clearSavedGame);
   const background = useAsset('bg_start_screen');
   const logo = useAsset('ui_logo_wordmark');
 
@@ -45,6 +50,30 @@ export function StartScreen() {
             <h2 className="text-base font-semibold text-amber-100">
               Game Setup
             </h2>
+            {hasSavedGame ? (
+              <div className="mt-4 border border-amber-400 bg-stone-950 p-3">
+                <p className="text-sm text-stone-200">Saved game available</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    className="bg-amber-300 px-3 py-2 text-sm font-semibold text-stone-950"
+                    onClick={resumeSavedGame}
+                  >
+                    Resume Game
+                  </button>
+                  <button
+                    className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
+                    onClick={clearSavedGame}
+                  >
+                    Discard Save
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            {lastError || persistenceError ? (
+              <p className="mt-4 bg-red-950 p-2 text-sm text-red-100">
+                {lastError ?? persistenceError}
+              </p>
+            ) : null}
             <div className="mt-4 grid gap-4">
               <label className="grid gap-2 text-sm text-stone-300">
                 Hero
@@ -89,7 +118,7 @@ export function StartScreen() {
                 className="bg-amber-300 px-4 py-3 font-semibold text-stone-950"
                 onClick={startGame}
               >
-                Start Game
+                {hasSavedGame ? 'Start New Game' : 'Start Game'}
               </button>
             </div>
           </div>
