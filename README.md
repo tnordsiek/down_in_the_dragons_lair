@@ -40,3 +40,23 @@ Dieses Repository definiert die fachliche und technische Grundlage, auf der Code
 - Für Regel- und Datenfragen arbeite von `GAME_RULES.md` und `GAME_DATA_MODEL.md` aus.
 - Verwende für die lokale Entwicklung die in `.nvmrc` festgelegte Node-Version.
 
+## Lokale Entwicklung
+```sh
+npm install
+npm run dev
+```
+
+## Qualitätssicherung
+```sh
+npm run test
+npm run lint
+npm run format
+npm run build
+npm run test:e2e
+```
+
+## Veröffentlichung
+Der V1-Produktions-Build wird mit `npm run build` erzeugt. `vite.config.ts` setzt im GitHub-Actions-Kontext automatisch den passenden `base`-Pfad für GitHub Pages Projektseiten.
+
+Die formale V1-Abnahme steht in `V1_ACCEPTANCE.md`.
+

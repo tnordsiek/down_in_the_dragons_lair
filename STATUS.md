@@ -9,18 +9,18 @@ Update it when:
 - tests or build verification change the confidence level
 
 ## Current milestone
-- Milestone 9 ready to start
+- V1 documented milestones complete
 
 ## Last completed
-- Milestone 8 persistence and resume flow implemented and verified
+- Milestone 9 V1 acceptance completed and verified
 
 ## In progress
 - none
 
 ## Next steps
-1. Validate V1 scope against the documented rules
-2. Finalize build/start and GitHub Pages verification notes
-3. Document Android post-V1 roadmap
+1. Expand arbitrary-seed AI completion coverage during post-V1 balancing
+2. Replace placeholder visual and audio assets with final project-owned assets
+3. Prepare release/deployment automation when repository target is finalized
 
 ## Open decisions
 - none currently documented
@@ -34,6 +34,7 @@ Update it when:
 - `npm run format` passed
 - `npm run build` passed
 - `npm run test:e2e` passed
+- GitHub Pages project-base build emitted `/down_in_the_dragons_lair/assets/...`
 
 ## Notes
 - Update this file before stopping if work is incomplete and not yet committed.
