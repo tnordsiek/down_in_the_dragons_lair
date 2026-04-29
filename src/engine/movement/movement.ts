@@ -1,5 +1,6 @@
 import { getTileAt, hasTileAt } from '../core/board';
 import type { GameState, TileSide } from '../core/types';
+import { hasActiveHeroAbility } from '../rules/abilities';
 import { adjacentPosition, canExit, canTilesConnect } from './topology';
 
 export function getActivePlayer(state: GameState) {
@@ -17,6 +18,13 @@ export function getLegalKnownMoveDirections(state: GameState): TileSide[] {
   return (['A', 'B', 'C', 'D'] as TileSide[]).filter((direction) => {
     const targetPosition = adjacentPosition(activePlayer.position, direction);
     const targetTile = getTileAt(state.board, targetPosition);
+
+    if (
+      targetTile !== undefined &&
+      hasActiveHeroAbility(activePlayer, 'hero_mage')
+    ) {
+      return true;
+    }
 
     return (
       targetTile !== undefined &&

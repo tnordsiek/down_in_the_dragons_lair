@@ -9,18 +9,18 @@ Update it when:
 - tests or build verification change the confidence level
 
 ## Current milestone
-- Milestone 5 ready to start
+- Milestone 6 ready to start
 
 ## Last completed
-- Milestone 4 combat, rewards, room tokens, healing, curse and dragon scoring implemented and verified
+- Milestone 5 hero abilities implemented and verified
 
 ## In progress
 - none
 
 ## Next steps
-1. Define hero ability hooks or equivalent rule extension points
-2. Implement all six V1 hero abilities with curse bypass
-3. Add dedicated regression tests per hero
+1. Connect start/setup UI to the engine setup flow
+2. Render board state, players, legal movement and exploration choices
+3. Surface combat, loot, inventory, event log and endscreen states
 
 ## Open decisions
 - none currently documented

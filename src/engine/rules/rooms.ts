@@ -6,8 +6,16 @@ import type {
   PlacedTile,
   Token,
 } from '../core/types';
+import { getActivePlayer, hasActiveHeroAbility } from './abilities';
 
-export function resolveRoomToken(state: GameState): GameState {
+export type ResolveRoomTokenOptions = {
+  oracleChoiceIndex?: 0 | 1;
+};
+
+export function resolveRoomToken(
+  state: GameState,
+  options: ResolveRoomTokenOptions = {},
+): GameState {
   const activePlayer = state.players[state.activePlayerIndex];
   const tile = getTileAt(state.board, activePlayer.position);
 
@@ -22,7 +30,9 @@ export function resolveRoomToken(state: GameState): GameState {
     };
   }
 
-  const [token, ...remainingTokenBag] = state.tokenBag;
+  const draw = drawRoomToken(state, options);
+  const token = draw.token;
+  const remainingTokenBag = draw.remainingTokenBag;
   const board = state.board.map((boardTile) =>
     samePosition(boardTile, tile)
       ? { ...boardTile, roomToken: token }
@@ -45,6 +55,32 @@ export function resolveRoomToken(state: GameState): GameState {
     tokenBag: remainingTokenBag,
     combat: createCombatContext(state, tile, token),
   };
+}
+
+function drawRoomToken(
+  state: GameState,
+  options: ResolveRoomTokenOptions,
+): { token: Token; remainingTokenBag: Token[] } {
+  if (
+    hasActiveHeroAbility(getActivePlayer(state), 'hero_oracle') &&
+    state.tokenBag.length > 1
+  ) {
+    const drawnTokens = state.tokenBag.slice(0, 2);
+    const choiceIndex = options.oracleChoiceIndex ?? 0;
+    const returnedIndex = choiceIndex === 0 ? 1 : 0;
+
+    return {
+      token: drawnTokens[choiceIndex],
+      remainingTokenBag: [
+        drawnTokens[returnedIndex],
+        ...state.tokenBag.slice(2),
+      ],
+    };
+  }
+
+  const [token, ...remainingTokenBag] = state.tokenBag;
+
+  return { token, remainingTokenBag };
 }
 
 function createCombatContext(

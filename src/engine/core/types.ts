@@ -162,6 +162,7 @@ export interface CombatContext {
   monsterId: MonsterId;
   position: BoardPosition;
   enteredFrom: BoardPosition;
+  source?: 'movement' | 'warlock_swap';
 }
 
 export interface GameEvent {
@@ -229,6 +230,10 @@ export type ResolveCombatAction = {
   dice?: [number, number];
   flameSpellCount?: number;
   curseTargetPlayerId?: string;
+  warriorRerollDice?: [number, number];
+  useWarriorReroll?: boolean;
+  useWarlockSacrifice?: boolean;
+  swordsmanOneRerolls?: number[];
 };
 
 export type OpenChestAction = {
@@ -239,6 +244,11 @@ export type UseHealingSpellAction = {
   type: 'useHealingSpell';
   targetPlayerId: string;
   healingPosition: BoardPosition;
+};
+
+export type SwapWarlockPositionAction = {
+  type: 'swapWarlockPosition';
+  targetPlayerId: string;
 };
 
 export type EndTurnAction = {
@@ -254,4 +264,5 @@ export type GameAction =
   | ResolveCombatAction
   | OpenChestAction
   | UseHealingSpellAction
+  | SwapWarlockPositionAction
   | EndTurnAction;

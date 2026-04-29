@@ -8,6 +8,7 @@ import { moveActivePlayer } from '../movement/performMove';
 import { openChest } from '../rules/chests';
 import { resolveRoomToken } from '../rules/rooms';
 import { castHealingSpell } from '../rules/spells';
+import { swapWarlockPosition } from '../rules/warlock';
 import { createNewGame } from '../setup/createGame';
 import { endTurn } from '../turns/turns';
 
@@ -41,6 +42,10 @@ export function applyGameAction(
         dice: action.dice,
         flameSpellCount: action.flameSpellCount,
         curseTargetPlayerId: action.curseTargetPlayerId,
+        warriorRerollDice: action.warriorRerollDice,
+        useWarriorReroll: action.useWarriorReroll,
+        useWarlockSacrifice: action.useWarlockSacrifice,
+        swordsmanOneRerolls: action.swordsmanOneRerolls,
       });
     case 'openChest':
       return openChest(state);
@@ -49,6 +54,8 @@ export function applyGameAction(
         targetPlayerId: action.targetPlayerId,
         healingPosition: action.healingPosition,
       });
+    case 'swapWarlockPosition':
+      return swapWarlockPosition(state, action.targetPlayerId);
     case 'endTurn':
       return endTurn(state);
   }
