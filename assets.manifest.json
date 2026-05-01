@@ -132,8 +132,9 @@
       "category": "token",
       "purpose": "Schatztruhen-Token",
       "usedBy": ["board", "ui"],
-      "format": "svg",
-      "placeholderAllowed": true,
+      "format": "png",
+      "src": "assets/monsters/token_treasure_chest.png",
+      "placeholderAllowed": false,
       "replaceableAfterV1": true,
       "transparentBackground": true,
       "spec": "Transparenter Hintergrund, in kleiner Groesse lesbar"
