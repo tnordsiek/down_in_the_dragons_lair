@@ -65,8 +65,8 @@ export function GameScreen() {
 
   return (
     <main className="min-h-screen bg-stone-950 text-stone-100">
-      <div className="mx-auto grid w-full max-w-7xl gap-4 px-4 py-4 lg:grid-cols-[1fr_22rem]">
-        <div className="grid gap-4">
+      <div className="grid min-h-screen w-full gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="grid min-w-0 gap-4">
           <header className="flex items-center justify-between gap-4 border-b border-stone-800 pb-3">
             <div>
               <h1 className="font-display text-3xl text-amber-100">
@@ -87,7 +87,7 @@ export function GameScreen() {
           ) : null}
           <BoardView state={state} />
         </div>
-        <aside className="grid content-start gap-4">
+        <aside className="grid content-start gap-4 lg:w-[22rem] lg:justify-self-end">
           <ActionPanel
             state={state}
             onMove={handleMove}

@@ -41,6 +41,27 @@ describe('App', () => {
     expect(screen.getByText('Players')).toBeInTheDocument();
   });
 
+  it('uses a full-width game layout with a fixed right sidebar', () => {
+    render(<App />);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
+    });
+
+    const board = screen.getByLabelText('Dungeon board');
+    const layout = board.closest('main')?.firstElementChild;
+    const actionsHeading = screen.getByRole('heading', { name: 'Actions' });
+    const sidebar = actionsHeading.closest('aside');
+
+    expect(layout).toHaveClass(
+      'grid',
+      'w-full',
+      'lg:grid-cols-[minmax(0,1fr)_22rem]',
+    );
+    expect(layout).not.toHaveClass('max-w-7xl');
+    expect(sidebar).toHaveClass('lg:w-[22rem]', 'lg:justify-self-end');
+  });
+
   it('resumes a saved game from the setup flow', () => {
     render(<App />);
 
