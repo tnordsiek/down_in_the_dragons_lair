@@ -1,6 +1,11 @@
-import { useAsset } from '../../data/assets';
-import type { GameState } from '../../engine/core/types';
-import { heroName } from '../labels';
+import { getAssetUrl, useAsset } from '../../data/assets';
+import type {
+  GameState,
+  HeroId,
+  MonsterId,
+  Token,
+} from '../../engine/core/types';
+import { heroName, monsterName } from '../labels';
 
 type BoardViewProps = {
   state: GameState;
@@ -55,23 +60,11 @@ export function BoardView({ state }: BoardViewProps) {
                   {cell.tile.blueprintId}
                 </div>
                 {cell.tile.roomToken ? (
-                  <div
-                    className="font-mono text-amber-200"
-                    data-asset-id={`token_${cell.tile.roomToken.id}`}
-                  >
-                    {cell.tile.roomToken.id}
-                  </div>
+                  <RoomToken token={cell.tile.roomToken} />
                 ) : null}
                 <div className="flex flex-wrap gap-1">
                   {cell.players.map((player) => (
-                    <span
-                      key={player.id}
-                      className="inline-flex h-5 min-w-5 items-center justify-center bg-amber-300 px-1 font-mono text-stone-950"
-                      data-asset-id={`${player.heroId}_token`}
-                      title={heroName(player.heroId)}
-                    >
-                      {heroName(player.heroId).slice(0, 1)}
-                    </span>
+                    <HeroToken key={player.id} heroId={player.heroId} />
                   ))}
                 </div>
               </div>
@@ -80,5 +73,51 @@ export function BoardView({ state }: BoardViewProps) {
         ))}
       </div>
     </section>
+  );
+}
+
+function RoomToken({ token }: { token: Token }) {
+  const assetId = `token_${token.id}`;
+  const assetUrl = getAssetUrl(assetId);
+  const label =
+    token.kind === 'monster'
+      ? monsterName(token.id as MonsterId)
+      : 'Treasure chest';
+
+  return (
+    <div
+      className="flex min-h-8 items-center justify-center font-mono text-amber-200"
+      data-asset-id={assetId}
+    >
+      {assetUrl ? (
+        <img className="h-8 w-8 object-contain" src={assetUrl} alt={label} />
+      ) : (
+        token.id
+      )}
+    </div>
+  );
+}
+
+function HeroToken({ heroId }: { heroId: HeroId }) {
+  const assetId = `${heroId}_token`;
+  const assetUrl = getAssetUrl(assetId);
+  const label = heroName(heroId);
+
+  return (
+    <span
+      className="inline-flex h-8 w-8 items-center justify-center bg-amber-300 font-mono text-stone-950"
+      data-asset-id={assetId}
+      title={label}
+    >
+      {assetUrl ? (
+        <img
+          className="h-full w-full object-contain"
+          src={assetUrl}
+          alt={label}
+        />
+      ) : (
+        label.slice(0, 1)
+      )}
+    </span>
   );
 }

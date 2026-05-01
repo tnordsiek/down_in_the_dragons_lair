@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { assets, getAsset } from './assets';
+import { assets, getAsset, getAssetUrl } from './assets';
 
 describe('asset manifest runtime mapping', () => {
   const requiredV1AssetIds = [
@@ -67,6 +67,15 @@ describe('asset manifest runtime mapping', () => {
   it('resolves visual and audio assets by stable assetId', () => {
     expect(getAsset('bg_start_screen').category).toBe('background');
     expect(getAsset('sfx_tile_place').category).toBe('audio');
+  });
+
+  it('maps final hero and monster png assets to public URLs', () => {
+    expect(getAssetUrl('hero_mage_token')).toBe(
+      '/assets/heroes/token_hero_mage.png',
+    );
+    expect(getAssetUrl('token_skeleton_turnkey')).toBe(
+      '/assets/monsters/token_skeleton_keyguardian.png',
+    );
   });
 
   it('keeps asset IDs unique', () => {

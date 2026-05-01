@@ -18,6 +18,7 @@ export type AssetSpec = {
   placeholderAllowed: boolean;
   replaceableAfterV1: boolean;
   spec: string;
+  src?: string;
   variants?: string[];
   notes?: string;
   loop?: boolean;
@@ -47,4 +48,10 @@ export function getAsset(assetId: string): AssetSpec {
 
 export function useAsset(assetId: string): AssetSpec {
   return getAsset(assetId);
+}
+
+export function getAssetUrl(assetId: string): string | undefined {
+  const src = getAsset(assetId).src;
+
+  return src ? `${import.meta.env.BASE_URL}${src}` : undefined;
 }

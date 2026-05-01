@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createNewGame } from '../../engine/setup/createGame';
 import type { GameState } from '../../engine/core/types';
 import { ActionPanel } from './ActionPanel';
+import { BoardView } from './BoardView';
 import { EndScreen } from './EndScreen';
 import { EventLog } from './EventLog';
 import { PlayerPanel } from './PlayerPanel';
@@ -108,6 +109,28 @@ describe('Milestone 6 UI', () => {
     expect(
       screen.getByText('Resolved combat and gained treasure'),
     ).toBeInTheDocument();
+  });
+
+  it('renders mapped hero and monster images on the board', () => {
+    const state = createUiState({
+      board: [
+        {
+          ...baseBoard()[0],
+          roomToken: { id: 'giant_rat', kind: 'monster' },
+        },
+      ],
+    });
+
+    render(<BoardView state={state} />);
+
+    expect(screen.getByRole('img', { name: 'Mage' })).toHaveAttribute(
+      'src',
+      '/assets/heroes/token_hero_mage.png',
+    );
+    expect(screen.getByRole('img', { name: 'Giant Rat' })).toHaveAttribute(
+      'src',
+      '/assets/monsters/token_giant_rat.png',
+    );
   });
 
   it('shows game end ranking', () => {

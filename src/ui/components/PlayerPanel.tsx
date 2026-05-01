@@ -1,5 +1,5 @@
-import { useAsset } from '../../data/assets';
-import type { GameState } from '../../engine/core/types';
+import { getAssetUrl, useAsset } from '../../data/assets';
+import type { GameState, HeroId } from '../../engine/core/types';
 import { heroName } from '../labels';
 
 type PlayerPanelProps = {
@@ -29,13 +29,16 @@ export function PlayerPanel({ state }: PlayerPanelProps) {
             data-asset-id={`${player.heroId}_portrait`}
           >
             <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3 className="font-semibold text-stone-100">
-                  {heroName(player.heroId)}
-                </h3>
-                <p className="text-xs uppercase tracking-wide text-stone-400">
-                  {player.kind}
-                </p>
+              <div className="flex min-w-0 items-center gap-3">
+                <HeroPortrait heroId={player.heroId} />
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-stone-100">
+                    {heroName(player.heroId)}
+                  </h3>
+                  <p className="text-xs uppercase tracking-wide text-stone-400">
+                    {player.kind}
+                  </p>
+                </div>
               </div>
               <div className="text-right font-mono text-sm text-amber-100">
                 {player.treasurePoints} pts
@@ -93,5 +96,28 @@ export function PlayerPanel({ state }: PlayerPanelProps) {
         ))}
       </div>
     </section>
+  );
+}
+
+function HeroPortrait({ heroId }: { heroId: HeroId }) {
+  const assetId = `${heroId}_portrait`;
+  const assetUrl = getAssetUrl(assetId);
+  const label = heroName(heroId);
+
+  return (
+    <div
+      className="flex h-12 w-12 shrink-0 items-center justify-center border border-stone-700 bg-stone-900 font-mono text-sm text-amber-100"
+      data-asset-id={assetId}
+    >
+      {assetUrl ? (
+        <img
+          className="h-full w-full object-contain"
+          src={assetUrl}
+          alt={label}
+        />
+      ) : (
+        label.slice(0, 1)
+      )}
+    </div>
   );
 }
