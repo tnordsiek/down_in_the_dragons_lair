@@ -65,6 +65,7 @@ The newly placed tile only needs to connect to the origin tile. Other sides may 
 
 ### Implementation note
 The engine should compute all valid rotations for the drawn tile. The UI should present those choices if more than one rotation is possible.
+Before the player confirms a final rotation, the newly drawn tile should already appear on the board at the target position in its default orientation.
 
 ---
 

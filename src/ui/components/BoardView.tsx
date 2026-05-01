@@ -13,10 +13,18 @@ type BoardViewProps = {
 
 export function BoardView({ state }: BoardViewProps) {
   const gameTable = useAsset('bg_game_table');
-  const boardMinX = Math.min(...state.board.map((tile) => tile.boardX), -2);
-  const boardMaxX = Math.max(...state.board.map((tile) => tile.boardX), 2);
-  const boardMinY = Math.min(...state.board.map((tile) => tile.boardY), -2);
-  const boardMaxY = Math.max(...state.board.map((tile) => tile.boardY), 2);
+  const boardXValues = state.board.map((tile) => tile.boardX);
+  const boardYValues = state.board.map((tile) => tile.boardY);
+
+  if (state.pendingTile) {
+    boardXValues.push(state.pendingTile.target.boardX);
+    boardYValues.push(state.pendingTile.target.boardY);
+  }
+
+  const boardMinX = Math.min(...boardXValues, -2);
+  const boardMaxX = Math.max(...boardXValues, 2);
+  const boardMinY = Math.min(...boardYValues, -2);
+  const boardMaxY = Math.max(...boardYValues, 2);
   const columns = boardMaxX - boardMinX + 1;
   const rows = boardMaxY - boardMinY + 1;
   const cells = Array.from({ length: columns * rows }, (_, index) => {
@@ -29,8 +37,13 @@ export function BoardView({ state }: BoardViewProps) {
       (player) =>
         player.position.boardX === boardX && player.position.boardY === boardY,
     );
+    const pendingTile =
+      state.pendingTile?.target.boardX === boardX &&
+      state.pendingTile.target.boardY === boardY
+        ? state.pendingTile
+        : undefined;
 
-    return { boardX, boardY, tile, players };
+    return { boardX, boardY, tile, players, pendingTile };
   });
 
   return (
@@ -46,22 +59,35 @@ export function BoardView({ state }: BoardViewProps) {
           <div
             key={`${cell.boardX},${cell.boardY}`}
             className={`aspect-square min-h-16 border p-1 text-[0.65rem] ${
-              cell.tile
+              cell.tile || cell.pendingTile
                 ? 'border-stone-500 bg-stone-800'
                 : 'border-stone-800 bg-stone-900'
             }`}
           >
-            {cell.tile ? (
+            {cell.tile || cell.pendingTile ? (
               <div
                 className="relative h-full overflow-hidden"
-                data-asset-id={`tile_${cell.tile.blueprintId}`}
+                data-asset-id={
+                  cell.tile
+                    ? `tile_${cell.tile.blueprintId}`
+                    : `tile_${cell.pendingTile!.blueprintId}`
+                }
               >
                 <TileGraphic
-                  assetId={`tile_${cell.tile.blueprintId}`}
-                  blueprintId={cell.tile.blueprintId}
-                  rotation={cell.tile.rotation}
+                  assetId={
+                    cell.tile
+                      ? `tile_${cell.tile.blueprintId}`
+                      : `tile_${cell.pendingTile!.blueprintId}`
+                  }
+                  blueprintId={
+                    cell.tile
+                      ? cell.tile.blueprintId
+                      : cell.pendingTile!.blueprintId
+                  }
+                  rotation={cell.tile?.rotation ?? 0}
+                  isPending={Boolean(cell.pendingTile && !cell.tile)}
                 />
-                {cell.tile.roomToken ? (
+                {cell.tile?.roomToken ? (
                   <RoomToken token={cell.tile.roomToken} />
                 ) : null}
                 <div className="absolute bottom-1 left-1 right-1 flex flex-wrap gap-1">
@@ -82,20 +108,29 @@ function TileGraphic({
   assetId,
   blueprintId,
   rotation,
+  isPending,
 }: {
   assetId: string;
   blueprintId: GameState['board'][number]['blueprintId'];
   rotation: GameState['board'][number]['rotation'];
+  isPending?: boolean;
 }) {
   const assetUrl = getAssetUrl(assetId);
 
   return assetUrl ? (
-    <img
-      className="h-full w-full object-cover"
-      src={assetUrl}
-      alt={blueprintId}
-      style={{ transform: `rotate(${rotation}deg)` }}
-    />
+    <div className="relative h-full w-full">
+      <img
+        className={`h-full w-full object-cover ${isPending ? 'opacity-70' : ''}`}
+        src={assetUrl}
+        alt={isPending ? `${blueprintId} preview` : blueprintId}
+        style={{ transform: `rotate(${rotation}deg)` }}
+      />
+      {isPending ? (
+        <div className="absolute left-1 top-1 bg-stone-950/80 px-1 py-0.5 text-[0.6rem] font-mono uppercase tracking-wide text-amber-100">
+          Preview
+        </div>
+      ) : null}
+    </div>
   ) : (
     <div className="flex h-full items-start justify-start p-1 font-mono text-stone-200">
       {blueprintId}

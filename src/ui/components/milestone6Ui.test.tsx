@@ -64,6 +64,32 @@ describe('Milestone 6 UI', () => {
     expect(screen.getByRole('button', { name: '90 deg' })).toBeInTheDocument();
   });
 
+  it('shows a pending tile on the board in default orientation before placement', () => {
+    const state = createUiState({
+      phase: 'choose_pending_tile_rotation',
+      pendingTile: {
+        origin: { boardX: 0, boardY: 0 },
+        target: { boardX: 1, boardY: 0 },
+        direction: 'B',
+        blueprintId: 'room_corner',
+        legalRotations: [90, 180],
+        skippedBlueprintIds: [],
+      },
+    });
+
+    render(<BoardView state={state} />);
+
+    expect(
+      screen.getByRole('img', { name: 'room_corner preview' }),
+    ).toHaveAttribute('src', '/assets/tiles/tile_room_corner.png');
+    expect(
+      screen.getByRole('img', { name: 'room_corner preview' }),
+    ).toHaveStyle({
+      transform: 'rotate(0deg)',
+    });
+    expect(screen.getByText('Preview')).toBeInTheDocument();
+  });
+
   it('shows combat math and loot state', () => {
     const state = createUiState({
       phase: 'combat',
