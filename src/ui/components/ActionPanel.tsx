@@ -1,6 +1,6 @@
 import { monsterDefinitions } from '../../data/monsters';
 import { getTileAt } from '../../engine/core/board';
-import type { GameState, Rotation, TileSide } from '../../engine/core/types';
+import type { GameState, TileSide } from '../../engine/core/types';
 import { getUiLegalActions } from '../../state/setupStore';
 import { monsterName, sideLabels } from '../labels';
 
@@ -8,7 +8,6 @@ type ActionPanelProps = {
   state: GameState;
   onMove: (direction: TileSide) => void;
   onExplore: (direction: TileSide) => void;
-  onPlaceTile: (rotation: Rotation) => void;
   onResolveRoom: () => void;
   onResolveCombat: () => void;
   onOpenChest: () => void;
@@ -19,7 +18,6 @@ export function ActionPanel({
   state,
   onMove,
   onExplore,
-  onPlaceTile,
   onResolveRoom,
   onResolveCombat,
   onOpenChest,
@@ -69,17 +67,10 @@ export function ActionPanel({
           <h3 className="text-sm text-stone-300">
             {state.pendingTile.blueprintId}
           </h3>
-          <div className="flex flex-wrap gap-2">
-            {state.pendingTile.legalRotations.map((rotation) => (
-              <button
-                key={rotation}
-                className="bg-amber-300 px-3 py-2 text-sm font-semibold text-stone-950"
-                onClick={() => onPlaceTile(rotation)}
-              >
-                {rotation} deg
-              </button>
-            ))}
-          </div>
+          <p className="text-sm text-stone-400">
+            Rotate the preview tile on the board, then confirm placement in the
+            center of the tile.
+          </p>
         </div>
       ) : null}
 

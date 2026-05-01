@@ -5,6 +5,7 @@ import {
   drawPendingTileForExploration,
   hasPendingTileAtTarget,
   placePendingTile,
+  rotatePendingTilePreview,
 } from './exploration';
 
 describe('exploration flow', () => {
@@ -23,10 +24,32 @@ describe('exploration flow', () => {
     expect(pendingState.pendingTile).toEqual(
       expect.objectContaining({
         blueprintId: 'tunnel_straight',
+        previewRotation: 0,
         legalRotations: [0, 180],
       }),
     );
     expect(hasPendingTileAtTarget(pendingState)).toBe(true);
+  });
+
+  it('rotates the preview tile and skips invalid orientations', () => {
+    const state = {
+      ...createNewGame({
+        humanHeroId: 'hero_mage',
+        aiCount: 1,
+        seed: 'preview-rotation-seed',
+      }),
+      tileStack: ['room_corner' as const],
+    };
+    const pendingState = drawPendingTileForExploration(state, 'A');
+    const clockwise = rotatePendingTilePreview(pendingState, 'clockwise');
+    const counterclockwise = rotatePendingTilePreview(
+      pendingState,
+      'counterclockwise',
+    );
+
+    expect(pendingState.pendingTile?.previewRotation).toBe(0);
+    expect(clockwise.pendingTile?.previewRotation).toBe(90);
+    expect(counterclockwise.pendingTile?.previewRotation).toBe(180);
   });
 
   it('places a pending tile and moves the active player onto it', () => {

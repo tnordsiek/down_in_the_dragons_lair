@@ -155,6 +155,8 @@ function actionMessage(action: GameAction): string {
       return `Moved ${action.direction}`;
     case 'declareExplorationDirection':
       return `Explored ${action.direction}`;
+    case 'rotatePendingTilePreview':
+      return `Rotated preview ${action.direction}`;
     case 'placePendingTile':
       return `Placed tile at ${action.rotation} degrees`;
     case 'resolveRoomToken':

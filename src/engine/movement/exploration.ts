@@ -4,6 +4,7 @@ import { getTileAt } from '../core/board';
 import type {
   GameState,
   PendingTileDraw,
+  RotationDirection,
   TileBlueprintId,
   TileSide,
 } from '../core/types';
@@ -13,6 +14,7 @@ import {
   adjacentPosition,
   getLegalRotationsForEntry,
   oppositeSide,
+  rotations,
 } from './topology';
 
 export function drawPendingTileForExploration(
@@ -47,6 +49,7 @@ export function drawPendingTileForExploration(
           target,
           direction,
           blueprintId,
+          previewRotation: 0,
           legalRotations,
           skippedBlueprintIds,
         },
@@ -57,6 +60,25 @@ export function drawPendingTileForExploration(
   }
 
   throw new Error('No placeable tile found in tile stack');
+}
+
+export function rotatePendingTilePreview(
+  state: GameState,
+  direction: RotationDirection,
+): GameState {
+  const pendingTile = state.pendingTile;
+
+  if (!pendingTile) {
+    throw new Error('No pending tile to rotate');
+  }
+
+  return {
+    ...state,
+    pendingTile: {
+      ...pendingTile,
+      previewRotation: getNextPreviewRotation(pendingTile, direction),
+    },
+  };
 }
 
 export function placePendingTile(
@@ -115,4 +137,24 @@ export function hasPendingTileAtTarget(state: GameState): boolean {
     state.pendingTile !== undefined &&
     getTileAt(state.board, state.pendingTile.target) === undefined
   );
+}
+
+function getNextPreviewRotation(
+  pendingTile: PendingTileDraw,
+  direction: RotationDirection,
+): PendingTileDraw['previewRotation'] {
+  const currentIndex = rotations.indexOf(pendingTile.previewRotation);
+  const step = direction === 'clockwise' ? 1 : -1;
+
+  for (let offset = 1; offset <= rotations.length; offset += 1) {
+    const nextIndex =
+      (currentIndex + step * offset + rotations.length) % rotations.length;
+    const candidate = rotations[nextIndex];
+
+    if (pendingTile.legalRotations.includes(candidate)) {
+      return candidate;
+    }
+  }
+
+  return pendingTile.previewRotation;
 }

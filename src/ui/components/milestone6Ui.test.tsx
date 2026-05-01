@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createNewGame } from '../../engine/setup/createGame';
@@ -12,7 +12,6 @@ import { PlayerPanel } from './PlayerPanel';
 const noopActions = {
   onMove: vi.fn(),
   onExplore: vi.fn(),
-  onPlaceTile: vi.fn(),
   onResolveRoom: vi.fn(),
   onResolveCombat: vi.fn(),
   onOpenChest: vi.fn(),
@@ -52,6 +51,7 @@ describe('Milestone 6 UI', () => {
         target: { boardX: 1, boardY: 0 },
         direction: 'B',
         blueprintId: 'room_corner',
+        previewRotation: 0,
         legalRotations: [0, 90],
         skippedBlueprintIds: [],
       },
@@ -60,8 +60,11 @@ describe('Milestone 6 UI', () => {
     render(<ActionPanel state={state} {...noopActions} />);
 
     expect(screen.getByText('room_corner')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '0 deg' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '90 deg' })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Rotate the preview tile on the board, then confirm placement in the center of the tile.',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('shows a pending tile on the board in default orientation before placement', () => {
@@ -72,6 +75,7 @@ describe('Milestone 6 UI', () => {
         target: { boardX: 1, boardY: 0 },
         direction: 'B',
         blueprintId: 'room_corner',
+        previewRotation: 0,
         legalRotations: [90, 180],
         skippedBlueprintIds: [],
       },
@@ -84,10 +88,53 @@ describe('Milestone 6 UI', () => {
     ).toHaveAttribute('src', '/assets/tiles/tile_room_corner.png');
     expect(
       screen.getByRole('img', { name: 'room_corner preview' }),
-    ).toHaveStyle({
-      transform: 'rotate(0deg)',
-    });
+    ).toHaveAttribute('style', expect.stringContaining('rotate(0deg)'));
     expect(screen.getByText('Preview')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Confirm tile rotation' }),
+    ).toBeDisabled();
+  });
+
+  it('rotates a pending tile preview through board controls and confirms valid rotations', () => {
+    const state = createUiState({
+      phase: 'choose_pending_tile_rotation',
+      pendingTile: {
+        origin: { boardX: 0, boardY: 0 },
+        target: { boardX: 1, boardY: 0 },
+        direction: 'B',
+        blueprintId: 'room_corner',
+        previewRotation: 180,
+        legalRotations: [90, 180],
+        skippedBlueprintIds: [],
+      },
+    });
+    const onRotatePendingTile = vi.fn();
+    const onConfirmPendingTile = vi.fn();
+
+    render(
+      <BoardView
+        state={state}
+        onConfirmPendingTile={onConfirmPendingTile}
+        onRotatePendingTile={onRotatePendingTile}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Rotate tile counterclockwise' }),
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Rotate tile clockwise' }),
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Confirm tile rotation' }),
+    );
+
+    expect(onRotatePendingTile).toHaveBeenNthCalledWith(1, 'counterclockwise');
+    expect(onRotatePendingTile).toHaveBeenNthCalledWith(2, 'clockwise');
+    expect(onConfirmPendingTile).toHaveBeenCalledOnce();
+    expect(
+      screen.getByRole('button', { name: 'Confirm tile rotation' }),
+    ).toBeEnabled();
   });
 
   it('shows combat math and loot state', () => {
@@ -155,7 +202,7 @@ describe('Milestone 6 UI', () => {
     ).toHaveAttribute('src', '/assets/tiles/tile_start_cross_healing.png');
     expect(
       screen.getByRole('img', { name: 'start_cross_healing' }),
-    ).toHaveStyle({ transform: 'rotate(90deg)' });
+    ).toHaveAttribute('style', expect.stringContaining('rotate(90deg)'));
     expect(screen.getByRole('img', { name: 'Mage' })).toHaveAttribute(
       'src',
       '/assets/heroes/token_hero_mage.png',

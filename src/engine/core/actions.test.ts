@@ -34,4 +34,23 @@ describe('game action transitions', () => {
     expect(placedState.board).toHaveLength(2);
     expect(placedState.phase).toBe('await_move');
   });
+
+  it('can rotate a pending tile preview through actions', () => {
+    const state = applyGameAction(undefined, {
+      type: 'startGame',
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'action-rotate-seed',
+    });
+    const pendingState = applyGameAction(
+      { ...state, tileStack: ['room_corner'] },
+      { type: 'declareExplorationDirection', direction: 'A' },
+    );
+    const rotatedState = applyGameAction(pendingState, {
+      type: 'rotatePendingTilePreview',
+      direction: 'clockwise',
+    });
+
+    expect(rotatedState.pendingTile?.previewRotation).toBe(90);
+  });
 });

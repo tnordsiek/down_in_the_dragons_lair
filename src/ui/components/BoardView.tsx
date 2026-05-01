@@ -3,15 +3,22 @@ import type {
   GameState,
   HeroId,
   MonsterId,
+  RotationDirection,
   Token,
 } from '../../engine/core/types';
 import { heroName, monsterName } from '../labels';
 
 type BoardViewProps = {
   state: GameState;
+  onConfirmPendingTile?: () => void;
+  onRotatePendingTile?: (direction: RotationDirection) => void;
 };
 
-export function BoardView({ state }: BoardViewProps) {
+export function BoardView({
+  state,
+  onConfirmPendingTile,
+  onRotatePendingTile,
+}: BoardViewProps) {
   const gameTable = useAsset('bg_game_table');
   const boardXValues = state.board.map((tile) => tile.boardX);
   const boardYValues = state.board.map((tile) => tile.boardY);
@@ -84,9 +91,20 @@ export function BoardView({ state }: BoardViewProps) {
                       ? cell.tile.blueprintId
                       : cell.pendingTile!.blueprintId
                   }
-                  rotation={cell.tile?.rotation ?? 0}
+                  rotation={
+                    cell.tile?.rotation ?? cell.pendingTile!.previewRotation
+                  }
                   isPending={Boolean(cell.pendingTile && !cell.tile)}
                 />
+                {cell.pendingTile && !cell.tile ? (
+                  <PendingTileControls
+                    canConfirm={cell.pendingTile.legalRotations.includes(
+                      cell.pendingTile.previewRotation,
+                    )}
+                    onConfirm={onConfirmPendingTile}
+                    onRotate={onRotatePendingTile}
+                  />
+                ) : null}
                 {cell.tile?.roomToken ? (
                   <RoomToken token={cell.tile.roomToken} />
                 ) : null}
@@ -101,6 +119,46 @@ export function BoardView({ state }: BoardViewProps) {
         ))}
       </div>
     </section>
+  );
+}
+
+function PendingTileControls({
+  canConfirm,
+  onConfirm,
+  onRotate,
+}: {
+  canConfirm: boolean;
+  onConfirm?: () => void;
+  onRotate?: (direction: RotationDirection) => void;
+}) {
+  return (
+    <>
+      <button
+        aria-label="Rotate tile counterclockwise"
+        className="absolute left-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-stone-500 bg-stone-950/85 text-base font-semibold text-amber-100"
+        onClick={() => onRotate?.('counterclockwise')}
+        type="button"
+      >
+        {'<'}
+      </button>
+      <button
+        aria-label="Rotate tile clockwise"
+        className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-stone-500 bg-stone-950/85 text-base font-semibold text-amber-100"
+        onClick={() => onRotate?.('clockwise')}
+        type="button"
+      >
+        {'>'}
+      </button>
+      <button
+        aria-label="Confirm tile rotation"
+        className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-amber-300 bg-amber-300/90 text-[0.65rem] font-semibold uppercase tracking-wide text-stone-950 disabled:cursor-not-allowed disabled:border-stone-600 disabled:bg-stone-800 disabled:text-stone-400"
+        disabled={!canConfirm}
+        onClick={onConfirm}
+        type="button"
+      >
+        OK
+      </button>
+    </>
   );
 }
 

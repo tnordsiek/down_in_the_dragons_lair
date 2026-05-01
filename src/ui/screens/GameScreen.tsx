@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 import { chooseHeuristicAiAction } from '../../ai/heuristicAgent';
 import { getLegalAiActions } from '../../ai/legalActions';
-import type { Rotation, TileSide } from '../../engine/core/types';
+import type { RotationDirection, TileSide } from '../../engine/core/types';
 import { useSetupStore } from '../../state/setupStore';
 import { ActionPanel } from '../components/ActionPanel';
 import { BoardView } from '../components/BoardView';
@@ -47,8 +47,18 @@ export function GameScreen() {
   const handleExplore = (direction: TileSide) => {
     dispatch({ type: 'declareExplorationDirection', direction });
   };
-  const handlePlaceTile = (rotation: Rotation) => {
-    dispatch({ type: 'placePendingTile', rotation });
+  const handleRotatePendingTile = (direction: RotationDirection) => {
+    dispatch({ type: 'rotatePendingTilePreview', direction });
+  };
+  const handleConfirmPendingTile = () => {
+    if (!state.pendingTile) {
+      return;
+    }
+
+    dispatch({
+      type: 'placePendingTile',
+      rotation: state.pendingTile.previewRotation,
+    });
   };
   const handleResolveRoom = () => {
     dispatch({ type: 'resolveRoomToken' });
@@ -85,14 +95,17 @@ export function GameScreen() {
           {state.phase === 'game_over' ? (
             <EndScreen state={state} onNewGame={resetGame} />
           ) : null}
-          <BoardView state={state} />
+          <BoardView
+            state={state}
+            onConfirmPendingTile={handleConfirmPendingTile}
+            onRotatePendingTile={handleRotatePendingTile}
+          />
         </div>
         <aside className="grid content-start gap-4 lg:w-[22rem] lg:justify-self-end">
           <ActionPanel
             state={state}
             onMove={handleMove}
             onExplore={handleExplore}
-            onPlaceTile={handlePlaceTile}
             onResolveRoom={handleResolveRoom}
             onResolveCombat={handleResolveCombat}
             onOpenChest={handleOpenChest}

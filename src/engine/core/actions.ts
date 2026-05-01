@@ -3,6 +3,7 @@ import { resolveCombat } from '../combat/combat';
 import {
   drawPendingTileForExploration,
   placePendingTile,
+  rotatePendingTilePreview,
 } from '../movement/exploration';
 import { moveActivePlayer } from '../movement/performMove';
 import { openChest } from '../rules/chests';
@@ -33,6 +34,8 @@ export function applyGameAction(
       return moveActivePlayer(state, action.direction);
     case 'declareExplorationDirection':
       return drawPendingTileForExploration(state, action.direction);
+    case 'rotatePendingTilePreview':
+      return rotatePendingTilePreview(state, action.direction);
     case 'placePendingTile':
       return placePendingTile(state, action.rotation);
     case 'resolveRoomToken':

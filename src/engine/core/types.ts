@@ -78,6 +78,7 @@ export type TileSide = 'A' | 'B' | 'C' | 'D';
 export type TileShape = 'straight' | 'corner' | 't_junction' | 'cross';
 export type TileCategory = 'start' | 'tunnel' | 'room' | 'teleport' | 'healing';
 export type Rotation = 0 | 90 | 180 | 270;
+export type RotationDirection = 'clockwise' | 'counterclockwise';
 
 export interface TileBlueprint {
   id: TileBlueprintId;
@@ -153,6 +154,7 @@ export interface PendingTileDraw {
   target: BoardPosition;
   direction: TileSide;
   blueprintId: TileBlueprintId;
+  previewRotation: Rotation;
   legalRotations: Rotation[];
   skippedBlueprintIds: TileBlueprintId[];
 }
@@ -221,6 +223,11 @@ export type PlacePendingTileAction = {
   rotation: Rotation;
 };
 
+export type RotatePendingTilePreviewAction = {
+  type: 'rotatePendingTilePreview';
+  direction: RotationDirection;
+};
+
 export type ResolveRoomTokenAction = {
   type: 'resolveRoomToken';
 };
@@ -259,6 +266,7 @@ export type GameAction =
   | StartGameAction
   | MovePlayerAction
   | DeclareExplorationDirectionAction
+  | RotatePendingTilePreviewAction
   | PlacePendingTileAction
   | ResolveRoomTokenAction
   | ResolveCombatAction
