@@ -76,6 +76,9 @@ describe('asset manifest runtime mapping', () => {
     expect(getAssetUrl('token_skeleton_turnkey')).toBe(
       '/assets/monsters/token_skeleton_keyguardian.png',
     );
+    expect(getAssetUrl('tile_tunnel_cross')).toBe(
+      '/assets/tiles/tile_tunnel_cross.png',
+    );
   });
 
   it('keeps asset IDs unique', () => {

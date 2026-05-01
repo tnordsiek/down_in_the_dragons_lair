@@ -53,16 +53,18 @@ export function BoardView({ state }: BoardViewProps) {
           >
             {cell.tile ? (
               <div
-                className="flex h-full flex-col justify-between"
+                className="relative h-full overflow-hidden"
                 data-asset-id={`tile_${cell.tile.blueprintId}`}
               >
-                <div className="font-mono text-stone-200">
-                  {cell.tile.blueprintId}
-                </div>
+                <TileGraphic
+                  assetId={`tile_${cell.tile.blueprintId}`}
+                  blueprintId={cell.tile.blueprintId}
+                  rotation={cell.tile.rotation}
+                />
                 {cell.tile.roomToken ? (
                   <RoomToken token={cell.tile.roomToken} />
                 ) : null}
-                <div className="flex flex-wrap gap-1">
+                <div className="absolute bottom-1 left-1 right-1 flex flex-wrap gap-1">
                   {cell.players.map((player) => (
                     <HeroToken key={player.id} heroId={player.heroId} />
                   ))}
@@ -76,6 +78,31 @@ export function BoardView({ state }: BoardViewProps) {
   );
 }
 
+function TileGraphic({
+  assetId,
+  blueprintId,
+  rotation,
+}: {
+  assetId: string;
+  blueprintId: GameState['board'][number]['blueprintId'];
+  rotation: GameState['board'][number]['rotation'];
+}) {
+  const assetUrl = getAssetUrl(assetId);
+
+  return assetUrl ? (
+    <img
+      className="h-full w-full object-cover"
+      src={assetUrl}
+      alt={blueprintId}
+      style={{ transform: `rotate(${rotation}deg)` }}
+    />
+  ) : (
+    <div className="flex h-full items-start justify-start p-1 font-mono text-stone-200">
+      {blueprintId}
+    </div>
+  );
+}
+
 function RoomToken({ token }: { token: Token }) {
   const assetId = `token_${token.id}`;
   const assetUrl = getAssetUrl(assetId);
@@ -86,7 +113,7 @@ function RoomToken({ token }: { token: Token }) {
 
   return (
     <div
-      className="flex min-h-8 items-center justify-center font-mono text-amber-200"
+      className="absolute left-1/2 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-stone-950/80 font-mono text-amber-200"
       data-asset-id={assetId}
     >
       {assetUrl ? (

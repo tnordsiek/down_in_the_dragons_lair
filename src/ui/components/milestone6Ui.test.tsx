@@ -116,6 +116,7 @@ describe('Milestone 6 UI', () => {
       board: [
         {
           ...baseBoard()[0],
+          rotation: 90,
           roomToken: { id: 'giant_rat', kind: 'monster' },
         },
       ],
@@ -123,6 +124,12 @@ describe('Milestone 6 UI', () => {
 
     render(<BoardView state={state} />);
 
+    expect(
+      screen.getByRole('img', { name: 'start_cross_healing' }),
+    ).toHaveAttribute('src', '/assets/tiles/tile_start_cross_healing.png');
+    expect(
+      screen.getByRole('img', { name: 'start_cross_healing' }),
+    ).toHaveStyle({ transform: 'rotate(90deg)' });
     expect(screen.getByRole('img', { name: 'Mage' })).toHaveAttribute(
       'src',
       '/assets/heroes/token_hero_mage.png',
