@@ -268,6 +268,27 @@ describe('Milestone 6 UI', () => {
     expect(onMove).toHaveBeenCalledWith('A');
   });
 
+  it('highlights legal exploration targets on the board and explores by tile click', () => {
+    const state = createUiState();
+    const onExplore = vi.fn();
+
+    render(<BoardView state={state} onExplore={onExplore} />);
+
+    const exploreTarget = screen.getByRole('button', {
+      name: 'Explore tile 1,0',
+    });
+
+    expect(exploreTarget).toHaveAttribute('data-testid', 'explore-target-1-0');
+    expect(
+      screen.getByRole('button', { name: 'Explore tile 0,-1' }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(exploreTarget);
+
+    expect(onExplore).toHaveBeenCalledOnce();
+    expect(onExplore).toHaveBeenCalledWith('B');
+  });
+
   it('supports mouse-wheel zoom and drag panning on the board', () => {
     const state = createUiState({
       board: [

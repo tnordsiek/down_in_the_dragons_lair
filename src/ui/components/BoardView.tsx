@@ -10,13 +10,17 @@ import type {
   TileSide,
   Token,
 } from '../../engine/core/types';
-import { getLegalKnownMoveDirections } from '../../engine/movement/movement';
+import {
+  getLegalExplorationDirections,
+  getLegalKnownMoveDirections,
+} from '../../engine/movement/movement';
 import { adjacentPosition } from '../../engine/movement/topology';
 import { heroName, monsterName } from '../labels';
 
 type BoardViewProps = {
   state: GameState;
   onConfirmPendingTile?: () => void;
+  onExplore?: (direction: TileSide) => void;
   onMove?: (direction: TileSide) => void;
   onRotatePendingTile?: (direction: RotationDirection) => void;
 };
@@ -24,6 +28,7 @@ type BoardViewProps = {
 export function BoardView({
   state,
   onConfirmPendingTile,
+  onExplore,
   onMove,
   onRotatePendingTile,
 }: BoardViewProps) {
@@ -61,6 +66,13 @@ export function BoardView({
       return [positionKey(targetPosition), direction];
     }),
   );
+  const legalExplorationTargets = new Map<string, TileSide>(
+    getLegalExplorationDirections(state).map((direction) => {
+      const targetPosition = adjacentPosition(activePlayer.position, direction);
+
+      return [positionKey(targetPosition), direction];
+    }),
+  );
   const cells = Array.from({ length: columns * rows }, (_, index) => {
     const boardX = boardMinX + (index % columns);
     const boardY = boardMinY + Math.floor(index / columns);
@@ -80,11 +92,16 @@ export function BoardView({
     return { boardX, boardY, tile, players, pendingTile };
   });
   const renderCell = (cell: (typeof cells)[number]) => {
-    const moveDirection = legalMoveTargets.get(
-      positionKey({ boardX: cell.boardX, boardY: cell.boardY }),
-    );
+    const cellPosition = { boardX: cell.boardX, boardY: cell.boardY };
+    const cellKey = positionKey(cellPosition);
+    const moveDirection = legalMoveTargets.get(cellKey);
+    const explorationDirection = legalExplorationTargets.get(cellKey);
     const isClickableMoveTarget =
       cell.tile !== undefined && moveDirection !== undefined;
+    const isClickableExplorationTarget =
+      cell.tile === undefined &&
+      cell.pendingTile === undefined &&
+      explorationDirection !== undefined;
 
     return (
       <div
@@ -152,6 +169,20 @@ export function BoardView({
               ))}
             </div>
           </div>
+        ) : isClickableExplorationTarget ? (
+          <button
+            aria-label={`Explore tile ${cell.boardX},${cell.boardY}`}
+            className="relative h-full w-full border border-sky-300/35 bg-sky-200/8 shadow-[inset_0_0_0_1px_rgba(125,211,252,0.3)] transition-colors hover:bg-sky-200/14"
+            data-testid={`explore-target-${cell.boardX}-${cell.boardY}`}
+            data-asset-id="sfx_tile_place"
+            onClick={() => onExplore?.(explorationDirection)}
+            onPointerDown={(event) => event.stopPropagation()}
+            type="button"
+          >
+            <span className="sr-only">
+              Explore to {cell.boardX},{cell.boardY}
+            </span>
+          </button>
         ) : null}
       </div>
     );

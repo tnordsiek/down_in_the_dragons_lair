@@ -98,6 +98,7 @@ export function GameScreen() {
           <BoardView
             state={state}
             onConfirmPendingTile={handleConfirmPendingTile}
+            onExplore={handleExplore}
             onMove={handleMove}
             onRotatePendingTile={handleRotatePendingTile}
           />
