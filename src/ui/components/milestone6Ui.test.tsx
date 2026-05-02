@@ -285,6 +285,24 @@ describe('Milestone 6 UI', () => {
     );
   });
 
+  it('allows deeper zooming on the board', () => {
+    const state = createUiState();
+
+    render(<BoardView state={state} />);
+
+    const board = screen.getByLabelText('Dungeon board');
+    const transformLayer = screen.getByTestId('board-transform-layer');
+
+    for (let index = 0; index < 20; index += 1) {
+      fireEvent.wheel(board, { deltaY: -100 });
+    }
+
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('scale(4)'),
+    );
+  });
+
   it('stops panning as soon as the left mouse button is no longer pressed', () => {
     const state = createUiState({
       board: [

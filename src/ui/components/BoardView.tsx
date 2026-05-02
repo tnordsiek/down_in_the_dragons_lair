@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { getAssetUrl, useAsset } from '../../data/assets';
 import type {
@@ -22,6 +22,7 @@ export function BoardView({
   onRotatePendingTile,
 }: BoardViewProps) {
   const gameTable = useAsset('bg_game_table');
+  const boardViewportRef = useRef<HTMLDivElement | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -84,11 +85,36 @@ export function BoardView({
     }
   };
 
+  useEffect(() => {
+    const boardViewport = boardViewportRef.current;
+
+    if (!boardViewport) {
+      return;
+    }
+
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      setZoom((currentZoom) => {
+        const nextZoom =
+          event.deltaY < 0 ? currentZoom * 1.1 : currentZoom / 1.1;
+
+        return Math.min(4, Math.max(0.6, Number(nextZoom.toFixed(3))));
+      });
+    };
+
+    boardViewport.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      boardViewport.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
+
   return (
     <section className="min-w-0" data-asset-id={gameTable.assetId}>
       <div
         aria-label="Dungeon board"
         className="overflow-hidden bg-stone-950 p-2"
+        ref={boardViewportRef}
         onPointerDown={(event) => {
           if (event.button !== 0) {
             return;
@@ -129,15 +155,6 @@ export function BoardView({
         }}
         onPointerCancel={(event) => {
           stopDragging(event.pointerId, event.currentTarget);
-        }}
-        onWheel={(event) => {
-          event.preventDefault();
-          setZoom((currentZoom) => {
-            const nextZoom =
-              event.deltaY < 0 ? currentZoom * 1.1 : currentZoom / 1.1;
-
-            return Math.min(2.5, Math.max(0.6, Number(nextZoom.toFixed(3))));
-          });
         }}
       >
         <div
