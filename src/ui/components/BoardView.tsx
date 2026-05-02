@@ -144,6 +144,7 @@ export function BoardView({
                 )}
                 onConfirm={onConfirmPendingTile}
                 onRotate={onRotatePendingTile}
+                zoom={zoom}
               />
             ) : null}
             {cell.tile?.roomToken ? (
@@ -311,41 +312,54 @@ function PendingTileControls({
   canConfirm,
   onConfirm,
   onRotate,
+  zoom,
 }: {
   canConfirm: boolean;
   onConfirm?: () => void;
   onRotate?: (direction: RotationDirection) => void;
+  zoom: number;
 }) {
+  const controlScale = Number((1 / zoom).toFixed(3));
+
   return (
     <>
-      <button
-        aria-label="Rotate tile counterclockwise"
-        className="absolute left-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-stone-500 bg-stone-950/85 text-base font-semibold text-amber-100"
-        onClick={() => onRotate?.('counterclockwise')}
-        onPointerDown={(event) => event.stopPropagation()}
-        type="button"
-      >
-        {'<'}
-      </button>
-      <button
-        aria-label="Rotate tile clockwise"
-        className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-stone-500 bg-stone-950/85 text-base font-semibold text-amber-100"
-        onClick={() => onRotate?.('clockwise')}
-        onPointerDown={(event) => event.stopPropagation()}
-        type="button"
-      >
-        {'>'}
-      </button>
-      <button
-        aria-label="Confirm tile rotation"
-        className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-amber-300 bg-amber-300/90 text-[0.65rem] font-semibold uppercase tracking-wide text-stone-950 disabled:cursor-not-allowed disabled:border-stone-600 disabled:bg-stone-800 disabled:text-stone-400"
-        disabled={!canConfirm}
-        onClick={onConfirm}
-        onPointerDown={(event) => event.stopPropagation()}
-        type="button"
-      >
-        OK
-      </button>
+      <div className="absolute left-1 top-1/2 -translate-y-1/2">
+        <button
+          aria-label="Rotate tile counterclockwise"
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-stone-500 bg-stone-950/85 text-base font-semibold text-amber-100"
+          onClick={() => onRotate?.('counterclockwise')}
+          onPointerDown={(event) => event.stopPropagation()}
+          style={{ transform: `scale(${controlScale})` }}
+          type="button"
+        >
+          {'<'}
+        </button>
+      </div>
+      <div className="absolute right-1 top-1/2 -translate-y-1/2">
+        <button
+          aria-label="Rotate tile clockwise"
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-stone-500 bg-stone-950/85 text-base font-semibold text-amber-100"
+          onClick={() => onRotate?.('clockwise')}
+          onPointerDown={(event) => event.stopPropagation()}
+          style={{ transform: `scale(${controlScale})` }}
+          type="button"
+        >
+          {'>'}
+        </button>
+      </div>
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        <button
+          aria-label="Confirm tile rotation"
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-amber-300 bg-amber-300/90 text-[0.65rem] font-semibold uppercase tracking-wide text-stone-950 disabled:cursor-not-allowed disabled:border-stone-600 disabled:bg-stone-800 disabled:text-stone-400"
+          disabled={!canConfirm}
+          onClick={onConfirm}
+          onPointerDown={(event) => event.stopPropagation()}
+          style={{ transform: `scale(${controlScale})` }}
+          type="button"
+        >
+          OK
+        </button>
+      </div>
     </>
   );
 }

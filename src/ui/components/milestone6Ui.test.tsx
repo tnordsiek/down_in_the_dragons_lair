@@ -137,6 +137,36 @@ describe('Milestone 6 UI', () => {
     ).toBeEnabled();
   });
 
+  it('keeps pending tile rotation controls screen-sized while the board is zoomed', () => {
+    const state = createUiState({
+      phase: 'choose_pending_tile_rotation',
+      pendingTile: {
+        origin: { boardX: 0, boardY: 0 },
+        target: { boardX: 1, boardY: 0 },
+        direction: 'B',
+        blueprintId: 'room_corner',
+        previewRotation: 0,
+        legalRotations: [0, 90],
+        skippedBlueprintIds: [],
+      },
+    });
+
+    render(<BoardView state={state} />);
+
+    const board = screen.getByLabelText('Dungeon board');
+
+    for (let index = 0; index < 20; index += 1) {
+      fireEvent.wheel(board, { deltaY: -100 });
+    }
+
+    expect(
+      screen.getByRole('button', { name: 'Rotate tile clockwise' }),
+    ).toHaveAttribute('style', expect.stringContaining('scale(0.25)'));
+    expect(
+      screen.getByRole('button', { name: 'Confirm tile rotation' }),
+    ).toHaveAttribute('style', expect.stringContaining('scale(0.25)'));
+  });
+
   it('shows combat math and loot state', () => {
     const state = createUiState({
       phase: 'combat',
