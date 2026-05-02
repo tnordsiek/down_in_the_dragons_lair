@@ -17,14 +17,24 @@ describe('App', () => {
     render(<App />);
 
     expect(
-      screen.getByRole('heading', {
-        name: "Down in the Dragon's Lair",
-      }),
-    ).toBeInTheDocument();
-    expect(
       screen.getByRole('button', { name: 'Start Game' }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText('Hero')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Choose a hero, set the opposition, and enter the dungeon.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Code powered by Codex')).toBeInTheDocument();
+    expect(screen.getByText('Graphics powered by Gemini')).toBeInTheDocument();
+    expect(
+      screen.getByText('Concept and AI Direction by fnord GAMES (2026)'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('img', {
+        name: 'Wortmarke oder kompaktes Logo fuer den Startscreen',
+      }).length,
+    ).toBeGreaterThan(0);
   });
 
   it('starts a game and shows board actions', () => {

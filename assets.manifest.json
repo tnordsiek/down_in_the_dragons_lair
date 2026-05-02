@@ -468,8 +468,9 @@
       "category": "ui",
       "purpose": "Wortmarke oder kompaktes Logo fuer den Startscreen",
       "usedBy": ["start_screen", "header"],
-      "format": "svg",
-      "placeholderAllowed": true,
+      "format": "png",
+      "src": "assets/ui/ui_logo_wordmark.png",
+      "placeholderAllowed": false,
       "replaceableAfterV1": true,
       "spec": "Eigenstaendiges Logo-Asset, in V1 als Platzhalter darstellbar"
     },

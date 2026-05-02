@@ -1,4 +1,4 @@
-import { useAsset } from '../../data/assets';
+import { getAssetUrl, useAsset } from '../../data/assets';
 import { heroDefinitions, heroIds } from '../../data/heroes';
 import type { HeroId } from '../../engine/core/types';
 import { useSetupStore } from '../../state/setupStore';
@@ -18,29 +18,41 @@ export function StartScreen() {
   const clearSavedGame = useSetupStore((state) => state.clearSavedGame);
   const background = useAsset('bg_start_screen');
   const logo = useAsset('ui_logo_wordmark');
+  const logoUrl = getAssetUrl(logo.assetId);
 
   return (
     <main
       className="min-h-screen bg-stone-950 text-stone-100"
       data-asset-id={background.assetId}
     >
-      <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-between px-6 py-8 sm:px-8">
+      <section className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-between px-6 py-8 sm:px-8">
         <header className="flex items-center justify-between gap-4">
-          <div
-            aria-label={logo.purpose}
-            className="h-10 w-10 border border-amber-400 bg-amber-300 text-center text-2xl font-bold leading-10 text-stone-950"
-            data-asset-id={logo.assetId}
-          >
-            D
+          <div className="h-10 w-10" data-asset-id={logo.assetId}>
+            {logoUrl ? (
+              <img
+                className="h-full w-full object-contain"
+                src={logoUrl}
+                alt={logo.purpose}
+              />
+            ) : null}
           </div>
           <p className="text-sm text-stone-300">Local browser game</p>
         </header>
 
-        <div className="grid gap-8 py-12 md:grid-cols-[1.2fr_0.8fr] md:items-end">
-          <div>
-            <h1 className="max-w-3xl font-display text-5xl leading-tight text-amber-100 sm:text-6xl">
-              Down in the Dragon&apos;s Lair
-            </h1>
+        <div className="grid flex-1 gap-8 py-12 md:grid-cols-[1.2fr_0.8fr] md:items-center">
+          <div className="flex min-h-[22rem] flex-col items-center justify-center text-center">
+            {logoUrl ? (
+              <img
+                className="max-h-[18rem] w-full max-w-2xl object-contain"
+                data-asset-id={logo.assetId}
+                src={logoUrl}
+                alt={logo.purpose}
+              />
+            ) : (
+              <h1 className="max-w-3xl font-display text-5xl leading-tight text-amber-100 sm:text-6xl">
+                Down in the Dragon&apos;s Lair
+              </h1>
+            )}
             <p className="mt-5 max-w-2xl text-lg leading-8 text-stone-200">
               Choose a hero, set the opposition, and enter the dungeon.
             </p>
@@ -122,6 +134,12 @@ export function StartScreen() {
               </button>
             </div>
           </div>
+        </div>
+
+        <div className="pointer-events-none absolute bottom-8 left-6 text-left text-xs leading-5 text-stone-400 sm:left-8">
+          <p>Code powered by Codex</p>
+          <p>Graphics powered by Gemini</p>
+          <p>Concept and AI Direction by fnord GAMES (2026)</p>
         </div>
       </section>
     </main>
