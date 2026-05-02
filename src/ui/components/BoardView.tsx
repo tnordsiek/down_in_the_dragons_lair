@@ -1,3 +1,5 @@
+import { useRef, useState } from 'react';
+
 import { getAssetUrl, useAsset } from '../../data/assets';
 import type {
   GameState,
@@ -20,6 +22,16 @@ export function BoardView({
   onRotatePendingTile,
 }: BoardViewProps) {
   const gameTable = useAsset('bg_game_table');
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStateRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+  } | null>(null);
   const boardXValues = state.board.map((tile) => tile.boardX);
   const boardYValues = state.board.map((tile) => tile.boardY);
 
@@ -56,67 +68,135 @@ export function BoardView({
   return (
     <section className="min-w-0" data-asset-id={gameTable.assetId}>
       <div
-        className="grid gap-1 overflow-auto bg-stone-950 p-2"
-        style={{
-          gridTemplateColumns: `repeat(${columns}, minmax(4rem, 1fr))`,
-        }}
         aria-label="Dungeon board"
+        className="overflow-hidden bg-stone-950 p-2"
+        onPointerDown={(event) => {
+          if (event.button !== 0) {
+            return;
+          }
+
+          dragStateRef.current = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            originX: pan.x,
+            originY: pan.y,
+          };
+          setIsDragging(true);
+          event.currentTarget.setPointerCapture?.(event.pointerId);
+        }}
+        onPointerMove={(event) => {
+          const dragState = dragStateRef.current;
+
+          if (!dragState || dragState.pointerId !== event.pointerId) {
+            return;
+          }
+
+          setPan({
+            x: dragState.originX + event.clientX - dragState.startX,
+            y: dragState.originY + event.clientY - dragState.startY,
+          });
+        }}
+        onPointerUp={(event) => {
+          if (dragStateRef.current?.pointerId !== event.pointerId) {
+            return;
+          }
+
+          dragStateRef.current = null;
+          setIsDragging(false);
+          event.currentTarget.releasePointerCapture?.(event.pointerId);
+        }}
+        onPointerLeave={(event) => {
+          if (dragStateRef.current?.pointerId !== event.pointerId) {
+            return;
+          }
+
+          dragStateRef.current = null;
+          setIsDragging(false);
+        }}
+        onWheel={(event) => {
+          event.preventDefault();
+          setZoom((currentZoom) => {
+            const nextZoom =
+              event.deltaY < 0 ? currentZoom * 1.1 : currentZoom / 1.1;
+
+            return Math.min(2.5, Math.max(0.6, Number(nextZoom.toFixed(3))));
+          });
+        }}
       >
-        {cells.map((cell) => (
+        <div
+          className={`origin-center transition-transform ${
+            isDragging ? 'cursor-grabbing' : 'cursor-grab'
+          }`}
+          data-testid="board-transform-layer"
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            width: 'max-content',
+          }}
+        >
           <div
-            key={`${cell.boardX},${cell.boardY}`}
-            className={`aspect-square min-h-16 border p-1 text-[0.65rem] ${
-              cell.tile || cell.pendingTile
-                ? 'border-stone-500 bg-stone-800'
-                : 'border-stone-800 bg-stone-900'
-            }`}
+            className="grid gap-1"
+            style={{
+              gridTemplateColumns: `repeat(${columns}, minmax(4.5rem, 4.5rem))`,
+            }}
           >
-            {cell.tile || cell.pendingTile ? (
+            {cells.map((cell) => (
               <div
-                className="relative h-full overflow-hidden"
-                data-asset-id={
-                  cell.tile
-                    ? `tile_${cell.tile.blueprintId}`
-                    : `tile_${cell.pendingTile!.blueprintId}`
-                }
+                key={`${cell.boardX},${cell.boardY}`}
+                className={`aspect-square min-h-16 border p-1 text-[0.65rem] ${
+                  cell.tile || cell.pendingTile
+                    ? 'border-stone-500 bg-stone-800'
+                    : 'border-stone-800 bg-stone-900'
+                }`}
               >
-                <TileGraphic
-                  assetId={
-                    cell.tile
-                      ? `tile_${cell.tile.blueprintId}`
-                      : `tile_${cell.pendingTile!.blueprintId}`
-                  }
-                  blueprintId={
-                    cell.tile
-                      ? cell.tile.blueprintId
-                      : cell.pendingTile!.blueprintId
-                  }
-                  rotation={
-                    cell.tile?.rotation ?? cell.pendingTile!.previewRotation
-                  }
-                  isPending={Boolean(cell.pendingTile && !cell.tile)}
-                />
-                {cell.pendingTile && !cell.tile ? (
-                  <PendingTileControls
-                    canConfirm={cell.pendingTile.legalRotations.includes(
-                      cell.pendingTile.previewRotation,
-                    )}
-                    onConfirm={onConfirmPendingTile}
-                    onRotate={onRotatePendingTile}
-                  />
+                {cell.tile || cell.pendingTile ? (
+                  <div
+                    className="relative h-full overflow-hidden"
+                    data-asset-id={
+                      cell.tile
+                        ? `tile_${cell.tile.blueprintId}`
+                        : `tile_${cell.pendingTile!.blueprintId}`
+                    }
+                  >
+                    <TileGraphic
+                      assetId={
+                        cell.tile
+                          ? `tile_${cell.tile.blueprintId}`
+                          : `tile_${cell.pendingTile!.blueprintId}`
+                      }
+                      blueprintId={
+                        cell.tile
+                          ? cell.tile.blueprintId
+                          : cell.pendingTile!.blueprintId
+                      }
+                      rotation={
+                        cell.tile?.rotation ?? cell.pendingTile!.previewRotation
+                      }
+                      isPending={Boolean(cell.pendingTile && !cell.tile)}
+                    />
+                    {cell.pendingTile && !cell.tile ? (
+                      <PendingTileControls
+                        canConfirm={cell.pendingTile.legalRotations.includes(
+                          cell.pendingTile.previewRotation,
+                        )}
+                        onConfirm={onConfirmPendingTile}
+                        onRotate={onRotatePendingTile}
+                      />
+                    ) : null}
+                    {cell.tile?.roomToken ? (
+                      <RoomToken token={cell.tile.roomToken} />
+                    ) : null}
+                    <div className="absolute bottom-1 left-1 right-1 flex flex-wrap gap-1">
+                      {cell.players.map((player) => (
+                        <HeroToken key={player.id} heroId={player.heroId} />
+                      ))}
+                    </div>
+                  </div>
                 ) : null}
-                {cell.tile?.roomToken ? (
-                  <RoomToken token={cell.tile.roomToken} />
-                ) : null}
-                <div className="absolute bottom-1 left-1 right-1 flex flex-wrap gap-1">
-                  {cell.players.map((player) => (
-                    <HeroToken key={player.id} heroId={player.heroId} />
-                  ))}
-                </div>
               </div>
-            ) : null}
+            ))}
           </div>
-        ))}
+        </div>
       </div>
     </section>
   );
@@ -137,6 +217,7 @@ function PendingTileControls({
         aria-label="Rotate tile counterclockwise"
         className="absolute left-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-stone-500 bg-stone-950/85 text-base font-semibold text-amber-100"
         onClick={() => onRotate?.('counterclockwise')}
+        onPointerDown={(event) => event.stopPropagation()}
         type="button"
       >
         {'<'}
@@ -145,6 +226,7 @@ function PendingTileControls({
         aria-label="Rotate tile clockwise"
         className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-stone-500 bg-stone-950/85 text-base font-semibold text-amber-100"
         onClick={() => onRotate?.('clockwise')}
+        onPointerDown={(event) => event.stopPropagation()}
         type="button"
       >
         {'>'}
@@ -154,6 +236,7 @@ function PendingTileControls({
         className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-amber-300 bg-amber-300/90 text-[0.65rem] font-semibold uppercase tracking-wide text-stone-950 disabled:cursor-not-allowed disabled:border-stone-600 disabled:bg-stone-800 disabled:text-stone-400"
         disabled={!canConfirm}
         onClick={onConfirm}
+        onPointerDown={(event) => event.stopPropagation()}
         type="button"
       >
         OK

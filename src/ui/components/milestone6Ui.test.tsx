@@ -234,6 +234,56 @@ describe('Milestone 6 UI', () => {
     );
   });
 
+  it('supports mouse-wheel zoom and drag panning on the board', () => {
+    const state = createUiState({
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-east',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+
+    render(<BoardView state={state} />);
+
+    const board = screen.getByLabelText('Dungeon board');
+    const transformLayer = screen.getByTestId('board-transform-layer');
+
+    fireEvent.wheel(board, { deltaY: -100 });
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('scale(1.1)'),
+    );
+
+    fireEvent.pointerDown(board, {
+      button: 0,
+      clientX: 100,
+      clientY: 100,
+      pointerId: 1,
+    });
+    fireEvent.pointerMove(board, {
+      clientX: 140,
+      clientY: 125,
+      pointerId: 1,
+    });
+    fireEvent.pointerUp(board, {
+      clientX: 140,
+      clientY: 125,
+      pointerId: 1,
+    });
+
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('translate(40px, 25px)'),
+    );
+  });
+
   it('shows game end ranking', () => {
     const state = createUiState({
       phase: 'game_over',
