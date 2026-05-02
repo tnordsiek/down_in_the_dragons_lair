@@ -65,6 +65,25 @@ export function BoardView({
     return { boardX, boardY, tile, players, pendingTile };
   });
 
+  const stopDragging = (
+    pointerId?: number,
+    element?: HTMLDivElement | null,
+  ) => {
+    if (
+      pointerId !== undefined &&
+      dragStateRef.current?.pointerId !== pointerId
+    ) {
+      return;
+    }
+
+    dragStateRef.current = null;
+    setIsDragging(false);
+
+    if (pointerId !== undefined) {
+      element?.releasePointerCapture?.(pointerId);
+    }
+  };
+
   return (
     <section className="min-w-0" data-asset-id={gameTable.assetId}>
       <div
@@ -92,27 +111,24 @@ export function BoardView({
             return;
           }
 
+          if ((event.buttons & 1) !== 1) {
+            stopDragging(event.pointerId, event.currentTarget);
+            return;
+          }
+
           setPan({
             x: dragState.originX + event.clientX - dragState.startX,
             y: dragState.originY + event.clientY - dragState.startY,
           });
         }}
         onPointerUp={(event) => {
-          if (dragStateRef.current?.pointerId !== event.pointerId) {
-            return;
-          }
-
-          dragStateRef.current = null;
-          setIsDragging(false);
-          event.currentTarget.releasePointerCapture?.(event.pointerId);
+          stopDragging(event.pointerId, event.currentTarget);
         }}
         onPointerLeave={(event) => {
-          if (dragStateRef.current?.pointerId !== event.pointerId) {
-            return;
-          }
-
-          dragStateRef.current = null;
-          setIsDragging(false);
+          stopDragging(event.pointerId, event.currentTarget);
+        }}
+        onPointerCancel={(event) => {
+          stopDragging(event.pointerId, event.currentTarget);
         }}
         onWheel={(event) => {
           event.preventDefault();
@@ -264,6 +280,7 @@ function TileGraphic({
         className={`h-full w-full object-cover ${isPending ? 'opacity-70' : ''}`}
         src={assetUrl}
         alt={isPending ? `${blueprintId} preview` : blueprintId}
+        draggable={false}
         style={{ transform: `rotate(${rotation}deg)` }}
       />
       {isPending ? (

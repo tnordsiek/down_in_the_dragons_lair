@@ -268,6 +268,7 @@ describe('Milestone 6 UI', () => {
       pointerId: 1,
     });
     fireEvent.pointerMove(board, {
+      buttons: 1,
       clientX: 140,
       clientY: 125,
       pointerId: 1,
@@ -275,6 +276,64 @@ describe('Milestone 6 UI', () => {
     fireEvent.pointerUp(board, {
       clientX: 140,
       clientY: 125,
+      pointerId: 1,
+    });
+
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('translate(40px, 25px)'),
+    );
+  });
+
+  it('stops panning as soon as the left mouse button is no longer pressed', () => {
+    const state = createUiState({
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-east',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+
+    render(<BoardView state={state} />);
+
+    const board = screen.getByLabelText('Dungeon board');
+    const transformLayer = screen.getByTestId('board-transform-layer');
+
+    fireEvent.pointerDown(board, {
+      button: 0,
+      buttons: 1,
+      clientX: 100,
+      clientY: 100,
+      pointerId: 1,
+    });
+    fireEvent.pointerMove(board, {
+      buttons: 1,
+      clientX: 140,
+      clientY: 125,
+      pointerId: 1,
+    });
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('translate(40px, 25px)'),
+    );
+
+    fireEvent.pointerMove(board, {
+      buttons: 0,
+      clientX: 180,
+      clientY: 160,
+      pointerId: 1,
+    });
+    fireEvent.pointerMove(board, {
+      buttons: 0,
+      clientX: 220,
+      clientY: 200,
       pointerId: 1,
     });
 
