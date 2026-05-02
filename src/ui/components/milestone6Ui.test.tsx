@@ -163,6 +163,8 @@ describe('Milestone 6 UI', () => {
                 spells: [{ type: 'spell', spellKind: 'flame' }],
               },
               treasurePoints: 7,
+              isCursed: true,
+              skipNextTurn: true,
             }
           : player,
       ),
@@ -178,10 +180,29 @@ describe('Milestone 6 UI', () => {
       screen.getByRole('button', { name: 'Resolve Combat' }),
     ).toBeInTheDocument();
     expect(screen.getByText('7 pts')).toBeInTheDocument();
-    expect(screen.getByText('+2')).toBeInTheDocument();
     expect(
       screen.getByText('Resolved combat and gained treasure'),
     ).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Key' })).toHaveAttribute(
+      'src',
+      '/assets/items/item_key.png',
+    );
+    expect(screen.getByRole('img', { name: 'Weapon +2' })).toHaveAttribute(
+      'src',
+      '/assets/items/item_weapon_2.png',
+    );
+    expect(screen.getByRole('img', { name: 'flame spell' })).toHaveAttribute(
+      'src',
+      '/assets/items/item_spell_flame.png',
+    );
+    expect(screen.getByRole('img', { name: 'cursed' })).toHaveAttribute(
+      'src',
+      '/assets/status/status_curse.png',
+    );
+    expect(screen.getByRole('img', { name: 'unconscious' })).toHaveAttribute(
+      'src',
+      '/assets/status/status_unconscious.png',
+    );
   });
 
   it('renders mapped hero and monster images on the board', () => {

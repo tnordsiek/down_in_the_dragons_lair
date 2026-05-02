@@ -1,5 +1,10 @@
 import { getAssetUrl, useAsset } from '../../data/assets';
-import type { GameState, HeroId } from '../../engine/core/types';
+import type {
+  GameState,
+  HeroId,
+  SpellKind,
+  WeaponBonus,
+} from '../../engine/core/types';
 import { heroName } from '../labels';
 
 type PlayerPanelProps = {
@@ -53,43 +58,48 @@ export function PlayerPanel({ state }: PlayerPanelProps) {
               </div>
               <div>
                 <dt>Key</dt>
-                <dd className="font-mono text-stone-100">
-                  {player.inventory.keyCount}
+                <dd className="flex min-h-6 items-center gap-1 font-mono text-stone-100">
+                  {player.inventory.keyCount > 0 ? (
+                    <ItemIcon assetId="item_key" label="Key" />
+                  ) : null}
+                  {player.inventory.keyCount || '-'}
                 </dd>
               </div>
               <div>
                 <dt>Weapons</dt>
-                <dd className="font-mono text-stone-100">
-                  {player.inventory.weapons
-                    .map((weapon) => `+${weapon.bonus}`)
-                    .join(', ') || '-'}
+                <dd className="flex min-h-6 flex-wrap items-center gap-1 font-mono text-stone-100">
+                  {player.inventory.weapons.length > 0
+                    ? player.inventory.weapons.map((weapon, index) => (
+                        <ItemIcon
+                          key={`${player.id}-weapon-${index}`}
+                          assetId={weaponAssetId(weapon.bonus)}
+                          label={`Weapon +${weapon.bonus}`}
+                        />
+                      ))
+                    : '-'}
                 </dd>
               </div>
               <div>
                 <dt>Spells</dt>
-                <dd className="font-mono text-stone-100">
-                  {player.inventory.spells
-                    .map((spell) => spell.spellKind)
-                    .join(', ') || '-'}
+                <dd className="flex min-h-6 flex-wrap items-center gap-1 font-mono text-stone-100">
+                  {player.inventory.spells.length > 0
+                    ? player.inventory.spells.map((spell, index) => (
+                        <ItemIcon
+                          key={`${player.id}-spell-${index}`}
+                          assetId={spellAssetId(spell.spellKind)}
+                          label={`${spell.spellKind} spell`}
+                        />
+                      ))
+                    : '-'}
                 </dd>
               </div>
             </dl>
             <div className="mt-2 flex gap-2 text-xs">
               {player.isCursed ? (
-                <span
-                  className="bg-red-800 px-2 py-1"
-                  data-asset-id="status_curse"
-                >
-                  cursed
-                </span>
+                <StatusBadge assetId="status_curse" label="cursed" />
               ) : null}
               {player.skipNextTurn ? (
-                <span
-                  className="bg-stone-700 px-2 py-1"
-                  data-asset-id="status_unconscious"
-                >
-                  unconscious
-                </span>
+                <StatusBadge assetId="status_unconscious" label="unconscious" />
               ) : null}
             </div>
           </article>
@@ -120,4 +130,44 @@ function HeroPortrait({ heroId }: { heroId: HeroId }) {
       )}
     </div>
   );
+}
+
+function ItemIcon({ assetId, label }: { assetId: string; label: string }) {
+  const assetUrl = getAssetUrl(assetId);
+
+  return assetUrl ? (
+    <img
+      className="h-5 w-5 rounded-sm object-contain"
+      data-asset-id={assetId}
+      src={assetUrl}
+      alt={label}
+      title={label}
+    />
+  ) : (
+    <span className="text-xs">{label}</span>
+  );
+}
+
+function StatusBadge({ assetId, label }: { assetId: string; label: string }) {
+  const assetUrl = getAssetUrl(assetId);
+
+  return (
+    <span
+      className="inline-flex items-center gap-1 bg-stone-800 px-2 py-1"
+      data-asset-id={assetId}
+    >
+      {assetUrl ? (
+        <img className="h-4 w-4 object-contain" src={assetUrl} alt={label} />
+      ) : null}
+      {label}
+    </span>
+  );
+}
+
+function weaponAssetId(bonus: WeaponBonus): string {
+  return `item_weapon_${bonus}`;
+}
+
+function spellAssetId(spellKind: SpellKind): string {
+  return `item_spell_${spellKind}`;
 }

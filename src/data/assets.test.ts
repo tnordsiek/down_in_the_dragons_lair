@@ -79,6 +79,10 @@ describe('asset manifest runtime mapping', () => {
     expect(getAssetUrl('token_treasure_chest')).toBe(
       '/assets/monsters/token_treasure_chest.png',
     );
+    expect(getAssetUrl('item_weapon_1')).toBe(
+      '/assets/items/item_weapon_1.png',
+    );
+    expect(getAssetUrl('status_curse')).toBe('/assets/status/status_curse.png');
     expect(getAssetUrl('tile_tunnel_cross')).toBe(
       '/assets/tiles/tile_tunnel_cross.png',
     );
