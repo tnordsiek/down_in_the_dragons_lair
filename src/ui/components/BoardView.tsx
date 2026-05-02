@@ -2,23 +2,29 @@ import { useEffect, useRef, useState } from 'react';
 
 import { getAssetUrl, useAsset } from '../../data/assets';
 import type {
+  BoardPosition,
   GameState,
   HeroId,
   MonsterId,
   RotationDirection,
+  TileSide,
   Token,
 } from '../../engine/core/types';
+import { getLegalKnownMoveDirections } from '../../engine/movement/movement';
+import { adjacentPosition } from '../../engine/movement/topology';
 import { heroName, monsterName } from '../labels';
 
 type BoardViewProps = {
   state: GameState;
   onConfirmPendingTile?: () => void;
+  onMove?: (direction: TileSide) => void;
   onRotatePendingTile?: (direction: RotationDirection) => void;
 };
 
 export function BoardView({
   state,
   onConfirmPendingTile,
+  onMove,
   onRotatePendingTile,
 }: BoardViewProps) {
   const gameTable = useAsset('bg_game_table');
@@ -47,6 +53,14 @@ export function BoardView({
   const boardMaxY = Math.max(...boardYValues, 2);
   const columns = boardMaxX - boardMinX + 1;
   const rows = boardMaxY - boardMinY + 1;
+  const activePlayer = state.players[state.activePlayerIndex];
+  const legalMoveTargets = new Map<string, TileSide>(
+    getLegalKnownMoveDirections(state).map((direction) => {
+      const targetPosition = adjacentPosition(activePlayer.position, direction);
+
+      return [positionKey(targetPosition), direction];
+    }),
+  );
   const cells = Array.from({ length: columns * rows }, (_, index) => {
     const boardX = boardMinX + (index % columns);
     const boardY = boardMinY + Math.floor(index / columns);
@@ -65,6 +79,83 @@ export function BoardView({
 
     return { boardX, boardY, tile, players, pendingTile };
   });
+  const renderCell = (cell: (typeof cells)[number]) => {
+    const moveDirection = legalMoveTargets.get(
+      positionKey({ boardX: cell.boardX, boardY: cell.boardY }),
+    );
+    const isClickableMoveTarget =
+      cell.tile !== undefined && moveDirection !== undefined;
+
+    return (
+      <div
+        key={`${cell.boardX},${cell.boardY}`}
+        className={`aspect-square min-h-16 border p-1 text-[0.65rem] ${
+          cell.tile || cell.pendingTile
+            ? 'border-stone-500 bg-stone-800'
+            : 'border-stone-800 bg-stone-900'
+        }`}
+      >
+        {cell.tile || cell.pendingTile ? (
+          <div
+            className="relative h-full overflow-hidden"
+            data-asset-id={
+              cell.tile
+                ? `tile_${cell.tile.blueprintId}`
+                : `tile_${cell.pendingTile!.blueprintId}`
+            }
+          >
+            <TileGraphic
+              assetId={
+                cell.tile
+                  ? `tile_${cell.tile.blueprintId}`
+                  : `tile_${cell.pendingTile!.blueprintId}`
+              }
+              blueprintId={
+                cell.tile
+                  ? cell.tile.blueprintId
+                  : cell.pendingTile!.blueprintId
+              }
+              rotation={
+                cell.tile?.rotation ?? cell.pendingTile!.previewRotation
+              }
+              isPending={Boolean(cell.pendingTile && !cell.tile)}
+            />
+            {cell.pendingTile && !cell.tile ? (
+              <PendingTileControls
+                canConfirm={cell.pendingTile.legalRotations.includes(
+                  cell.pendingTile.previewRotation,
+                )}
+                onConfirm={onConfirmPendingTile}
+                onRotate={onRotatePendingTile}
+              />
+            ) : null}
+            {cell.tile?.roomToken ? (
+              <RoomToken token={cell.tile.roomToken} />
+            ) : null}
+            {isClickableMoveTarget ? (
+              <button
+                aria-label={`Move to tile ${cell.boardX},${cell.boardY}`}
+                className="absolute inset-0 z-10 border border-amber-200/50 bg-amber-100/10 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.35)] transition-colors hover:bg-amber-100/16"
+                data-testid={`move-target-${cell.boardX}-${cell.boardY}`}
+                onClick={() => onMove?.(moveDirection)}
+                onPointerDown={(event) => event.stopPropagation()}
+                type="button"
+              >
+                <span className="sr-only">
+                  Move to {cell.boardX},{cell.boardY}
+                </span>
+              </button>
+            ) : null}
+            <div className="absolute bottom-1 left-1 right-1 flex flex-wrap gap-1">
+              {cell.players.map((player) => (
+                <HeroToken key={player.id} heroId={player.heroId} />
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
 
   const stopDragging = (
     pointerId?: number,
@@ -173,66 +264,16 @@ export function BoardView({
               gridTemplateColumns: `repeat(${columns}, minmax(4.5rem, 4.5rem))`,
             }}
           >
-            {cells.map((cell) => (
-              <div
-                key={`${cell.boardX},${cell.boardY}`}
-                className={`aspect-square min-h-16 border p-1 text-[0.65rem] ${
-                  cell.tile || cell.pendingTile
-                    ? 'border-stone-500 bg-stone-800'
-                    : 'border-stone-800 bg-stone-900'
-                }`}
-              >
-                {cell.tile || cell.pendingTile ? (
-                  <div
-                    className="relative h-full overflow-hidden"
-                    data-asset-id={
-                      cell.tile
-                        ? `tile_${cell.tile.blueprintId}`
-                        : `tile_${cell.pendingTile!.blueprintId}`
-                    }
-                  >
-                    <TileGraphic
-                      assetId={
-                        cell.tile
-                          ? `tile_${cell.tile.blueprintId}`
-                          : `tile_${cell.pendingTile!.blueprintId}`
-                      }
-                      blueprintId={
-                        cell.tile
-                          ? cell.tile.blueprintId
-                          : cell.pendingTile!.blueprintId
-                      }
-                      rotation={
-                        cell.tile?.rotation ?? cell.pendingTile!.previewRotation
-                      }
-                      isPending={Boolean(cell.pendingTile && !cell.tile)}
-                    />
-                    {cell.pendingTile && !cell.tile ? (
-                      <PendingTileControls
-                        canConfirm={cell.pendingTile.legalRotations.includes(
-                          cell.pendingTile.previewRotation,
-                        )}
-                        onConfirm={onConfirmPendingTile}
-                        onRotate={onRotatePendingTile}
-                      />
-                    ) : null}
-                    {cell.tile?.roomToken ? (
-                      <RoomToken token={cell.tile.roomToken} />
-                    ) : null}
-                    <div className="absolute bottom-1 left-1 right-1 flex flex-wrap gap-1">
-                      {cell.players.map((player) => (
-                        <HeroToken key={player.id} heroId={player.heroId} />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            ))}
+            {cells.map(renderCell)}
           </div>
         </div>
       </div>
     </section>
   );
+}
+
+function positionKey(position: BoardPosition): string {
+  return `${position.boardX},${position.boardY}`;
 }
 
 function PendingTileControls({

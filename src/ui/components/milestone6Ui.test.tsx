@@ -234,6 +234,40 @@ describe('Milestone 6 UI', () => {
     );
   });
 
+  it('highlights legal move targets on the board and moves by tile click', () => {
+    const state = createUiState({
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-north',
+          blueprintId: 'tunnel_straight',
+          rotation: 0,
+          boardX: 0,
+          boardY: -1,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+    const onMove = vi.fn();
+
+    render(<BoardView state={state} onMove={onMove} />);
+
+    const moveTarget = screen.getByRole('button', {
+      name: 'Move to tile 0,-1',
+    });
+
+    expect(moveTarget).toHaveAttribute('data-testid', 'move-target-0--1');
+    expect(
+      screen.queryByRole('button', { name: 'Move to tile 1,0' }),
+    ).toBeNull();
+
+    fireEvent.click(moveTarget);
+
+    expect(onMove).toHaveBeenCalledOnce();
+    expect(onMove).toHaveBeenCalledWith('A');
+  });
+
   it('supports mouse-wheel zoom and drag panning on the board', () => {
     const state = createUiState({
       board: [
