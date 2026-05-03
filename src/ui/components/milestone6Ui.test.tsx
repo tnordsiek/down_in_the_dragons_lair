@@ -89,7 +89,7 @@ describe('Milestone 6 UI', () => {
     expect(
       screen.getByRole('img', { name: 'room_corner preview' }),
     ).toHaveAttribute('style', expect.stringContaining('rotate(0deg)'));
-    expect(screen.getByText('Preview')).toBeInTheDocument();
+    expect(screen.queryByText('Preview')).toBeNull();
     expect(
       screen.getByRole('button', { name: 'Confirm tile rotation' }),
     ).toBeDisabled();
@@ -137,7 +137,7 @@ describe('Milestone 6 UI', () => {
     ).toBeEnabled();
   });
 
-  it('keeps pending tile rotation controls screen-sized while the board is zoomed', () => {
+  it('keeps pending tile rotation controls screen-sized and clickable while the board is zoomed', () => {
     const state = createUiState({
       phase: 'choose_pending_tile_rotation',
       pendingTile: {
@@ -150,8 +150,11 @@ describe('Milestone 6 UI', () => {
         skippedBlueprintIds: [],
       },
     });
+    const onRotatePendingTile = vi.fn();
 
-    render(<BoardView state={state} />);
+    render(
+      <BoardView state={state} onRotatePendingTile={onRotatePendingTile} />,
+    );
 
     const board = screen.getByLabelText('Dungeon board');
 
@@ -161,10 +164,17 @@ describe('Milestone 6 UI', () => {
 
     expect(
       screen.getByRole('button', { name: 'Rotate tile clockwise' }),
-    ).toHaveAttribute('style', expect.stringContaining('scale(0.25)'));
+    ).toHaveAttribute('style', expect.stringContaining('width: 6px'));
     expect(
       screen.getByRole('button', { name: 'Confirm tile rotation' }),
-    ).toHaveAttribute('style', expect.stringContaining('scale(0.25)'));
+    ).toHaveAttribute('style', expect.stringContaining('width: 6px'));
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Rotate tile clockwise' }),
+    );
+
+    expect(onRotatePendingTile).toHaveBeenCalledOnce();
+    expect(onRotatePendingTile).toHaveBeenCalledWith('clockwise');
   });
 
   it('shows combat math and loot state', () => {

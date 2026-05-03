@@ -319,29 +319,47 @@ function PendingTileControls({
   onRotate?: (direction: RotationDirection) => void;
   zoom: number;
 }) {
-  const controlScale = Number((1 / zoom).toFixed(3));
+  const arrowSize = Number((24 / zoom).toFixed(3));
+  const confirmSize = Number((24 / zoom).toFixed(3));
+  const edgeOffset = Number((0 / zoom).toFixed(3));
+  const controlFontSize = Number((12 / zoom).toFixed(3));
+  const confirmFontSize = Number((9 / zoom).toFixed(3));
 
   return (
-    <>
-      <div className="absolute left-1 top-1/2 -translate-y-1/2">
+    <div className="pointer-events-none absolute inset-0 z-20">
+      <div
+        className="absolute top-1/2 -translate-y-1/2"
+        style={{ left: `${edgeOffset}px` }}
+      >
         <button
           aria-label="Rotate tile counterclockwise"
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-stone-500 bg-stone-950/85 text-base font-semibold text-amber-100"
+          className="pointer-events-auto flex items-center justify-center rounded-full border border-stone-500 bg-stone-950/90 font-semibold text-amber-100"
           onClick={() => onRotate?.('counterclockwise')}
           onPointerDown={(event) => event.stopPropagation()}
-          style={{ transform: `scale(${controlScale})` }}
+          style={{
+            fontSize: `${controlFontSize}px`,
+            height: `${arrowSize}px`,
+            width: `${arrowSize}px`,
+          }}
           type="button"
         >
           {'<'}
         </button>
       </div>
-      <div className="absolute right-1 top-1/2 -translate-y-1/2">
+      <div
+        className="absolute top-1/2 -translate-y-1/2"
+        style={{ right: `${edgeOffset}px` }}
+      >
         <button
           aria-label="Rotate tile clockwise"
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-stone-500 bg-stone-950/85 text-base font-semibold text-amber-100"
+          className="pointer-events-auto flex items-center justify-center rounded-full border border-stone-500 bg-stone-950/90 font-semibold text-amber-100"
           onClick={() => onRotate?.('clockwise')}
           onPointerDown={(event) => event.stopPropagation()}
-          style={{ transform: `scale(${controlScale})` }}
+          style={{
+            fontSize: `${controlFontSize}px`,
+            height: `${arrowSize}px`,
+            width: `${arrowSize}px`,
+          }}
           type="button"
         >
           {'>'}
@@ -350,17 +368,21 @@ function PendingTileControls({
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <button
           aria-label="Confirm tile rotation"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-amber-300 bg-amber-300/90 text-[0.65rem] font-semibold uppercase tracking-wide text-stone-950 disabled:cursor-not-allowed disabled:border-stone-600 disabled:bg-stone-800 disabled:text-stone-400"
+          className="pointer-events-auto flex items-center justify-center rounded-full border border-amber-300 bg-amber-300/90 font-semibold uppercase tracking-wide text-stone-950 disabled:cursor-not-allowed disabled:border-stone-600 disabled:bg-stone-800 disabled:text-stone-400"
           disabled={!canConfirm}
           onClick={onConfirm}
           onPointerDown={(event) => event.stopPropagation()}
-          style={{ transform: `scale(${controlScale})` }}
+          style={{
+            fontSize: `${confirmFontSize}px`,
+            height: `${confirmSize}px`,
+            width: `${confirmSize}px`,
+          }}
           type="button"
         >
           OK
         </button>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -386,11 +408,6 @@ function TileGraphic({
         draggable={false}
         style={{ transform: `rotate(${rotation}deg)` }}
       />
-      {isPending ? (
-        <div className="absolute left-1 top-1 bg-stone-950/80 px-1 py-0.5 text-[0.6rem] font-mono uppercase tracking-wide text-amber-100">
-          Preview
-        </div>
-      ) : null}
     </div>
   ) : (
     <div className="flex h-full items-start justify-start p-1 font-mono text-stone-200">
