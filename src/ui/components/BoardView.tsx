@@ -1,3 +1,4 @@
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
 import { getAssetUrl, useAsset } from '../../data/assets';
@@ -165,6 +166,7 @@ export function BoardView({
                 className="absolute inset-0 z-10 border border-amber-200/50 bg-amber-100/10 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.35)] transition-colors hover:bg-amber-100/16"
                 data-testid={`move-target-${cell.boardX}-${cell.boardY}`}
                 onClick={() => onMove?.(moveDirection)}
+                onMouseDown={preventButtonFocus}
                 onPointerDown={(event) => event.stopPropagation()}
                 type="button"
               >
@@ -186,6 +188,7 @@ export function BoardView({
             data-testid={`explore-target-${cell.boardX}-${cell.boardY}`}
             data-asset-id="sfx_tile_place"
             onClick={() => onExplore?.(explorationDirection)}
+            onMouseDown={preventButtonFocus}
             onPointerDown={(event) => event.stopPropagation()}
             type="button"
           >
@@ -275,13 +278,14 @@ export function BoardView({
     <section className="min-w-0" data-asset-id={gameTable.assetId}>
       <div
         aria-label="Dungeon board"
-        className="overflow-hidden bg-stone-950 p-2"
+        className="select-none overflow-hidden bg-stone-950 p-2"
         ref={boardViewportRef}
         onPointerDown={(event) => {
           if (event.button !== 0) {
             return;
           }
 
+          event.preventDefault();
           dragStateRef.current = {
             pointerId: event.pointerId,
             startX: event.clientX,
@@ -347,6 +351,10 @@ function positionKey(position: BoardPosition): string {
   return `${position.boardX},${position.boardY}`;
 }
 
+function preventButtonFocus(event: ReactMouseEvent<HTMLButtonElement>) {
+  event.preventDefault();
+}
+
 function PendingTileControls({
   canConfirm,
   onConfirm,
@@ -374,6 +382,7 @@ function PendingTileControls({
           aria-label="Rotate tile counterclockwise"
           className="pointer-events-auto flex items-center justify-center rounded-full border border-stone-500 bg-stone-950/90 font-semibold text-amber-100"
           onClick={() => onRotate?.('counterclockwise')}
+          onMouseDown={preventButtonFocus}
           onPointerDown={(event) => event.stopPropagation()}
           style={{
             fontSize: `${controlFontSize}px`,
@@ -393,6 +402,7 @@ function PendingTileControls({
           aria-label="Rotate tile clockwise"
           className="pointer-events-auto flex items-center justify-center rounded-full border border-stone-500 bg-stone-950/90 font-semibold text-amber-100"
           onClick={() => onRotate?.('clockwise')}
+          onMouseDown={preventButtonFocus}
           onPointerDown={(event) => event.stopPropagation()}
           style={{
             fontSize: `${controlFontSize}px`,
@@ -410,6 +420,7 @@ function PendingTileControls({
           className="pointer-events-auto flex items-center justify-center rounded-full border border-amber-300 bg-amber-300/90 font-semibold uppercase tracking-wide text-stone-950 disabled:cursor-not-allowed disabled:border-stone-600 disabled:bg-stone-800 disabled:text-stone-400"
           disabled={!canConfirm}
           onClick={onConfirm}
+          onMouseDown={preventButtonFocus}
           onPointerDown={(event) => event.stopPropagation()}
           style={{
             fontSize: `${confirmFontSize}px`,
