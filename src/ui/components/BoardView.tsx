@@ -15,6 +15,7 @@ import {
   getLegalExplorationDirections,
   getLegalKnownMoveDirections,
 } from '../../engine/movement/movement';
+import { getReachableKnownMovePaths } from '../../engine/movement/reachable';
 import { adjacentPosition } from '../../engine/movement/topology';
 import { heroName, monsterName } from '../labels';
 
@@ -28,6 +29,7 @@ type BoardViewProps = {
   onConfirmPendingTile?: () => void;
   onExplore?: (direction: TileSide) => void;
   onMove?: (direction: TileSide) => void;
+  onMovePath?: (directions: TileSide[]) => void;
   onRotatePendingTile?: (direction: RotationDirection) => void;
 };
 
@@ -37,6 +39,7 @@ export function BoardView({
   onConfirmPendingTile,
   onExplore,
   onMove,
+  onMovePath,
   onRotatePendingTile,
 }: BoardViewProps) {
   const cellSizePx = 72;
@@ -62,13 +65,35 @@ export function BoardView({
     boardYValues.push(state.pendingTile.target.boardY);
   }
 
-  const boardMinX = Math.min(...boardXValues, -2);
-  const boardMaxX = Math.max(...boardXValues, 2);
-  const boardMinY = Math.min(...boardYValues, -2);
-  const boardMaxY = Math.max(...boardYValues, 2);
+  const tileMinX = Math.min(...boardXValues, -2);
+  const tileMaxX = Math.max(...boardXValues, 2);
+  const tileMinY = Math.min(...boardYValues, -2);
+  const tileMaxY = Math.max(...boardYValues, 2);
+  const playerOnMinXEdge = state.players.some(
+    (player) => player.position.boardX === tileMinX,
+  );
+  const playerOnMaxXEdge = state.players.some(
+    (player) => player.position.boardX === tileMaxX,
+  );
+  const playerOnMinYEdge = state.players.some(
+    (player) => player.position.boardY === tileMinY,
+  );
+  const playerOnMaxYEdge = state.players.some(
+    (player) => player.position.boardY === tileMaxY,
+  );
+  const boardMinX = playerOnMinXEdge ? tileMinX - 1 : tileMinX;
+  const boardMaxX = playerOnMaxXEdge ? tileMaxX + 1 : tileMaxX;
+  const boardMinY = playerOnMinYEdge ? tileMinY - 1 : tileMinY;
+  const boardMaxY = playerOnMaxYEdge ? tileMaxY + 1 : tileMaxY;
   const columns = boardMaxX - boardMinX + 1;
   const rows = boardMaxY - boardMinY + 1;
   const activePlayer = state.players[state.activePlayerIndex];
+  const reachableMoveTargets = new Map(
+    getReachableKnownMovePaths(state).map((target) => [
+      positionKey(target.position),
+      target.path,
+    ]),
+  );
   const legalMoveTargets = new Map<string, TileSide>(
     getLegalKnownMoveDirections(state).map((direction) => {
       const targetPosition = adjacentPosition(activePlayer.position, direction);
@@ -104,10 +129,13 @@ export function BoardView({
   const renderCell = (cell: (typeof cells)[number]) => {
     const cellPosition = { boardX: cell.boardX, boardY: cell.boardY };
     const cellKey = positionKey(cellPosition);
+    const movePath = reachableMoveTargets.get(cellKey);
     const moveDirection = legalMoveTargets.get(cellKey);
     const explorationDirection = legalExplorationTargets.get(cellKey);
     const isClickableMoveTarget =
-      cell.tile !== undefined && moveDirection !== undefined;
+      cell.tile !== undefined && movePath !== undefined;
+    const isExtendedMoveTarget =
+      isClickableMoveTarget && movePath !== undefined && movePath.length > 1;
     const isClickableExplorationTarget =
       cell.tile === undefined &&
       cell.pendingTile === undefined &&
@@ -163,9 +191,24 @@ export function BoardView({
             {isClickableMoveTarget ? (
               <button
                 aria-label={`Move to tile ${cell.boardX},${cell.boardY}`}
-                className="absolute inset-0 z-10 border border-amber-200/50 bg-amber-100/10 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.35)] transition-colors hover:bg-amber-100/16"
+                className={`absolute inset-0 z-10 border transition-colors ${
+                  isExtendedMoveTarget
+                    ? 'border-amber-100/60 bg-amber-200/14 shadow-[inset_0_0_0_1px_rgba(253,230,138,0.45)] hover:bg-amber-200/20'
+                    : 'border-amber-200/50 bg-amber-100/10 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.35)] hover:bg-amber-100/16'
+                }`}
                 data-testid={`move-target-${cell.boardX}-${cell.boardY}`}
-                onClick={() => onMove?.(moveDirection)}
+                onClick={() => {
+                  if (!movePath) {
+                    return;
+                  }
+
+                  if (movePath.length > 1) {
+                    onMovePath?.(movePath);
+                    return;
+                  }
+
+                  onMove?.(moveDirection ?? movePath[0]);
+                }}
                 onMouseDown={preventButtonFocus}
                 onPointerDown={(event) => event.stopPropagation()}
                 type="button"

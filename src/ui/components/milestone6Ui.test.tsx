@@ -308,6 +308,48 @@ describe('Milestone 6 UI', () => {
     expect(onMove).toHaveBeenCalledWith('A');
   });
 
+  it('shows reachable discovered tiles beyond one step and emits their move path', () => {
+    const state = createUiState({
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-east-1',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-east-2',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 2,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+      remainingSteps: 2,
+    });
+    const onMovePath = vi.fn();
+
+    render(<BoardView state={state} onMovePath={onMovePath} />);
+
+    const farMoveTarget = screen.getByRole('button', {
+      name: 'Move to tile 2,0',
+    });
+
+    expect(farMoveTarget).toBeInTheDocument();
+    expect(farMoveTarget).toHaveClass('border-amber-100/60');
+
+    fireEvent.click(farMoveTarget);
+
+    expect(onMovePath).toHaveBeenCalledOnce();
+    expect(onMovePath).toHaveBeenCalledWith(['B', 'B']);
+  });
+
   it('highlights legal exploration targets on the board and explores by tile click', () => {
     const state = createUiState();
     const onExplore = vi.fn();
@@ -327,6 +369,28 @@ describe('Milestone 6 UI', () => {
 
     expect(onExplore).toHaveBeenCalledOnce();
     expect(onExplore).toHaveBeenCalledWith('B');
+  });
+
+  it('extends the visible board by an unexplored row and column when a player reaches the edge', () => {
+    const state = createUiState({
+      board: [
+        {
+          ...baseBoard()[0],
+          boardX: 2,
+          boardY: 2,
+        },
+      ],
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? { ...player, position: { boardX: 2, boardY: 2 } }
+          : player,
+      ),
+    });
+
+    render(<BoardView state={state} />);
+
+    expect(screen.getByTestId('explore-target-3-2')).toBeInTheDocument();
+    expect(screen.getByTestId('explore-target-2-3')).toBeInTheDocument();
   });
 
   it('centers the board on requested positions and can reset to the start view', () => {

@@ -57,6 +57,11 @@ export function GameScreen() {
   const handleMove = (direction: TileSide) => {
     dispatch({ type: 'movePlayer', direction });
   };
+  const handleMovePath = (directions: TileSide[]) => {
+    for (const direction of directions) {
+      dispatch({ type: 'movePlayer', direction });
+    }
+  };
   const handleExplore = (direction: TileSide) => {
     dispatch({ type: 'declareExplorationDirection', direction });
   };
@@ -140,6 +145,7 @@ export function GameScreen() {
             onConfirmPendingTile={handleConfirmPendingTile}
             onExplore={handleExplore}
             onMove={handleMove}
+            onMovePath={handleMovePath}
             onRotatePendingTile={handleRotatePendingTile}
           />
         </div>
