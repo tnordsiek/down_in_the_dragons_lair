@@ -1,5 +1,6 @@
 import { getAssetUrl, useAsset } from '../../data/assets';
 import type {
+  BoardPosition,
   GameState,
   HeroId,
   SpellKind,
@@ -8,10 +9,11 @@ import type {
 import { heroName } from '../labels';
 
 type PlayerPanelProps = {
+  onFocusPosition?: (position: BoardPosition) => void;
   state: GameState;
 };
 
-export function PlayerPanel({ state }: PlayerPanelProps) {
+export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
   const panel = useAsset('ui_panel_frame');
 
   return (
@@ -35,7 +37,10 @@ export function PlayerPanel({ state }: PlayerPanelProps) {
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <HeroPortrait heroId={player.heroId} />
+                <HeroPortrait
+                  heroId={player.heroId}
+                  onFocusPosition={() => onFocusPosition?.(player.position)}
+                />
                 <div className="min-w-0">
                   <h3 className="font-semibold text-stone-100">
                     {heroName(player.heroId)}
@@ -109,15 +114,27 @@ export function PlayerPanel({ state }: PlayerPanelProps) {
   );
 }
 
-function HeroPortrait({ heroId }: { heroId: HeroId }) {
+function HeroPortrait({
+  heroId,
+  onFocusPosition,
+}: {
+  heroId: HeroId;
+  onFocusPosition?: () => void;
+}) {
   const assetId = `${heroId}_portrait`;
   const assetUrl = getAssetUrl(assetId);
   const label = heroName(heroId);
 
   return (
-    <div
+    <button
+      aria-label={`Focus ${label} on map`}
       className="flex h-12 w-12 shrink-0 items-center justify-center border border-stone-700 bg-stone-900 font-mono text-sm text-amber-100"
       data-asset-id={assetId}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        onFocusPosition?.();
+      }}
+      type="button"
     >
       {assetUrl ? (
         <img
@@ -128,7 +145,7 @@ function HeroPortrait({ heroId }: { heroId: HeroId }) {
       ) : (
         label.slice(0, 1)
       )}
-    </div>
+    </button>
   );
 }
 

@@ -18,6 +18,11 @@ import { adjacentPosition } from '../../engine/movement/topology';
 import { heroName, monsterName } from '../labels';
 
 type BoardViewProps = {
+  cameraRequest?: {
+    nonce: number;
+    position: BoardPosition;
+    resetZoom?: boolean;
+  };
   state: GameState;
   onConfirmPendingTile?: () => void;
   onExplore?: (direction: TileSide) => void;
@@ -26,12 +31,16 @@ type BoardViewProps = {
 };
 
 export function BoardView({
+  cameraRequest,
   state,
   onConfirmPendingTile,
   onExplore,
   onMove,
   onRotatePendingTile,
 }: BoardViewProps) {
+  const cellSizePx = 72;
+  const cellGapPx = 4;
+  const cellStridePx = cellSizePx + cellGapPx;
   const gameTable = useAsset('bg_game_table');
   const boardViewportRef = useRef<HTMLDivElement | null>(null);
   const [zoom, setZoom] = useState(1);
@@ -231,6 +240,36 @@ export function BoardView({
       boardViewport.removeEventListener('wheel', handleWheel);
     };
   }, []);
+
+  useEffect(() => {
+    if (!cameraRequest) {
+      return;
+    }
+
+    const boardViewport = boardViewportRef.current;
+
+    if (!boardViewport) {
+      return;
+    }
+
+    const targetZoom = cameraRequest.resetZoom ? 1 : zoom;
+    const centerX =
+      (cameraRequest.position.boardX - boardMinX) * cellStridePx +
+      cellSizePx / 2;
+    const centerY =
+      (cameraRequest.position.boardY - boardMinY) * cellStridePx +
+      cellSizePx / 2;
+    const nextPan = {
+      x: boardViewport.clientWidth / 2 - centerX * targetZoom,
+      y: boardViewport.clientHeight / 2 - centerY * targetZoom,
+    };
+
+    if (cameraRequest.resetZoom) {
+      setZoom(1);
+    }
+
+    setPan(nextPan);
+  }, [boardMinX, boardMinY, cameraRequest?.nonce, cellStridePx]);
 
   return (
     <section className="min-w-0" data-asset-id={gameTable.assetId}>

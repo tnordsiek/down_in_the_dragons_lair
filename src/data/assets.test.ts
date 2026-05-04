@@ -45,6 +45,7 @@ describe('asset manifest runtime mapping', () => {
     'hero_swordsman_token',
     'hero_oracle_token',
     'ui_logo_wordmark',
+    'ui_logo_header',
     'ui_icon_move',
     'ui_icon_attack',
     'ui_icon_heal',
@@ -86,6 +87,7 @@ describe('asset manifest runtime mapping', () => {
     expect(getAssetUrl('tile_tunnel_cross')).toBe(
       '/assets/tiles/tile_tunnel_cross.png',
     );
+    expect(getAssetUrl('ui_logo_header')).toBe('/assets/ui/ui_logo_header.png');
   });
 
   it('keeps asset IDs unique', () => {

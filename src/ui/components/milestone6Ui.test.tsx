@@ -329,6 +329,77 @@ describe('Milestone 6 UI', () => {
     expect(onExplore).toHaveBeenCalledWith('B');
   });
 
+  it('centers the board on requested positions and can reset to the start view', () => {
+    const state = createUiState({
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-east',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+    const { rerender } = render(
+      <BoardView
+        cameraRequest={{
+          nonce: 0,
+          position: { boardX: 0, boardY: 0 },
+          resetZoom: true,
+        }}
+        state={state}
+      />,
+    );
+
+    const board = screen.getByLabelText('Dungeon board');
+    const transformLayer = screen.getByTestId('board-transform-layer');
+
+    Object.defineProperty(board, 'clientWidth', {
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(board, 'clientHeight', {
+      configurable: true,
+      value: 600,
+    });
+
+    rerender(
+      <BoardView
+        cameraRequest={{
+          nonce: 1,
+          position: { boardX: 1, boardY: 0 },
+          resetZoom: false,
+        }}
+        state={state}
+      />,
+    );
+
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('translate(136px, 112px)'),
+    );
+
+    rerender(
+      <BoardView
+        cameraRequest={{
+          nonce: 2,
+          position: { boardX: 0, boardY: 0 },
+          resetZoom: true,
+        }}
+        state={state}
+      />,
+    );
+
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('translate(212px, 112px) scale(1)'),
+    );
+  });
+
   it('supports mouse-wheel zoom and drag panning on the board', () => {
     const state = createUiState({
       board: [
@@ -480,6 +551,26 @@ describe('Milestone 6 UI', () => {
     expect(
       screen.getByRole('button', { name: 'New Game' }),
     ).toBeInTheDocument();
+  });
+
+  it('focuses a player position when the portrait is right-clicked', () => {
+    const state = createUiState({
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? player
+          : { ...player, position: { boardX: 1, boardY: -1 } },
+      ),
+    });
+    const onFocusPosition = vi.fn();
+
+    render(<PlayerPanel state={state} onFocusPosition={onFocusPosition} />);
+
+    fireEvent.contextMenu(
+      screen.getByRole('button', { name: 'Focus Mage on map' }),
+    );
+
+    expect(onFocusPosition).toHaveBeenCalledOnce();
+    expect(onFocusPosition).toHaveBeenCalledWith({ boardX: 0, boardY: 0 });
   });
 });
 

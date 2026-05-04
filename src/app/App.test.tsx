@@ -35,6 +35,8 @@ describe('App', () => {
         name: 'Wortmarke oder kompaktes Logo fuer den Startscreen',
       }).length,
     ).toBeGreaterThan(0);
+    expect(screen.getByText('v1.0')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Imprint' })).toBeInTheDocument();
   });
 
   it('starts a game and shows board actions', () => {
@@ -49,6 +51,34 @@ describe('App', () => {
       screen.getByRole('heading', { name: 'Actions' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Players')).toBeInTheDocument();
+    expect(screen.getByText('v1.0')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Imprint' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Center Map' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', { name: "Down in the Dragon's Lair" }),
+    ).toBeInTheDocument();
+  });
+
+  it('opens and closes the imprint layer from the footer', () => {
+    render(<App />);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Imprint' }));
+    });
+
+    expect(screen.getByText('Torsten Nordsiek')).toBeInTheDocument();
+    expect(screen.getByText('Taigaweg 4')).toBeInTheDocument();
+    expect(screen.getByText('33739 Bielefeld')).toBeInTheDocument();
+    expect(screen.getByText('Kontakt +49 (0)521 1648447')).toBeInTheDocument();
+    expect(screen.getByText('E-Mail: tnordsiek@web.de')).toBeInTheDocument();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Close imprint' }));
+    });
+
+    expect(screen.queryByText('Torsten Nordsiek')).toBeNull();
   });
 
   it('uses a full-width game layout with a fixed right sidebar', () => {
@@ -62,6 +92,9 @@ describe('App', () => {
     const layout = board.closest('main')?.firstElementChild;
     const actionsHeading = screen.getByRole('heading', { name: 'Actions' });
     const sidebar = actionsHeading.closest('aside');
+    const header = screen
+      .getByRole('img', { name: "Down in the Dragon's Lair" })
+      .closest('header');
 
     expect(layout).toHaveClass(
       'grid',
@@ -70,6 +103,7 @@ describe('App', () => {
     );
     expect(layout).not.toHaveClass('max-w-7xl');
     expect(sidebar).toHaveClass('lg:w-[22rem]', 'lg:justify-self-end');
+    expect(header).toHaveClass('h-[120px]');
   });
 
   it('resumes a saved game from the setup flow', () => {

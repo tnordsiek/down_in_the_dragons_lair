@@ -2,6 +2,7 @@ import { getAssetUrl, useAsset } from '../../data/assets';
 import { heroDefinitions, heroIds } from '../../data/heroes';
 import type { HeroId } from '../../engine/core/types';
 import { useSetupStore } from '../../state/setupStore';
+import { FooterMeta } from '../components/FooterMeta';
 
 export function StartScreen() {
   const heroId = useSetupStore((state) => state.selectedHeroId);
@@ -141,6 +142,7 @@ export function StartScreen() {
           <p>Graphics powered by Gemini</p>
           <p>Concept and AI Direction by fnord GAMES (2026)</p>
         </div>
+        <FooterMeta align="left" />
       </section>
     </main>
   );

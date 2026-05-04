@@ -475,6 +475,17 @@
       "spec": "Eigenstaendiges Logo-Asset, in V1 als Platzhalter darstellbar"
     },
     {
+      "assetId": "ui_logo_header",
+      "category": "ui",
+      "purpose": "Zentrales Header-Logo fuer die Spielansicht",
+      "usedBy": ["game_screen", "header"],
+      "format": "png",
+      "src": "assets/ui/ui_logo_header.png",
+      "placeholderAllowed": false,
+      "replaceableAfterV1": true,
+      "spec": "Breites Logo fuer den festen Spiel-Header"
+    },
+    {
       "assetId": "ui_button_primary",
       "category": "ui",
       "purpose": "Primaerer Button-Stil",
