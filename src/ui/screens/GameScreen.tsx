@@ -101,7 +101,7 @@ export function GameScreen() {
   return (
     <main className="relative min-h-screen bg-stone-950 text-stone-100">
       <div className="grid min-h-screen w-full gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="grid min-w-0 gap-4">
+        <div className="flex min-w-0 flex-col gap-4">
           <header className="grid h-[120px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 border-b border-stone-800 pb-3">
             <div className="min-w-0">
               <p className="text-sm text-stone-400">{activePlayer.id}</p>

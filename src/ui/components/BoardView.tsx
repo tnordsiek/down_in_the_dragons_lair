@@ -218,11 +218,13 @@ export function BoardView({
                 </span>
               </button>
             ) : null}
-            <div className="absolute bottom-1 left-1 right-1 flex flex-wrap gap-1">
-              {cell.players.map((player) => (
-                <HeroToken key={player.id} heroId={player.heroId} />
-              ))}
-            </div>
+            {cell.pendingTile && !cell.tile ? null : (
+              <div className="absolute bottom-1 left-1 right-1 flex flex-wrap gap-1">
+                {cell.players.map((player) => (
+                  <HeroToken key={player.id} heroId={player.heroId} />
+                ))}
+              </div>
+            )}
           </div>
         ) : isClickableExplorationTarget ? (
           <button

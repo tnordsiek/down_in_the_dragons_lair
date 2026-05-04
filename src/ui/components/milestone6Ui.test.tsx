@@ -135,6 +135,12 @@ describe('Milestone 6 UI', () => {
     expect(
       screen.getByRole('button', { name: 'Confirm tile rotation' }),
     ).toBeEnabled();
+    expect(
+      screen
+        .getByRole('img', { name: 'room_corner preview' })
+        .closest('[data-asset-id="tile_room_corner"]')
+        ?.querySelector('[data-asset-id="hero_mage_token"]'),
+    ).toBeNull();
   });
 
   it('keeps pending tile rotation controls screen-sized and clickable while the board is zoomed', () => {
