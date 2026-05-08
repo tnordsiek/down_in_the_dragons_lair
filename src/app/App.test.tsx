@@ -106,6 +106,24 @@ describe('App', () => {
     expect(header).toHaveClass('h-[120px]');
   });
 
+  it('stretches the board area to fill the available game viewport height', () => {
+    render(<App />);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
+    });
+
+    const board = screen.getByLabelText('Dungeon board');
+    const boardSection = board.closest('[data-asset-id="bg_game_table"]');
+    const contentColumn = boardSection?.parentElement;
+    const main = board.closest('main');
+
+    expect(main).toHaveClass('lg:h-screen');
+    expect(contentColumn).toHaveClass('min-h-0', 'flex-col');
+    expect(boardSection).toHaveClass('flex', 'min-h-0', 'flex-1');
+    expect(board).toHaveClass('h-full', 'flex-1');
+  });
+
   it('resumes a saved game from the setup flow', () => {
     render(<App />);
 

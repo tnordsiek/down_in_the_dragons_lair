@@ -320,10 +320,13 @@ export function BoardView({
   }, [boardMinX, boardMinY, cameraRequest?.nonce, cellStridePx]);
 
   return (
-    <section className="min-w-0" data-asset-id={gameTable.assetId}>
+    <section
+      className="flex min-h-0 min-w-0 flex-1"
+      data-asset-id={gameTable.assetId}
+    >
       <div
         aria-label="Dungeon board"
-        className="select-none overflow-hidden bg-stone-950 p-2"
+        className="h-full min-h-[24rem] flex-1 select-none overflow-hidden bg-stone-950 p-2"
         ref={boardViewportRef}
         onPointerDown={(event) => {
           if (event.button !== 0) {
