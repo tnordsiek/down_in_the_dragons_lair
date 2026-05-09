@@ -3,7 +3,7 @@
 Browserbasiertes Dungeon-Brettspiel mit eigener IP und einer klar definierten, projektspezifischen Spielmechanik für V1.
 
 ## Ziel des Projekts
-Dieses Repository definiert die fachliche und technische Grundlage, auf der Codex die erste spielbare Version implementieren soll.
+Dieses Repository enthaelt die fachliche und technische Grundlage der umgesetzten V1 sowie die begleitende Dokumentation fuer Pflege, Tests und Post-V1-Weiterentwicklung.
 
 ## Produktkern
 - Einzelspieler im Browser
@@ -28,7 +28,7 @@ Dieses Repository definiert die fachliche und technische Grundlage, auf der Code
 ## Dokumentenrollen
 - `README.md` ist Einstieg und Orientierung, nicht die führende Spezifikation.
 - `PRD.md` beschreibt das Produkt-`was`.
-- `IMPLEMENTATION_PLAN.md` beschreibt das Umsetzungs-`wie` und die Reihenfolge.
+- `IMPLEMENTATION_PLAN.md` beschreibt den bereinigten Post-V1-Planungsstand; der urspruengliche V1-Umsetzungsplan gilt als abgeschlossen.
 - Bei Regeldetails entscheiden `GAME_RULES.md`, `GAME_DATA_MODEL.md` und `RULE_EDGE_CASES.md`.
 - Für IP- und Quellenfragen gilt `LEGAL_AND_IP_NOTES.md`.
 - Für austauschbare Grafik-, UI- und Audioelemente gilt `ASSET_SPEC.md`.

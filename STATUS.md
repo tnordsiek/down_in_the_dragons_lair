@@ -38,4 +38,4 @@ Update it when:
 
 ## Notes
 - Update this file before stopping if work is incomplete and not yet committed.
-- Repository documentation is prepared; no documented blocker prevents starting implementation.
+- The V1 implementation is complete; use this file only for post-V1 progress or new blockers.
