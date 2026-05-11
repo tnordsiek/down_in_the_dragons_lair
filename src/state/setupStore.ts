@@ -4,7 +4,7 @@ import { applyGameAction } from '../engine/core/actions';
 import type { GameAction, GameState, HeroId } from '../engine/core/types';
 import {
   getLegalExplorationDirections,
-  getLegalKnownMoveDirections,
+  getLegalKnownMoves,
 } from '../engine/movement/movement';
 import {
   clearPersistedGameState,
@@ -152,7 +152,7 @@ function appendUiEvent(state: GameState, message: string): GameState {
 function actionMessage(action: GameAction): string {
   switch (action.type) {
     case 'movePlayer':
-      return `Moved ${action.direction}`;
+      return `Moved to ${action.target.boardX},${action.target.boardY}`;
     case 'declareExplorationDirection':
       return `Explored ${action.direction}`;
     case 'rotatePendingTilePreview':
@@ -178,7 +178,7 @@ function actionMessage(action: GameAction): string {
 
 export function getUiLegalActions(state: GameState) {
   return {
-    knownMoveDirections: getLegalKnownMoveDirections(state),
+    knownMoves: getLegalKnownMoves(state),
     explorationDirections: getLegalExplorationDirections(state),
   };
 }

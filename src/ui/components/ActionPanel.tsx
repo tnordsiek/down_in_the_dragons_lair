@@ -1,12 +1,13 @@
 import { monsterDefinitions } from '../../data/monsters';
+import { tileBlueprints } from '../../data/tiles';
 import { getTileAt } from '../../engine/core/board';
-import type { GameState, TileSide } from '../../engine/core/types';
+import type { BoardPosition, GameState, TileSide } from '../../engine/core/types';
 import { getUiLegalActions } from '../../state/setupStore';
 import { monsterName, sideLabels } from '../labels';
 
 type ActionPanelProps = {
   state: GameState;
-  onMove: (direction: TileSide) => void;
+  onMove: (target: BoardPosition) => void;
   onExplore: (direction: TileSide) => void;
   onResolveRoom: () => void;
   onResolveCombat: () => void;
@@ -26,6 +27,15 @@ export function ActionPanel({
   const legalActions = getUiLegalActions(state);
   const activePlayer = state.players[state.activePlayerIndex];
   const activeTile = getTileAt(state.board, activePlayer.position);
+  const isOnTeleportTile =
+    activeTile !== undefined &&
+    tileBlueprints[activeTile.blueprintId].category === 'teleport';
+  const adjacentMoves = legalActions.knownMoves.filter(
+    (move) => move.direction !== undefined,
+  );
+  const portalMoves = legalActions.knownMoves.filter(
+    (move) => move.kind === 'teleport',
+  );
   const combatMonster = state.combat
     ? monsterDefinitions[state.combat.monsterId]
     : undefined;
@@ -120,21 +130,50 @@ export function ActionPanel({
       ) : null}
 
       <div className="mt-4 grid gap-3">
-        {legalActions.knownMoveDirections.length > 0 ? (
+        {adjacentMoves.length > 0 ? (
           <div>
             <h3 className="text-xs uppercase tracking-wide text-stone-400">
               Move
             </h3>
             <div className="mt-2 flex flex-wrap gap-2">
-              {legalActions.knownMoveDirections.map((direction) => (
+              {adjacentMoves.map((move) => (
                 <button
-                  key={direction}
+                  key={`${move.target.boardX},${move.target.boardY}`}
                   className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
-                  onClick={() => onMove(direction)}
+                  onClick={() => onMove(move.target)}
                 >
-                  {sideLabels[direction]}
+                  {sideLabels[move.direction!]}
                 </button>
               ))}
+            </div>
+          </div>
+        ) : null}
+
+        {isOnTeleportTile ? (
+          <div>
+            <h3 className="text-xs uppercase tracking-wide text-stone-400">
+              Portal
+            </h3>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {portalMoves.length > 0 ? (
+                portalMoves.map((move) => (
+                  <button
+                    key={`portal-${move.target.boardX},${move.target.boardY}`}
+                    className="border border-sky-500 px-3 py-2 text-sm text-sky-100"
+                    onClick={() => onMove(move.target)}
+                  >
+                    {move.target.boardX},{move.target.boardY}
+                  </button>
+                ))
+              ) : (
+                <button
+                  className="cursor-not-allowed border border-stone-700 px-3 py-2 text-sm text-stone-500"
+                  disabled
+                  type="button"
+                >
+                  No known portal target
+                </button>
+              )}
             </div>
           </div>
         ) : null}

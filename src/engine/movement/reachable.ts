@@ -1,10 +1,10 @@
 import { positionKey } from '../core/board';
-import type { BoardPosition, GameState, TileSide } from '../core/types';
+import type { BoardPosition, GameState, KnownMove } from '../core/types';
 import { moveActivePlayer } from './performMove';
-import { getLegalKnownMoveDirections } from './movement';
+import { getLegalKnownMoves } from './movement';
 
 export type ReachableKnownMove = {
-  path: TileSide[];
+  path: KnownMove[];
   position: BoardPosition;
 };
 
@@ -16,7 +16,7 @@ export function getReachableKnownMovePaths(
   }
 
   const origin = state.players[state.activePlayerIndex].position;
-  const queue: Array<{ path: TileSide[]; state: GameState }> = [
+  const queue: Array<{ path: KnownMove[]; state: GameState }> = [
     { path: [], state },
   ];
   const visited = new Set<string>([positionKey(origin)]);
@@ -24,13 +24,13 @@ export function getReachableKnownMovePaths(
 
   while (queue.length > 0) {
     const current = queue.shift()!;
-    const legalDirections = getLegalKnownMoveDirections(current.state);
+    const legalMoves = getLegalKnownMoves(current.state);
 
-    for (const direction of legalDirections) {
-      const nextState = moveActivePlayer(current.state, direction);
+    for (const move of legalMoves) {
+      const nextState = moveActivePlayer(current.state, move.target);
       const nextPosition =
         nextState.players[nextState.activePlayerIndex].position;
-      const nextPath = [...current.path, direction];
+      const nextPath = [...current.path, move];
       const key = positionKey(nextPosition);
 
       if (!reachableMoves.has(key)) {

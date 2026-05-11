@@ -6,6 +6,7 @@ import type {
   BoardPosition,
   GameState,
   HeroId,
+  KnownMove,
   MonsterId,
   RotationDirection,
   TileSide,
@@ -13,7 +14,7 @@ import type {
 } from '../../engine/core/types';
 import {
   getLegalExplorationDirections,
-  getLegalKnownMoveDirections,
+  getLegalKnownMoves,
 } from '../../engine/movement/movement';
 import { getReachableKnownMovePaths } from '../../engine/movement/reachable';
 import { adjacentPosition } from '../../engine/movement/topology';
@@ -28,8 +29,8 @@ type BoardViewProps = {
   state: GameState;
   onConfirmPendingTile?: () => void;
   onExplore?: (direction: TileSide) => void;
-  onMove?: (direction: TileSide) => void;
-  onMovePath?: (directions: TileSide[]) => void;
+  onMove?: (target: BoardPosition) => void;
+  onMovePath?: (targets: BoardPosition[]) => void;
   onRotatePendingTile?: (direction: RotationDirection) => void;
 };
 
@@ -94,12 +95,11 @@ export function BoardView({
       target.path,
     ]),
   );
-  const legalMoveTargets = new Map<string, TileSide>(
-    getLegalKnownMoveDirections(state).map((direction) => {
-      const targetPosition = adjacentPosition(activePlayer.position, direction);
-
-      return [positionKey(targetPosition), direction];
-    }),
+  const legalMoveTargets = new Map<string, KnownMove>(
+    getLegalKnownMoves(state).map((move) => [
+      positionKey(move.target),
+      move,
+    ]),
   );
   const legalExplorationTargets = new Map<string, TileSide>(
     getLegalExplorationDirections(state).map((direction) => {
@@ -130,7 +130,7 @@ export function BoardView({
     const cellPosition = { boardX: cell.boardX, boardY: cell.boardY };
     const cellKey = positionKey(cellPosition);
     const movePath = reachableMoveTargets.get(cellKey);
-    const moveDirection = legalMoveTargets.get(cellKey);
+    const moveTarget = legalMoveTargets.get(cellKey);
     const explorationDirection = legalExplorationTargets.get(cellKey);
     const isClickableMoveTarget =
       cell.tile !== undefined && movePath !== undefined;
@@ -203,11 +203,11 @@ export function BoardView({
                   }
 
                   if (movePath.length > 1) {
-                    onMovePath?.(movePath);
+                    onMovePath?.(movePath.map((move) => move.target));
                     return;
                   }
 
-                  onMove?.(moveDirection ?? movePath[0]);
+                  onMove?.(moveTarget?.target ?? movePath[0].target);
                 }}
                 onMouseDown={preventButtonFocus}
                 onPointerDown={(event) => event.stopPropagation()}
@@ -317,7 +317,7 @@ export function BoardView({
     }
 
     setPan(nextPan);
-  }, [boardMinX, boardMinY, cameraRequest?.nonce, cellStridePx]);
+  }, [boardMinX, boardMinY, cameraRequest, cellStridePx, zoom]);
 
   return (
     <section

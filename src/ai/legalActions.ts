@@ -1,13 +1,8 @@
 import { getTileAt } from '../engine/core/board';
-import type {
-  BoardPosition,
-  GameAction,
-  GameState,
-  Player,
-} from '../engine/core/types';
+import type { BoardPosition, GameAction, GameState, Player } from '../engine/core/types';
 import {
   getLegalExplorationDirections,
-  getLegalKnownMoveDirections,
+  getLegalKnownMoves,
 } from '../engine/movement/movement';
 import { adjacentPosition } from '../engine/movement/topology';
 import { getDiscoveredHealingPositions } from '../engine/rules/abilities';
@@ -65,9 +60,9 @@ export function getLegalAiActions(state: GameState): GameAction[] {
 
   if (state.phase === 'turn_start' || state.phase === 'await_move') {
     actions.push(
-      ...getLegalKnownMoveDirections(state).map((direction) => ({
+      ...getLegalKnownMoves(state).map((move) => ({
         type: 'movePlayer' as const,
-        direction,
+        target: move.target,
       })),
       ...getLegalExplorationDirections(state).map((direction) => ({
         type: 'declareExplorationDirection' as const,
@@ -140,8 +135,9 @@ export function getActionTargetPosition(
     return undefined;
   }
 
-  return adjacentPosition(
-    state.players[state.activePlayerIndex].position,
-    action.direction,
-  );
+  if (action.type === 'movePlayer') {
+    return action.target;
+  }
+
+  return adjacentPosition(state.players[state.activePlayerIndex].position, action.direction);
 }

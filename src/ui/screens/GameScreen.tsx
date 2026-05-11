@@ -54,12 +54,12 @@ export function GameScreen() {
 
   const activePlayer = state.players[state.activePlayerIndex];
 
-  const handleMove = (direction: TileSide) => {
-    dispatch({ type: 'movePlayer', direction });
+  const handleMove = (target: BoardPosition) => {
+    dispatch({ type: 'movePlayer', target });
   };
-  const handleMovePath = (directions: TileSide[]) => {
-    for (const direction of directions) {
-      dispatch({ type: 'movePlayer', direction });
+  const handleMovePath = (targets: BoardPosition[]) => {
+    for (const target of targets) {
+      dispatch({ type: 'movePlayer', target });
     }
   };
   const handleExplore = (direction: TileSide) => {

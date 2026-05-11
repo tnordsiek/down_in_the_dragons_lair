@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import type { PlacedTile } from '../core/types';
+import type { GameState, PlacedTile } from '../core/types';
 import { createNewGame } from '../setup/createGame';
 import {
   getLegalExplorationDirections,
+  getLegalKnownMoves,
   getLegalKnownMoveDirections,
 } from './movement';
 import { moveActivePlayer } from './performMove';
+import { getReachableKnownMovePaths } from './reachable';
 
 describe('movement rules', () => {
   it('exposes unexplored directions from the start tile before drawing', () => {
@@ -40,11 +42,125 @@ describe('movement rules', () => {
     };
 
     expect(getLegalKnownMoveDirections(withKnownNeighbor)).toContain('A');
-    const movedState = moveActivePlayer(withKnownNeighbor, 'A');
+    const movedState = moveActivePlayer(withKnownNeighbor, {
+      boardX: 0,
+      boardY: -1,
+    });
 
     expect(movedState.players[movedState.activePlayerIndex].position).toEqual({
       boardX: 0,
       boardY: -1,
     });
   });
+
+  it('allows teleporting to another discovered portal for one step', () => {
+    const state = createPortalState({
+      remainingSteps: 2,
+    });
+
+    expect(getLegalKnownMoves(state)).toContainEqual({
+      target: { boardX: 2, boardY: 0 },
+      kind: 'teleport',
+    });
+
+    const movedState = moveActivePlayer(state, { boardX: 2, boardY: 0 });
+
+    expect(movedState.players[movedState.activePlayerIndex].position).toEqual({
+      boardX: 2,
+      boardY: 0,
+    });
+    expect(movedState.remainingSteps).toBe(1);
+    expect(movedState.phase).toBe('await_move');
+  });
+
+  it('does not offer teleporting without another discovered portal', () => {
+    const state = createPortalState({
+      board: createPortalBoard().slice(0, 2),
+    });
+
+    expect(
+      getLegalKnownMoves(state).some((move) => move.kind === 'teleport'),
+    ).toBe(false);
+  });
+
+  it('includes teleport steps in reachable known move paths', () => {
+    const state = createPortalState({
+      remainingSteps: 2,
+      board: [
+        ...createPortalBoard(),
+        {
+          tileInstanceId: 'tile-east-of-portal',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 3,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+
+    const reachableMoves = getReachableKnownMovePaths(state);
+    const farTarget = reachableMoves.find(
+      (move) => move.position.boardX === 3 && move.position.boardY === 0,
+    );
+
+    expect(farTarget?.path.map((step) => step.kind)).toEqual([
+      'teleport',
+      'adjacent',
+    ]);
+  });
 });
+
+function createPortalState(overrides: Partial<GameState> = {}): GameState {
+  const state = createNewGame({
+    humanHeroId: 'hero_mage',
+    aiCount: 1,
+    seed: 'portal-move-seed',
+  });
+
+  return {
+    ...state,
+    phase: 'await_move',
+    activePlayerIndex: 0,
+    players: state.players.map((player, index) =>
+      index === 0
+        ? { ...player, position: { boardX: 0, boardY: 0 } }
+        : player,
+    ),
+    board: createPortalBoard(),
+    ...overrides,
+  };
+}
+
+function createPortalBoard(): PlacedTile[] {
+  return [
+    {
+      tileInstanceId: 'tile-origin-portal',
+      blueprintId: 'teleport_straight',
+      rotation: 90,
+      boardX: 0,
+      boardY: 0,
+      discovered: true,
+      looseItems: [],
+    },
+    {
+      tileInstanceId: 'tile-west',
+      blueprintId: 'tunnel_straight',
+      rotation: 90,
+      boardX: -1,
+      boardY: 0,
+      discovered: true,
+      looseItems: [],
+    },
+    {
+      tileInstanceId: 'tile-target-portal',
+      blueprintId: 'teleport_straight',
+      rotation: 90,
+      boardX: 2,
+      boardY: 0,
+      discovered: true,
+      looseItems: [],
+    },
+  ];
+}

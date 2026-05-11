@@ -31,7 +31,7 @@ export function applyGameAction(
 
   switch (action.type) {
     case 'movePlayer':
-      return moveActivePlayer(state, action.direction);
+      return moveActivePlayer(state, action.target);
     case 'declareExplorationDirection':
       return drawPendingTileForExploration(state, action.direction);
     case 'rotatePendingTilePreview':

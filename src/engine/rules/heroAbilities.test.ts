@@ -223,7 +223,7 @@ describe('hero_thief abilities', () => {
       targetHasMonster: true,
       targetConnects: true,
     });
-    const moved = moveActivePlayer(moveState, 'A');
+    const moved = moveActivePlayer(moveState, { boardX: 0, boardY: -1 });
 
     expect(moved.phase).toBe('await_move');
     expect(moved.combat).toBeUndefined();
@@ -251,7 +251,10 @@ describe('hero_thief abilities', () => {
       }),
       (player) => ({ ...player, isCursed: true }),
     );
-    const moved = moveActivePlayer(cursedMoveState, 'A');
+    const moved = moveActivePlayer(cursedMoveState, {
+      boardX: 0,
+      boardY: -1,
+    });
 
     expect(moved.phase).toBe('combat');
   });

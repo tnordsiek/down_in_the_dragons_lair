@@ -61,6 +61,12 @@ export interface BoardPosition {
   boardY: number;
 }
 
+export interface KnownMove {
+  target: BoardPosition;
+  direction?: TileSide;
+  kind: 'adjacent' | 'teleport';
+}
+
 export interface Player {
   id: string;
   kind: 'human' | 'ai';
@@ -210,7 +216,7 @@ export type StartGameAction = {
 
 export type MovePlayerAction = {
   type: 'movePlayer';
-  direction: TileSide;
+  target: BoardPosition;
 };
 
 export type DeclareExplorationDirectionAction = {

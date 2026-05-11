@@ -311,7 +311,7 @@ describe('Milestone 6 UI', () => {
     fireEvent.click(moveTarget);
 
     expect(onMove).toHaveBeenCalledOnce();
-    expect(onMove).toHaveBeenCalledWith('A');
+    expect(onMove).toHaveBeenCalledWith({ boardX: 0, boardY: -1 });
   });
 
   it('shows reachable discovered tiles beyond one step and emits their move path', () => {
@@ -353,7 +353,72 @@ describe('Milestone 6 UI', () => {
     fireEvent.click(farMoveTarget);
 
     expect(onMovePath).toHaveBeenCalledOnce();
-    expect(onMovePath).toHaveBeenCalledWith(['B', 'B']);
+    expect(onMovePath).toHaveBeenCalledWith([
+      { boardX: 1, boardY: 0 },
+      { boardX: 2, boardY: 0 },
+    ]);
+  });
+
+  it('shows portal actions disabled without another discovered portal target', () => {
+    const state = createUiState({
+      board: [
+        {
+          tileInstanceId: 'tile-portal-origin',
+          blueprintId: 'teleport_straight',
+          rotation: 90,
+          boardX: 0,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+
+    render(<ActionPanel state={state} {...noopActions} />);
+
+    expect(screen.getByText('Portal')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'No known portal target' }),
+    ).toBeDisabled();
+  });
+
+  it('shows portal actions and board targets when another portal is discovered', () => {
+    const state = createUiState({
+      board: [
+        {
+          tileInstanceId: 'tile-portal-origin',
+          blueprintId: 'teleport_straight',
+          rotation: 90,
+          boardX: 0,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-portal-target',
+          blueprintId: 'teleport_straight',
+          rotation: 90,
+          boardX: 2,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+    const onMove = vi.fn();
+
+    render(
+      <>
+        <ActionPanel state={state} {...noopActions} onMove={onMove} />
+        <BoardView state={state} onMove={onMove} />
+      </>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '2,0' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Move to tile 2,0' }));
+
+    expect(onMove).toHaveBeenNthCalledWith(1, { boardX: 2, boardY: 0 });
+    expect(onMove).toHaveBeenNthCalledWith(2, { boardX: 2, boardY: 0 });
   });
 
   it('highlights legal exploration targets on the board and explores by tile click', () => {

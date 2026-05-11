@@ -1,23 +1,30 @@
-import { getTileAt } from '../core/board';
-import type { GameState, MonsterId, TileSide } from '../core/types';
+import { getTileAt, samePosition } from '../core/board';
+import type { BoardPosition, GameState, MonsterId } from '../core/types';
 import { hasActiveHeroAbility } from '../rules/abilities';
-import { getLegalKnownMoveDirections } from './movement';
-import { adjacentPosition } from './topology';
+import { getLegalKnownMoves } from './movement';
 
 export function moveActivePlayer(
   state: GameState,
-  direction: TileSide,
+  target: BoardPosition,
 ): GameState {
-  if (!getLegalKnownMoveDirections(state).includes(direction)) {
-    throw new Error(`Illegal move direction: ${direction}`);
+  const legalMove = getLegalKnownMoves(state).find((move) =>
+    samePosition(move.target, target),
+  );
+
+  if (!legalMove) {
+    throw new Error(
+      `Illegal move target: ${target.boardX},${target.boardY}`,
+    );
   }
 
   const activePlayer = state.players[state.activePlayerIndex];
-  const targetPosition = adjacentPosition(activePlayer.position, direction);
+  const targetPosition = legalMove.target;
   const targetTile = getTileAt(state.board, targetPosition);
 
   if (!targetTile) {
-    throw new Error(`Known move target is missing: ${direction}`);
+    throw new Error(
+      `Known move target is missing: ${targetPosition.boardX},${targetPosition.boardY}`,
+    );
   }
 
   const remainingSteps = state.remainingSteps - 1;
