@@ -10,10 +10,14 @@ import { EventLog } from './EventLog';
 import { PlayerPanel } from './PlayerPanel';
 
 const noopActions = {
+  onBeginLoot: vi.fn(),
+  onLeaveLoot: vi.fn(),
   onMove: vi.fn(),
   onExplore: vi.fn(),
   onResolveRoom: vi.fn(),
   onResolveCombat: vi.fn(),
+  onSwapLoot: vi.fn(),
+  onTakeLoot: vi.fn(),
   onOpenChest: vi.fn(),
   onEndTurn: vi.fn(),
 };
@@ -237,7 +241,7 @@ describe('Milestone 6 UI', () => {
       'src',
       '/assets/items/item_weapon_2.png',
     );
-    expect(screen.getByRole('img', { name: 'flame spell' })).toHaveAttribute(
+    expect(screen.getByRole('img', { name: 'Flame spell' })).toHaveAttribute(
       'src',
       '/assets/items/item_spell_flame.png',
     );
@@ -277,6 +281,24 @@ describe('Milestone 6 UI', () => {
     expect(screen.getByRole('img', { name: 'Giant Rat' })).toHaveAttribute(
       'src',
       '/assets/monsters/token_giant_rat.png',
+    );
+  });
+
+  it('renders visible loose item graphics on board tiles', () => {
+    const state = createUiState({
+      board: [
+        {
+          ...baseBoard()[0],
+          looseItems: [{ type: 'weapon', bonus: 2 }],
+        },
+      ],
+    });
+
+    render(<BoardView state={state} />);
+
+    expect(screen.getByRole('img', { name: 'Weapon +2' })).toHaveAttribute(
+      'src',
+      '/assets/items/item_weapon_2.png',
     );
   });
 
@@ -419,6 +441,51 @@ describe('Milestone 6 UI', () => {
 
     expect(onMove).toHaveBeenNthCalledWith(1, { boardX: 2, boardY: 0 });
     expect(onMove).toHaveBeenNthCalledWith(2, { boardX: 2, boardY: 0 });
+  });
+
+  it('shows ground loot and loot-resolution actions in the panel', () => {
+    const state = createUiState({
+      phase: 'await_move',
+      board: [
+        {
+          ...baseBoard()[0],
+          looseItems: [{ type: 'spell', spellKind: 'healing' }],
+        },
+      ],
+    });
+    const onBeginLoot = vi.fn();
+
+    const { rerender } = render(
+      <ActionPanel
+        state={state}
+        {...noopActions}
+        onBeginLoot={onBeginLoot}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Take Healing spell' }));
+    expect(onBeginLoot).toHaveBeenCalledOnce();
+
+    rerender(
+      <ActionPanel
+        state={{
+          ...state,
+          phase: 'loot_resolution',
+          pendingLoot: {
+            source: 'ground_item',
+            position: { boardX: 0, boardY: 0 },
+            item: { type: 'spell', spellKind: 'healing' },
+          },
+        }}
+        {...noopActions}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Take' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Leave' })).toBeInTheDocument();
+    expect(
+      screen.getByText('Healing spell'),
+    ).toBeInTheDocument();
   });
 
   it('highlights legal exploration targets on the board and explores by tile click', () => {
@@ -583,6 +650,31 @@ describe('Milestone 6 UI', () => {
     expect(transformLayer).toHaveAttribute(
       'style',
       expect.stringContaining('translate(40px, 25px)'),
+    );
+  });
+
+  it('keeps wheel zoom after an already-applied camera request', () => {
+    const state = createUiState();
+
+    render(
+      <BoardView
+        cameraRequest={{
+          nonce: 0,
+          position: { boardX: 0, boardY: 0 },
+          resetZoom: true,
+        }}
+        state={state}
+      />,
+    );
+
+    const board = screen.getByLabelText('Dungeon board');
+    const transformLayer = screen.getByTestId('board-transform-layer');
+
+    fireEvent.wheel(board, { deltaY: -100 });
+
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('scale(1.1)'),
     );
   });
 

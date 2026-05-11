@@ -18,6 +18,7 @@ import {
 } from '../engine/movement/topology';
 import { getDiscoveredHealingPositions } from '../engine/rules/abilities';
 import { hasActiveHeroAbility } from '../engine/rules/abilities';
+import { canStoreItem } from '../engine/rules/inventory';
 import { aiHeuristicConfig, type AiHeuristicConfig } from './config';
 import { getActionTargetPosition, getLegalAiActions } from './legalActions';
 
@@ -74,12 +75,22 @@ export function chooseHeuristicAiAction(
     return chooseCombatAction(state, legalActions, config);
   }
 
+  if (state.phase === 'loot_resolution') {
+    return chooseLootAction(state, legalActions);
+  }
+
   if (state.phase === 'resolve_room_token') {
     return requireAction(legalActions, 'resolveRoomToken');
   }
 
   if (state.phase === 'choose_pending_tile_rotation') {
     return choosePlacementAction(state, legalActions);
+  }
+
+  const groundLootAction = chooseGroundLootAction(state, legalActions);
+
+  if (groundLootAction) {
+    return groundLootAction;
   }
 
   const movementAction = chooseMovementAction(state, legalActions, config);
@@ -287,6 +298,122 @@ function chooseMovementAction(
           scoreMovementAction(state, left, config) ||
         actionOrder(left) - actionOrder(right),
     )[0];
+}
+
+function chooseGroundLootAction(
+  state: GameState,
+  legalActions: GameAction[],
+): GameAction | undefined {
+  const beginLootAction = legalActions.find((action) => action.type === 'beginLoot');
+  const activeTile = getTileAt(
+    state.board,
+    state.players[state.activePlayerIndex].position,
+  );
+  const item = activeTile?.looseItems[0];
+
+  if (!beginLootAction || !item) {
+    return undefined;
+  }
+
+  if (item.type === 'key') {
+    return state.players[state.activePlayerIndex].inventory.keyCount === 0
+      ? beginLootAction
+      : undefined;
+  }
+
+  if (item.type === 'weapon') {
+    const weapons = state.players[state.activePlayerIndex].inventory.weapons;
+
+    if (weapons.length < 2) {
+      return beginLootAction;
+    }
+
+    return weapons.some((weapon) => item.bonus > weapon.bonus)
+      ? beginLootAction
+      : undefined;
+  }
+
+  const spells = state.players[state.activePlayerIndex].inventory.spells;
+
+  if (spells.length < 3) {
+    return beginLootAction;
+  }
+
+  const spellPriority = {
+    healing: 0,
+    flame: 1,
+  } as const;
+
+  return spells.some(
+    (spell) => spellPriority[item.spellKind] > spellPriority[spell.spellKind],
+  )
+    ? beginLootAction
+    : undefined;
+}
+
+function chooseLootAction(state: GameState, legalActions: GameAction[]): GameAction {
+  const pendingLoot = state.pendingLoot;
+  const activePlayer = state.players[state.activePlayerIndex];
+
+  if (!pendingLoot) {
+    return requireAction(legalActions, 'leaveLoot');
+  }
+
+  if (pendingLoot.item.type === 'key') {
+    return canStoreItem(activePlayer, pendingLoot.item)
+      ? requireAction(legalActions, 'takeLoot')
+      : requireAction(legalActions, 'leaveLoot');
+  }
+
+  if (pendingLoot.item.type === 'weapon') {
+    if (canStoreItem(activePlayer, pendingLoot.item)) {
+      return requireAction(legalActions, 'takeLoot');
+    }
+
+    const worstWeapon = activePlayer.inventory.weapons
+      .map((weapon, index) => ({ index, bonus: weapon.bonus }))
+      .sort((left, right) => left.bonus - right.bonus)[0];
+
+    if (worstWeapon && pendingLoot.item.bonus > worstWeapon.bonus) {
+      return legalActions.find(
+        (action) =>
+          action.type === 'swapLoot' &&
+          action.inventorySlot.kind === 'weapon' &&
+          action.inventorySlot.index === worstWeapon.index,
+      ) ?? requireAction(legalActions, 'leaveLoot');
+    }
+
+    return requireAction(legalActions, 'leaveLoot');
+  }
+
+  if (canStoreItem(activePlayer, pendingLoot.item)) {
+    return requireAction(legalActions, 'takeLoot');
+  }
+
+  const spellPriority = {
+    healing: 0,
+    flame: 1,
+  } as const;
+  const worstSpell = activePlayer.inventory.spells
+    .map((spell, index) => ({
+      index,
+      priority: spellPriority[spell.spellKind],
+    }))
+    .sort((left, right) => left.priority - right.priority)[0];
+
+  if (
+    worstSpell &&
+    spellPriority[pendingLoot.item.spellKind] > worstSpell.priority
+  ) {
+    return legalActions.find(
+      (action) =>
+        action.type === 'swapLoot' &&
+        action.inventorySlot.kind === 'spell' &&
+        action.inventorySlot.index === worstSpell.index,
+    ) ?? requireAction(legalActions, 'leaveLoot');
+  }
+
+  return requireAction(legalActions, 'leaveLoot');
 }
 
 function scoreMovementAction(
@@ -575,6 +702,10 @@ function isHealingTarget(state: GameState, position: BoardPosition): boolean {
 
 function actionOrder(action: GameAction): number {
   const order = [
+    'takeLoot',
+    'swapLoot',
+    'leaveLoot',
+    'beginLoot',
     'openChest',
     'useHealingSpell',
     'resolveCombat',

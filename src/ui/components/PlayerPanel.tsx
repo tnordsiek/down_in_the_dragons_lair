@@ -3,9 +3,9 @@ import type {
   BoardPosition,
   GameState,
   HeroId,
-  SpellKind,
-  WeaponBonus,
+  Item,
 } from '../../engine/core/types';
+import { itemAssetId, itemLabel } from '../items';
 import { heroName } from '../labels';
 
 type PlayerPanelProps = {
@@ -65,7 +65,7 @@ export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
                 <dt>Key</dt>
                 <dd className="flex min-h-6 items-center gap-1 font-mono text-stone-100">
                   {player.inventory.keyCount > 0 ? (
-                    <ItemIcon assetId="item_key" label="Key" />
+                    <ItemIcon item={{ type: 'key' }} />
                   ) : null}
                   {player.inventory.keyCount || '-'}
                 </dd>
@@ -77,8 +77,7 @@ export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
                     ? player.inventory.weapons.map((weapon, index) => (
                         <ItemIcon
                           key={`${player.id}-weapon-${index}`}
-                          assetId={weaponAssetId(weapon.bonus)}
-                          label={`Weapon +${weapon.bonus}`}
+                          item={weapon}
                         />
                       ))
                     : '-'}
@@ -91,8 +90,7 @@ export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
                     ? player.inventory.spells.map((spell, index) => (
                         <ItemIcon
                           key={`${player.id}-spell-${index}`}
-                          assetId={spellAssetId(spell.spellKind)}
-                          label={`${spell.spellKind} spell`}
+                          item={spell}
                         />
                       ))
                     : '-'}
@@ -149,7 +147,9 @@ function HeroPortrait({
   );
 }
 
-function ItemIcon({ assetId, label }: { assetId: string; label: string }) {
+function ItemIcon({ item }: { item: Item }) {
+  const assetId = itemAssetId(item);
+  const label = itemLabel(item);
   const assetUrl = getAssetUrl(assetId);
 
   return assetUrl ? (
@@ -179,12 +179,4 @@ function StatusBadge({ assetId, label }: { assetId: string; label: string }) {
       {label}
     </span>
   );
-}
-
-function weaponAssetId(bonus: WeaponBonus): string {
-  return `item_weapon_${bonus}`;
-}
-
-function spellAssetId(spellKind: SpellKind): string {
-  return `item_spell_${spellKind}`;
 }

@@ -173,6 +173,12 @@ export interface CombatContext {
   source?: 'movement' | 'warlock_swap';
 }
 
+export interface PendingLoot {
+  source: 'combat_reward' | 'ground_item';
+  position: BoardPosition;
+  item: Item;
+}
+
 export interface GameEvent {
   id: string;
   type: string;
@@ -202,6 +208,7 @@ export interface GameState {
   remainingSteps: number;
   lastMoveFrom?: BoardPosition;
   combat?: CombatContext;
+  pendingLoot?: PendingLoot;
   eventLog: GameEvent[];
   victory?: VictoryState;
   rng: SerializedRngState;
@@ -253,6 +260,25 @@ export type OpenChestAction = {
   type: 'openChest';
 };
 
+export type BeginLootAction = {
+  type: 'beginLoot';
+};
+
+export type TakeLootAction = {
+  type: 'takeLoot';
+};
+
+export type LeaveLootAction = {
+  type: 'leaveLoot';
+};
+
+export type SwapLootAction = {
+  type: 'swapLoot';
+  inventorySlot:
+    | { kind: 'weapon'; index: number }
+    | { kind: 'spell'; index: number };
+};
+
 export type UseHealingSpellAction = {
   type: 'useHealingSpell';
   targetPlayerId: string;
@@ -277,6 +303,10 @@ export type GameAction =
   | ResolveRoomTokenAction
   | ResolveCombatAction
   | OpenChestAction
+  | BeginLootAction
+  | TakeLootAction
+  | LeaveLootAction
+  | SwapLootAction
   | UseHealingSpellAction
   | SwapWarlockPositionAction
   | EndTurnAction;

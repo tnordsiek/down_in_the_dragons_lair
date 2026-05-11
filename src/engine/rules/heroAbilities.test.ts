@@ -101,7 +101,8 @@ describe('hero_warrior abilities', () => {
     const activePlayer = resolved.players[resolved.activePlayerIndex];
 
     expect(activePlayer.hp).toBe(5);
-    expect(resolved.phase).toBe('turn_end');
+    expect(resolved.phase).toBe('loot_resolution');
+    expect(resolved.pendingLoot?.item).toEqual({ type: 'weapon', bonus: 1 });
     expect(
       resolved.board.find((tile) => tile.roomToken?.id === 'giant_rat'),
     ).toBeUndefined();
@@ -268,7 +269,8 @@ describe('hero_swordsman abilities', () => {
       swordsmanOneRerolls: [6, 2],
     });
 
-    expect(resolved.phase).toBe('await_move');
+    expect(resolved.phase).toBe('loot_resolution');
+    expect(resolved.pendingLoot?.item).toEqual({ type: 'weapon', bonus: 1 });
     expect(
       resolved.board.find((tile) => tile.roomToken?.id === 'giant_rat'),
     ).toBeUndefined();

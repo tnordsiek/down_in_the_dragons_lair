@@ -165,6 +165,14 @@ function actionMessage(action: GameAction): string {
       return 'Resolved combat';
     case 'openChest':
       return 'Opened chest';
+    case 'beginLoot':
+      return 'Started loot';
+    case 'takeLoot':
+      return 'Took loot';
+    case 'leaveLoot':
+      return 'Left loot on tile';
+    case 'swapLoot':
+      return 'Swapped loot';
     case 'useHealingSpell':
       return 'Used healing spell';
     case 'swapWarlockPosition':

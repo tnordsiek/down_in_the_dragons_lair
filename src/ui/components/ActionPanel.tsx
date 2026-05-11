@@ -1,16 +1,26 @@
 import { monsterDefinitions } from '../../data/monsters';
 import { tileBlueprints } from '../../data/tiles';
 import { getTileAt } from '../../engine/core/board';
-import type { BoardPosition, GameState, TileSide } from '../../engine/core/types';
+import type {
+  BoardPosition,
+  GameState,
+  TileSide,
+} from '../../engine/core/types';
+import { canStoreItem } from '../../engine/rules/inventory';
 import { getUiLegalActions } from '../../state/setupStore';
 import { monsterName, sideLabels } from '../labels';
+import { itemLabel } from '../items';
 
 type ActionPanelProps = {
   state: GameState;
   onMove: (target: BoardPosition) => void;
+  onBeginLoot: () => void;
+  onLeaveLoot: () => void;
   onExplore: (direction: TileSide) => void;
   onResolveRoom: () => void;
   onResolveCombat: () => void;
+  onSwapLoot: (inventorySlot: { kind: 'weapon' | 'spell'; index: number }) => void;
+  onTakeLoot: () => void;
   onOpenChest: () => void;
   onEndTurn: () => void;
 };
@@ -18,9 +28,13 @@ type ActionPanelProps = {
 export function ActionPanel({
   state,
   onMove,
+  onBeginLoot,
+  onLeaveLoot,
   onExplore,
   onResolveRoom,
   onResolveCombat,
+  onSwapLoot,
+  onTakeLoot,
   onOpenChest,
   onEndTurn,
 }: ActionPanelProps) {
@@ -49,6 +63,10 @@ export function ActionPanel({
   const canOpenChest =
     activeTile?.roomToken?.id === 'treasure_chest' &&
     activePlayer.inventory.keyCount > 0;
+  const groundLootItem = activeTile?.looseItems[0];
+  const pendingLoot = state.pendingLoot;
+  const canTakePendingLoot =
+    pendingLoot !== undefined && canStoreItem(activePlayer, pendingLoot.item);
 
   return (
     <section
@@ -66,6 +84,7 @@ export function ActionPanel({
         </div>
         <button
           className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
+          disabled={state.phase === 'loot_resolution'}
           onClick={onEndTurn}
         >
           End Turn
@@ -129,7 +148,75 @@ export function ActionPanel({
         </div>
       ) : null}
 
+      {state.phase === 'loot_resolution' && pendingLoot ? (
+        <div className="mt-4 grid gap-2">
+          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+            Loot
+          </h3>
+          <p className="text-sm text-stone-200">{itemLabel(pendingLoot.item)}</p>
+          <div className="flex flex-wrap gap-2">
+            {canTakePendingLoot ? (
+              <button
+                className="border border-amber-500 px-3 py-2 text-sm text-amber-100"
+                onClick={onTakeLoot}
+              >
+                Take
+              </button>
+            ) : null}
+            <button
+              className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
+              onClick={onLeaveLoot}
+            >
+              Leave
+            </button>
+            {pendingLoot.item.type === 'weapon'
+              ? activePlayer.inventory.weapons.map((weapon, index) => (
+                  <button
+                    key={`swap-weapon-${index}`}
+                    className="border border-sky-500 px-3 py-2 text-sm text-sky-100"
+                    onClick={() =>
+                      onSwapLoot({ kind: 'weapon', index })
+                    }
+                  >
+                    Swap Weapon +{weapon.bonus}
+                  </button>
+                ))
+              : null}
+            {pendingLoot.item.type === 'spell'
+              ? activePlayer.inventory.spells.map((spell, index) => (
+                  <button
+                    key={`swap-spell-${index}`}
+                    className="border border-sky-500 px-3 py-2 text-sm text-sky-100"
+                    onClick={() =>
+                      onSwapLoot({ kind: 'spell', index })
+                    }
+                  >
+                    Swap {spell.spellKind} spell
+                  </button>
+                ))
+              : null}
+          </div>
+        </div>
+      ) : null}
+
       <div className="mt-4 grid gap-3">
+        {groundLootItem &&
+        (state.phase === 'turn_start' || state.phase === 'await_move') ? (
+          <div>
+            <h3 className="text-xs uppercase tracking-wide text-stone-400">
+              Loot
+            </h3>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                className="border border-amber-500 px-3 py-2 text-sm text-amber-100"
+                onClick={onBeginLoot}
+              >
+                Take {itemLabel(groundLootItem)}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {adjacentMoves.length > 0 ? (
           <div>
             <h3 className="text-xs uppercase tracking-wide text-stone-400">

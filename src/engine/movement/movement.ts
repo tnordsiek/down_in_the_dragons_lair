@@ -13,7 +13,11 @@ export function getLegalKnownMoves(state: GameState): KnownMove[] {
   const activePlayer = getActivePlayer(state);
   const originTile = getTileAt(state.board, activePlayer.position);
 
-  if (!originTile || state.remainingSteps <= 0) {
+  if (
+    !originTile ||
+    state.remainingSteps <= 0 ||
+    (state.phase !== 'turn_start' && state.phase !== 'await_move')
+  ) {
     return [];
   }
 
@@ -80,7 +84,8 @@ export function getLegalExplorationDirections(state: GameState): TileSide[] {
   if (
     !originTile ||
     state.remainingSteps <= 0 ||
-    state.tileStack.length === 0
+    state.tileStack.length === 0 ||
+    (state.phase !== 'turn_start' && state.phase !== 'await_move')
   ) {
     return [];
   }

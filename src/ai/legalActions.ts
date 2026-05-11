@@ -7,6 +7,11 @@ import {
 import { adjacentPosition } from '../engine/movement/topology';
 import { getDiscoveredHealingPositions } from '../engine/rules/abilities';
 import { hasActiveHeroAbility } from '../engine/rules/abilities';
+import {
+  canBeginGroundLoot,
+  canStoreItem,
+  getLootSwapChoices,
+} from '../engine/rules/inventory';
 
 export function getLegalAiActions(state: GameState): GameAction[] {
   if (state.phase === 'game_over') {
@@ -20,6 +25,24 @@ export function getLegalAiActions(state: GameState): GameAction[] {
   }
 
   const actions: GameAction[] = [];
+
+  if (state.phase === 'loot_resolution' && state.pendingLoot) {
+    if (canStoreItem(activePlayer, state.pendingLoot.item)) {
+      actions.push({ type: 'takeLoot' });
+    }
+
+    actions.push({ type: 'leaveLoot' });
+    actions.push(
+      ...getLootSwapChoices(activePlayer, state.pendingLoot.item).map(
+        (inventorySlot) => ({
+          type: 'swapLoot' as const,
+          inventorySlot,
+        }),
+      ),
+    );
+
+    return actions;
+  }
 
   actions.push(...getLegalHealingSpellActions(state, activePlayer));
 
@@ -59,6 +82,10 @@ export function getLegalAiActions(state: GameState): GameAction[] {
   }
 
   if (state.phase === 'turn_start' || state.phase === 'await_move') {
+    if (canBeginGroundLoot(state)) {
+      actions.push({ type: 'beginLoot' });
+    }
+
     actions.push(
       ...getLegalKnownMoves(state).map((move) => ({
         type: 'movePlayer' as const,

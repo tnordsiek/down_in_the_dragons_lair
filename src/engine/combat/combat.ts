@@ -14,7 +14,7 @@ import {
   hasActiveHeroAbility,
 } from '../rules/abilities';
 import { healPlayer, isHealingPosition } from '../rules/healing';
-import { applyRewardToPlayer } from '../rules/inventory';
+import { createCombatRewardLoot } from '../rules/inventory';
 import { createVictoryState } from '../victory/scoring';
 import { canTilesConnect, adjacentPosition } from '../movement/topology';
 
@@ -147,14 +147,20 @@ function resolveVictory(
   }
 
   const activePlayer = state.players[state.activePlayerIndex];
-  const rewardResult = applyRewardToPlayer(
-    activePlayer,
-    combatTile,
-    monster.reward,
-  );
-  let players = state.players.map((player, index) =>
-    index === state.activePlayerIndex ? rewardResult.player : player,
-  );
+  const reward = monster.reward;
+  const combatRewardLoot = createCombatRewardLoot(reward, combat.position);
+  let players = state.players;
+
+  if (reward.type === 'treasure') {
+    players = state.players.map((player, index) =>
+      index === state.activePlayerIndex
+        ? {
+            ...player,
+            treasurePoints: player.treasurePoints + reward.points,
+          }
+        : player,
+    );
+  }
 
   if (monster.onDefeatEffect === 'curse_other_player') {
     players = applyCurse(players, activePlayer.id, curseTargetPlayerId);
@@ -162,17 +168,20 @@ function resolveVictory(
 
   const phase: GameState['phase'] = monster.isAncientDragon
     ? 'game_over'
-    : getPostVictoryPhase(activePlayer, state, dice);
+    : combatRewardLoot
+      ? 'loot_resolution'
+      : getPostVictoryPhase(activePlayer, state, dice);
   const stateAfterReward: GameState = {
     ...state,
     phase,
     players,
     board: state.board.map((tile) =>
       samePosition(tile, combatTile)
-        ? { ...rewardResult.tile, roomToken: undefined }
+        ? { ...tile, roomToken: undefined }
         : tile,
     ),
     combat: undefined,
+    pendingLoot: combatRewardLoot,
   };
 
   if (!monster.isAncientDragon) {

@@ -1,4 +1,16 @@
-import type { Item, PlacedTile, Player, RewardDefinition } from '../core/types';
+import { getTileAt, samePosition } from '../core/board';
+import type {
+  GameState,
+  Item,
+  PendingLoot,
+  PlacedTile,
+  Player,
+  RewardDefinition,
+} from '../core/types';
+
+type LootSwapSlot =
+  | { kind: 'weapon'; index: number }
+  | { kind: 'spell'; index: number };
 
 export function rewardToItem(reward: RewardDefinition): Item | undefined {
   switch (reward.type) {
@@ -13,80 +25,289 @@ export function rewardToItem(reward: RewardDefinition): Item | undefined {
   }
 }
 
-export function applyRewardToPlayer(
-  player: Player,
-  tile: PlacedTile,
+export function createCombatRewardLoot(
   reward: RewardDefinition,
-): { player: Player; tile: PlacedTile } {
-  if (reward.type === 'treasure') {
-    return {
-      player: {
-        ...player,
-        treasurePoints: player.treasurePoints + reward.points,
-      },
-      tile,
-    };
-  }
-
+  position: PendingLoot['position'],
+): PendingLoot | undefined {
   const item = rewardToItem(reward);
 
   if (!item) {
-    return { player, tile };
+    return undefined;
   }
 
-  if (item.type === 'weapon') {
-    if (player.inventory.weapons.length < 2) {
-      return {
-        player: {
-          ...player,
-          inventory: {
-            ...player.inventory,
-            weapons: [...player.inventory.weapons, item],
-          },
-        },
-        tile,
-      };
-    }
+  return {
+    source: 'combat_reward',
+    position,
+    item,
+  };
+}
 
-    return { player, tile: leaveItemOnTile(tile, item) };
+export function beginGroundLoot(state: GameState): GameState {
+  if (state.phase !== 'turn_start' && state.phase !== 'await_move') {
+    throw new Error('Ground loot can only be started during movement');
+  }
+
+  const activePlayer = state.players[state.activePlayerIndex];
+  const tile = getTileAt(state.board, activePlayer.position);
+  const item = tile?.looseItems[0];
+
+  if (!tile || !item) {
+    throw new Error('No loose item on active player tile');
+  }
+
+  return {
+    ...state,
+    phase: 'loot_resolution',
+    pendingLoot: {
+      source: 'ground_item',
+      position: activePlayer.position,
+      item,
+    },
+  };
+}
+
+export function leavePendingLoot(state: GameState): GameState {
+  if (state.phase !== 'loot_resolution') {
+    throw new Error('Loot can only be resolved during loot resolution');
+  }
+
+  const pendingLoot = requirePendingLoot(state);
+
+  return finalizeLootState(
+    state,
+    state.players[state.activePlayerIndex],
+    updateTileLoot(getTileAt(state.board, pendingLoot.position)!, pendingLoot),
+  );
+}
+
+export function takePendingLoot(state: GameState): GameState {
+  if (state.phase !== 'loot_resolution') {
+    throw new Error('Loot can only be resolved during loot resolution');
+  }
+
+  const pendingLoot = requirePendingLoot(state);
+  const activePlayer = state.players[state.activePlayerIndex];
+
+  if (!canStoreItem(activePlayer, pendingLoot.item)) {
+    throw new Error('Inventory capacity is full for this item');
+  }
+
+  const player = addItemToInventory(activePlayer, pendingLoot.item);
+  const tile = removePendingLootFromTile(
+    getTileAt(state.board, pendingLoot.position)!,
+    pendingLoot,
+  );
+
+  return finalizeLootState(state, player, tile);
+}
+
+export function swapPendingLoot(
+  state: GameState,
+  inventorySlot: LootSwapSlot,
+): GameState {
+  if (state.phase !== 'loot_resolution') {
+    throw new Error('Loot can only be resolved during loot resolution');
+  }
+
+  const pendingLoot = requirePendingLoot(state);
+  const activePlayer = state.players[state.activePlayerIndex];
+
+  if (pendingLoot.item.type === 'key') {
+    throw new Error('Keys cannot be swapped');
+  }
+
+  if (pendingLoot.item.type !== inventorySlot.kind) {
+    throw new Error('Swap slot must match the loot item type');
+  }
+
+  const swapResult = swapInventoryItem(activePlayer, pendingLoot.item, inventorySlot);
+  const tileWithRemovedPendingLoot = removePendingLootFromTile(
+    getTileAt(state.board, pendingLoot.position)!,
+    pendingLoot,
+  );
+  const tile = setTileLooseItem(tileWithRemovedPendingLoot, swapResult.droppedItem);
+
+  return finalizeLootState(state, swapResult.player, tile);
+}
+
+export function getLootSwapChoices(player: Player, item: Item): LootSwapSlot[] {
+  if (item.type === 'weapon') {
+    return player.inventory.weapons.map((_, index) => ({
+      kind: 'weapon' as const,
+      index,
+    }));
   }
 
   if (item.type === 'spell') {
-    if (player.inventory.spells.length < 3) {
-      return {
-        player: {
-          ...player,
-          inventory: {
-            ...player.inventory,
-            spells: [...player.inventory.spells, item],
-          },
-        },
-        tile,
-      };
-    }
-
-    return { player, tile: leaveItemOnTile(tile, item) };
+    return player.inventory.spells.map((_, index) => ({
+      kind: 'spell' as const,
+      index,
+    }));
   }
 
-  if (player.inventory.keyCount === 0) {
+  return [];
+}
+
+export function canBeginGroundLoot(state: GameState): boolean {
+  if (state.phase !== 'turn_start' && state.phase !== 'await_move') {
+    return false;
+  }
+
+  const activePlayer = state.players[state.activePlayerIndex];
+  const tile = getTileAt(state.board, activePlayer.position);
+
+  return (tile?.looseItems.length ?? 0) > 0;
+}
+
+export function canStoreItem(player: Player, item: Item): boolean {
+  if (item.type === 'weapon') {
+    return player.inventory.weapons.length < 2;
+  }
+
+  if (item.type === 'spell') {
+    return player.inventory.spells.length < 3;
+  }
+
+  return player.inventory.keyCount === 0;
+}
+
+function finalizeLootState(
+  state: GameState,
+  activePlayer: Player,
+  tile: PlacedTile,
+): GameState {
+  return {
+    ...state,
+    phase: 'turn_end',
+    players: state.players.map((player, index) =>
+      index === state.activePlayerIndex ? activePlayer : player,
+    ),
+    board: state.board.map((boardTile) =>
+      samePosition(boardTile, tile) ? tile : boardTile,
+    ),
+    pendingLoot: undefined,
+  };
+}
+
+function requirePendingLoot(state: GameState): PendingLoot {
+  if (!state.pendingLoot) {
+    throw new Error('No pending loot to resolve');
+  }
+
+  const tile = getTileAt(state.board, state.pendingLoot.position);
+
+  if (!tile) {
+    throw new Error('Pending loot tile is missing');
+  }
+
+  return state.pendingLoot;
+}
+
+function updateTileLoot(tile: PlacedTile, pendingLoot: PendingLoot): PlacedTile {
+  if (pendingLoot.source === 'combat_reward') {
+    return setTileLooseItem(tile, pendingLoot.item);
+  }
+
+  return tile;
+}
+
+function removePendingLootFromTile(
+  tile: PlacedTile,
+  pendingLoot: PendingLoot,
+): PlacedTile {
+  if (pendingLoot.source === 'ground_item') {
+    return {
+      ...tile,
+      looseItems: [],
+    };
+  }
+
+  return tile;
+}
+
+function setTileLooseItem(tile: PlacedTile, item: Item): PlacedTile {
+  return {
+    ...tile,
+    looseItems: [item],
+  };
+}
+
+function addItemToInventory(player: Player, item: Item): Player {
+  if (item.type === 'weapon') {
+    return {
+      ...player,
+      inventory: {
+        ...player.inventory,
+        weapons: [...player.inventory.weapons, item],
+      },
+    };
+  }
+
+  if (item.type === 'spell') {
+    return {
+      ...player,
+      inventory: {
+        ...player.inventory,
+        spells: [...player.inventory.spells, item],
+      },
+    };
+  }
+
+  return {
+    ...player,
+    inventory: {
+      ...player.inventory,
+      keyCount: 1,
+    },
+  };
+}
+
+function swapInventoryItem(
+  player: Player,
+  item: Item,
+  inventorySlot: LootSwapSlot,
+): { player: Player; droppedItem: Item } {
+  if (inventorySlot.kind === 'weapon' && item.type === 'weapon') {
+    const droppedItem = player.inventory.weapons[inventorySlot.index];
+
+    if (!droppedItem) {
+      throw new Error('Invalid weapon swap index');
+    }
+
     return {
       player: {
         ...player,
         inventory: {
           ...player.inventory,
-          keyCount: 1,
+          weapons: player.inventory.weapons.map((weapon, index) =>
+            index === inventorySlot.index ? item : weapon,
+          ),
         },
       },
-      tile,
+      droppedItem,
     };
   }
 
-  return { player, tile: leaveItemOnTile(tile, item) };
-}
+  if (inventorySlot.kind === 'spell' && item.type === 'spell') {
+    const droppedItem = player.inventory.spells[inventorySlot.index];
 
-function leaveItemOnTile(tile: PlacedTile, item: Item): PlacedTile {
-  return {
-    ...tile,
-    looseItems: [...tile.looseItems, item],
-  };
+    if (!droppedItem) {
+      throw new Error('Invalid spell swap index');
+    }
+
+    return {
+      player: {
+        ...player,
+        inventory: {
+          ...player.inventory,
+          spells: player.inventory.spells.map((spell, index) =>
+            index === inventorySlot.index ? item : spell,
+          ),
+        },
+      },
+      droppedItem,
+    };
+  }
+
+  throw new Error('Invalid loot swap');
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { applyGameAction } from '../core/actions';
 import type { GameState, MonsterId, PlacedTile } from '../core/types';
 import { createNewGame } from '../setup/createGame';
 import { endTurn } from '../turns/turns';
@@ -76,7 +77,7 @@ describe('combat resolution', () => {
     );
   });
 
-  it('leaves overflow equipment on the combat tile', () => {
+  it('moves item rewards into loot resolution instead of auto-equipping them', () => {
     const state = withActivePlayer(
       createCombatState('giant_rat'),
       (player) => ({
@@ -95,7 +96,55 @@ describe('combat resolution', () => {
       (tile) => tile.boardX === 1 && tile.boardY === -1,
     );
 
+    expect(resolved.phase).toBe('loot_resolution');
+    expect(resolved.pendingLoot?.item).toEqual({ type: 'weapon', bonus: 1 });
+    expect(combatTile?.looseItems).toEqual([]);
+  });
+
+  it('leaves declined combat loot visibly on the combat tile and ends the turn', () => {
+    const state = resolveCombat(createCombatState('giant_rat'), { dice: [6, 6] });
+    const resolved = applyGameAction(state, { type: 'leaveLoot' });
+    const combatTile = resolved.board.find(
+      (tile) => tile.boardX === 1 && tile.boardY === -1,
+    );
+
+    expect(resolved.phase).toBe('turn_end');
+    expect(resolved.pendingLoot).toBeUndefined();
     expect(combatTile?.looseItems).toEqual([{ type: 'weapon', bonus: 1 }]);
+  });
+
+  it('takes ground loot as a turn-ending action for later heroes', () => {
+    const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
+      ...player,
+      position: { boardX: 1, boardY: -1 },
+    }));
+    const prepared = {
+      ...state,
+      phase: 'await_move' as const,
+      combat: undefined,
+      board: state.board.map((tile) =>
+        tile.boardX === 1 && tile.boardY === -1
+          ? {
+              ...tile,
+              roomToken: undefined,
+              looseItems: [{ type: 'weapon' as const, bonus: 1 as const }],
+            }
+          : tile,
+      ),
+    };
+    const lootState = applyGameAction(prepared, { type: 'beginLoot' });
+    const resolved = applyGameAction(lootState, { type: 'takeLoot' });
+    const activePlayer = resolved.players[resolved.activePlayerIndex];
+    const combatTile = resolved.board.find(
+      (tile) => tile.boardX === 1 && tile.boardY === -1,
+    );
+
+    expect(activePlayer.inventory.weapons).toContainEqual({
+      type: 'weapon',
+      bonus: 1,
+    });
+    expect(resolved.phase).toBe('turn_end');
+    expect(combatTile?.looseItems).toEqual([]);
   });
 
   it('moves the single curse to the selected target after defeating a mummy', () => {

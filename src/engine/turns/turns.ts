@@ -2,6 +2,10 @@ import type { GameState } from '../core/types';
 import { applyHealingIfOnHealingTile } from '../rules/healing';
 
 export function endTurn(state: GameState): GameState {
+  if (state.phase === 'loot_resolution') {
+    throw new Error('Resolve or leave pending loot before ending the turn');
+  }
+
   const activePlayerSkipsTurn =
     state.players[state.activePlayerIndex].skipNextTurn;
   const recoveredState = recoverUnconsciousActivePlayer(state);
@@ -17,6 +21,7 @@ export function endTurn(state: GameState): GameState {
     activePlayerIndex,
     remainingSteps: 4,
     pendingTile: undefined,
+    pendingLoot: undefined,
     lastMoveFrom: undefined,
     combat: undefined,
   };

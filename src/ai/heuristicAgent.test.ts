@@ -105,6 +105,50 @@ describe('heuristic AI', () => {
     });
   });
 
+  it('prefers taking useful loot and better swaps during loot resolution', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-loot',
+    });
+    const takeState: GameState = {
+      ...base,
+      phase: 'loot_resolution',
+      activePlayerIndex: 0,
+      pendingLoot: {
+        source: 'combat_reward',
+        position: { boardX: 0, boardY: 0 },
+        item: { type: 'weapon', bonus: 1 },
+      },
+    };
+
+    expect(chooseHeuristicAiAction(takeState)).toEqual({ type: 'takeLoot' });
+
+    const swapState = withActivePlayer(takeState, (player) => ({
+      ...player,
+      inventory: {
+        ...player.inventory,
+        weapons: [
+          { type: 'weapon', bonus: 1 },
+          { type: 'weapon', bonus: 2 },
+        ],
+      },
+    }));
+    const betterLootState: GameState = {
+      ...swapState,
+      pendingLoot: {
+        source: 'combat_reward',
+        position: { boardX: 0, boardY: 0 },
+        item: { type: 'weapon', bonus: 3 },
+      },
+    };
+
+    expect(chooseHeuristicAiAction(betterLootState)).toEqual({
+      type: 'swapLoot',
+      inventorySlot: { kind: 'weapon', index: 0 },
+    });
+  });
+
   it('finishes a deterministic dragon endgame without rule violations', () => {
     const result = playAiGameToEnd(createDragonEndgameState(), 20);
 

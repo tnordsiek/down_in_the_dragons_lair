@@ -7,6 +7,12 @@ import {
 } from '../movement/exploration';
 import { moveActivePlayer } from '../movement/performMove';
 import { openChest } from '../rules/chests';
+import {
+  beginGroundLoot,
+  leavePendingLoot,
+  swapPendingLoot,
+  takePendingLoot,
+} from '../rules/inventory';
 import { resolveRoomToken } from '../rules/rooms';
 import { castHealingSpell } from '../rules/spells';
 import { swapWarlockPosition } from '../rules/warlock';
@@ -52,6 +58,14 @@ export function applyGameAction(
       });
     case 'openChest':
       return openChest(state);
+    case 'beginLoot':
+      return beginGroundLoot(state);
+    case 'takeLoot':
+      return takePendingLoot(state);
+    case 'leaveLoot':
+      return leavePendingLoot(state);
+    case 'swapLoot':
+      return swapPendingLoot(state, action.inventorySlot);
     case 'useHealingSpell':
       return castHealingSpell(state, {
         targetPlayerId: action.targetPlayerId,

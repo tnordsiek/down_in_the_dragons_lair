@@ -87,6 +87,21 @@ export function GameScreen() {
   const handleOpenChest = () => {
     dispatch({ type: 'openChest' });
   };
+  const handleBeginLoot = () => {
+    dispatch({ type: 'beginLoot' });
+  };
+  const handleTakeLoot = () => {
+    dispatch({ type: 'takeLoot' });
+  };
+  const handleLeaveLoot = () => {
+    dispatch({ type: 'leaveLoot' });
+  };
+  const handleSwapLoot = (inventorySlot: {
+    kind: 'weapon' | 'spell';
+    index: number;
+  }) => {
+    dispatch({ type: 'swapLoot', inventorySlot });
+  };
   const handleEndTurn = () => {
     dispatch({ type: 'endTurn' });
   };
@@ -152,10 +167,14 @@ export function GameScreen() {
         <aside className="grid content-start gap-4 lg:w-[22rem] lg:justify-self-end">
           <ActionPanel
             state={state}
+            onBeginLoot={handleBeginLoot}
+            onLeaveLoot={handleLeaveLoot}
             onMove={handleMove}
             onExplore={handleExplore}
             onResolveRoom={handleResolveRoom}
             onResolveCombat={handleResolveCombat}
+            onSwapLoot={handleSwapLoot}
+            onTakeLoot={handleTakeLoot}
             onOpenChest={handleOpenChest}
             onEndTurn={handleEndTurn}
           />

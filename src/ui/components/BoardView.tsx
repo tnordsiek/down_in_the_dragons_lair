@@ -6,6 +6,7 @@ import type {
   BoardPosition,
   GameState,
   HeroId,
+  Item,
   KnownMove,
   MonsterId,
   RotationDirection,
@@ -18,6 +19,7 @@ import {
 } from '../../engine/movement/movement';
 import { getReachableKnownMovePaths } from '../../engine/movement/reachable';
 import { adjacentPosition } from '../../engine/movement/topology';
+import { itemAssetId, itemLabel } from '../items';
 import { heroName, monsterName } from '../labels';
 
 type BoardViewProps = {
@@ -48,6 +50,7 @@ export function BoardView({
   const cellStridePx = cellSizePx + cellGapPx;
   const gameTable = useAsset('bg_game_table');
   const boardViewportRef = useRef<HTMLDivElement | null>(null);
+  const appliedCameraNonceRef = useRef<number | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -188,6 +191,9 @@ export function BoardView({
             {cell.tile?.roomToken ? (
               <RoomToken token={cell.tile.roomToken} />
             ) : null}
+            {cell.tile?.looseItems[0] ? (
+              <LooseItemToken item={cell.tile.looseItems[0]} />
+            ) : null}
             {isClickableMoveTarget ? (
               <button
                 aria-label={`Move to tile ${cell.boardX},${cell.boardY}`}
@@ -294,6 +300,10 @@ export function BoardView({
       return;
     }
 
+    if (appliedCameraNonceRef.current === cameraRequest.nonce) {
+      return;
+    }
+
     const boardViewport = boardViewportRef.current;
 
     if (!boardViewport) {
@@ -317,6 +327,7 @@ export function BoardView({
     }
 
     setPan(nextPan);
+    appliedCameraNonceRef.current = cameraRequest.nonce;
   }, [boardMinX, boardMinY, cameraRequest, cellStridePx, zoom]);
 
   return (
@@ -557,5 +568,24 @@ function HeroToken({ heroId }: { heroId: HeroId }) {
         label.slice(0, 1)
       )}
     </span>
+  );
+}
+
+function LooseItemToken({ item }: { item: Item }) {
+  const assetId = itemAssetId(item);
+  const assetUrl = getAssetUrl(assetId);
+  const label = itemLabel(item);
+
+  return (
+    <div
+      className="absolute right-1 top-1 z-[1] flex h-6 w-6 items-center justify-center rounded-sm bg-stone-950/85"
+      data-asset-id={assetId}
+    >
+      {assetUrl ? (
+        <img className="h-5 w-5 object-contain" src={assetUrl} alt={label} />
+      ) : (
+        <span className="text-[0.55rem] text-amber-100">{label}</span>
+      )}
+    </div>
   );
 }
