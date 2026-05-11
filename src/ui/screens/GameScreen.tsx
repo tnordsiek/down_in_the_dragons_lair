@@ -52,8 +52,6 @@ export function GameScreen() {
     return null;
   }
 
-  const activePlayer = state.players[state.activePlayerIndex];
-
   const handleMove = (target: BoardPosition) => {
     dispatch({ type: 'movePlayer', target });
   };
@@ -118,22 +116,7 @@ export function GameScreen() {
       <div className="grid min-h-screen w-full gap-4 px-4 py-4 lg:h-full lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex min-h-0 min-w-0 flex-col gap-4">
           <header className="grid h-[120px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 border-b border-stone-800 pb-3">
-            <div className="min-w-0">
-              <p className="text-sm text-stone-400">{activePlayer.id}</p>
-            </div>
-            <div
-              className="flex justify-center"
-              data-asset-id={headerLogo.assetId}
-            >
-              {headerLogoUrl ? (
-                <img
-                  className="max-h-[88px] w-auto object-contain"
-                  src={headerLogoUrl}
-                  alt="Down in the Dragon's Lair"
-                />
-              ) : null}
-            </div>
-            <div className="flex justify-end">
+            <div className="flex justify-start">
               <div className="flex items-center gap-2">
                 <button
                   className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
@@ -150,6 +133,19 @@ export function GameScreen() {
                 </button>
               </div>
             </div>
+            <div
+              className="flex justify-center"
+              data-asset-id={headerLogo.assetId}
+            >
+              {headerLogoUrl ? (
+                <img
+                  className="max-h-[88px] w-auto object-contain"
+                  src={headerLogoUrl}
+                  alt="Down in the Dragon's Lair"
+                />
+              ) : null}
+            </div>
+            <div aria-hidden="true" />
           </header>
           {state.phase === 'game_over' ? (
             <EndScreen state={state} onNewGame={resetGame} />

@@ -95,6 +95,10 @@ describe('App', () => {
     const header = screen
       .getByRole('img', { name: "Down in the Dragon's Lair" })
       .closest('header');
+    const centerMapButton = screen.getByRole('button', { name: 'Center Map' });
+    const newGameButton = screen.getByRole('button', { name: 'New Game' });
+    const leftHeaderCell = header?.firstElementChild;
+    const centerHeaderCell = header?.children[1];
 
     expect(layout).toHaveClass(
       'grid',
@@ -104,6 +108,12 @@ describe('App', () => {
     expect(layout).not.toHaveClass('max-w-7xl');
     expect(sidebar).toHaveClass('lg:w-[22rem]', 'lg:justify-self-end');
     expect(header).toHaveClass('h-[120px]');
+    expect(leftHeaderCell).toContainElement(centerMapButton);
+    expect(leftHeaderCell).toContainElement(newGameButton);
+    expect(centerHeaderCell).toContainElement(
+      screen.getByRole('img', { name: "Down in the Dragon's Lair" }),
+    );
+    expect(header?.querySelector('.text-sm.text-stone-400')).toBeNull();
   });
 
   it('stretches the board area to fill the available game viewport height', () => {

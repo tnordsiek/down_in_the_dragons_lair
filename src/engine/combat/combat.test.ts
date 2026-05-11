@@ -27,6 +27,20 @@ describe('combat resolution', () => {
     expect(activePlayer.hp).toBe(5);
     expect(activePlayer.position).toEqual({ boardX: 1, boardY: 0 });
     expect(resolved.phase).toBe('turn_end');
+    expect(resolved.eventLog.at(-1)).toEqual(
+      expect.objectContaining({
+        type: 'combat_resolved',
+        playerId: activePlayer.id,
+        combat: expect.objectContaining({
+          monsterId: 'giant_rat',
+          monsterStrength: 5,
+          dice: [2, 3],
+          total: 5,
+          outcome: 'draw',
+          retreatPosition: { boardX: 1, boardY: 0 },
+        }),
+      }),
+    );
   });
 
   it('resolves a defeat as retreat with one HP loss', () => {
@@ -99,6 +113,19 @@ describe('combat resolution', () => {
     expect(resolved.phase).toBe('loot_resolution');
     expect(resolved.pendingLoot?.item).toEqual({ type: 'weapon', bonus: 1 });
     expect(combatTile?.looseItems).toEqual([]);
+    expect(resolved.eventLog.at(-1)).toEqual(
+      expect.objectContaining({
+        type: 'combat_resolved',
+        playerId: resolved.players[resolved.activePlayerIndex].id,
+        combat: expect.objectContaining({
+          monsterId: 'giant_rat',
+          outcome: 'victory',
+          dice: [6, 6],
+          total: 17,
+          weaponBonus: 5,
+        }),
+      }),
+    );
   });
 
   it('leaves declined combat loot visibly on the combat tile and ends the turn', () => {

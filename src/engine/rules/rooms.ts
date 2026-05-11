@@ -1,5 +1,6 @@
 import { monsterDefinitions } from '../../data/monsters';
 import { getTileAt, samePosition } from '../core/board';
+import { appendGameEvent, createPlayerEventFields } from '../core/events';
 import type {
   CombatContext,
   GameState,
@@ -38,23 +39,37 @@ export function resolveRoomToken(
       ? { ...boardTile, roomToken: token }
       : boardTile,
   );
+  const roomEvent = {
+    type: 'room_resolved',
+    message:
+      token.kind === 'chest'
+        ? 'Resolved room and found a treasure chest'
+        : `Resolved room and found ${monsterDefinitions[token.id as keyof typeof monsterDefinitions].displayName}`,
+    ...createPlayerEventFields(activePlayer),
+    room: {
+      tokenId: token.id,
+      tokenKind: token.kind,
+      position: activePlayer.position,
+      oracleChoiceIndex: options.oracleChoiceIndex,
+    },
+  } as const;
 
   if (token.kind === 'chest') {
-    return {
+    return appendGameEvent({
       ...state,
       phase: 'turn_end',
       board,
       tokenBag: remainingTokenBag,
-    };
+    }, roomEvent);
   }
 
-  return {
+  return appendGameEvent({
     ...state,
     phase: 'combat',
     board,
     tokenBag: remainingTokenBag,
     combat: createCombatContext(state, tile, token),
-  };
+  }, roomEvent);
 }
 
 function drawRoomToken(

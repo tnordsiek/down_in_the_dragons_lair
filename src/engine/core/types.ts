@@ -179,11 +179,42 @@ export interface PendingLoot {
   item: Item;
 }
 
+export interface GameEventActionDetails {
+  actionType: string;
+}
+
+export interface GameEventRoomDetails {
+  tokenId: TokenId;
+  tokenKind: Token['kind'];
+  position: BoardPosition;
+  oracleChoiceIndex?: 0 | 1;
+}
+
+export interface GameEventCombatDetails {
+  monsterId: MonsterId;
+  monsterStrength: number;
+  dice: [number, number];
+  total: number;
+  outcome: 'victory' | 'draw' | 'defeat';
+  weaponBonus: number;
+  flameSpellCount: number;
+  warlockSacrificeBonus: number;
+  oracleBonus: number;
+  curseTargetPlayerId?: string;
+  retreatPosition?: BoardPosition;
+}
+
 export interface GameEvent {
   id: string;
   type: string;
   message: string;
   turn?: number;
+  playerId?: string;
+  playerHeroId?: HeroId;
+  playerLabel?: string;
+  room?: GameEventRoomDetails;
+  combat?: GameEventCombatDetails;
+  action?: GameEventActionDetails;
 }
 
 export interface VictoryState {

@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { HeroId } from '../../engine/core/types';
 import { createNewGame } from '../../engine/setup/createGame';
 import type { GameState } from '../../engine/core/types';
 import { ActionPanel } from './ActionPanel';
@@ -199,8 +200,22 @@ describe('Milestone 6 UI', () => {
       eventLog: [
         {
           id: 'event-combat',
-          type: 'combat',
-          message: 'Resolved combat and gained treasure',
+          type: 'combat_resolved',
+          message: 'Resolved combat and defeated Giant Rat',
+          playerId: 'player_human',
+          playerHeroId: 'hero_mage',
+          playerLabel: 'Mage (player_human)',
+          combat: {
+            monsterId: 'giant_rat',
+            monsterStrength: 5,
+            dice: [6, 4],
+            total: 14,
+            outcome: 'victory',
+            weaponBonus: 2,
+            flameSpellCount: 1,
+            warlockSacrificeBonus: 0,
+            oracleBonus: 1,
+          },
         },
       ],
       players: createUiState().players.map((player, index) =>
@@ -230,8 +245,15 @@ describe('Milestone 6 UI', () => {
       screen.getByRole('button', { name: 'Resolve Combat' }),
     ).toBeInTheDocument();
     expect(screen.getByText('7 pts')).toBeInTheDocument();
+    expect(screen.getByText('Mage (player_human)')).toBeInTheDocument();
     expect(
-      screen.getByText('Resolved combat and gained treasure'),
+      screen.getByText('Resolved combat: Victory'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Giant Rat strength 5 · dice 6 + 4 · total 14'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('weapons +2 · flame +1 · oracle +1'),
     ).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Key' })).toHaveAttribute(
       'src',
@@ -799,6 +821,138 @@ describe('Milestone 6 UI', () => {
     expect(onFocusPosition).toHaveBeenCalledOnce();
     expect(onFocusPosition).toHaveBeenCalledWith({ boardX: 0, boardY: 0 });
   });
+
+  it('renders two compact player cards side by side with permanent bonuses and tooltips', () => {
+    const state = createUiState({
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_mage',
+              inventory: {
+                keyCount: 1,
+                weapons: [{ type: 'weapon', bonus: 2 }],
+                spells: [{ type: 'spell', spellKind: 'flame' }],
+              },
+            }
+          : {
+              ...player,
+              heroId: 'hero_thief',
+              isCursed: true,
+              skipNextTurn: true,
+            },
+      ),
+    });
+
+    render(<PlayerPanel state={state} />);
+
+    const grid = screen.getByTestId('player-panel-grid');
+    const mageCard = screen.getByTestId('player-card-player_human');
+    const thiefCard = screen.getByTestId('player-card-player_ai_1');
+
+    expect(grid).toHaveClass('sm:grid-cols-2');
+    expect(screen.getByRole('button', { name: 'Mage' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Thief' })).toBeInTheDocument();
+    expect(screen.getByText('ATK +2')).toHaveAttribute(
+      'title',
+      'Current weapon bonus: +2',
+    );
+    expect(screen.getByText('Flame∞')).toHaveAttribute(
+      'title',
+      'Mage: flame spells are not consumed',
+    );
+    expect(screen.getByRole('button', { name: 'Focus Mage on map' })).toHaveAttribute(
+      'title',
+      'Mage portrait - right-click to focus on map',
+    );
+    expect(within(mageCard).getByText('0 pts')).toBeInTheDocument();
+    expect(within(thiefCard).getByText('0 pts')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Weapon +2' })).toHaveAttribute(
+      'title',
+      'Weapon +2',
+    );
+    expect(screen.getByRole('img', { name: 'Key' })).toHaveAttribute(
+      'title',
+      'Key',
+    );
+    expect(screen.getByRole('img', { name: 'cursed' })).toHaveAttribute(
+      'title',
+      'Cursed: hero abilities are inactive',
+    );
+    expect(screen.getByRole('img', { name: 'unconscious' })).toHaveAttribute(
+      'title',
+      'Unconscious: this player skips the next turn',
+    );
+    expect(screen.queryByText('Draw = Win')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
+
+    expect(screen.getByTestId('hero-info-player_ai_1')).toHaveTextContent(
+      'Combat draws count as wins. The Thief may ignore monsters while moving.',
+    );
+  });
+
+  it('spans the last player card across both columns for three players', () => {
+    const state = createUiStateWithPlayerCount(3, [
+      'hero_mage',
+      'hero_warrior',
+      'hero_oracle',
+    ]);
+
+    render(<PlayerPanel state={state} />);
+
+    expect(screen.getByTestId('player-panel-grid')).toHaveClass('sm:grid-cols-2');
+    expect(screen.getByTestId('player-card-player_ai_2')).toHaveClass(
+      'sm:col-span-2',
+    );
+  });
+
+  it('renders a two-by-two compact player grid for four players and shows the oracle bonus only when active', () => {
+    const state = {
+      ...createUiStateWithPlayerCount(4, [
+        'hero_mage',
+        'hero_warrior',
+        'hero_warlock',
+        'hero_oracle',
+      ]),
+      activePlayerIndex: 3,
+      remainingSteps: 3,
+    };
+
+    render(<PlayerPanel state={state} />);
+
+    expect(screen.getByTestId('player-panel-grid')).toHaveClass('sm:grid-cols-2');
+    expect(screen.getAllByTestId(/player-card-/)).toHaveLength(4);
+    expect(screen.queryByText('+1 First Fight')).toBeNull();
+    expect(screen.queryByText('Sacrifice +1')).toBeNull();
+    expect(screen.queryByText('Reroll')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Oracle' }));
+
+    expect(screen.getByTestId('hero-info-player_ai_3')).toHaveTextContent(
+      'Draws two room tokens and chooses one. Gains +1 combat strength before the first step is spent.',
+    );
+  });
+
+  it('shows the newest event first and still limits the log to the last eight entries', () => {
+    const state = createUiState({
+      eventLog: Array.from({ length: 10 }, (_, index) => ({
+        id: `event-${index}`,
+        type: 'ui_action',
+        message: `Event ${index}`,
+      })),
+    });
+
+    const { container } = render(<EventLog state={state} />);
+    const entries = Array.from(container.querySelectorAll('ol > li'));
+
+    expect(entries).toHaveLength(8);
+    expect(entries[0]).toHaveTextContent('Event 9');
+    expect(entries[1]).toHaveTextContent('Event 8');
+    expect(entries[7]).toHaveTextContent('Event 2');
+    expect(screen.queryByText('Event 1')).toBeNull();
+    expect(screen.queryByText('Event 0')).toBeNull();
+  });
 });
 
 function createUiState(overrides: Partial<GameState> = {}): GameState {
@@ -836,4 +990,24 @@ function baseBoard(): GameState['board'] {
       looseItems: [],
     },
   ];
+}
+
+function createUiStateWithPlayerCount(
+  playerCount: 3 | 4,
+  heroIds: HeroId[],
+): GameState {
+  const state = createNewGame({
+    humanHeroId: heroIds[0],
+    aiCount: playerCount - 1,
+    seed: `ui-test-${playerCount}-players`,
+  });
+
+  return {
+    ...state,
+    players: state.players.map((player, index) => ({
+      ...player,
+      heroId: heroIds[index],
+      position: { boardX: index, boardY: 0 },
+    })),
+  };
 }

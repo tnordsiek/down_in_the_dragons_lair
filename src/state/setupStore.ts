@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { applyGameAction } from '../engine/core/actions';
+import { createPlayerEventFields } from '../engine/core/events';
 import type { GameAction, GameState, HeroId } from '../engine/core/types';
 import {
   getLegalExplorationDirections,
@@ -54,12 +55,10 @@ export const useSetupStore = create<SetupState>((set) => ({
         aiCount: state.aiCount,
         seed: state.seed,
       });
-      const persistedState = appendUiEvent(gameState, 'New game started');
-
-      savePersistedGameState(persistedState);
+      savePersistedGameState(gameState);
 
       return {
-        gameState: persistedState,
+        gameState,
         hasSavedGame: true,
         lastError: undefined,
         persistenceError: undefined,
@@ -97,9 +96,13 @@ export const useSetupStore = create<SetupState>((set) => ({
   dispatch: (action) =>
     set((state) => {
       try {
+        const nextState = applyGameAction(state.gameState, action);
+        const actingPlayer = state.gameState?.players[state.gameState.activePlayerIndex];
         const gameState = appendUiEvent(
-          applyGameAction(state.gameState, action),
+          nextState,
           actionMessage(action),
+          action,
+          actingPlayer,
         );
 
         savePersistedGameState(gameState);
@@ -135,7 +138,16 @@ export const useSetupStore = create<SetupState>((set) => ({
     }),
 }));
 
-function appendUiEvent(state: GameState, message: string): GameState {
+function appendUiEvent(
+  state: GameState,
+  message: string | undefined,
+  action?: GameAction,
+  actingPlayer = state.players[state.activePlayerIndex],
+): GameState {
+  if (!message) {
+    return state;
+  }
+
   return {
     ...state,
     eventLog: [
@@ -144,12 +156,14 @@ function appendUiEvent(state: GameState, message: string): GameState {
         id: `event-${state.eventLog.length}`,
         type: 'ui_action',
         message,
+        ...createPlayerEventFields(actingPlayer),
+        action: action ? { actionType: action.type } : undefined,
       },
     ],
   };
 }
 
-function actionMessage(action: GameAction): string {
+function actionMessage(action: GameAction): string | undefined {
   switch (action.type) {
     case 'movePlayer':
       return `Moved to ${action.target.boardX},${action.target.boardY}`;
@@ -160,9 +174,9 @@ function actionMessage(action: GameAction): string {
     case 'placePendingTile':
       return `Placed tile at ${action.rotation} degrees`;
     case 'resolveRoomToken':
-      return 'Resolved room';
+      return undefined;
     case 'resolveCombat':
-      return 'Resolved combat';
+      return undefined;
     case 'openChest':
       return 'Opened chest';
     case 'beginLoot':
@@ -180,7 +194,7 @@ function actionMessage(action: GameAction): string {
     case 'endTurn':
       return 'Ended turn';
     case 'startGame':
-      return 'New game started';
+      return undefined;
   }
 }
 

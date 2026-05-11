@@ -2,6 +2,7 @@ import { heroIds } from '../../data/heroes';
 import { tilePoolCounts } from '../../data/tiles';
 import { createTokenBag } from '../../data/tokens';
 import { createSeededRng, type SeededRng } from '../../utils/rng';
+import { heroDisplayNames } from '../../data/displayNames';
 import type {
   GameEvent,
   GameState,
@@ -51,7 +52,7 @@ export function createNewGame(options: CreateGameOptions): GameState {
     tokenBag: shuffle(createTokenBag(), rng),
     activePlayerIndex,
     remainingSteps: 4,
-    eventLog: createInitialEventLog(activePlayerIndex),
+    eventLog: createInitialEventLog(players, activePlayerIndex),
     rng: rng.snapshot(),
   };
 }
@@ -131,12 +132,20 @@ export function shuffle<T>(items: T[], rng: SeededRng): T[] {
   return shuffled;
 }
 
-function createInitialEventLog(activePlayerIndex: number): GameEvent[] {
+function createInitialEventLog(
+  players: Player[],
+  activePlayerIndex: number,
+): GameEvent[] {
+  const activePlayer = players[activePlayerIndex];
+
   return [
     {
       id: 'event-0',
       type: 'game_started',
-      message: `Game started. Active player index: ${activePlayerIndex}`,
+      message: `Game started. ${heroDisplayNames[activePlayer.heroId]} (${activePlayer.id}) takes the first turn.`,
+      playerId: activePlayer.id,
+      playerHeroId: activePlayer.heroId,
+      playerLabel: `${heroDisplayNames[activePlayer.heroId]} (${activePlayer.id})`,
     },
   ];
 }

@@ -1,8 +1,10 @@
 import { monsterDefinitions } from '../../data/monsters';
 import { restoreSeededRng } from '../../utils/rng';
 import { getTileAt, samePosition } from '../core/board';
+import { appendGameEvent, createPlayerEventFields } from '../core/events';
 import type {
   BoardPosition,
+  GameEventCombatDetails,
   GameState,
   MonsterDefinition,
   Player,
@@ -49,10 +51,13 @@ export function resolveCombat(
     ? 1
     : 0;
   const flameSpellCount = options.flameSpellCount ?? 0;
+  const oracleBonus = getOracleCombatBonus(state);
+  const weaponBonus = getWeaponBonus(activePlayer);
+  let resolvedDice = dice;
   let total = calculateCombatTotal(
     activePlayer,
     dice,
-    flameSpellCount + warlockSacrificeBonus + getOracleCombatBonus(state),
+    flameSpellCount + warlockSacrificeBonus + oracleBonus,
   );
   let outcome = getCombatOutcomeForPlayer(
     activePlayer,
@@ -70,19 +75,32 @@ export function resolveCombat(
       rng.rollDie(6),
       rng.rollDie(6),
     ];
+    resolvedDice = rerollDice;
     total = calculateCombatTotal(
       activePlayer,
       rerollDice,
-      flameSpellCount + warlockSacrificeBonus + getOracleCombatBonus(state),
+      flameSpellCount + warlockSacrificeBonus + oracleBonus,
     );
     outcome = getCombatOutcomeForPlayer(activePlayer, total, monster.strength);
   }
+
+  const combatEvent = createCombatEventDetails(
+    monster,
+    resolvedDice,
+    total,
+    outcome,
+    weaponBonus,
+    flameSpellCount,
+    warlockSacrificeBonus,
+    oracleBonus,
+  );
 
   if (outcome === 'victory') {
     return resolveVictory(
       { ...stateWithSpentResources, rng: rng.snapshot() },
       monster,
       dice,
+      combatEvent,
       options.curseTargetPlayerId,
     );
   }
@@ -90,6 +108,7 @@ export function resolveCombat(
   return resolveRetreat(
     { ...stateWithSpentResources, rng: rng.snapshot() },
     outcome,
+    combatEvent,
   );
 }
 
@@ -98,12 +117,7 @@ export function calculateCombatTotal(
   dice: [number, number],
   flameSpellCount = 0,
 ): number {
-  const weaponBonus = player.inventory.weapons.reduce(
-    (sum, weapon) => sum + weapon.bonus,
-    0,
-  );
-
-  return dice[0] + dice[1] + weaponBonus + flameSpellCount;
+  return dice[0] + dice[1] + getWeaponBonus(player) + flameSpellCount;
 }
 
 export function getCombatOutcome(
@@ -137,6 +151,7 @@ function resolveVictory(
   state: GameState,
   monster: MonsterDefinition,
   dice: [number, number],
+  combatEvent: GameEventCombatDetails,
   curseTargetPlayerId?: string,
 ): GameState {
   const combat = state.combat!;
@@ -183,27 +198,45 @@ function resolveVictory(
     combat: undefined,
     pendingLoot: combatRewardLoot,
   };
+  const stateWithEvent = appendGameEvent(stateAfterReward, {
+    type: 'combat_resolved',
+    message: `Resolved combat and defeated ${monster.displayName}`,
+    ...createPlayerEventFields(activePlayer),
+    combat: {
+      ...combatEvent,
+      curseTargetPlayerId,
+    },
+  });
 
   if (!monster.isAncientDragon) {
-    return stateAfterReward;
+    return stateWithEvent;
   }
 
   return {
-    ...stateAfterReward,
-    victory: createVictoryState(stateAfterReward, activePlayer.id),
+    ...stateWithEvent,
+    victory: createVictoryState(stateWithEvent, activePlayer.id),
   };
 }
 
-function resolveRetreat(state: GameState, outcome: CombatOutcome): GameState {
+function resolveRetreat(
+  state: GameState,
+  outcome: CombatOutcome,
+  combatEvent: GameEventCombatDetails,
+): GameState {
   const combat = state.combat!;
   const activePlayer = state.players[state.activePlayerIndex];
 
   if (shouldSwordsmanKeepCombat(activePlayer, outcome)) {
-    return {
+    return appendGameEvent({
       ...state,
       phase: 'optional_post_combat',
       combat,
-    };
+    }, {
+      type: 'combat_resolved',
+      message: `Resolved combat against ${monsterDefinitions[combat.monsterId].displayName}`,
+      ...createPlayerEventFields(activePlayer),
+      combat: combatEvent,
+    });
   }
 
   const warlockFallback =
@@ -241,13 +274,22 @@ function resolveRetreat(state: GameState, outcome: CombatOutcome): GameState {
       : retreatedPlayer;
   });
 
-  return {
+  return appendGameEvent({
     ...state,
     phase: 'turn_end',
     players,
     combat: undefined,
     rng: warlockFallback?.rng ?? state.rng,
-  };
+  }, {
+    type: 'combat_resolved',
+    message: `Resolved combat against ${monsterDefinitions[combat.monsterId].displayName}`,
+    ...createPlayerEventFields(activePlayer),
+    combat: {
+      ...combatEvent,
+      retreatPosition:
+        players[state.activePlayerIndex]?.position ?? combat.enteredFrom,
+    },
+  });
 }
 
 function spendFlameSpells(
@@ -354,6 +396,33 @@ function getOracleCombatBonus(state: GameState): number {
     state.remainingSteps === 3
     ? 1
     : 0;
+}
+
+function getWeaponBonus(player: Player): number {
+  return player.inventory.weapons.reduce((sum, weapon) => sum + weapon.bonus, 0);
+}
+
+function createCombatEventDetails(
+  monster: MonsterDefinition,
+  dice: [number, number],
+  total: number,
+  outcome: CombatOutcome,
+  weaponBonus: number,
+  flameSpellCount: number,
+  warlockSacrificeBonus: number,
+  oracleBonus: number,
+): GameEventCombatDetails {
+  return {
+    monsterId: monster.id,
+    monsterStrength: monster.strength,
+    dice,
+    total,
+    outcome,
+    weaponBonus,
+    flameSpellCount,
+    warlockSacrificeBonus,
+    oracleBonus,
+  };
 }
 
 function shouldUseWarriorReroll(

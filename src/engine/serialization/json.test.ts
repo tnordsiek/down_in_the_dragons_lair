@@ -14,7 +14,27 @@ describe('game state serialization foundation', () => {
       tokenBag: [{ id: 'treasure_chest', kind: 'chest' }],
       activePlayerIndex: 0,
       remainingSteps: 0,
-      eventLog: [],
+      eventLog: [
+        {
+          id: 'event-0',
+          type: 'combat_resolved',
+          message: 'Resolved combat: Victory',
+          playerId: 'player_human',
+          playerHeroId: 'hero_mage',
+          playerLabel: 'Mage (player_human)',
+          combat: {
+            monsterId: 'giant_rat',
+            monsterStrength: 5,
+            dice: [6, 6],
+            total: 12,
+            outcome: 'victory',
+            weaponBonus: 0,
+            flameSpellCount: 0,
+            warlockSacrificeBonus: 0,
+            oracleBonus: 0,
+          },
+        },
+      ],
       rng: { seed: 'test-seed', state: 123 },
     };
 

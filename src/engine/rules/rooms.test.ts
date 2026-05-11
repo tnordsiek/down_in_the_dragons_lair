@@ -22,6 +22,17 @@ describe('room and chest rules', () => {
     expect(room?.roomToken).toEqual({ id: 'treasure_chest', kind: 'chest' });
     expect(resolved.tokenBag).toHaveLength(0);
     expect(resolved.phase).toBe('turn_end');
+    expect(resolved.eventLog.at(-1)).toEqual(
+      expect.objectContaining({
+        type: 'room_resolved',
+        playerId: resolved.players[resolved.activePlayerIndex].id,
+        room: expect.objectContaining({
+          tokenId: 'treasure_chest',
+          tokenKind: 'chest',
+          position: { boardX: 0, boardY: -1 },
+        }),
+      }),
+    );
   });
 
   it('starts combat when a monster token is drawn', () => {
@@ -34,6 +45,15 @@ describe('room and chest rules', () => {
     expect(resolved.phase).toBe('combat');
     expect(resolved.combat).toEqual(
       expect.objectContaining({ monsterId: 'giant_rat' }),
+    );
+    expect(resolved.eventLog.at(-1)).toEqual(
+      expect.objectContaining({
+        type: 'room_resolved',
+        room: expect.objectContaining({
+          tokenId: 'giant_rat',
+          tokenKind: 'monster',
+        }),
+      }),
     );
   });
 
