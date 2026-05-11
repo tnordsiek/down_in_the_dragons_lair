@@ -181,7 +181,7 @@ export function GameScreen() {
           <EventLog state={state} lastError={lastError} />
         </aside>
       </div>
-      <FooterMeta align="left" />
+      <FooterMeta align="left" versionLabel="v1.1 fnord GAMES 2026" />
     </main>
   );
 }

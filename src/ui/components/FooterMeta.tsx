@@ -2,9 +2,13 @@ import { useState } from 'react';
 
 type FooterMetaProps = {
   align?: 'left' | 'right';
+  versionLabel?: string;
 };
 
-export function FooterMeta({ align = 'right' }: FooterMetaProps) {
+export function FooterMeta({
+  align = 'right',
+  versionLabel = 'v1.1',
+}: FooterMetaProps) {
   const [isImprintOpen, setIsImprintOpen] = useState(false);
   const isLeftAligned = align === 'left';
 
@@ -45,7 +49,7 @@ export function FooterMeta({ align = 'right' }: FooterMetaProps) {
           Imprint
         </button>
       </div>
-      <span>v1.0</span>
+      <span>{versionLabel}</span>
     </div>
   );
 }

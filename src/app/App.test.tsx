@@ -35,7 +35,7 @@ describe('App', () => {
         name: 'Wortmarke oder kompaktes Logo fuer den Startscreen',
       }).length,
     ).toBeGreaterThan(0);
-    expect(screen.getByText('v1.0')).toBeInTheDocument();
+    expect(screen.getByText('v1.1')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Imprint' })).toBeInTheDocument();
   });
 
@@ -51,7 +51,7 @@ describe('App', () => {
       screen.getByRole('heading', { name: 'Actions' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Players')).toBeInTheDocument();
-    expect(screen.getByText('v1.0')).toBeInTheDocument();
+    expect(screen.getByText('v1.1 fnord GAMES 2026')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Imprint' })).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Center Map' }),
