@@ -33,6 +33,7 @@ type BoardViewProps = {
     position: BoardPosition;
     resetZoom?: boolean;
   };
+  onCameraRequestApplied?: (nonce: number) => void;
   state: GameState;
   onConfirmPendingTile?: () => void;
   onExplore?: (direction: TileSide) => void;
@@ -43,6 +44,7 @@ type BoardViewProps = {
 
 export function BoardView({
   cameraRequest,
+  onCameraRequestApplied,
   state,
   onConfirmPendingTile,
   onExplore,
@@ -55,7 +57,12 @@ export function BoardView({
   const cellStridePx = cellSizePx + cellGapPx;
   const gameTable = useAsset('bg_game_table');
   const boardViewportRef = useRef<HTMLDivElement | null>(null);
+  const transformLayerRef = useRef<HTMLDivElement | null>(null);
   const appliedCameraNonceRef = useRef<number | null>(null);
+  const previousGridOriginRef = useRef<{
+    boardMinX: number;
+    boardMinY: number;
+  } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const zoomRef = useRef(zoom);
@@ -76,6 +83,22 @@ export function BoardView({
     boardXValues.push(state.pendingTile.target.boardX);
     boardYValues.push(state.pendingTile.target.boardY);
   }
+
+  const boardLayoutSignature = state.board
+    .map(
+      (tile) =>
+        `${tile.tileInstanceId}:${tile.boardX},${tile.boardY},${tile.rotation}`,
+    )
+    .join('|');
+  const pendingTileSignature = state.pendingTile
+    ? `${state.pendingTile.target.boardX},${state.pendingTile.target.boardY}:${state.pendingTile.blueprintId}:${state.pendingTile.previewRotation}`
+    : 'none';
+  const playerPositionSignature = state.players
+    .map(
+      (player) =>
+        `${player.id}:${player.position.boardX},${player.position.boardY}`,
+    )
+    .join('|');
 
   const tileMinX = Math.min(...boardXValues, -2);
   const tileMaxX = Math.max(...boardXValues, 2);
@@ -99,6 +122,7 @@ export function BoardView({
   const boardMaxY = playerOnMaxYEdge ? tileMaxY + 1 : tileMaxY;
   const columns = boardMaxX - boardMinX + 1;
   const rows = boardMaxY - boardMinY + 1;
+  const gridOriginSignature = `${boardMinX},${boardMinY},${columns},${rows}`;
   const activePlayer = state.players[state.activePlayerIndex];
   const reachableMoveTargets = new Map(
     getReachableKnownMovePaths(state).map((target) => [
@@ -160,6 +184,7 @@ export function BoardView({
             ? 'border-stone-500 bg-stone-800'
             : 'border-stone-800 bg-stone-900'
         }`}
+        data-board-position={cellKey}
       >
         {cell.tile || cell.pendingTile ? (
           <div
@@ -233,11 +258,10 @@ export function BoardView({
               </button>
             ) : null}
             {cell.pendingTile && !cell.tile ? null : (
-              <div className="absolute bottom-1 left-1 right-1 flex flex-wrap gap-1">
-                {cell.players.map((player) => (
-                  <HeroToken key={player.id} heroId={player.heroId} />
-                ))}
-              </div>
+              <HeroTokenStack
+                activePlayerId={state.players[state.activePlayerIndex].id}
+                players={cell.players}
+              />
             )}
           </div>
         ) : isClickableExplorationTarget ? (
@@ -267,6 +291,44 @@ export function BoardView({
   useEffect(() => {
     panRef.current = pan;
   }, [pan]);
+
+  useEffect(() => {
+    const previousOrigin = previousGridOriginRef.current;
+
+    if (!previousOrigin) {
+      previousGridOriginRef.current = { boardMinX, boardMinY };
+      return;
+    }
+
+    if (
+      previousOrigin.boardMinX === boardMinX &&
+      previousOrigin.boardMinY === boardMinY
+    ) {
+      return;
+    }
+
+    if (cameraRequest && appliedCameraNonceRef.current !== cameraRequest.nonce) {
+      previousGridOriginRef.current = { boardMinX, boardMinY };
+      return;
+    }
+
+    const currentZoom = zoomRef.current;
+    const deltaX =
+      (boardMinX - previousOrigin.boardMinX) * cellStridePx * currentZoom;
+    const deltaY =
+      (boardMinY - previousOrigin.boardMinY) * cellStridePx * currentZoom;
+
+    previousGridOriginRef.current = { boardMinX, boardMinY };
+
+    if (deltaX === 0 && deltaY === 0) {
+      return;
+    }
+
+    setPan((currentPan) => ({
+      x: Number((currentPan.x + deltaX).toFixed(3)),
+      y: Number((currentPan.y + deltaY).toFixed(3)),
+    }));
+  }, [boardMinX, boardMinY, cameraRequest, cellStridePx]);
 
   useEffect(() => {
     const boardViewport = boardViewportRef.current;
@@ -376,18 +438,45 @@ export function BoardView({
     }
 
     const boardViewport = boardViewportRef.current;
+    const transformLayer = transformLayerRef.current;
 
-    if (!boardViewport || viewportSize.width <= 0 || viewportSize.height <= 0) {
+    if (
+      !boardViewport ||
+      !transformLayer ||
+      viewportSize.width <= 0 ||
+      viewportSize.height <= 0
+    ) {
       return;
     }
 
-    const targetZoom = cameraRequest.resetZoom ? 1 : zoom;
+    const currentZoom = zoomRef.current;
+    const targetZoom = cameraRequest.resetZoom ? 1 : currentZoom;
+    const targetCell = transformLayer.querySelector<HTMLElement>(
+      `[data-board-position="${positionKey(cameraRequest.position)}"]`,
+    );
+
+    if (!targetCell) {
+      return;
+    }
+
+    const transformRect = transformLayer.getBoundingClientRect();
+    const targetRect = targetCell.getBoundingClientRect();
+
+    if (
+      transformRect.width <= 0 ||
+      transformRect.height <= 0 ||
+      targetRect.width <= 0 ||
+      targetRect.height <= 0
+    ) {
+      return;
+    }
+
     const centerX =
-      (cameraRequest.position.boardX - boardMinX) * cellStridePx +
-      cellSizePx / 2;
+      (targetRect.left - transformRect.left + targetRect.width / 2) /
+      currentZoom;
     const centerY =
-      (cameraRequest.position.boardY - boardMinY) * cellStridePx +
-      cellSizePx / 2;
+      (targetRect.top - transformRect.top + targetRect.height / 2) /
+      currentZoom;
     const nextPan = {
       x: boardViewport.clientWidth / 2 - centerX * targetZoom,
       y: boardViewport.clientHeight / 2 - centerY * targetZoom,
@@ -399,7 +488,16 @@ export function BoardView({
 
     setPan(nextPan);
     appliedCameraNonceRef.current = cameraRequest.nonce;
-  }, [boardMinX, boardMinY, cameraRequest, cellStridePx, viewportSize, zoom]);
+    onCameraRequestApplied?.(cameraRequest.nonce);
+  }, [
+    boardLayoutSignature,
+    cameraRequest,
+    gridOriginSignature,
+    onCameraRequestApplied,
+    pendingTileSignature,
+    playerPositionSignature,
+    viewportSize,
+  ]);
 
   return (
     <section
@@ -458,6 +556,7 @@ export function BoardView({
             isDragging ? 'cursor-grabbing' : 'cursor-grab'
           }`}
           data-testid="board-transform-layer"
+          ref={transformLayerRef}
           style={{
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
             width: 'max-content',
@@ -623,16 +722,23 @@ function RoomToken({ token }: { token: Token }) {
   );
 }
 
-function HeroToken({ heroId }: { heroId: HeroId }) {
+function HeroToken({
+  heroId,
+  sizePx = 32,
+}: {
+  heroId: HeroId;
+  sizePx?: number;
+}) {
   const assetId = `${heroId}_token`;
   const assetUrl = getAssetUrl(assetId);
   const label = heroName(heroId);
 
   return (
     <span
-      className="inline-flex h-8 w-8 items-center justify-center bg-amber-300 font-mono text-stone-950"
+      className="inline-flex items-center justify-center bg-amber-300 font-mono text-stone-950"
       data-asset-id={assetId}
       title={label}
+      style={{ height: `${sizePx}px`, width: `${sizePx}px` }}
     >
       {assetUrl ? (
         <img
@@ -644,6 +750,54 @@ function HeroToken({ heroId }: { heroId: HeroId }) {
         label.slice(0, 1)
       )}
     </span>
+  );
+}
+
+function HeroTokenStack({
+  activePlayerId,
+  players,
+}: {
+  activePlayerId: string;
+  players: GameState['players'];
+}) {
+  if (players.length === 0) {
+    return null;
+  }
+
+  if (players.length === 1) {
+    return (
+      <div className="absolute left-1 top-1 z-[2]" data-testid="hero-stack">
+        <HeroToken heroId={players[0].heroId} />
+      </div>
+    );
+  }
+
+  const orderedPlayers = [
+    ...players.filter((player) => player.id !== activePlayerId),
+    ...players.filter((player) => player.id === activePlayerId),
+  ];
+  const tokenHeight = players.length >= 4 ? 28 : 32;
+  const topOffset = players.length >= 4 ? 10 : 12;
+
+  return (
+    <div
+      className="absolute left-1 top-1 z-[2] w-8"
+      data-testid="hero-stack"
+    >
+      {orderedPlayers.map((player, index) => (
+        <div
+          key={player.id}
+          className="absolute left-0"
+          data-testid={`hero-stack-entry-${player.id}`}
+          style={{
+            top: `${index * topOffset}px`,
+            zIndex: index + 1,
+          }}
+        >
+          <HeroToken heroId={player.heroId} sizePx={tokenHeight} />
+        </div>
+      ))}
+    </div>
   );
 }
 

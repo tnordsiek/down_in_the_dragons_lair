@@ -115,8 +115,8 @@ export function GameScreen() {
 
   return (
     <main className="relative min-h-screen bg-stone-950 text-stone-100 lg:h-screen">
-      <div className="grid min-h-screen w-full gap-4 px-4 py-4 lg:h-full lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="flex min-h-0 min-w-0 flex-col gap-4">
+      <div className="grid min-h-screen w-full gap-4 px-4 py-4 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="flex min-h-0 min-w-0 flex-col gap-4 lg:h-full">
           <header className="grid h-[120px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 border-b border-stone-800 pb-2">
             <div className="flex justify-start">
               <div className="flex items-center gap-2">
@@ -184,7 +184,7 @@ export function GameScreen() {
             onRotatePendingTile={handleRotatePendingTile}
           />
         </div>
-        <aside className="grid content-start gap-4 lg:w-[22rem] lg:justify-self-end">
+        <aside className="grid min-h-0 content-start gap-4 lg:h-full lg:w-[22rem] lg:justify-self-end lg:overflow-y-auto lg:pr-1">
           <ActionPanel
             state={state}
             onBeginLoot={handleBeginLoot}

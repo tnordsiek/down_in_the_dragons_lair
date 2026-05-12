@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -33,6 +34,7 @@ const noopActions = {
 
 describe('Milestone 6 UI', () => {
   afterEach(() => {
+    vi.useRealTimers();
     cleanup();
     useSetupStore.setState({
       gameState: undefined,
@@ -399,6 +401,84 @@ describe('Milestone 6 UI', () => {
     ).toHaveAttribute('title', 'Giant Rat: Strength 5');
   });
 
+  it('stacks multiple hero tokens from the top of the tile and keeps the active player in front', () => {
+    const baseState = createUiStateWithPlayerCount(3, [
+      'hero_mage',
+      'hero_warrior',
+      'hero_oracle',
+    ]);
+    const state = {
+      ...baseState,
+      activePlayerIndex: 2,
+      players: baseState.players.map((player) => ({
+        ...player,
+        position: { boardX: 0, boardY: 0 },
+      })),
+    };
+
+    render(<BoardView state={state} />);
+
+    const stack = screen.getByTestId('hero-stack');
+    const mageEntry = screen.getByTestId('hero-stack-entry-player_human');
+    const warriorEntry = screen.getByTestId('hero-stack-entry-player_ai_1');
+    const oracleEntry = screen.getByTestId('hero-stack-entry-player_ai_2');
+
+    expect(stack).toHaveClass('absolute', 'left-1', 'top-1');
+    expect(mageEntry).toHaveAttribute(
+      'style',
+      expect.stringContaining('top: 0px;'),
+    );
+    expect(warriorEntry).toHaveAttribute(
+      'style',
+      expect.stringContaining('top: 12px;'),
+    );
+    expect(oracleEntry).toHaveAttribute(
+      'style',
+      expect.stringContaining('top: 24px;'),
+    );
+    expect(mageEntry).toHaveAttribute(
+      'style',
+      expect.stringContaining('z-index: 1;'),
+    );
+    expect(oracleEntry).toHaveAttribute(
+      'style',
+      expect.stringContaining('z-index: 3;'),
+    );
+  });
+
+  it('keeps stacked hero tokens compact for larger player counts', () => {
+    const baseState = createUiStateWithPlayerCount(5, [
+      'hero_mage',
+      'hero_warrior',
+      'hero_warlock',
+      'hero_thief',
+      'hero_oracle',
+    ]);
+    const state = {
+      ...baseState,
+      activePlayerIndex: 4,
+      players: baseState.players.map((player) => ({
+        ...player,
+        position: { boardX: 0, boardY: 0 },
+      })),
+    };
+
+    render(<BoardView state={state} />);
+
+    expect(screen.getByTestId('hero-stack-entry-player_ai_3')).toHaveAttribute(
+      'style',
+      expect.stringContaining('top: 30px;'),
+    );
+    expect(
+      screen
+        .getByRole('img', { name: 'Mage' })
+        .closest('[data-asset-id="hero_mage_token"]'),
+    ).toHaveAttribute(
+      'style',
+      expect.stringContaining('height: 28px; width: 28px;'),
+    );
+  });
+
   it('renders visible loose item graphics on board tiles', () => {
     const state = createUiState({
       board: [
@@ -679,15 +759,7 @@ describe('Milestone 6 UI', () => {
 
     const board = screen.getByLabelText('Dungeon board');
     const transformLayer = screen.getByTestId('board-transform-layer');
-
-    Object.defineProperty(board, 'clientWidth', {
-      configurable: true,
-      value: 800,
-    });
-    Object.defineProperty(board, 'clientHeight', {
-      configurable: true,
-      value: 600,
-    });
+    setupBoardGeometry(board, transformLayer);
     fireEvent(window, new Event('resize'));
 
     rerender(
@@ -700,11 +772,9 @@ describe('Milestone 6 UI', () => {
         state={state}
       />,
     );
+    setupBoardGeometry(board, transformLayer);
 
-    expect(transformLayer).toHaveAttribute(
-      'style',
-      expect.stringContaining('translate(136px, 112px)'),
-    );
+    expectCenteredOnBoard(getBoardCell('1,0'), board);
 
     rerender(
       <BoardView
@@ -716,10 +786,12 @@ describe('Milestone 6 UI', () => {
         state={state}
       />,
     );
+    setupBoardGeometry(board, transformLayer);
 
+    expectCenteredOnBoard(getBoardCell('0,0'), board);
     expect(transformLayer).toHaveAttribute(
       'style',
-      expect.stringContaining('translate(212px, 112px) scale(1)'),
+      expect.stringContaining('scale(1)'),
     );
   });
 
@@ -743,15 +815,7 @@ describe('Milestone 6 UI', () => {
 
     const board = screen.getByLabelText('Dungeon board');
     const transformLayer = screen.getByTestId('board-transform-layer');
-
-    Object.defineProperty(board, 'clientWidth', {
-      configurable: true,
-      value: 800,
-    });
-    Object.defineProperty(board, 'clientHeight', {
-      configurable: true,
-      value: 600,
-    });
+    setupBoardGeometry(board, transformLayer);
     fireEvent(window, new Event('resize'));
 
     fireEvent.wheel(board, { deltaY: -100 });
@@ -800,22 +864,15 @@ describe('Milestone 6 UI', () => {
 
     const board = screen.getByLabelText('Dungeon board');
     const transformLayer = screen.getByTestId('board-transform-layer');
-
-    Object.defineProperty(board, 'clientWidth', {
-      configurable: true,
-      value: 800,
-    });
-    Object.defineProperty(board, 'clientHeight', {
-      configurable: true,
-      value: 600,
-    });
+    setupBoardGeometry(board, transformLayer);
     fireEvent(window, new Event('resize'));
 
     fireEvent.wheel(board, { deltaY: -100 });
 
+    expectCenteredOnBoard(getBoardCell('0,0'), board);
     expect(transformLayer).toHaveAttribute(
       'style',
-      expect.stringContaining('translate(193.2px, 93.2px) scale(1.1)'),
+      expect.stringContaining('scale(1.1)'),
     );
   });
 
@@ -848,15 +905,7 @@ describe('Milestone 6 UI', () => {
 
     const board = screen.getByLabelText('Dungeon board');
     const transformLayer = screen.getByTestId('board-transform-layer');
-
-    Object.defineProperty(board, 'clientWidth', {
-      configurable: true,
-      value: 800,
-    });
-    Object.defineProperty(board, 'clientHeight', {
-      configurable: true,
-      value: 600,
-    });
+    setupBoardGeometry(board, transformLayer);
     fireEvent(window, new Event('resize'));
 
     rerender(
@@ -869,13 +918,120 @@ describe('Milestone 6 UI', () => {
         state={state}
       />,
     );
+    setupBoardGeometry(board, transformLayer);
 
     fireEvent.wheel(board, { deltaY: -100 });
 
+    expectCenteredOnBoard(getBoardCell('0,0'), board);
     expect(transformLayer).toHaveAttribute(
       'style',
-      expect.stringContaining('translate(193.2px, 93.2px) scale(1.1)'),
+      expect.stringContaining('scale(1.1)'),
     );
+  });
+
+  it('keeps the current center stable when a pending tile extends the board upward', () => {
+    const baseState = createUiState();
+
+    const { rerender } = render(
+      <BoardView
+        cameraRequest={{
+          nonce: 0,
+          position: { boardX: 0, boardY: 0 },
+          resetZoom: true,
+        }}
+        state={baseState}
+      />,
+    );
+
+    const board = screen.getByLabelText('Dungeon board');
+    const transformLayer = screen.getByTestId('board-transform-layer');
+    setupBoardGeometry(board, transformLayer);
+    fireEvent(window, new Event('resize'));
+
+    expectCenteredOnBoard(getBoardCell('0,0'), board);
+
+    rerender(
+      <BoardView
+        cameraRequest={{
+          nonce: 0,
+          position: { boardX: 0, boardY: 0 },
+          resetZoom: true,
+        }}
+        state={{
+          ...baseState,
+          pendingTile: {
+            origin: { boardX: 0, boardY: 0 },
+            target: { boardX: 0, boardY: -3 },
+            direction: 'A',
+            blueprintId: 'room_corner',
+            previewRotation: 0,
+            legalRotations: [0, 90],
+            skippedBlueprintIds: [],
+          },
+        }}
+      />,
+    );
+
+    setupBoardGeometry(board, transformLayer);
+
+    expectCenteredOnBoard(getBoardCell('0,0'), board);
+  });
+
+  it('keeps the current center stable when player edge expansion adds a new left column', () => {
+    const baseState = createUiState({
+      board: [
+        {
+          ...baseBoard()[0],
+          boardX: 2,
+          boardY: 0,
+        },
+      ],
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? { ...player, position: { boardX: 2, boardY: 0 } }
+          : player,
+      ),
+    });
+
+    const { rerender } = render(
+      <BoardView
+        cameraRequest={{
+          nonce: 0,
+          position: { boardX: 2, boardY: 0 },
+          resetZoom: true,
+        }}
+        state={baseState}
+      />,
+    );
+
+    const board = screen.getByLabelText('Dungeon board');
+    const transformLayer = screen.getByTestId('board-transform-layer');
+    setupBoardGeometry(board, transformLayer);
+    fireEvent(window, new Event('resize'));
+
+    expectCenteredOnBoard(getBoardCell('2,0'), board);
+
+    rerender(
+      <BoardView
+        cameraRequest={{
+          nonce: 0,
+          position: { boardX: 2, boardY: 0 },
+          resetZoom: true,
+        }}
+        state={{
+          ...baseState,
+          players: baseState.players.map((player, index) =>
+            index === 0
+              ? { ...player, position: { boardX: -2, boardY: 0 } }
+              : player,
+          ),
+        }}
+      />,
+    );
+
+    setupBoardGeometry(board, transformLayer);
+
+    expectCenteredOnBoard(getBoardCell('2,0'), board);
   });
 
   it('allows deeper zooming on the board', () => {
@@ -1031,15 +1187,7 @@ describe('Milestone 6 UI', () => {
 
     const board = screen.getByLabelText('Dungeon board');
     const transformLayer = screen.getByTestId('board-transform-layer');
-
-    Object.defineProperty(board, 'clientWidth', {
-      configurable: true,
-      value: 800,
-    });
-    Object.defineProperty(board, 'clientHeight', {
-      configurable: true,
-      value: 600,
-    });
+    setupBoardGeometry(board, transformLayer);
     fireEvent(window, new Event('resize'));
 
     fireEvent.wheel(board, { deltaY: -100 });
@@ -1052,9 +1200,80 @@ describe('Milestone 6 UI', () => {
       screen.getByRole('button', { name: 'Thief portrait actions' }),
     );
 
+    expectCenteredOnBoard(getBoardCell('1,0'), board);
     expect(transformLayer).toHaveAttribute(
       'style',
-      expect.stringContaining('translate(136px, 112px) scale(1)'),
+      expect.stringContaining('scale(1)'),
+    );
+  });
+
+  it('keeps center map and portrait focus correct when an AI player starts first', () => {
+    vi.useFakeTimers();
+
+    const baseState = createUiState({
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-east',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+    const state = {
+      ...baseState,
+      activePlayerIndex: 1,
+      phase: 'turn_start' as const,
+      players: baseState.players.map((player, index) =>
+        index === 0
+          ? { ...player, position: { boardX: 1, boardY: 0 } }
+          : { ...player, position: { boardX: 0, boardY: 0 } },
+      ),
+    };
+
+    useSetupStore.setState({
+      gameState: state,
+      hasSavedGame: false,
+      lastError: undefined,
+    });
+
+    render(<GameScreen />);
+
+    const board = screen.getByLabelText('Dungeon board');
+    const transformLayer = screen.getByTestId('board-transform-layer');
+    setupBoardGeometry(board, transformLayer);
+    const initialBoardHeight = board.getBoundingClientRect().height;
+    fireEvent(window, new Event('resize'));
+
+    act(() => {
+      vi.advanceTimersByTime(250);
+    });
+
+    expect(useSetupStore.getState().gameState?.pendingTile).toBeDefined();
+
+    setupBoardGeometry(board, transformLayer);
+    expect(board.getBoundingClientRect().height).toBe(initialBoardHeight);
+    expectCenteredOnBoard(getBoardCell('0,0'), board);
+    fireEvent.click(screen.getByRole('button', { name: 'Center Map' }));
+
+    expectCenteredOnBoard(getBoardCell('0,0'), board);
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('scale(1)'),
+    );
+
+    fireEvent.contextMenu(
+      screen.getByRole('button', { name: 'Mage portrait actions' }),
+    );
+
+    expectCenteredOnBoard(getBoardCell('1,0'), board);
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('scale(1)'),
     );
   });
 
@@ -1289,7 +1508,7 @@ function baseBoard(): GameState['board'] {
 }
 
 function createUiStateWithPlayerCount(
-  playerCount: 3 | 4,
+  playerCount: 3 | 4 | 5,
   heroIds: HeroId[],
 ): GameState {
   const state = createNewGame({
@@ -1306,4 +1525,139 @@ function createUiStateWithPlayerCount(
       position: { boardX: index, boardY: 0 },
     })),
   };
+}
+
+function setupBoardGeometry(board: HTMLElement, transformLayer: HTMLElement) {
+  const viewportWidth = 800;
+  const viewportHeight = 600;
+  const cellSizePx = 72;
+  const cellGapPx = 4;
+  const cells = Array.from(
+    transformLayer.querySelectorAll<HTMLElement>('[data-board-position]'),
+  );
+  const positions = cells.map((cell) => parseBoardPosition(cell));
+  const minX = Math.min(...positions.map((position) => position.boardX));
+  const minY = Math.min(...positions.map((position) => position.boardY));
+  const maxX = Math.max(...positions.map((position) => position.boardX));
+  const maxY = Math.max(...positions.map((position) => position.boardY));
+  const contentWidth = (maxX - minX + 1) * cellSizePx + (maxX - minX) * cellGapPx;
+  const contentHeight =
+    (maxY - minY + 1) * cellSizePx + (maxY - minY) * cellGapPx;
+
+  Object.defineProperty(board, 'clientWidth', {
+    configurable: true,
+    value: viewportWidth,
+  });
+  Object.defineProperty(board, 'clientHeight', {
+    configurable: true,
+    value: viewportHeight,
+  });
+  board.getBoundingClientRect = () =>
+    createRect(0, 0, viewportWidth, viewportHeight);
+
+  transformLayer.getBoundingClientRect = () => {
+    const { scale, translateX, translateY } = parseTransform(
+      transformLayer.getAttribute('style') ?? '',
+    );
+
+    return createRect(
+      translateX,
+      translateY,
+      contentWidth * scale,
+      contentHeight * scale,
+    );
+  };
+
+  for (const cell of cells) {
+    cell.getBoundingClientRect = () => {
+      const { scale, translateX, translateY } = parseTransform(
+        transformLayer.getAttribute('style') ?? '',
+      );
+      const { boardX, boardY } = parseBoardPosition(cell);
+      const offsetX = (boardX - minX) * (cellSizePx + cellGapPx);
+      const offsetY = (boardY - minY) * (cellSizePx + cellGapPx);
+
+      return createRect(
+        translateX + offsetX * scale,
+        translateY + offsetY * scale,
+        cellSizePx * scale,
+        cellSizePx * scale,
+      );
+    };
+  }
+}
+
+function getBoardCell(position: string): HTMLElement {
+  const cell = document.querySelector<HTMLElement>(
+    `[data-board-position="${position}"]`,
+  );
+
+  if (!cell) {
+    throw new Error(`Missing board cell ${position}`);
+  }
+
+  return cell;
+}
+
+function getElementCenter(element: HTMLElement): { x: number; y: number } {
+  const rect = element.getBoundingClientRect();
+
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2,
+  };
+}
+
+function expectCenteredOnBoard(target: HTMLElement, board: HTMLElement) {
+  const targetCenter = getElementCenter(target);
+  const boardCenter = getElementCenter(board);
+
+  expect(targetCenter.x).toBeCloseTo(boardCenter.x, 3);
+  expect(targetCenter.y).toBeCloseTo(boardCenter.y, 3);
+}
+
+function parseBoardPosition(element: HTMLElement): {
+  boardX: number;
+  boardY: number;
+} {
+  const rawPosition = element.dataset.boardPosition;
+
+  if (!rawPosition) {
+    throw new Error('Missing board position data attribute');
+  }
+
+  const [boardX, boardY] = rawPosition.split(',').map(Number);
+
+  return { boardX, boardY };
+}
+
+function parseTransform(style: string): {
+  scale: number;
+  translateX: number;
+  translateY: number;
+} {
+  const translateMatch = style.match(
+    /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/,
+  );
+  const scaleMatch = style.match(/scale\(([-\d.]+)\)/);
+
+  return {
+    scale: scaleMatch ? Number(scaleMatch[1]) : 1,
+    translateX: translateMatch ? Number(translateMatch[1]) : 0,
+    translateY: translateMatch ? Number(translateMatch[2]) : 0,
+  };
+}
+
+function createRect(left: number, top: number, width: number, height: number) {
+  return {
+    x: left,
+    y: top,
+    left,
+    top,
+    width,
+    height,
+    right: left + width,
+    bottom: top + height,
+    toJSON: () => ({}),
+  } as DOMRect;
 }

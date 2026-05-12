@@ -107,7 +107,13 @@ describe('App', () => {
       'lg:grid-cols-[minmax(0,1fr)_22rem]',
     );
     expect(layout).not.toHaveClass('max-w-7xl');
-    expect(sidebar).toHaveClass('lg:w-[22rem]', 'lg:justify-self-end');
+    expect(sidebar).toHaveClass(
+      'min-h-0',
+      'lg:h-full',
+      'lg:w-[22rem]',
+      'lg:justify-self-end',
+      'lg:overflow-y-auto',
+    );
     expect(header).toHaveClass('h-[120px]', 'pb-2');
     expect(leftHeaderCell).toContainElement(centerMapButton);
     expect(leftHeaderCell).toContainElement(newGameButton);
@@ -139,9 +145,10 @@ describe('App', () => {
     const main = board.closest('main');
 
     expect(main).toHaveClass('lg:h-screen');
-    expect(contentColumn).toHaveClass('min-h-0', 'flex-col');
+    expect(contentColumn).toHaveClass('min-h-0', 'flex-col', 'lg:h-full');
     expect(boardSection).toHaveClass('flex', 'min-h-0', 'flex-1');
     expect(board).toHaveClass('h-full', 'flex-1');
+    expect(board.closest('main')?.firstElementChild).toHaveClass('lg:min-h-0');
   });
 
   it('resumes a saved game from the setup flow', () => {
