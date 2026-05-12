@@ -57,7 +57,7 @@ export function resolveRoomToken(
   if (token.kind === 'chest') {
     return appendGameEvent({
       ...state,
-      phase: 'turn_end',
+      phase: state.remainingSteps > 0 ? 'await_move' : 'turn_end',
       board,
       tokenBag: remainingTokenBag,
     }, roomEvent);

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { GameState } from '../engine/core/types';
+import type { GameState, PlacedTile } from '../engine/core/types';
+import { resolveRoomToken } from '../engine/rules/rooms';
 import { createNewGame } from '../engine/setup/createGame';
 import { getLegalAiActions } from './legalActions';
 
@@ -55,6 +56,45 @@ describe('AI legal actions', () => {
     expect(getLegalAiActions(lootResolutionState)).toContainEqual({
       type: 'leaveLoot',
     });
+  });
+
+  it('keeps movement and end-turn actions legal after resolving a chest with steps remaining', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'chest-actions-seed',
+    });
+    const roomTile: PlacedTile = {
+      tileInstanceId: 'tile-room',
+      blueprintId: 'room_cross',
+      rotation: 0,
+      boardX: 0,
+      boardY: -1,
+      discovered: true,
+      looseItems: [],
+    };
+    const resolvedChestState = resolveRoomToken({
+      ...base,
+      phase: 'resolve_room_token',
+      board: [...base.board, roomTile],
+      players: base.players.map((player, index) =>
+        index === base.activePlayerIndex
+          ? { ...player, position: { boardX: 0, boardY: -1 } }
+          : player,
+      ),
+      tokenBag: [{ id: 'treasure_chest', kind: 'chest' }],
+      remainingSteps: 3,
+      lastMoveFrom: { boardX: 0, boardY: 0 },
+    });
+
+    expect(resolvedChestState.phase).toBe('await_move');
+    expect(getLegalAiActions(resolvedChestState)).toEqual(
+      expect.arrayContaining([
+        { type: 'endTurn' },
+        expect.objectContaining({ type: 'movePlayer' }),
+        expect.objectContaining({ type: 'declareExplorationDirection' }),
+      ]),
+    );
   });
 });
 

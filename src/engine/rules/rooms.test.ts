@@ -6,7 +6,7 @@ import { openChest } from './chests';
 import { resolveRoomToken } from './rooms';
 
 describe('room and chest rules', () => {
-  it('places a chest token from the bag and consumes it', () => {
+  it('places a chest token from the bag, consumes it, and allows moving when steps remain', () => {
     const state = createRoomState({
       id: 'treasure_chest',
       kind: 'chest',
@@ -21,7 +21,7 @@ describe('room and chest rules', () => {
 
     expect(room?.roomToken).toEqual({ id: 'treasure_chest', kind: 'chest' });
     expect(resolved.tokenBag).toHaveLength(0);
-    expect(resolved.phase).toBe('turn_end');
+    expect(resolved.phase).toBe('await_move');
     expect(resolved.eventLog.at(-1)).toEqual(
       expect.objectContaining({
         type: 'room_resolved',
@@ -33,6 +33,23 @@ describe('room and chest rules', () => {
         }),
       }),
     );
+  });
+
+  it('ends the turn after discovering a chest when no steps remain', () => {
+    const state = createRoomState(
+      {
+        id: 'treasure_chest',
+        kind: 'chest',
+      },
+      { remainingSteps: 0 },
+    );
+    const resolved = resolveRoomToken(state);
+
+    expect(resolved.phase).toBe('turn_end');
+    expect(
+      resolved.board.find((tile) => tile.boardX === 0 && tile.boardY === -1)
+        ?.roomToken,
+    ).toEqual({ id: 'treasure_chest', kind: 'chest' });
   });
 
   it('starts combat when a monster token is drawn', () => {
@@ -88,7 +105,10 @@ describe('room and chest rules', () => {
   });
 });
 
-function createRoomState(token: GameState['tokenBag'][number]): GameState {
+function createRoomState(
+  token: GameState['tokenBag'][number],
+  overrides: Partial<Pick<GameState, 'remainingSteps'>> = {},
+): GameState {
   const base = createNewGame({
     humanHeroId: 'hero_mage',
     aiCount: 1,
@@ -114,7 +134,7 @@ function createRoomState(token: GameState['tokenBag'][number]): GameState {
         : player,
     ),
     tokenBag: [token],
-    remainingSteps: 3,
+    remainingSteps: overrides.remainingSteps ?? 3,
     lastMoveFrom: { boardX: 0, boardY: 0 },
   };
 }
