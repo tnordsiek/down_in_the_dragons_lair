@@ -99,6 +99,7 @@ describe('App', () => {
     const newGameButton = screen.getByRole('button', { name: 'New Game' });
     const leftHeaderCell = header?.firstElementChild;
     const centerHeaderCell = header?.children[1];
+    const rightHeaderCell = header?.children[2];
 
     expect(layout).toHaveClass(
       'grid',
@@ -107,13 +108,22 @@ describe('App', () => {
     );
     expect(layout).not.toHaveClass('max-w-7xl');
     expect(sidebar).toHaveClass('lg:w-[22rem]', 'lg:justify-self-end');
-    expect(header).toHaveClass('h-[120px]');
+    expect(header).toHaveClass('h-[120px]', 'pb-2');
     expect(leftHeaderCell).toContainElement(centerMapButton);
     expect(leftHeaderCell).toContainElement(newGameButton);
     expect(centerHeaderCell).toContainElement(
       screen.getByRole('img', { name: "Down in the Dragon's Lair" }),
     );
+    expect(screen.getByRole('img', { name: "Down in the Dragon's Lair" })).toHaveClass(
+      'max-h-[108px]',
+      'w-auto',
+      'object-contain',
+    );
+    expect(rightHeaderCell).toHaveClass('flex', 'items-center', 'justify-end');
     expect(header?.querySelector('.text-sm.text-stone-400')).toBeNull();
+    expect(
+      screen.queryByRole('img', { name: /Combat die \d:/ }),
+    ).toBeNull();
   });
 
   it('stretches the board area to fill the available game viewport height', () => {

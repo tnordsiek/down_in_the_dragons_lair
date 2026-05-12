@@ -46,6 +46,12 @@ describe('asset manifest runtime mapping', () => {
     'hero_oracle_token',
     'ui_logo_wordmark',
     'ui_logo_header',
+    'ui_dice_01',
+    'ui_dice_02',
+    'ui_dice_03',
+    'ui_dice_04',
+    'ui_dice_05',
+    'ui_dice_06',
     'ui_icon_move',
     'ui_icon_attack',
     'ui_icon_heal',
@@ -88,6 +94,7 @@ describe('asset manifest runtime mapping', () => {
       '/assets/tiles/tile_tunnel_cross.png',
     );
     expect(getAssetUrl('ui_logo_header')).toBe('/assets/ui/ui_logo_header.png');
+    expect(getAssetUrl('ui_dice_06')).toBe('/assets/ui/ui_dice_06.png');
   });
 
   it('keeps asset IDs unique', () => {

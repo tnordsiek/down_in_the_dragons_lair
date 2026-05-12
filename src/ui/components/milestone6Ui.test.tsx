@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { HeroId } from '../../engine/core/types';
@@ -8,7 +14,9 @@ import { ActionPanel } from './ActionPanel';
 import { BoardView } from './BoardView';
 import { EndScreen } from './EndScreen';
 import { EventLog } from './EventLog';
+import { GameScreen } from '../screens/GameScreen';
 import { PlayerPanel } from './PlayerPanel';
+import { useSetupStore } from '../../state/setupStore';
 
 const noopActions = {
   onBeginLoot: vi.fn(),
@@ -24,6 +32,15 @@ const noopActions = {
 };
 
 describe('Milestone 6 UI', () => {
+  afterEach(() => {
+    cleanup();
+    useSetupStore.setState({
+      gameState: undefined,
+      hasSavedGame: false,
+      lastError: undefined,
+    });
+  });
+
   it('shows legal known movement and exploration choices', () => {
     const state = createUiState({
       board: [
@@ -275,6 +292,77 @@ describe('Milestone 6 UI', () => {
       'src',
       '/assets/status/status_unconscious.png',
     );
+  });
+
+  it('shows the latest resolved combat dice as header images', () => {
+    const state = createUiState({
+      phase: 'await_move',
+      eventLog: [
+        {
+          id: 'event-combat-old',
+          type: 'combat_resolved',
+          message: 'Resolved combat against Giant Rat',
+          playerId: 'player_human',
+          playerHeroId: 'hero_mage',
+          playerLabel: 'Mage (player_human)',
+          combat: {
+            monsterId: 'giant_rat',
+            monsterStrength: 5,
+            dice: [1, 2],
+            total: 6,
+            outcome: 'victory',
+            weaponBonus: 0,
+            flameSpellCount: 0,
+            warlockSacrificeBonus: 0,
+            oracleBonus: 0,
+          },
+        },
+        {
+          id: 'event-combat-new',
+          type: 'combat_resolved',
+          message: 'Resolved combat against Giant Spider',
+          playerId: 'player_human',
+          playerHeroId: 'hero_mage',
+          playerLabel: 'Mage (player_human)',
+          combat: {
+            monsterId: 'giant_spider',
+            monsterStrength: 7,
+            dice: [6, 4],
+            total: 10,
+            outcome: 'victory',
+            weaponBonus: 0,
+            flameSpellCount: 0,
+            warlockSacrificeBonus: 0,
+            oracleBonus: 0,
+          },
+        },
+      ],
+    });
+
+    useSetupStore.setState({
+      gameState: state,
+      hasSavedGame: false,
+      lastError: undefined,
+    });
+
+    render(<GameScreen />);
+
+    expect(screen.getByLabelText('Latest combat dice')).toHaveClass('items-center');
+    expect(screen.getByRole('img', { name: 'Combat die 1: 6' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_06.png',
+    );
+    expect(screen.getByRole('img', { name: 'Combat die 1: 6' })).toHaveClass(
+      'max-h-[108px]',
+      'w-auto',
+    );
+    expect(screen.getByRole('img', { name: 'Combat die 2: 4' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_04.png',
+    );
+    expect(
+      screen.getByRole('img', { name: "Down in the Dragon's Lair" }),
+    ).toHaveClass('max-h-[108px]');
   });
 
   it('renders mapped hero and monster images on the board', () => {

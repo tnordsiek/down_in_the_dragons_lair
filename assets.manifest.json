@@ -486,6 +486,72 @@
       "spec": "Breites Logo fuer den festen Spiel-Header"
     },
     {
+      "assetId": "ui_dice_01",
+      "category": "ui",
+      "purpose": "Wuerfelbild fuer das Kampfergebnis 1",
+      "usedBy": ["game_screen", "header", "combat_panel"],
+      "format": "png",
+      "src": "assets/ui/ui_dice_01.png",
+      "placeholderAllowed": false,
+      "replaceableAfterV1": true,
+      "spec": "Kompaktes Wuerfelbild fuer die Anzeige des letzten Kampfwurfs"
+    },
+    {
+      "assetId": "ui_dice_02",
+      "category": "ui",
+      "purpose": "Wuerfelbild fuer das Kampfergebnis 2",
+      "usedBy": ["game_screen", "header", "combat_panel"],
+      "format": "png",
+      "src": "assets/ui/ui_dice_02.png",
+      "placeholderAllowed": false,
+      "replaceableAfterV1": true,
+      "spec": "Kompaktes Wuerfelbild fuer die Anzeige des letzten Kampfwurfs"
+    },
+    {
+      "assetId": "ui_dice_03",
+      "category": "ui",
+      "purpose": "Wuerfelbild fuer das Kampfergebnis 3",
+      "usedBy": ["game_screen", "header", "combat_panel"],
+      "format": "png",
+      "src": "assets/ui/ui_dice_03.png",
+      "placeholderAllowed": false,
+      "replaceableAfterV1": true,
+      "spec": "Kompaktes Wuerfelbild fuer die Anzeige des letzten Kampfwurfs"
+    },
+    {
+      "assetId": "ui_dice_04",
+      "category": "ui",
+      "purpose": "Wuerfelbild fuer das Kampfergebnis 4",
+      "usedBy": ["game_screen", "header", "combat_panel"],
+      "format": "png",
+      "src": "assets/ui/ui_dice_04.png",
+      "placeholderAllowed": false,
+      "replaceableAfterV1": true,
+      "spec": "Kompaktes Wuerfelbild fuer die Anzeige des letzten Kampfwurfs"
+    },
+    {
+      "assetId": "ui_dice_05",
+      "category": "ui",
+      "purpose": "Wuerfelbild fuer das Kampfergebnis 5",
+      "usedBy": ["game_screen", "header", "combat_panel"],
+      "format": "png",
+      "src": "assets/ui/ui_dice_05.png",
+      "placeholderAllowed": false,
+      "replaceableAfterV1": true,
+      "spec": "Kompaktes Wuerfelbild fuer die Anzeige des letzten Kampfwurfs"
+    },
+    {
+      "assetId": "ui_dice_06",
+      "category": "ui",
+      "purpose": "Wuerfelbild fuer das Kampfergebnis 6",
+      "usedBy": ["game_screen", "header", "combat_panel"],
+      "format": "png",
+      "src": "assets/ui/ui_dice_06.png",
+      "placeholderAllowed": false,
+      "replaceableAfterV1": true,
+      "spec": "Kompaktes Wuerfelbild fuer die Anzeige des letzten Kampfwurfs"
+    },
+    {
       "assetId": "ui_button_primary",
       "category": "ui",
       "purpose": "Primaerer Button-Stil",
