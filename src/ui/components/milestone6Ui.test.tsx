@@ -6,13 +6,19 @@ import {
   screen,
   within,
 } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { useState } from 'react';
+import { flushSync } from 'react-dom';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { HeroId } from '../../engine/core/types';
+import { applyGameAction } from '../../engine/core/actions';
 import { createNewGame } from '../../engine/setup/createGame';
 import type { GameState } from '../../engine/core/types';
 import { ActionPanel } from './ActionPanel';
-import { BoardView } from './BoardView';
+import {
+  BoardView,
+  getBoardSelectableHealingPositions,
+} from './BoardView';
 import { EndScreen } from './EndScreen';
 import { EventLog } from './EventLog';
 import { GameScreen } from '../screens/GameScreen';
@@ -20,12 +26,16 @@ import { PlayerPanel } from './PlayerPanel';
 import { useSetupStore } from '../../state/setupStore';
 
 const noopActions = {
+  healingSpellSelection: { mode: 'idle' as const },
+  onCancelHealingSpellSelection: vi.fn(),
   onBeginLoot: vi.fn(),
   onLeaveLoot: vi.fn(),
   onMove: vi.fn(),
   onExplore: vi.fn(),
   onResolveRoom: vi.fn(),
   onResolveCombat: vi.fn(),
+  onSelectHealingSpellTarget: vi.fn(),
+  onStartHealingSpellSelection: vi.fn(),
   onSwapLoot: vi.fn(),
   onTakeLoot: vi.fn(),
   onOpenChest: vi.fn(),
@@ -688,6 +698,99 @@ describe('Milestone 6 UI', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows the healing spell action only when the active hero carries one', () => {
+    const withSpell = createUiState({
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              inventory: {
+                ...player.inventory,
+                spells: [{ type: 'spell', spellKind: 'healing' }],
+              },
+            }
+          : player,
+      ),
+    });
+    const withoutSpell = createUiState();
+    const { rerender } = render(
+      <ActionPanel state={withSpell} {...noopActions} />,
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Use Healing Spell' }),
+    ).toBeInTheDocument();
+
+    rerender(<ActionPanel state={withoutSpell} {...noopActions} />);
+
+    expect(
+      screen.queryByRole('button', { name: 'Use Healing Spell' }),
+    ).toBeNull();
+  });
+
+  it('shows healing spell target choices and tile-selection hint in the panel', () => {
+    const state = createUiState({
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              inventory: {
+                ...player.inventory,
+                spells: [{ type: 'spell', spellKind: 'healing' }],
+              },
+            }
+          : player,
+      ),
+    });
+    const onStartHealingSpellSelection = vi.fn();
+    const onSelectHealingSpellTarget = vi.fn();
+    const { rerender } = render(
+      <ActionPanel
+        state={state}
+        {...noopActions}
+        onStartHealingSpellSelection={onStartHealingSpellSelection}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use Healing Spell' }));
+
+    expect(onStartHealingSpellSelection).toHaveBeenCalledOnce();
+
+    rerender(
+      <ActionPanel
+        state={state}
+        {...noopActions}
+        healingSpellSelection={{ mode: 'select_target' }}
+        onSelectHealingSpellTarget={onSelectHealingSpellTarget}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        'Choose which hero to teleport to a discovered healing tile.',
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mage' }));
+
+    expect(onSelectHealingSpellTarget).toHaveBeenCalledWith('player_human');
+
+    rerender(
+      <ActionPanel
+        state={state}
+        {...noopActions}
+        healingSpellSelection={{
+          mode: 'select_tile',
+          targetPlayerId: 'player_human',
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByText('Choose a discovered healing tile for Mage.'),
+    ).toBeInTheDocument();
+  });
+
   it('highlights legal exploration targets on the board and explores by tile click', () => {
     const state = createUiState();
     const onExplore = vi.fn();
@@ -707,6 +810,256 @@ describe('Milestone 6 UI', () => {
 
     expect(onExplore).toHaveBeenCalledOnce();
     expect(onExplore).toHaveBeenCalledWith('B');
+  });
+
+  it('highlights discovered healing tiles in yellow and selects them by click', () => {
+    const state = createUiState({
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-healing',
+          blueprintId: 'healing_corner',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-tunnel',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: -1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+    const onSelectHealingTile = vi.fn();
+
+    render(
+      <BoardView
+        state={state}
+        onSelectHealingTile={onSelectHealingTile}
+        selectableHealingPositions={[
+          { boardX: 0, boardY: 0 },
+          { boardX: 1, boardY: 0 },
+        ]}
+      />,
+    );
+
+    const startHealingTarget = screen.getByRole('button', {
+      name: 'Select healing tile 0,0',
+    });
+    const secondHealingTarget = screen.getByRole('button', {
+      name: 'Select healing tile 1,0',
+    });
+
+    expect(startHealingTarget).toHaveClass('border-yellow-300');
+    expect(secondHealingTarget).toHaveAttribute(
+      'data-testid',
+      'healing-target-1-0',
+    );
+    expect(
+      screen.queryByRole('button', { name: 'Select healing tile -1,0' }),
+    ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Move to tile 1,0' })).toBeNull();
+
+    fireEvent.click(secondHealingTarget);
+
+    expect(onSelectHealingTile).toHaveBeenCalledOnce();
+    expect(onSelectHealingTile).toHaveBeenCalledWith({ boardX: 1, boardY: 0 });
+  });
+
+  it('dispatches healing spell use through the integrated panel and board flow', () => {
+    const state = createUiState({
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              inventory: {
+                ...player.inventory,
+                spells: [{ type: 'spell', spellKind: 'healing' }],
+              },
+            }
+          : {
+              ...player,
+              hp: 1,
+              isCursed: true,
+              position: { boardX: 2, boardY: 2 },
+            },
+      ),
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-healing',
+          blueprintId: 'healing_corner',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+
+    render(<HealingSpellHarness initialState={state} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use Healing Spell' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select healing tile 1,0' }));
+
+    expect(screen.getByTestId('healing-target-hp')).toHaveTextContent('5');
+    expect(screen.getByTestId('healing-target-curse')).toHaveTextContent('false');
+    expect(screen.getByTestId('healing-target-position')).toHaveTextContent('1,0');
+    expect(screen.getByTestId('active-spell-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('phase-label')).toHaveTextContent(state.phase);
+    expect(
+      screen.queryByRole('button', { name: 'Select healing tile 1,0' }),
+    ).toBeNull();
+  });
+
+  it('offers movement again after self-healing when steps remain', () => {
+    const state = createUiState({
+      phase: 'await_move',
+      remainingSteps: 2,
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              hp: 1,
+              inventory: {
+                ...player.inventory,
+                spells: [{ type: 'spell', spellKind: 'healing' }],
+              },
+            }
+          : player,
+      ),
+      board: [
+        {
+          ...baseBoard()[0],
+          boardX: -1,
+          boardY: 0,
+        },
+        {
+          tileInstanceId: 'tile-healing',
+          blueprintId: 'healing_corner',
+          rotation: 180,
+          boardX: 0,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-east',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+
+    render(<HealingSpellHarness initialState={state} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use Healing Spell' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mage' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select healing tile 0,0' }));
+
+    expect(screen.queryByRole('button', { name: 'Select healing tile 0,0' })).toBeNull();
+    expect(screen.getByText('Move')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'East' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Move to tile 1,0' })).toBeInTheDocument();
+  });
+
+  it('offers exploration again after self-healing when the healing tile can explore', () => {
+    const state = createUiState({
+      phase: 'await_move',
+      remainingSteps: 2,
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              hp: 1,
+              inventory: {
+                ...player.inventory,
+                spells: [{ type: 'spell', spellKind: 'healing' }],
+              },
+            }
+          : player,
+      ),
+      board: [
+        {
+          tileInstanceId: 'tile-healing',
+          blueprintId: 'healing_corner',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+
+    render(<HealingSpellHarness initialState={state} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use Healing Spell' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mage' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select healing tile 1,0' }));
+
+    expect(screen.queryByRole('button', { name: 'Select healing tile 1,0' })).toBeNull();
+    expect(screen.getByText('Explore')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'North' })).toBeInTheDocument();
+  });
+
+  it('keeps the active hero movement options after healing another hero', () => {
+    const state = createUiState({
+      phase: 'await_move',
+      remainingSteps: 2,
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              inventory: {
+                ...player.inventory,
+                spells: [{ type: 'spell', spellKind: 'healing' }],
+              },
+            }
+          : {
+              ...player,
+              hp: 1,
+              isCursed: true,
+              position: { boardX: 3, boardY: 3 },
+            },
+      ),
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-east',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+
+    render(<HealingSpellHarness initialState={state} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use Healing Spell' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select healing tile 0,0' }));
+
+    expect(screen.queryByRole('button', { name: 'Select healing tile 0,0' })).toBeNull();
+    expect(screen.getByText('Move')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'East' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Move to tile 1,0' })).toBeInTheDocument();
+    expect(screen.getByTestId('healing-target-position')).toHaveTextContent('0,0');
   });
 
   it('extends the visible board by an unexplored row and column when a player reaches the edge', () => {
@@ -1660,4 +2013,76 @@ function createRect(left: number, top: number, width: number, height: number) {
     bottom: top + height,
     toJSON: () => ({}),
   } as DOMRect;
+}
+
+function HealingSpellHarness({ initialState }: { initialState: GameState }) {
+  const [state, setState] = useState(initialState);
+  const [healingSpellSelection, setHealingSpellSelection] = useState<
+    { mode: 'idle' } | { mode: 'select_target' } | { mode: 'select_tile'; targetPlayerId: string }
+  >({ mode: 'idle' });
+  const targetPlayer = state.players.find((player) => player.id === 'player_ai_1');
+  const selectableHealingPositions =
+    healingSpellSelection.mode === 'select_tile'
+      ? getBoardSelectableHealingPositions(state)
+      : [];
+
+  return (
+    <>
+      <ActionPanel
+        state={state}
+        healingSpellSelection={healingSpellSelection}
+        onBeginLoot={vi.fn()}
+        onCancelHealingSpellSelection={() =>
+          setHealingSpellSelection({ mode: 'idle' })
+        }
+        onEndTurn={vi.fn()}
+        onExplore={vi.fn()}
+        onLeaveLoot={vi.fn()}
+        onMove={vi.fn()}
+        onOpenChest={vi.fn()}
+        onResolveCombat={vi.fn()}
+        onResolveRoom={vi.fn()}
+        onSelectHealingSpellTarget={(targetPlayerId) =>
+          setHealingSpellSelection({ mode: 'select_tile', targetPlayerId })
+        }
+        onStartHealingSpellSelection={() =>
+          setHealingSpellSelection({ mode: 'select_target' })
+        }
+        onSwapLoot={vi.fn()}
+        onTakeLoot={vi.fn()}
+      />
+      <BoardView
+        state={state}
+        onSelectHealingTile={(healingPosition) => {
+          if (healingSpellSelection.mode !== 'select_tile') {
+            return;
+          }
+
+          const targetPlayerId = healingSpellSelection.targetPlayerId;
+
+          flushSync(() => {
+            setHealingSpellSelection({ mode: 'idle' });
+          });
+
+          setState((current) =>
+            applyGameAction(current, {
+              type: 'useHealingSpell',
+              targetPlayerId,
+              healingPosition,
+            }),
+          );
+        }}
+        selectableHealingPositions={selectableHealingPositions}
+      />
+      <div data-testid="healing-target-hp">{targetPlayer?.hp}</div>
+      <div data-testid="healing-target-curse">{String(targetPlayer?.isCursed)}</div>
+      <div data-testid="healing-target-position">
+        {targetPlayer?.position.boardX},{targetPlayer?.position.boardY}
+      </div>
+      <div data-testid="active-spell-count">
+        {state.players[state.activePlayerIndex].inventory.spells.length}
+      </div>
+      <div data-testid="phase-label">{state.phase}</div>
+    </>
+  );
 }

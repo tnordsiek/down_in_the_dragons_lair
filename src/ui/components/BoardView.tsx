@@ -19,6 +19,7 @@ import {
 } from '../../engine/movement/movement';
 import { getReachableKnownMovePaths } from '../../engine/movement/reachable';
 import { adjacentPosition } from '../../engine/movement/topology';
+import { getDiscoveredHealingPositions } from '../../engine/rules/abilities';
 import { itemAssetId, itemLabel } from '../items';
 import { heroName, monsterName } from '../labels';
 import {
@@ -37,9 +38,11 @@ type BoardViewProps = {
   state: GameState;
   onConfirmPendingTile?: () => void;
   onExplore?: (direction: TileSide) => void;
+  onSelectHealingTile?: (target: BoardPosition) => void;
   onMove?: (target: BoardPosition) => void;
   onMovePath?: (targets: BoardPosition[]) => void;
   onRotatePendingTile?: (direction: RotationDirection) => void;
+  selectableHealingPositions?: BoardPosition[];
 };
 
 export function BoardView({
@@ -48,9 +51,11 @@ export function BoardView({
   state,
   onConfirmPendingTile,
   onExplore,
+  onSelectHealingTile,
   onMove,
   onMovePath,
   onRotatePendingTile,
+  selectableHealingPositions = [],
 }: BoardViewProps) {
   const cellSizePx = 72;
   const cellGapPx = 4;
@@ -143,6 +148,9 @@ export function BoardView({
       return [positionKey(targetPosition), direction];
     }),
   );
+  const healingSelectionTargets = new Set(
+    selectableHealingPositions.map(positionKey),
+  );
   const cells = Array.from({ length: columns * rows }, (_, index) => {
     const boardX = boardMinX + (index % columns);
     const boardY = boardMinY + Math.floor(index / columns);
@@ -167,11 +175,16 @@ export function BoardView({
     const movePath = reachableMoveTargets.get(cellKey);
     const moveTarget = legalMoveTargets.get(cellKey);
     const explorationDirection = legalExplorationTargets.get(cellKey);
+    const isSelectableHealingTarget =
+      cell.tile !== undefined && healingSelectionTargets.has(cellKey);
     const isClickableMoveTarget =
-      cell.tile !== undefined && movePath !== undefined;
+      selectableHealingPositions.length === 0 &&
+      cell.tile !== undefined &&
+      movePath !== undefined;
     const isExtendedMoveTarget =
       isClickableMoveTarget && movePath !== undefined && movePath.length > 1;
     const isClickableExplorationTarget =
+      selectableHealingPositions.length === 0 &&
       cell.tile === undefined &&
       cell.pendingTile === undefined &&
       explorationDirection !== undefined;
@@ -226,6 +239,21 @@ export function BoardView({
             ) : null}
             {cell.tile?.looseItems[0] ? (
               <LooseItemToken item={cell.tile.looseItems[0]} />
+            ) : null}
+            {isSelectableHealingTarget ? (
+              <button
+                aria-label={`Select healing tile ${cell.boardX},${cell.boardY}`}
+                className="absolute inset-0 z-10 border border-yellow-300 bg-yellow-200/10 shadow-[inset_0_0_0_2px_rgba(253,224,71,0.6)] transition-colors hover:bg-yellow-200/18"
+                data-testid={`healing-target-${cell.boardX}-${cell.boardY}`}
+                onClick={() => onSelectHealingTile?.(cellPosition)}
+                onMouseDown={preventButtonFocus}
+                onPointerDown={(event) => event.stopPropagation()}
+                type="button"
+              >
+                <span className="sr-only">
+                  Select healing tile {cell.boardX},{cell.boardY}
+                </span>
+              </button>
             ) : null}
             {isClickableMoveTarget ? (
               <button
@@ -574,6 +602,12 @@ export function BoardView({
       </div>
     </section>
   );
+}
+
+export function getBoardSelectableHealingPositions(
+  state: GameState,
+): BoardPosition[] {
+  return getDiscoveredHealingPositions(state);
 }
 
 function positionKey(position: BoardPosition): string {

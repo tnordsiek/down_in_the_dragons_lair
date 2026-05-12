@@ -8,8 +8,13 @@ import type {
 } from '../../engine/core/types';
 import { canStoreItem } from '../../engine/rules/inventory';
 import { getUiLegalActions } from '../../state/setupStore';
-import { monsterName, sideLabels } from '../labels';
+import { heroName, monsterName, sideLabels } from '../labels';
 import { itemLabel } from '../items';
+
+type HealingSpellSelectionState =
+  | { mode: 'idle' }
+  | { mode: 'select_target' }
+  | { mode: 'select_tile'; targetPlayerId: string };
 
 type ActionPanelProps = {
   state: GameState;
@@ -23,6 +28,10 @@ type ActionPanelProps = {
   onTakeLoot: () => void;
   onOpenChest: () => void;
   onEndTurn: () => void;
+  healingSpellSelection: HealingSpellSelectionState;
+  onStartHealingSpellSelection: () => void;
+  onCancelHealingSpellSelection: () => void;
+  onSelectHealingSpellTarget: (targetPlayerId: string) => void;
 };
 
 export function ActionPanel({
@@ -37,6 +46,10 @@ export function ActionPanel({
   onTakeLoot,
   onOpenChest,
   onEndTurn,
+  healingSpellSelection,
+  onStartHealingSpellSelection,
+  onCancelHealingSpellSelection,
+  onSelectHealingSpellTarget,
 }: ActionPanelProps) {
   const legalActions = getUiLegalActions(state);
   const activePlayer = state.players[state.activePlayerIndex];
@@ -67,6 +80,15 @@ export function ActionPanel({
   const pendingLoot = state.pendingLoot;
   const canTakePendingLoot =
     pendingLoot !== undefined && canStoreItem(activePlayer, pendingLoot.item);
+  const hasHealingSpell = activePlayer.inventory.spells.some(
+    (spell) => spell.spellKind === 'healing',
+  );
+  const selectedHealingTarget =
+    healingSpellSelection.mode === 'select_tile'
+      ? state.players.find(
+          (player) => player.id === healingSpellSelection.targetPlayerId,
+        )
+      : undefined;
 
   return (
     <section
@@ -196,6 +218,59 @@ export function ActionPanel({
                 ))
               : null}
           </div>
+        </div>
+      ) : null}
+
+      {hasHealingSpell ? (
+        <div className="mt-4 grid gap-2">
+          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+            Healing Spell
+          </h3>
+          {healingSpellSelection.mode === 'idle' ? (
+            <button
+              className="w-fit border border-amber-500 px-3 py-2 text-sm text-amber-100"
+              onClick={onStartHealingSpellSelection}
+            >
+              Use Healing Spell
+            </button>
+          ) : null}
+          {healingSpellSelection.mode === 'select_target' ? (
+            <>
+              <p className="text-sm text-stone-300">
+                Choose which hero to teleport to a discovered healing tile.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {state.players.map((player) => (
+                  <button
+                    key={player.id}
+                    className="border border-amber-500 px-3 py-2 text-sm text-amber-100"
+                    onClick={() => onSelectHealingSpellTarget(player.id)}
+                  >
+                    {heroName(player.heroId)}
+                  </button>
+                ))}
+                <button
+                  className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
+                  onClick={onCancelHealingSpellSelection}
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          ) : null}
+          {healingSpellSelection.mode === 'select_tile' && selectedHealingTarget ? (
+            <>
+              <p className="text-sm text-stone-300">
+                Choose a discovered healing tile for {heroName(selectedHealingTarget.heroId)}.
+              </p>
+              <button
+                className="w-fit border border-stone-500 px-3 py-2 text-sm text-stone-100"
+                onClick={onCancelHealingSpellSelection}
+              >
+                Cancel
+              </button>
+            </>
+          ) : null}
         </div>
       ) : null}
 

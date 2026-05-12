@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 
 import { chooseHeuristicAiAction } from '../../ai/heuristicAgent';
 import { getLegalAiActions } from '../../ai/legalActions';
@@ -11,11 +12,19 @@ import type {
 } from '../../engine/core/types';
 import { useSetupStore } from '../../state/setupStore';
 import { ActionPanel } from '../components/ActionPanel';
-import { BoardView } from '../components/BoardView';
+import {
+  BoardView,
+  getBoardSelectableHealingPositions,
+} from '../components/BoardView';
 import { EndScreen } from '../components/EndScreen';
 import { EventLog } from '../components/EventLog';
 import { FooterMeta } from '../components/FooterMeta';
 import { PlayerPanel } from '../components/PlayerPanel';
+
+type HealingSpellSelectionState =
+  | { mode: 'idle' }
+  | { mode: 'select_target' }
+  | { mode: 'select_tile'; targetPlayerId: string };
 
 export function GameScreen() {
   const state = useSetupStore((store) => store.gameState);
@@ -30,6 +39,8 @@ export function GameScreen() {
     position: { boardX: 0, boardY: 0 },
     resetZoom: true,
   });
+  const [healingSpellSelection, setHealingSpellSelection] =
+    useState<HealingSpellSelectionState>({ mode: 'idle' });
 
   useEffect(() => {
     if (!state) {
@@ -50,9 +61,41 @@ export function GameScreen() {
     return () => window.clearTimeout(timeoutId);
   }, [dispatch, state]);
 
+  useEffect(() => {
+    if (!state) {
+      setHealingSpellSelection({ mode: 'idle' });
+      return;
+    }
+
+    const activePlayer = state.players[state.activePlayerIndex];
+    const isAiTurn = activePlayer.kind === 'ai';
+    const hasHealingSpell = activePlayer.inventory.spells.some(
+      (spell) => spell.spellKind === 'healing',
+    );
+
+    if (isAiTurn || !hasHealingSpell) {
+      setHealingSpellSelection({ mode: 'idle' });
+      return;
+    }
+
+    if (
+      healingSpellSelection.mode === 'select_tile' &&
+      !state.players.some(
+        (player) => player.id === healingSpellSelection.targetPlayerId,
+      )
+    ) {
+      setHealingSpellSelection({ mode: 'idle' });
+    }
+  }, [healingSpellSelection, state]);
+
   if (!state) {
     return null;
   }
+
+  const selectableHealingPositions =
+    healingSpellSelection.mode === 'select_tile'
+      ? getBoardSelectableHealingPositions(state)
+      : [];
 
   const handleMove = (target: BoardPosition) => {
     dispatch({ type: 'movePlayer', target });
@@ -104,6 +147,34 @@ export function GameScreen() {
   };
   const handleEndTurn = () => {
     dispatch({ type: 'endTurn' });
+  };
+  const handleStartHealingSpellSelection = () => {
+    setHealingSpellSelection({ mode: 'select_target' });
+  };
+  const handleCancelHealingSpellSelection = () => {
+    setHealingSpellSelection({ mode: 'idle' });
+  };
+  const handleSelectHealingSpellTarget = (targetPlayerId: string) => {
+    setHealingSpellSelection({ mode: 'select_tile', targetPlayerId });
+  };
+  const handleSelectHealingTile = (healingPosition: BoardPosition) => {
+    if (healingSpellSelection.mode !== 'select_tile') {
+      return;
+    }
+
+    const targetPlayerId = healingSpellSelection.targetPlayerId;
+
+    // Leave spell-selection mode before applying the state update so the next
+    // render immediately restores the normal move/explore overlays.
+    flushSync(() => {
+      setHealingSpellSelection({ mode: 'idle' });
+    });
+
+    dispatch({
+      type: 'useHealingSpell',
+      targetPlayerId,
+      healingPosition,
+    });
   };
   const focusMap = (position: BoardPosition, resetZoom = false) => {
     setCameraRequest((current) => ({
@@ -179,13 +250,17 @@ export function GameScreen() {
             state={state}
             onConfirmPendingTile={handleConfirmPendingTile}
             onExplore={handleExplore}
+            onSelectHealingTile={handleSelectHealingTile}
             onMove={handleMove}
             onMovePath={handleMovePath}
             onRotatePendingTile={handleRotatePendingTile}
+            selectableHealingPositions={selectableHealingPositions}
           />
         </div>
         <aside className="grid min-h-0 content-start gap-4 lg:h-full lg:w-[22rem] lg:justify-self-end lg:overflow-y-auto lg:pr-1">
           <ActionPanel
+            healingSpellSelection={healingSpellSelection}
+            onCancelHealingSpellSelection={handleCancelHealingSpellSelection}
             state={state}
             onBeginLoot={handleBeginLoot}
             onLeaveLoot={handleLeaveLoot}
@@ -193,6 +268,8 @@ export function GameScreen() {
             onExplore={handleExplore}
             onResolveRoom={handleResolveRoom}
             onResolveCombat={handleResolveCombat}
+            onSelectHealingSpellTarget={handleSelectHealingSpellTarget}
+            onStartHealingSpellSelection={handleStartHealingSpellSelection}
             onSwapLoot={handleSwapLoot}
             onTakeLoot={handleTakeLoot}
             onOpenChest={handleOpenChest}
