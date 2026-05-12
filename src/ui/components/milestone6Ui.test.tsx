@@ -688,6 +688,7 @@ describe('Milestone 6 UI', () => {
       configurable: true,
       value: 600,
     });
+    fireEvent(window, new Event('resize'));
 
     rerender(
       <BoardView
@@ -743,10 +744,20 @@ describe('Milestone 6 UI', () => {
     const board = screen.getByLabelText('Dungeon board');
     const transformLayer = screen.getByTestId('board-transform-layer');
 
+    Object.defineProperty(board, 'clientWidth', {
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(board, 'clientHeight', {
+      configurable: true,
+      value: 600,
+    });
+    fireEvent(window, new Event('resize'));
+
     fireEvent.wheel(board, { deltaY: -100 });
     expect(transformLayer).toHaveAttribute(
       'style',
-      expect.stringContaining('scale(1.1)'),
+      expect.stringContaining('translate(-40px, -30px) scale(1.1)'),
     );
 
     fireEvent.pointerDown(board, {
@@ -769,7 +780,7 @@ describe('Milestone 6 UI', () => {
 
     expect(transformLayer).toHaveAttribute(
       'style',
-      expect.stringContaining('translate(40px, 25px)'),
+      expect.stringContaining('translate(0px, -5px)'),
     );
   });
 
@@ -790,11 +801,80 @@ describe('Milestone 6 UI', () => {
     const board = screen.getByLabelText('Dungeon board');
     const transformLayer = screen.getByTestId('board-transform-layer');
 
+    Object.defineProperty(board, 'clientWidth', {
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(board, 'clientHeight', {
+      configurable: true,
+      value: 600,
+    });
+    fireEvent(window, new Event('resize'));
+
     fireEvent.wheel(board, { deltaY: -100 });
 
     expect(transformLayer).toHaveAttribute(
       'style',
-      expect.stringContaining('scale(1.1)'),
+      expect.stringContaining('translate(193.2px, 93.2px) scale(1.1)'),
+    );
+  });
+
+  it('keeps the start tile centered when zooming after a centered camera reset', () => {
+    const state = createUiState({
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-east',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+
+    const { rerender } = render(
+      <BoardView
+        cameraRequest={{
+          nonce: 0,
+          position: { boardX: 0, boardY: 0 },
+          resetZoom: true,
+        }}
+        state={state}
+      />,
+    );
+
+    const board = screen.getByLabelText('Dungeon board');
+    const transformLayer = screen.getByTestId('board-transform-layer');
+
+    Object.defineProperty(board, 'clientWidth', {
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(board, 'clientHeight', {
+      configurable: true,
+      value: 600,
+    });
+    fireEvent(window, new Event('resize'));
+
+    rerender(
+      <BoardView
+        cameraRequest={{
+          nonce: 1,
+          position: { boardX: 0, boardY: 0 },
+          resetZoom: true,
+        }}
+        state={state}
+      />,
+    );
+
+    fireEvent.wheel(board, { deltaY: -100 });
+
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('translate(193.2px, 93.2px) scale(1.1)'),
     );
   });
 
@@ -918,6 +998,64 @@ describe('Milestone 6 UI', () => {
 
     expect(onFocusPosition).toHaveBeenCalledOnce();
     expect(onFocusPosition).toHaveBeenCalledWith({ boardX: 0, boardY: 0 });
+  });
+
+  it('resets zoom to default when centering the board on a hero portrait', () => {
+    const state = createUiState({
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-east',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? player
+          : { ...player, position: { boardX: 1, boardY: 0 } },
+      ),
+    });
+
+    useSetupStore.setState({
+      gameState: state,
+      hasSavedGame: false,
+      lastError: undefined,
+    });
+
+    render(<GameScreen />);
+
+    const board = screen.getByLabelText('Dungeon board');
+    const transformLayer = screen.getByTestId('board-transform-layer');
+
+    Object.defineProperty(board, 'clientWidth', {
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(board, 'clientHeight', {
+      configurable: true,
+      value: 600,
+    });
+    fireEvent(window, new Event('resize'));
+
+    fireEvent.wheel(board, { deltaY: -100 });
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('scale(1.1)'),
+    );
+
+    fireEvent.contextMenu(
+      screen.getByRole('button', { name: 'Thief portrait actions' }),
+    );
+
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('translate(136px, 112px) scale(1)'),
+    );
   });
 
   it('renders two compact player cards side by side with permanent bonuses and tooltips', () => {

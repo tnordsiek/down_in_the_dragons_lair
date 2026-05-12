@@ -200,7 +200,7 @@ export function GameScreen() {
           />
           <PlayerPanel
             state={state}
-            onFocusPosition={(position) => focusMap(position)}
+            onFocusPosition={(position) => focusMap(position, true)}
           />
           <EventLog state={state} lastError={lastError} />
         </aside>

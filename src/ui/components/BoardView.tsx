@@ -58,6 +58,9 @@ export function BoardView({
   const appliedCameraNonceRef = useRef<number | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const zoomRef = useRef(zoom);
+  const panRef = useRef(pan);
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStateRef = useRef<{
     pointerId: number;
@@ -257,6 +260,49 @@ export function BoardView({
     );
   };
 
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
+
+  useEffect(() => {
+    panRef.current = pan;
+  }, [pan]);
+
+  useEffect(() => {
+    const boardViewport = boardViewportRef.current;
+
+    if (!boardViewport) {
+      return;
+    }
+
+    const updateViewportSize = () => {
+      setViewportSize({
+        width: boardViewport.clientWidth,
+        height: boardViewport.clientHeight,
+      });
+    };
+
+    updateViewportSize();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateViewportSize);
+
+      return () => {
+        window.removeEventListener('resize', updateViewportSize);
+      };
+    }
+
+    const observer = new ResizeObserver(() => {
+      updateViewportSize();
+    });
+
+    observer.observe(boardViewport);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   const stopDragging = (
     pointerId?: number,
     element?: HTMLDivElement | null,
@@ -285,12 +331,32 @@ export function BoardView({
 
     const handleWheel = (event: WheelEvent) => {
       event.preventDefault();
-      setZoom((currentZoom) => {
-        const nextZoom =
-          event.deltaY < 0 ? currentZoom * 1.1 : currentZoom / 1.1;
+      const currentZoom = zoomRef.current;
+      const currentPan = panRef.current;
+      const nextZoom = Math.min(
+        4,
+        Math.max(
+          0.6,
+          Number(
+            (
+              event.deltaY < 0
+                ? currentZoom * 1.1
+                : currentZoom / 1.1
+            ).toFixed(3),
+          ),
+        ),
+      );
+      const viewportCenterX = boardViewport.clientWidth / 2;
+      const viewportCenterY = boardViewport.clientHeight / 2;
+      const contentX = (viewportCenterX - currentPan.x) / currentZoom;
+      const contentY = (viewportCenterY - currentPan.y) / currentZoom;
+      const nextPan = {
+        x: Number((viewportCenterX - contentX * nextZoom).toFixed(3)),
+        y: Number((viewportCenterY - contentY * nextZoom).toFixed(3)),
+      };
 
-        return Math.min(4, Math.max(0.6, Number(nextZoom.toFixed(3))));
-      });
+      setZoom(nextZoom);
+      setPan(nextPan);
     };
 
     boardViewport.addEventListener('wheel', handleWheel, { passive: false });
@@ -311,7 +377,7 @@ export function BoardView({
 
     const boardViewport = boardViewportRef.current;
 
-    if (!boardViewport) {
+    if (!boardViewport || viewportSize.width <= 0 || viewportSize.height <= 0) {
       return;
     }
 
@@ -333,7 +399,7 @@ export function BoardView({
 
     setPan(nextPan);
     appliedCameraNonceRef.current = cameraRequest.nonce;
-  }, [boardMinX, boardMinY, cameraRequest, cellStridePx, zoom]);
+  }, [boardMinX, boardMinY, cameraRequest, cellStridePx, viewportSize, zoom]);
 
   return (
     <section
@@ -388,7 +454,7 @@ export function BoardView({
         }}
       >
         <div
-          className={`origin-center transition-transform ${
+          className={`origin-top-left transition-transform ${
             isDragging ? 'cursor-grabbing' : 'cursor-grab'
           }`}
           data-testid="board-transform-layer"
