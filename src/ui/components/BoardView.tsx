@@ -21,6 +21,11 @@ import { getReachableKnownMovePaths } from '../../engine/movement/reachable';
 import { adjacentPosition } from '../../engine/movement/topology';
 import { itemAssetId, itemLabel } from '../items';
 import { heroName, monsterName } from '../labels';
+import {
+  getChestTileTooltip,
+  getItemTileTooltip,
+  getMonsterTileTooltip,
+} from '../tooltips';
 
 type BoardViewProps = {
   cameraRequest?: {
@@ -532,11 +537,16 @@ function RoomToken({ token }: { token: Token }) {
     token.kind === 'monster'
       ? monsterName(token.id as MonsterId)
       : 'Treasure chest';
+  const tooltip =
+    token.kind === 'monster'
+      ? getMonsterTileTooltip(token.id as MonsterId)
+      : getChestTileTooltip();
 
   return (
     <div
       className="absolute left-1/2 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-stone-950/80 font-mono text-amber-200"
       data-asset-id={assetId}
+      title={tooltip}
     >
       {assetUrl ? (
         <img className="h-8 w-8 object-contain" src={assetUrl} alt={label} />
@@ -575,11 +585,13 @@ function LooseItemToken({ item }: { item: Item }) {
   const assetId = itemAssetId(item);
   const assetUrl = getAssetUrl(assetId);
   const label = itemLabel(item);
+  const tooltip = getItemTileTooltip(item);
 
   return (
     <div
       className="absolute right-1 top-1 z-[1] flex h-6 w-6 items-center justify-center rounded-sm bg-stone-950/85"
       data-asset-id={assetId}
+      title={tooltip}
     >
       {assetUrl ? (
         <img className="h-5 w-5 object-contain" src={assetUrl} alt={label} />

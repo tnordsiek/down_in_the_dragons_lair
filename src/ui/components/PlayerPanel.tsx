@@ -1,4 +1,10 @@
-import { useState, type ReactNode } from 'react';
+import {
+  type Dispatch,
+  type SetStateAction,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import { getAssetUrl, useAsset } from '../../data/assets';
 import type {
@@ -10,6 +16,7 @@ import type {
 } from '../../engine/core/types';
 import { itemAssetId, itemLabel } from '../items';
 import { heroName } from '../labels';
+import { getHeroPortraitTooltip } from '../tooltips';
 
 type PlayerPanelProps = {
   onFocusPosition?: (position: BoardPosition) => void;
@@ -18,8 +25,32 @@ type PlayerPanelProps = {
 
 export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
   const panel = useAsset('ui_panel_frame');
+  const [activeHeroInfoPlayerId, setActiveHeroInfoPlayerId] = useState<
+    string | undefined
+  >(undefined);
   const playerGridClass =
     state.players.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1';
+
+  useEffect(() => {
+    if (!activeHeroInfoPlayerId) {
+      return;
+    }
+
+    const handleClick = () => {
+      setActiveHeroInfoPlayerId(undefined);
+    };
+    const handleContextMenu = () => {
+      setActiveHeroInfoPlayerId(undefined);
+    };
+
+    document.addEventListener('click', handleClick);
+    document.addEventListener('contextmenu', handleContextMenu);
+
+    return () => {
+      document.removeEventListener('click', handleClick);
+      document.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, [activeHeroInfoPlayerId]);
 
   return (
     <section
@@ -35,10 +66,15 @@ export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
       >
         {state.players.map((player, index) => (
           <PlayerCard
+            activeHeroInfoPlayerId={activeHeroInfoPlayerId}
             key={player.id}
             index={index}
-            onFocusPosition={() => onFocusPosition?.(player.position)}
+            onFocusPosition={() => {
+              setActiveHeroInfoPlayerId(undefined);
+              onFocusPosition?.(player.position);
+            }}
             player={player}
+            setActiveHeroInfoPlayerId={setActiveHeroInfoPlayerId}
             state={state}
           />
         ))}
@@ -48,19 +84,23 @@ export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
 }
 
 function PlayerCard({
+  activeHeroInfoPlayerId,
   index,
   onFocusPosition,
   player,
+  setActiveHeroInfoPlayerId,
   state,
 }: {
+  activeHeroInfoPlayerId?: string;
   index: number;
   onFocusPosition?: () => void;
   player: Player;
+  setActiveHeroInfoPlayerId: Dispatch<SetStateAction<string | undefined>>;
   state: GameState;
 }) {
-  const [showHeroInfo, setShowHeroInfo] = useState(false);
   const isActive = index === state.activePlayerIndex;
   const isThreePlayerTail = state.players.length === 3 && index === 2;
+  const showHeroInfo = activeHeroInfoPlayerId === player.id;
   const weaponBonus = player.inventory.weapons.reduce(
     (sum, weapon) => sum + weapon.bonus,
     0,
@@ -73,7 +113,7 @@ function PlayerCard({
 
   return (
     <article
-      className={`min-w-0 border p-2.5 ${
+      className={`relative min-w-0 border p-2.5 ${
         isActive
           ? 'border-amber-300 bg-stone-800'
           : 'border-stone-700 bg-stone-950'
@@ -81,34 +121,33 @@ function PlayerCard({
       data-asset-id={`${player.heroId}_portrait`}
       data-testid={`player-card-${player.id}`}
     >
+      {showHeroInfo ? (
+        <div
+          className="pointer-events-none absolute bottom-full left-0 right-0 z-10 mb-2 border border-stone-700 bg-stone-900 px-2 py-1 text-[10px] text-stone-300 shadow-lg"
+          data-testid={`hero-info-${player.id}`}
+        >
+          {heroInfo}
+        </div>
+      ) : null}
       <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-2">
         <HeroPortrait
           heroId={player.heroId}
+          onShowHeroInfo={() =>
+            setActiveHeroInfoPlayerId((current) =>
+              current === player.id ? undefined : player.id,
+            )
+          }
           onFocusPosition={onFocusPosition}
         />
         <div className="grid content-start gap-1">
           <div className="min-w-0">
-            <button
-              aria-expanded={showHeroInfo}
-              className="text-left text-sm font-semibold leading-tight text-stone-100 underline decoration-stone-600 underline-offset-2"
-              onClick={() => setShowHeroInfo((current) => !current)}
-              title={`Show ${heroName(player.heroId)} ability details`}
-              type="button"
-            >
+            <p className="text-sm font-semibold leading-tight text-stone-100">
               {heroName(player.heroId)}
-            </button>
+            </p>
             <p className="text-[10px] uppercase tracking-wide text-stone-400">
               {player.kind}
             </p>
           </div>
-          {showHeroInfo ? (
-            <div
-              className="border border-stone-700 bg-stone-900 px-2 py-1 text-[10px] text-stone-300"
-              data-testid={`hero-info-${player.id}`}
-            >
-              {heroInfo}
-            </div>
-          ) : null}
           <div className="flex flex-wrap gap-1">
             <MetricChip
               label={`HP ${player.hp}/${player.maxHp}`}
@@ -212,9 +251,11 @@ function getHeroAbilityInfo(heroId: HeroId): string {
 
 function HeroPortrait({
   heroId,
+  onShowHeroInfo,
   onFocusPosition,
 }: {
   heroId: HeroId;
+  onShowHeroInfo: () => void;
   onFocusPosition?: () => void;
 }) {
   const assetId = `${heroId}_portrait`;
@@ -223,14 +264,19 @@ function HeroPortrait({
 
   return (
     <button
-      aria-label={`Focus ${label} on map`}
+      aria-label={`${label} portrait actions`}
       className="flex h-20 w-20 shrink-0 items-center justify-center border border-stone-700 bg-stone-900 font-mono text-sm text-amber-100"
       data-asset-id={assetId}
+      onClick={(event) => {
+        event.stopPropagation();
+        onShowHeroInfo();
+      }}
       onContextMenu={(event) => {
         event.preventDefault();
+        event.stopPropagation();
         onFocusPosition?.();
       }}
-      title={`${label} portrait - right-click to focus on map`}
+      title={getHeroPortraitTooltip()}
       type="button"
     >
       {assetUrl ? (

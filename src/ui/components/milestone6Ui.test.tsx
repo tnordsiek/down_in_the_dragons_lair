@@ -392,6 +392,11 @@ describe('Milestone 6 UI', () => {
       'src',
       '/assets/monsters/token_giant_rat.png',
     );
+    expect(
+      screen
+        .getByRole('img', { name: 'Giant Rat' })
+        .closest('[data-asset-id="token_giant_rat"]'),
+    ).toHaveAttribute('title', 'Giant Rat: Strength 5');
   });
 
   it('renders visible loose item graphics on board tiles', () => {
@@ -410,6 +415,11 @@ describe('Milestone 6 UI', () => {
       'src',
       '/assets/items/item_weapon_2.png',
     );
+    expect(
+      screen
+        .getByRole('img', { name: 'Weapon +2' })
+        .closest('[data-asset-id="item_weapon_2"]'),
+    ).toHaveAttribute('title', 'Weapon +2: Combat bonus +2');
   });
 
   it('highlights legal move targets on the board and moves by tile click', () => {
@@ -903,7 +913,7 @@ describe('Milestone 6 UI', () => {
     render(<PlayerPanel state={state} onFocusPosition={onFocusPosition} />);
 
     fireEvent.contextMenu(
-      screen.getByRole('button', { name: 'Focus Mage on map' }),
+      screen.getByRole('button', { name: 'Mage portrait actions' }),
     );
 
     expect(onFocusPosition).toHaveBeenCalledOnce();
@@ -939,8 +949,8 @@ describe('Milestone 6 UI', () => {
     const thiefCard = screen.getByTestId('player-card-player_ai_1');
 
     expect(grid).toHaveClass('sm:grid-cols-2');
-    expect(screen.getByRole('button', { name: 'Mage' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Thief' })).toBeInTheDocument();
+    expect(screen.getByText('Mage')).toBeInTheDocument();
+    expect(screen.getByText('Thief')).toBeInTheDocument();
     expect(screen.getByText('ATK +2')).toHaveAttribute(
       'title',
       'Current weapon bonus: +2',
@@ -949,9 +959,9 @@ describe('Milestone 6 UI', () => {
       'title',
       'Mage: flame spells are not consumed',
     );
-    expect(screen.getByRole('button', { name: 'Focus Mage on map' })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: 'Mage portrait actions' })).toHaveAttribute(
       'title',
-      'Mage portrait - right-click to focus on map',
+      'Right-click to center the map on this hero. Left-click to show the hero description.',
     );
     expect(within(mageCard).getByText('0 pts')).toBeInTheDocument();
     expect(within(thiefCard).getByText('0 pts')).toBeInTheDocument();
@@ -973,7 +983,9 @@ describe('Milestone 6 UI', () => {
     );
     expect(screen.queryByText('Draw = Win')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Thief portrait actions' }),
+    );
 
     expect(screen.getByTestId('hero-info-player_ai_1')).toHaveTextContent(
       'Combat draws count as wins. The Thief may ignore monsters while moving.',
@@ -1015,11 +1027,69 @@ describe('Milestone 6 UI', () => {
     expect(screen.queryByText('Sacrifice +1')).toBeNull();
     expect(screen.queryByText('Reroll')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Oracle' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Oracle portrait actions' }),
+    );
 
     expect(screen.getByTestId('hero-info-player_ai_3')).toHaveTextContent(
       'Draws two room tokens and chooses one. Gains +1 combat strength before the first step is spent.',
     );
+  });
+
+  it('closes the portrait description on the next click anywhere else in the app', () => {
+    const state = createUiState();
+
+    render(
+      <>
+        <PlayerPanel state={state} />
+        <ActionPanel state={state} {...noopActions} />
+      </>,
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Mage portrait actions' }),
+    );
+    expect(screen.getByTestId('hero-info-player_human')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+
+    expect(screen.queryByTestId('hero-info-player_human')).toBeNull();
+  });
+
+  it('shows english item tooltips for healing spells and keys on tiles', () => {
+    const healingState = createUiState({
+      board: [
+        {
+          ...baseBoard()[0],
+          looseItems: [{ type: 'spell', spellKind: 'healing' }],
+        },
+      ],
+    });
+    const keyState = createUiState({
+      board: [
+        {
+          ...baseBoard()[0],
+          looseItems: [{ type: 'key' }],
+        },
+      ],
+    });
+
+    const { rerender } = render(<BoardView state={healingState} />);
+
+    expect(
+      screen
+        .getByRole('img', { name: 'Healing spell' })
+        .closest('[data-asset-id="item_spell_healing"]'),
+    ).toHaveAttribute(
+      'title',
+      'Healing Spell: Teleports a hero to a discovered healing tile',
+    );
+
+    rerender(<BoardView state={keyState} />);
+
+    expect(
+      screen.getByRole('img', { name: 'Key' }).closest('[data-asset-id="item_key"]'),
+    ).toHaveAttribute('title', 'Key: Opens a treasure chest');
   });
 
   it('shows the newest event first and still limits the log to the last eight entries', () => {
