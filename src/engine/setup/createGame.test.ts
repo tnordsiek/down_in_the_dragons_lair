@@ -41,8 +41,31 @@ describe('createNewGame', () => {
       second.players.map((player) => player.heroId),
     );
     expect(first.activePlayerIndex).toBe(second.activePlayerIndex);
+    expect(first.eventLog[0].startPlayer).toEqual(second.eventLog[0].startPlayer);
     expect(first.tileStack).toEqual(second.tileStack);
     expect(first.tokenBag).toEqual(second.tokenBag);
+  });
+
+  it('records complete start-player rolls in the initial event log', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 3,
+      seed: 'setup-roll-log',
+    });
+
+    expect(state.eventLog[0]).toEqual(
+      expect.objectContaining({
+        type: 'game_started',
+        startPlayer: expect.objectContaining({
+          rounds: [
+            expect.objectContaining({
+              roundType: 'initial',
+            }),
+          ],
+        }),
+      }),
+    );
+    expect(state.eventLog[0].startPlayer?.rounds[0]?.rolls).toHaveLength(4);
   });
 
   it('rejects invalid AI counts', () => {

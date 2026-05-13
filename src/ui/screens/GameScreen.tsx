@@ -20,6 +20,7 @@ import { EndScreen } from '../components/EndScreen';
 import { EventLog } from '../components/EventLog';
 import { FooterMeta } from '../components/FooterMeta';
 import { PlayerPanel } from '../components/PlayerPanel';
+import { heroName } from '../labels';
 
 type HealingSpellSelectionState =
   | { mode: 'idle' }
@@ -47,6 +48,18 @@ export function GameScreen() {
   });
   const [healingSpellSelection, setHealingSpellSelection] =
     useState<HealingSpellSelectionState>({ mode: 'idle' });
+  const [dismissedStartOverlayEventId, setDismissedStartOverlayEventId] =
+    useState<string | null>(null);
+  const latestEvent = state?.eventLog[state.eventLog.length - 1];
+  const startPlayerEvent =
+    latestEvent?.type === 'game_started' &&
+    latestEvent.playerHeroId &&
+    latestEvent.startPlayer
+      ? latestEvent
+      : undefined;
+  const showStartPlayerOverlay =
+    startPlayerEvent !== undefined &&
+    startPlayerEvent.id !== dismissedStartOverlayEventId;
 
   useEffect(() => {
     if (!state) {
@@ -67,7 +80,10 @@ export function GameScreen() {
     }
 
     const activePlayer = state.players[state.activePlayerIndex];
-    const isAiTurn = activePlayer.kind === 'ai' && state.phase !== 'game_over';
+    const isAiTurn =
+      activePlayer.kind === 'ai' &&
+      state.phase !== 'game_over' &&
+      !showStartPlayerOverlay;
 
     if (!isAiTurn) {
       return;
@@ -78,11 +94,14 @@ export function GameScreen() {
     }, 200);
 
     return () => window.clearTimeout(timeoutId);
-  }, [dispatch, state]);
+  }, [dispatch, showStartPlayerOverlay, state]);
 
   useEffect(() => {
     if (!state) {
-      setHealingSpellSelection({ mode: 'idle' });
+      if (healingSpellSelection.mode !== 'idle') {
+        setHealingSpellSelection({ mode: 'idle' });
+      }
+
       return;
     }
 
@@ -93,7 +112,10 @@ export function GameScreen() {
     );
 
     if (isAiTurn || !hasHealingSpell || !canUseHealingSpellNow(state)) {
-      setHealingSpellSelection({ mode: 'idle' });
+      if (healingSpellSelection.mode !== 'idle') {
+        setHealingSpellSelection({ mode: 'idle' });
+      }
+
       return;
     }
 
@@ -107,6 +129,12 @@ export function GameScreen() {
     }
   }, [healingSpellSelection, state]);
 
+  useEffect(() => {
+    if (!state) {
+      setDismissedStartOverlayEventId(null);
+    }
+  }, [state]);
+
   if (!state) {
     return null;
   }
@@ -115,6 +143,8 @@ export function GameScreen() {
     healingSpellSelection.mode === 'select_tile'
       ? getBoardSelectableHealingPositions(state)
       : [];
+  const overlayStartPlayerHeroId = startPlayerEvent?.playerHeroId;
+  const overlayStartPlayerDetails = startPlayerEvent?.startPlayer;
 
   const handleMove = (target: BoardPosition) => {
     dispatch({ type: 'movePlayer', target });
@@ -311,6 +341,122 @@ export function GameScreen() {
           <EventLog state={state} lastError={lastError} />
         </aside>
       </div>
+      {showStartPlayerOverlay &&
+      startPlayerEvent &&
+      overlayStartPlayerHeroId &&
+      overlayStartPlayerDetails ? (
+        <div
+          className="absolute inset-0 z-30 bg-stone-950/90 px-4 py-6 text-left backdrop-blur-sm"
+          data-testid="start-player-overlay"
+          onClick={(event) => {
+            if (event.button !== 0) {
+              return;
+            }
+
+            setDismissedStartOverlayEventId(startPlayerEvent.id);
+          }}
+        >
+          <div className="mx-auto flex h-full w-full max-w-5xl items-center justify-center">
+            <div className="w-full max-w-4xl border border-amber-500/40 bg-stone-900/95 p-6 shadow-2xl shadow-black/40">
+              <div className="flex flex-col gap-2 border-b border-stone-700 pb-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-amber-300">
+                    Starting Player Roll-Off
+                  </p>
+                  <h2 className="mt-2 text-2xl font-semibold text-stone-100">
+                    {heroName(overlayStartPlayerHeroId)} begins the game
+                  </h2>
+                </div>
+                <p className="text-sm text-stone-300">
+                  Click anywhere to begin
+                </p>
+              </div>
+              <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.9fr)]">
+                <div className="grid gap-4">
+                  {overlayStartPlayerDetails.rounds.map((round, roundIndex) => {
+                    const highestRoll = Math.max(
+                      ...round.rolls.map((entry) => entry.roll),
+                    );
+
+                    return (
+                      <div key={`${startPlayerEvent.id}-overlay-round-${roundIndex}`}>
+                        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-200">
+                          {round.roundType === 'initial'
+                            ? 'Initial Roll'
+                            : `Tiebreak ${roundIndex}`}
+                        </h3>
+                        <table className="w-full border-collapse text-sm text-stone-200">
+                          <thead>
+                            <tr className="border-b border-stone-700 text-left text-xs uppercase tracking-wide text-stone-400">
+                              <th className="px-3 py-2 font-medium">Player</th>
+                              <th className="px-3 py-2 font-medium">Hero</th>
+                              <th className="px-3 py-2 font-medium">Roll</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {round.rolls.map((entry) => (
+                              <tr
+                                key={`${startPlayerEvent.id}-${roundIndex}-${entry.playerId}`}
+                                className={
+                                  entry.roll === highestRoll
+                                    ? 'bg-amber-500/10 text-amber-100'
+                                    : 'border-b border-stone-800 last:border-b-0'
+                                }
+                              >
+                                <td className="px-3 py-2">
+                                  {playerTurnLabel(entry.playerId, state)}
+                                </td>
+                                <td className="px-3 py-2">
+                                  {heroName(entry.playerHeroId)}
+                                </td>
+                                <td className="px-3 py-2 font-semibold">
+                                  {entry.roll}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-200">
+                    Turn Order
+                  </h3>
+                  <table className="w-full border-collapse text-sm text-stone-200">
+                    <thead>
+                      <tr className="border-b border-stone-700 text-left text-xs uppercase tracking-wide text-stone-400">
+                        <th className="px-3 py-2 font-medium">#</th>
+                        <th className="px-3 py-2 font-medium">Player</th>
+                        <th className="px-3 py-2 font-medium">Hero</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {getTurnOrder(state).map((player, index) => (
+                        <tr
+                          key={`turn-order-${player.id}`}
+                          className={
+                            index === 0
+                              ? 'bg-emerald-500/10 text-emerald-100'
+                              : 'border-b border-stone-800 last:border-b-0'
+                          }
+                        >
+                          <td className="px-3 py-2 font-semibold">{index + 1}</td>
+                          <td className="px-3 py-2">
+                            {playerTurnLabel(player.id, state)}
+                          </td>
+                          <td className="px-3 py-2">{heroName(player.heroId)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <FooterMeta align="left" versionLabel="v1.1 fnord GAMES 2026" />
     </main>
   );
@@ -332,4 +478,26 @@ function getLatestCombatDice(
   }
 
   return undefined;
+}
+
+function getTurnOrder(
+  state: NonNullable<ReturnType<typeof useSetupStore.getState>['gameState']>,
+) {
+  return state.players.map(
+    (_, offset) =>
+      state.players[(state.activePlayerIndex + offset) % state.players.length],
+  );
+}
+
+function playerTurnLabel(
+  playerId: string,
+  state: NonNullable<ReturnType<typeof useSetupStore.getState>['gameState']>,
+) {
+  const playerIndex = state.players.findIndex((player) => player.id === playerId);
+
+  if (playerIndex === 0) {
+    return 'Human';
+  }
+
+  return `AI ${playerIndex}`;
 }

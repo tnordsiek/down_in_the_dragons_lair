@@ -351,6 +351,227 @@ describe('Milestone 6 UI', () => {
     );
   });
 
+  it('renders start-player rolls and tiebreaks inside a single game-start log entry', () => {
+    const state = createUiState({
+      eventLog: [
+        {
+          id: 'event-start',
+          type: 'game_started',
+          message: 'Game started. Mage (player_human) takes the first turn.',
+          playerId: 'player_human',
+          playerHeroId: 'hero_mage',
+          playerLabel: 'Mage (player_human)',
+          startPlayer: {
+            rounds: [
+              {
+                roundType: 'initial',
+                rolls: [
+                  {
+                    playerId: 'player_human',
+                    playerHeroId: 'hero_mage',
+                    playerLabel: 'Mage (player_human)',
+                    roll: 6,
+                  },
+                  {
+                    playerId: 'player_ai_1',
+                    playerHeroId: 'hero_thief',
+                    playerLabel: 'Thief (player_ai_1)',
+                    roll: 6,
+                  },
+                  {
+                    playerId: 'player_ai_2',
+                    playerHeroId: 'hero_warrior',
+                    playerLabel: 'Warrior (player_ai_2)',
+                    roll: 2,
+                  },
+                ],
+              },
+              {
+                roundType: 'tiebreak',
+                rolls: [
+                  {
+                    playerId: 'player_human',
+                    playerHeroId: 'hero_mage',
+                    playerLabel: 'Mage (player_human)',
+                    roll: 5,
+                  },
+                  {
+                    playerId: 'player_ai_1',
+                    playerHeroId: 'hero_thief',
+                    playerLabel: 'Thief (player_ai_1)',
+                    roll: 3,
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      ],
+    });
+    const { container } = render(<EventLog state={state} />);
+    const entries = Array.from(container.querySelectorAll('ol > li'));
+
+    expect(entries).toHaveLength(1);
+    expect(screen.getByText('Mage takes the first turn')).toBeInTheDocument();
+    expect(
+      screen.getByText('Start rolls: Mage 6 · Thief 6 · Warrior 2'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Tiebreak 1: Mage 5 · Thief 3'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows a start-player overlay with roll tables and turn order before the game begins', () => {
+    const baseState = createUiStateWithPlayerCount(3, [
+      'hero_mage',
+      'hero_thief',
+      'hero_warrior',
+    ]);
+    const state: GameState = {
+      ...baseState,
+      activePlayerIndex: 1,
+      eventLog: [
+        {
+          id: 'event-start',
+          type: 'game_started',
+          message: 'Game started. Thief (player_ai_1) takes the first turn.',
+          playerId: 'player_ai_1',
+          playerHeroId: 'hero_thief',
+          playerLabel: 'Thief (player_ai_1)',
+          startPlayer: {
+            rounds: [
+              {
+                roundType: 'initial' as const,
+                rolls: [
+                  {
+                    playerId: 'player_human',
+                    playerHeroId: 'hero_mage',
+                    playerLabel: 'Mage (player_human)',
+                    roll: 4,
+                  },
+                  {
+                    playerId: 'player_ai_1',
+                    playerHeroId: 'hero_thief',
+                    playerLabel: 'Thief (player_ai_1)',
+                    roll: 6,
+                  },
+                  {
+                    playerId: 'player_ai_2',
+                    playerHeroId: 'hero_warrior',
+                    playerLabel: 'Warrior (player_ai_2)',
+                    roll: 6,
+                  },
+                ],
+              },
+              {
+                roundType: 'tiebreak' as const,
+                rolls: [
+                  {
+                    playerId: 'player_ai_1',
+                    playerHeroId: 'hero_thief',
+                    playerLabel: 'Thief (player_ai_1)',
+                    roll: 5,
+                  },
+                  {
+                    playerId: 'player_ai_2',
+                    playerHeroId: 'hero_warrior',
+                    playerLabel: 'Warrior (player_ai_2)',
+                    roll: 2,
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      ],
+    };
+
+    useSetupStore.setState({
+      gameState: state,
+      hasSavedGame: false,
+      lastError: undefined,
+    });
+
+    render(<GameScreen />);
+
+    const overlay = screen.getByTestId('start-player-overlay');
+    const tables = within(overlay).getAllByRole('table');
+
+    expect(
+      within(overlay).getByRole('heading', { name: 'Thief begins the game' }),
+    ).toBeInTheDocument();
+    expect(
+      within(overlay).getByText('Click anywhere to begin'),
+    ).toBeInTheDocument();
+    expect(tables).toHaveLength(3);
+    expect(
+      within(tables[0]).getByRole('columnheader', { name: 'Player' }),
+    ).toBeInTheDocument();
+    expect(within(tables[0]).getByText('Human')).toBeInTheDocument();
+    expect(within(tables[0]).getByText('Mage')).toBeInTheDocument();
+    expect(within(tables[0]).getByText('4')).toBeInTheDocument();
+    expect(within(tables[1]).getByText('Warrior')).toBeInTheDocument();
+    expect(within(tables[2]).getByText('1')).toBeInTheDocument();
+    expect(within(tables[2]).getByText('AI 1')).toBeInTheDocument();
+    expect(within(tables[2]).getByText('Thief')).toBeInTheDocument();
+    expect(within(tables[2]).getByText('2')).toBeInTheDocument();
+    expect(within(tables[2]).getByText('AI 2')).toBeInTheDocument();
+    expect(within(tables[2]).getByText('3')).toBeInTheDocument();
+    expect(within(tables[2]).getByText('Human')).toBeInTheDocument();
+  });
+
+  it('dismisses the start-player overlay on click and only then allows AI auto-play', () => {
+    vi.useFakeTimers();
+
+    const baseState = createUiState({
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-east',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+    const state = {
+      ...baseState,
+      activePlayerIndex: 1,
+      phase: 'turn_start' as const,
+      players: baseState.players.map((player, index) =>
+        index === 0
+          ? { ...player, position: { boardX: 1, boardY: 0 } }
+          : { ...player, position: { boardX: 0, boardY: 0 } },
+      ),
+    };
+
+    useSetupStore.setState({
+      gameState: state,
+      hasSavedGame: false,
+      lastError: undefined,
+    });
+
+    render(<GameScreen />);
+
+    act(() => {
+      vi.advanceTimersByTime(250);
+    });
+
+    expect(useSetupStore.getState().gameState?.pendingTile).toBeUndefined();
+
+    fireEvent.click(screen.getByTestId('start-player-overlay'));
+    expect(screen.queryByTestId('start-player-overlay')).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(250);
+    });
+
+    expect(useSetupStore.getState().gameState?.pendingTile).toBeDefined();
+  });
+
   it('shows the latest resolved combat dice as header images', () => {
     const state = createUiState({
       phase: 'await_move',
@@ -1908,6 +2129,8 @@ describe('Milestone 6 UI', () => {
     const initialBoardHeight = board.getBoundingClientRect().height;
     fireEvent(window, new Event('resize'));
 
+    fireEvent.click(screen.getByTestId('start-player-overlay'));
+
     act(() => {
       vi.advanceTimersByTime(250);
     });
@@ -2351,6 +2574,8 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
         onMove={vi.fn()}
         onOpenChest={vi.fn()}
         onResolveCombat={vi.fn()}
+        onResolveCombatWithoutFlameSpells={vi.fn()}
+        onResolveCombatWithFlameSpells={vi.fn()}
         onResolveRoom={vi.fn()}
         onSelectHealingSpellTarget={(targetPlayerId) =>
           setHealingSpellSelection({ mode: 'select_tile', targetPlayerId })

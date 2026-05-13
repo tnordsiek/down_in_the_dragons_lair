@@ -33,6 +33,21 @@ export function EventLog({ state, lastError }: EventLogProps) {
             {event.room ? (
               <p className="text-xs text-stone-400">{renderRoomDetails(event)}</p>
             ) : null}
+            {event.startPlayer ? (
+              <div className="mt-1 grid gap-1 text-xs text-stone-400">
+                {event.startPlayer.rounds.map((round, index) => (
+                  <p key={`${event.id}-start-round-${index}`}>
+                    {round.roundType === 'initial'
+                      ? 'Start rolls'
+                      : `Tiebreak ${index}`}
+                    {': '}
+                    {round.rolls
+                      .map((entry) => `${heroName(entry.playerHeroId)} ${entry.roll}`)
+                      .join(' · ')}
+                  </p>
+                ))}
+              </div>
+            ) : null}
             {event.combat ? (
               <>
                 <p className="text-xs text-stone-400">

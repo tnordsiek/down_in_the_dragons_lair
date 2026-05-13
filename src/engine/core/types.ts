@@ -211,6 +211,22 @@ export interface GameEventCombatDetails {
   retreatPosition?: BoardPosition;
 }
 
+export interface GameEventStartPlayerRollEntry {
+  playerId: string;
+  playerHeroId: HeroId;
+  playerLabel: string;
+  roll: number;
+}
+
+export interface GameEventStartPlayerRoundDetails {
+  roundType: 'initial' | 'tiebreak';
+  rolls: GameEventStartPlayerRollEntry[];
+}
+
+export interface GameEventStartPlayerDetails {
+  rounds: GameEventStartPlayerRoundDetails[];
+}
+
 export interface GameEvent {
   id: string;
   type: string;
@@ -221,6 +237,7 @@ export interface GameEvent {
   playerLabel?: string;
   room?: GameEventRoomDetails;
   combat?: GameEventCombatDetails;
+  startPlayer?: GameEventStartPlayerDetails;
   action?: GameEventActionDetails;
 }
 

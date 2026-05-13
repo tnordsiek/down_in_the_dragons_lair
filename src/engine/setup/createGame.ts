@@ -5,6 +5,7 @@ import { createSeededRng, type SeededRng } from '../../utils/rng';
 import { heroDisplayNames } from '../../data/displayNames';
 import type {
   GameEvent,
+  GameEventStartPlayerDetails,
   GameState,
   HeroId,
   PlacedTile,
@@ -30,7 +31,8 @@ export function createNewGame(options: CreateGameOptions): GameState {
     rng,
   );
   const players = createPlayers(assignedHeroIds);
-  const activePlayerIndex = rollStartPlayerIndex(players, rng);
+  const startPlayerRoll = rollStartPlayer(players, rng);
+  const activePlayerIndex = startPlayerRoll.activePlayerIndex;
   const board: PlacedTile[] = [
     {
       tileInstanceId: 'tile-0',
@@ -52,7 +54,11 @@ export function createNewGame(options: CreateGameOptions): GameState {
     tokenBag: shuffle(createTokenBag(), rng),
     activePlayerIndex,
     remainingSteps: 4,
-    eventLog: createInitialEventLog(players, activePlayerIndex),
+    eventLog: createInitialEventLog(
+      players,
+      activePlayerIndex,
+      startPlayerRoll.details,
+    ),
     rng: rng.snapshot(),
   };
 }
@@ -91,21 +97,39 @@ function createPlayers(assignedHeroIds: HeroId[]): Player[] {
   }));
 }
 
-function rollStartPlayerIndex(players: Player[], rng: SeededRng): number {
+function rollStartPlayer(
+  players: Player[],
+  rng: SeededRng,
+): { activePlayerIndex: number; details: GameEventStartPlayerDetails } {
   let candidateIndexes = players.map((_, index) => index);
+  const rounds: GameEventStartPlayerDetails['rounds'] = [];
 
   while (candidateIndexes.length > 1) {
     const rolls = candidateIndexes.map((playerIndex) => ({
       playerIndex,
       roll: rng.rollDie(6),
     }));
+    rounds.push({
+      roundType: rounds.length === 0 ? 'initial' : 'tiebreak',
+      rolls: rolls.map((entry) => ({
+        playerId: players[entry.playerIndex].id,
+        playerHeroId: players[entry.playerIndex].heroId,
+        playerLabel: `${heroDisplayNames[players[entry.playerIndex].heroId]} (${players[entry.playerIndex].id})`,
+        roll: entry.roll,
+      })),
+    });
     const highRoll = Math.max(...rolls.map((entry) => entry.roll));
     candidateIndexes = rolls
       .filter((entry) => entry.roll === highRoll)
       .map((entry) => entry.playerIndex);
   }
 
-  return candidateIndexes[0];
+  return {
+    activePlayerIndex: candidateIndexes[0],
+    details: {
+      rounds,
+    },
+  };
 }
 
 function expandTileStack(): TileBlueprintId[] {
@@ -135,6 +159,7 @@ export function shuffle<T>(items: T[], rng: SeededRng): T[] {
 function createInitialEventLog(
   players: Player[],
   activePlayerIndex: number,
+  startPlayer: GameEventStartPlayerDetails,
 ): GameEvent[] {
   const activePlayer = players[activePlayerIndex];
 
@@ -146,6 +171,7 @@ function createInitialEventLog(
       playerId: activePlayer.id,
       playerHeroId: activePlayer.heroId,
       playerLabel: `${heroDisplayNames[activePlayer.heroId]} (${activePlayer.id})`,
+      startPlayer,
     },
   ];
 }

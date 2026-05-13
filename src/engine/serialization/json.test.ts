@@ -17,21 +17,31 @@ describe('game state serialization foundation', () => {
       eventLog: [
         {
           id: 'event-0',
-          type: 'combat_resolved',
-          message: 'Resolved combat: Victory',
+          type: 'game_started',
+          message: 'Game started. Mage (player_human) takes the first turn.',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
           playerLabel: 'Mage (player_human)',
-          combat: {
-            monsterId: 'giant_rat',
-            monsterStrength: 5,
-            dice: [6, 6],
-            total: 12,
-            outcome: 'victory',
-            weaponBonus: 0,
-            flameSpellCount: 0,
-            warlockSacrificeBonus: 0,
-            oracleBonus: 0,
+          startPlayer: {
+            rounds: [
+              {
+                roundType: 'initial',
+                rolls: [
+                  {
+                    playerId: 'player_human',
+                    playerHeroId: 'hero_mage',
+                    playerLabel: 'Mage (player_human)',
+                    roll: 6,
+                  },
+                  {
+                    playerId: 'player_ai_1',
+                    playerHeroId: 'hero_thief',
+                    playerLabel: 'Thief (player_ai_1)',
+                    roll: 4,
+                  },
+                ],
+              },
+            ],
           },
         },
       ],
