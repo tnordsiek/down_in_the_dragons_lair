@@ -237,7 +237,7 @@ function getHeroAbilityInfo(heroId: HeroId): string {
     case 'hero_mage':
       return 'Flame spells are not consumed. The Mage may move through walls on discovered tiles.';
     case 'hero_warrior':
-      return 'May reroll one lost combat. Losing the last HP sends the Warrior to a healing tile.';
+      return 'May reroll both combat dice once after a draw or defeat. Losing the last HP sends the Warrior to a healing tile.';
     case 'hero_warlock':
       return 'May sacrifice 1 HP for +1 combat strength. May swap position with another player at turn start.';
     case 'hero_thief':

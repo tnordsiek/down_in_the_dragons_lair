@@ -6,8 +6,10 @@ import { createNewGame } from '../setup/createGame';
 import { endTurn } from '../turns/turns';
 import {
   calculateCombatTotal,
+  declineWarriorReroll,
   getCombatOutcome,
   resolveCombat,
+  useWarriorReroll,
 } from './combat';
 
 describe('combat resolution', () => {
@@ -43,7 +45,7 @@ describe('combat resolution', () => {
     );
   });
 
-  it('pauses for flame spell selection after a draw when spells can improve the result', () => {
+  it('pauses for warrior reroll before flame spell selection after a warrior draw', () => {
     const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
       ...player,
       heroId: 'hero_warrior',
@@ -54,15 +56,25 @@ describe('combat resolution', () => {
     }));
     const pending = resolveCombat(state, { dice: [2, 3] });
 
-    expect(pending.phase).toBe('combat_flame_spells');
+    expect(pending.phase).toBe('combat_warrior_reroll');
     expect(pending.combat).toEqual(
+      expect.objectContaining({
+        initialRolledDice: [2, 3],
+        initialBaseOutcome: 'draw',
+      }),
+    );
+
+    const afterDecline = declineWarriorReroll(pending);
+
+    expect(afterDecline.phase).toBe('combat_flame_spells');
+    expect(afterDecline.combat).toEqual(
       expect.objectContaining({
         rolledDice: [2, 3],
         pendingBaseOutcome: 'draw',
       }),
     );
 
-    const resolved = applyGameAction(pending, {
+    const resolved = applyGameAction(afterDecline, {
       type: 'resolveCombatWithFlameSpells',
       flameSpellCount: 1,
     });
@@ -89,7 +101,8 @@ describe('combat resolution', () => {
       },
     }));
     const pending = resolveCombat(state, { dice: [2, 3] });
-    const resolved = applyGameAction(pending, {
+    const withKeptRoll = declineWarriorReroll(pending);
+    const resolved = applyGameAction(withKeptRoll, {
       type: 'resolveCombatWithoutFlameSpells',
     });
 
@@ -114,12 +127,41 @@ describe('combat resolution', () => {
         spells: [{ type: 'spell', spellKind: 'flame' }],
       },
     }));
-    const resolved = resolveCombat(state, { dice: [1, 1] });
+    const pending = resolveCombat(state, { dice: [1, 1] });
+    const resolved = useWarriorReroll(pending, { dice: [1, 1] });
 
     expect(resolved.phase).toBe('turn_end');
     expect(
       resolved.players[resolved.activePlayerIndex].inventory.spells,
     ).toHaveLength(1);
+  });
+
+  it('skips the warrior reroll step after a warrior victory', () => {
+    const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
+      ...player,
+      heroId: 'hero_warrior',
+    }));
+
+    const resolved = resolveCombat(state, { dice: [6, 6] });
+
+    expect(resolved.phase).toBe('loot_resolution');
+  });
+
+  it('offers a warrior reroll after a defeat', () => {
+    const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
+      ...player,
+      heroId: 'hero_warrior',
+    }));
+
+    const pending = resolveCombat(state, { dice: [1, 1] });
+
+    expect(pending.phase).toBe('combat_warrior_reroll');
+    expect(pending.combat).toEqual(
+      expect.objectContaining({
+        initialRolledDice: [1, 1],
+        initialBaseOutcome: 'defeat',
+      }),
+    );
   });
 
   it('resolves a defeat as retreat with one HP loss', () => {

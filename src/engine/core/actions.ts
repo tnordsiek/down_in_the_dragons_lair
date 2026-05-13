@@ -1,8 +1,10 @@
 import type { GameAction, GameState } from './types';
 import {
+  declineWarriorReroll,
   resolveCombat,
   resolveCombatWithFlameSpells,
   resolveCombatWithoutFlameSpells,
+  useWarriorReroll,
 } from '../combat/combat';
 import {
   drawPendingTileForExploration,
@@ -54,11 +56,15 @@ export function applyGameAction(
       return resolveCombat(state, {
         dice: action.dice,
         curseTargetPlayerId: action.curseTargetPlayerId,
-        warriorRerollDice: action.warriorRerollDice,
-        useWarriorReroll: action.useWarriorReroll,
         useWarlockSacrifice: action.useWarlockSacrifice,
         swordsmanOneRerolls: action.swordsmanOneRerolls,
       });
+    case 'useWarriorReroll':
+      return useWarriorReroll(state, {
+        dice: action.dice,
+      });
+    case 'declineWarriorReroll':
+      return declineWarriorReroll(state);
     case 'resolveCombatWithoutFlameSpells':
       return resolveCombatWithoutFlameSpells(state);
     case 'resolveCombatWithFlameSpells':

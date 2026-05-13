@@ -75,6 +75,7 @@ export function chooseHeuristicAiAction(
   if (
     state.phase === 'combat' ||
     state.phase === 'optional_post_combat' ||
+    state.phase === 'combat_warrior_reroll' ||
     state.phase === 'combat_flame_spells'
   ) {
     return chooseCombatAction(state, legalActions, config);
@@ -144,6 +145,10 @@ function chooseCombatAction(
   legalActions: GameAction[],
   config: AiHeuristicConfig,
 ): GameAction {
+  if (state.phase === 'combat_warrior_reroll') {
+    return requireAction(legalActions, 'useWarriorReroll');
+  }
+
   if (state.phase === 'combat_flame_spells') {
     return chooseCombatFlameSpellAction(state, legalActions);
   }
@@ -179,7 +184,6 @@ function chooseCombatAction(
 
   return {
     ...combatAction,
-    useWarriorReroll: hasActiveHeroAbility(activePlayer, 'hero_warrior'),
     useWarlockSacrifice:
       hasActiveHeroAbility(activePlayer, 'hero_warlock') &&
       activePlayer.hp > config.criticalHp,

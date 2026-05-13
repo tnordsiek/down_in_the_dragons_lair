@@ -176,6 +176,12 @@ export function GameScreen() {
   const handleResolveCombat = () => {
     dispatch({ type: 'resolveCombat' });
   };
+  const handleUseWarriorReroll = () => {
+    dispatch({ type: 'useWarriorReroll' });
+  };
+  const handleDeclineWarriorReroll = () => {
+    dispatch({ type: 'declineWarriorReroll' });
+  };
   const handleResolveCombatWithoutFlameSpells = () => {
     dispatch({ type: 'resolveCombatWithoutFlameSpells' });
   };
@@ -323,6 +329,8 @@ export function GameScreen() {
             onExplore={handleExplore}
             onResolveRoom={handleResolveRoom}
             onResolveCombat={handleResolveCombat}
+            onUseWarriorReroll={handleUseWarriorReroll}
+            onDeclineWarriorReroll={handleDeclineWarriorReroll}
             onResolveCombatWithoutFlameSpells={
               handleResolveCombatWithoutFlameSpells
             }

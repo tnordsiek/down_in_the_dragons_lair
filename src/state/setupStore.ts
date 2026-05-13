@@ -181,6 +181,8 @@ function actionMessage(
     case 'resolveRoomToken':
       return undefined;
     case 'resolveCombat':
+    case 'useWarriorReroll':
+    case 'declineWarriorReroll':
     case 'resolveCombatWithoutFlameSpells':
     case 'resolveCombatWithFlameSpells':
       return undefined;

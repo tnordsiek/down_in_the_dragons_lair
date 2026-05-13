@@ -25,10 +25,12 @@ export type CombatOutcome = 'victory' | 'draw' | 'defeat';
 export type ResolveCombatOptions = {
   dice?: [number, number];
   curseTargetPlayerId?: string;
-  warriorRerollDice?: [number, number];
-  useWarriorReroll?: boolean;
   useWarlockSacrifice?: boolean;
   swordsmanOneRerolls?: number[];
+};
+
+export type UseWarriorRerollOptions = {
+  dice?: [number, number];
 };
 
 export function resolveCombat(
@@ -51,13 +53,12 @@ export function resolveCombat(
     : 0;
   const flameSpellCount = getAutomaticFlameSpellCount(activePlayer);
   const oracleBonus = getOracleCombatBonus(state);
-  let resolvedDice = dice;
-  let total = calculateCombatTotal(
+  const total = calculateCombatTotal(
     activePlayer,
     dice,
     flameSpellCount + warlockSacrificeBonus + oracleBonus,
   );
-  let outcome = getCombatOutcomeForPlayer(
+  const outcome = getCombatOutcomeForPlayer(
     activePlayer,
     total,
     monster.strength,
@@ -68,25 +69,27 @@ export function resolveCombat(
     stateWithAppliedCosts = applyWarlockSacrifice(stateWithAppliedCosts);
   }
 
-  if (shouldUseWarriorReroll(activePlayer, outcome, options)) {
-    const rerollDice = options.warriorRerollDice ?? [
-      rng.rollDie(6),
-      rng.rollDie(6),
-    ];
-    resolvedDice = rerollDice;
-    total = calculateCombatTotal(
-      activePlayer,
-      rerollDice,
-      flameSpellCount + warlockSacrificeBonus + oracleBonus,
-    );
-    outcome = getCombatOutcomeForPlayer(activePlayer, total, monster.strength);
+  if (shouldPauseForWarriorReroll(activePlayer, outcome)) {
+    return {
+      ...stateWithAppliedCosts,
+      phase: 'combat_warrior_reroll',
+      combat: {
+        ...state.combat,
+        initialRolledDice: dice,
+        initialBaseOutcome: outcome,
+        pendingWarlockSacrificeBonus: warlockSacrificeBonus,
+        pendingOracleBonus: oracleBonus,
+        pendingCurseTargetPlayerId: options.curseTargetPlayerId,
+      },
+      rng: rng.snapshot(),
+    };
   }
 
   if (
     shouldPauseForFlameSpells(
       activePlayer,
       monster.strength,
-      resolvedDice,
+      dice,
       warlockSacrificeBonus,
       oracleBonus,
     )
@@ -96,7 +99,7 @@ export function resolveCombat(
       phase: 'combat_flame_spells',
       combat: {
         ...state.combat,
-        rolledDice: resolvedDice,
+        rolledDice: dice,
         pendingBaseOutcome: outcome,
         pendingWarlockSacrificeBonus: warlockSacrificeBonus,
         pendingOracleBonus: oracleBonus,
@@ -108,11 +111,120 @@ export function resolveCombat(
 
   return resolveCombatOutcome(
     { ...stateWithAppliedCosts, rng: rng.snapshot() },
-    resolvedDice,
+    dice,
     flameSpellCount,
     warlockSacrificeBonus,
     oracleBonus,
     options.curseTargetPlayerId,
+  );
+}
+
+export function useWarriorReroll(
+  state: GameState,
+  options: UseWarriorRerollOptions = {},
+): GameState {
+  if (
+    state.phase !== 'combat_warrior_reroll' ||
+    !state.combat?.initialRolledDice
+  ) {
+    throw new Error(
+      'Warrior reroll can only resolve during pending warrior combat reroll',
+    );
+  }
+
+  const activePlayer = state.players[state.activePlayerIndex];
+  const monster = monsterDefinitions[state.combat.monsterId];
+  const rng = restoreSeededRng(state.rng);
+  const rerollDice = options.dice ?? [rng.rollDie(6), rng.rollDie(6)];
+  const flameSpellCount = getAutomaticFlameSpellCount(activePlayer);
+  const warlockSacrificeBonus = state.combat.pendingWarlockSacrificeBonus ?? 0;
+  const oracleBonus = state.combat.pendingOracleBonus ?? 0;
+  const total = calculateCombatTotal(
+    activePlayer,
+    rerollDice,
+    flameSpellCount + warlockSacrificeBonus + oracleBonus,
+  );
+  const outcome = getCombatOutcomeForPlayer(
+    activePlayer,
+    total,
+    monster.strength,
+  );
+  const stateWithUpdatedRng = { ...state, rng: rng.snapshot() };
+
+  if (
+    shouldPauseForFlameSpells(
+      activePlayer,
+      monster.strength,
+      rerollDice,
+      warlockSacrificeBonus,
+      oracleBonus,
+    )
+  ) {
+    return {
+      ...stateWithUpdatedRng,
+      phase: 'combat_flame_spells',
+      combat: {
+        ...state.combat,
+        rolledDice: rerollDice,
+        pendingBaseOutcome: outcome,
+      },
+    };
+  }
+
+  return resolveCombatOutcome(
+    stateWithUpdatedRng,
+    rerollDice,
+    flameSpellCount,
+    warlockSacrificeBonus,
+    oracleBonus,
+    state.combat.pendingCurseTargetPlayerId,
+  );
+}
+
+export function declineWarriorReroll(state: GameState): GameState {
+  if (
+    state.phase !== 'combat_warrior_reroll' ||
+    !state.combat?.initialRolledDice ||
+    !state.combat.initialBaseOutcome
+  ) {
+    throw new Error(
+      'Declining warrior reroll can only resolve during pending warrior combat reroll',
+    );
+  }
+
+  const activePlayer = state.players[state.activePlayerIndex];
+  const monster = monsterDefinitions[state.combat.monsterId];
+  const flameSpellCount = getAutomaticFlameSpellCount(activePlayer);
+  const warlockSacrificeBonus = state.combat.pendingWarlockSacrificeBonus ?? 0;
+  const oracleBonus = state.combat.pendingOracleBonus ?? 0;
+
+  if (
+    shouldPauseForFlameSpells(
+      activePlayer,
+      monster.strength,
+      state.combat.initialRolledDice,
+      warlockSacrificeBonus,
+      oracleBonus,
+    )
+  ) {
+    return {
+      ...state,
+      phase: 'combat_flame_spells',
+      combat: {
+        ...state.combat,
+        rolledDice: state.combat.initialRolledDice,
+        pendingBaseOutcome: state.combat.initialBaseOutcome,
+      },
+    };
+  }
+
+  return resolveCombatOutcome(
+    state,
+    state.combat.initialRolledDice,
+    flameSpellCount,
+    warlockSacrificeBonus,
+    oracleBonus,
+    state.combat.pendingCurseTargetPlayerId,
   );
 }
 
@@ -608,16 +720,11 @@ function createCombatEventDetails(
   };
 }
 
-function shouldUseWarriorReroll(
+function shouldPauseForWarriorReroll(
   player: Player,
   outcome: CombatOutcome,
-  options: ResolveCombatOptions,
 ): boolean {
-  return (
-    options.useWarriorReroll === true &&
-    hasActiveHeroAbility(player, 'hero_warrior') &&
-    outcome !== 'victory'
-  );
+  return hasActiveHeroAbility(player, 'hero_warrior') && outcome !== 'victory';
 }
 
 function getPostVictoryPhase(

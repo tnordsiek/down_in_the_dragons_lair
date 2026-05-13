@@ -194,6 +194,36 @@ describe('AI legal actions', () => {
     );
   });
 
+  it('offers only warrior reroll choices during the warrior reroll step', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'warrior-reroll-actions-seed',
+    });
+
+    expect(
+      getLegalAiActions({
+        ...state,
+        phase: 'combat_warrior_reroll',
+        activePlayerIndex: 0,
+        players: state.players.map((player, index) =>
+          index === 0 ? { ...player, heroId: 'hero_warrior' } : player,
+        ),
+        combat: {
+          playerId: state.players[0].id,
+          monsterId: 'giant_rat',
+          position: { boardX: 0, boardY: 0 },
+          enteredFrom: { boardX: 0, boardY: -1 },
+          initialRolledDice: [2, 3],
+          initialBaseOutcome: 'draw',
+        },
+      }),
+    ).toEqual([
+      { type: 'useWarriorReroll' },
+      { type: 'declineWarriorReroll' },
+    ]);
+  });
+
   it('offers healing spell actions during free movement phases', () => {
     const state = withHealingSpell(createNewGame({
       humanHeroId: 'hero_mage',

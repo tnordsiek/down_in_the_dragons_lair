@@ -29,6 +29,8 @@ type ActionPanelProps = {
   onExplore: (direction: TileSide) => void;
   onResolveRoom: () => void;
   onResolveCombat: () => void;
+  onUseWarriorReroll: () => void;
+  onDeclineWarriorReroll: () => void;
   onResolveCombatWithoutFlameSpells: () => void;
   onResolveCombatWithFlameSpells: (flameSpellCount: number) => void;
   onSwapLoot: (inventorySlot: { kind: 'weapon' | 'spell'; index: number }) => void;
@@ -49,6 +51,8 @@ export function ActionPanel({
   onExplore,
   onResolveRoom,
   onResolveCombat,
+  onUseWarriorReroll,
+  onDeclineWarriorReroll,
   onResolveCombatWithoutFlameSpells,
   onResolveCombatWithFlameSpells,
   onSwapLoot,
@@ -90,6 +94,8 @@ export function ActionPanel({
   const canTakePendingLoot =
     pendingLoot !== undefined && canStoreItem(activePlayer, pendingLoot.item);
   const flameSpellChoices = getCombatFlameSpellChoices(state);
+  const initialCombatDice = state.combat?.initialRolledDice;
+  const initialCombatOutcome = state.combat?.initialBaseOutcome;
   const pendingCombatDice = state.combat?.rolledDice;
   const pendingCombatOutcome = state.combat?.pendingBaseOutcome;
   const hasHealingSpell = activePlayer.inventory.spells.some(
@@ -174,6 +180,39 @@ export function ActionPanel({
           >
             Resolve Combat
           </button>
+        </div>
+      ) : null}
+
+      {state.phase === 'combat_warrior_reroll' &&
+      combatMonster &&
+      initialCombatDice &&
+      initialCombatOutcome ? (
+        <div className="mt-4 grid gap-2">
+          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+            Warrior Reroll
+          </h3>
+          <p className="text-sm text-stone-200">
+            {monsterName(combatMonster.id)} strength {combatMonster.strength}
+          </p>
+          <p className="font-mono text-xs text-stone-300">
+            Rolled {initialCombatDice[0]} + {initialCombatDice[1]} + weapons{' '}
+            {weaponBonus} = {initialCombatDice[0] + initialCombatDice[1] + weaponBonus}
+            {` and currently face ${initialCombatOutcome}`}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="bg-red-700 px-3 py-2 text-sm font-semibold text-white"
+              onClick={onUseWarriorReroll}
+            >
+              Reroll both dice
+            </button>
+            <button
+              className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
+              onClick={onDeclineWarriorReroll}
+            >
+              Keep this result
+            </button>
+          </div>
         </div>
       ) : null}
 

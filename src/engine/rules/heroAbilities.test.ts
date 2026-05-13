@@ -8,7 +8,12 @@ import type {
   Player,
   Token,
 } from '../core/types';
-import { resolveCombat, resolveCombatWithFlameSpells } from '../combat/combat';
+import {
+  declineWarriorReroll,
+  resolveCombat,
+  resolveCombatWithFlameSpells,
+  useWarriorReroll,
+} from '../combat/combat';
 import {
   getLegalExplorationDirections,
   getLegalKnownMoveDirections,
@@ -94,12 +99,13 @@ describe('hero_mage abilities', () => {
 });
 
 describe('hero_warrior abilities', () => {
-  it('rerolls a failed combat without taking loss from the first roll', () => {
+  it('offers a reroll after a failed combat without taking loss from the first roll', () => {
     const state = createCombatState('hero_warrior', 'giant_rat');
-    const resolved = resolveCombat(state, {
+    const pending = resolveCombat(state, {
       dice: [1, 1],
-      useWarriorReroll: true,
-      warriorRerollDice: [6, 6],
+    });
+    const resolved = useWarriorReroll(pending, {
+      dice: [6, 6],
     });
     const activePlayer = resolved.players[resolved.activePlayerIndex];
 
@@ -111,6 +117,38 @@ describe('hero_warrior abilities', () => {
     ).toBeUndefined();
   });
 
+  it('offers the reroll after a draw and lets the warrior keep the original result', () => {
+    const state = withActivePlayer(
+      createCombatState('hero_warrior', 'giant_rat'),
+      (player) => ({
+        ...player,
+        inventory: {
+          ...player.inventory,
+          spells: [{ type: 'spell', spellKind: 'flame' }],
+        },
+      }),
+    );
+    const pending = resolveCombat(state, { dice: [2, 3] });
+
+    expect(pending.phase).toBe('combat_warrior_reroll');
+    expect(pending.combat).toEqual(
+      expect.objectContaining({
+        initialRolledDice: [2, 3],
+        initialBaseOutcome: 'draw',
+      }),
+    );
+
+    const declined = declineWarriorReroll(pending);
+
+    expect(declined.phase).toBe('combat_flame_spells');
+    expect(declined.combat).toEqual(
+      expect.objectContaining({
+        rolledDice: [2, 3],
+        pendingBaseOutcome: 'draw',
+      }),
+    );
+  });
+
   it('moves to a healing tile instead of becoming unconscious on last HP loss', () => {
     const state = withActivePlayer(
       createCombatState('hero_warrior', 'giant_rat'),
@@ -119,7 +157,8 @@ describe('hero_warrior abilities', () => {
         hp: 1,
       }),
     );
-    const resolved = resolveCombat(state, { dice: [1, 1] });
+    const pending = resolveCombat(state, { dice: [1, 1] });
+    const resolved = declineWarriorReroll(pending);
     const activePlayer = resolved.players[resolved.activePlayerIndex];
 
     expect(activePlayer).toEqual(

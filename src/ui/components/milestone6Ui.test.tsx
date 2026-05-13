@@ -35,6 +35,8 @@ const noopActions = {
   onExplore: vi.fn(),
   onResolveRoom: vi.fn(),
   onResolveCombat: vi.fn(),
+  onUseWarriorReroll: vi.fn(),
+  onDeclineWarriorReroll: vi.fn(),
   onResolveCombatWithoutFlameSpells: vi.fn(),
   onResolveCombatWithFlameSpells: vi.fn(),
   onSelectHealingSpellTarget: vi.fn(),
@@ -1110,6 +1112,62 @@ describe('Milestone 6 UI', () => {
       screen.getByRole('button', { name: 'Use 1 Flame Spell' }),
     );
     expect(onResolveCombatWithFlameSpells).toHaveBeenCalledWith(1);
+  });
+
+  it('shows warrior reroll choices before flame spell choices', () => {
+    const onUseWarriorReroll = vi.fn();
+    const onDeclineWarriorReroll = vi.fn();
+    const state = createUiState({
+      phase: 'combat_warrior_reroll',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        initialRolledDice: [2, 3],
+        initialBaseOutcome: 'draw',
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_warrior',
+              inventory: {
+                ...player.inventory,
+                spells: [{ type: 'spell', spellKind: 'flame' }],
+              },
+            }
+          : player,
+      ),
+    });
+
+    render(
+      <ActionPanel
+        state={state}
+        {...noopActions}
+        onUseWarriorReroll={onUseWarriorReroll}
+        onDeclineWarriorReroll={onDeclineWarriorReroll}
+      />,
+    );
+
+    expect(
+      screen.getByText('Rolled 2 + 3 + weapons 0 = 5 and currently face draw'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Reroll both dice' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Keep this result' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Do not use flame spells' }),
+    ).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reroll both dice' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Keep this result' }));
+
+    expect(onUseWarriorReroll).toHaveBeenCalledTimes(1);
+    expect(onDeclineWarriorReroll).toHaveBeenCalledTimes(1);
   });
 
   it('hides the healing spell action during non-free interaction phases', () => {
@@ -2574,6 +2632,8 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
         onMove={vi.fn()}
         onOpenChest={vi.fn()}
         onResolveCombat={vi.fn()}
+        onUseWarriorReroll={vi.fn()}
+        onDeclineWarriorReroll={vi.fn()}
         onResolveCombatWithoutFlameSpells={vi.fn()}
         onResolveCombatWithFlameSpells={vi.fn()}
         onResolveRoom={vi.fn()}

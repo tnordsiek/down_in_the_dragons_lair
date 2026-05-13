@@ -227,6 +227,34 @@ describe('heuristic AI', () => {
       type: 'resolveCombatWithoutFlameSpells',
     });
   });
+
+  it('always takes the warrior reroll during the warrior reroll step', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-warrior-reroll-choice',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'combat_warrior_reroll',
+      activePlayerIndex: 0,
+      players: base.players.map((player, index) =>
+        index === 0 ? { ...player, heroId: 'hero_warrior' } : player,
+      ),
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        initialRolledDice: [2, 3],
+        initialBaseOutcome: 'draw',
+      },
+    };
+
+    expect(chooseHeuristicAiAction(state)).toEqual({
+      type: 'useWarriorReroll',
+    });
+  });
 });
 
 function createDragonEndgameState(): GameState {
