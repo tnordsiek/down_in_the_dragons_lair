@@ -6,6 +6,10 @@ export function endTurn(state: GameState): GameState {
     throw new Error('Resolve or leave pending loot before ending the turn');
   }
 
+  if (state.phase === 'resolve_room_token') {
+    throw new Error('Resolve the room token before ending the turn');
+  }
+
   const activePlayerSkipsTurn =
     state.players[state.activePlayerIndex].skipNextTurn;
   const recoveredState = recoverUnconsciousActivePlayer(state);

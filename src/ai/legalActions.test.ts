@@ -96,6 +96,81 @@ describe('AI legal actions', () => {
       ]),
     );
   });
+
+  it('allows only room resolution while a room token is pending', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'pending-room-actions-seed',
+    });
+
+    expect(
+      getLegalAiActions({
+        ...state,
+        phase: 'resolve_room_token',
+      }),
+    ).toEqual([{ type: 'resolveRoomToken' }]);
+  });
+
+  it('does not offer healing spell actions during combat', () => {
+    const state = withHealingSpell(createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'healing-combat-seed',
+    }));
+
+    expect(
+      getLegalAiActions({
+        ...state,
+        phase: 'combat',
+        combat: {
+          playerId: state.players[state.activePlayerIndex].id,
+          monsterId: 'giant_rat',
+          position: { boardX: 0, boardY: 0 },
+          enteredFrom: { boardX: 0, boardY: -1 },
+        },
+      }).some((action) => action.type === 'useHealingSpell'),
+    ).toBe(false);
+  });
+
+  it('does not offer healing spell actions during loot resolution', () => {
+    const state = withHealingSpell(createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'healing-loot-seed',
+    }));
+
+    expect(
+      getLegalAiActions({
+        ...state,
+        phase: 'loot_resolution',
+        pendingLoot: {
+          source: 'ground_item',
+          position: { boardX: 0, boardY: 0 },
+          item: { type: 'weapon', bonus: 1 },
+        },
+      }).some((action) => action.type === 'useHealingSpell'),
+    ).toBe(false);
+  });
+
+  it('offers healing spell actions during free movement phases', () => {
+    const state = withHealingSpell(createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'healing-await-move-seed',
+    }));
+
+    expect(
+      getLegalAiActions({
+        ...state,
+        phase: 'await_move',
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: 'useHealingSpell' }),
+      ]),
+    );
+  });
 });
 
 function createPortalState(): GameState {
@@ -134,5 +209,22 @@ function createPortalState(): GameState {
         looseItems: [],
       },
     ],
+  };
+}
+
+function withHealingSpell(state: GameState): GameState {
+  return {
+    ...state,
+    players: state.players.map((player, index) =>
+      index === state.activePlayerIndex
+        ? {
+            ...player,
+            inventory: {
+              ...player.inventory,
+              spells: [{ type: 'spell', spellKind: 'healing' }],
+            },
+          }
+        : player,
+    ),
   };
 }

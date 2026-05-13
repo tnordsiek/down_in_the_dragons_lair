@@ -26,6 +26,12 @@ type HealingSpellSelectionState =
   | { mode: 'select_target' }
   | { mode: 'select_tile'; targetPlayerId: string };
 
+function canUseHealingSpellNow(
+  state: NonNullable<ReturnType<typeof useSetupStore.getState>['gameState']>,
+): boolean {
+  return state.phase === 'turn_start' || state.phase === 'await_move';
+}
+
 export function GameScreen() {
   const state = useSetupStore((store) => store.gameState);
   const lastError = useSetupStore((store) => store.lastError);
@@ -41,6 +47,19 @@ export function GameScreen() {
   });
   const [healingSpellSelection, setHealingSpellSelection] =
     useState<HealingSpellSelectionState>({ mode: 'idle' });
+
+  useEffect(() => {
+    if (!state) {
+      return;
+    }
+
+    if (
+      state.phase === 'resolve_room_token' &&
+      state.players[state.activePlayerIndex].kind === 'human'
+    ) {
+      dispatch({ type: 'resolveRoomToken' });
+    }
+  }, [dispatch, state]);
 
   useEffect(() => {
     if (!state) {
@@ -73,7 +92,7 @@ export function GameScreen() {
       (spell) => spell.spellKind === 'healing',
     );
 
-    if (isAiTurn || !hasHealingSpell) {
+    if (isAiTurn || !hasHealingSpell || !canUseHealingSpellNow(state)) {
       setHealingSpellSelection({ mode: 'idle' });
       return;
     }

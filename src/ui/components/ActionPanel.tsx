@@ -16,6 +16,10 @@ type HealingSpellSelectionState =
   | { mode: 'select_target' }
   | { mode: 'select_tile'; targetPlayerId: string };
 
+function canUseHealingSpellNow(state: GameState): boolean {
+  return state.phase === 'turn_start' || state.phase === 'await_move';
+}
+
 type ActionPanelProps = {
   state: GameState;
   onMove: (target: BoardPosition) => void;
@@ -83,6 +87,7 @@ export function ActionPanel({
   const hasHealingSpell = activePlayer.inventory.spells.some(
     (spell) => spell.spellKind === 'healing',
   );
+  const canUseHealingSpell = hasHealingSpell && canUseHealingSpellNow(state);
   const selectedHealingTarget =
     healingSpellSelection.mode === 'select_tile'
       ? state.players.find(
@@ -106,7 +111,10 @@ export function ActionPanel({
         </div>
         <button
           className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
-          disabled={state.phase === 'loot_resolution'}
+          disabled={
+            state.phase === 'loot_resolution' ||
+            state.phase === 'resolve_room_token'
+          }
           onClick={onEndTurn}
         >
           End Turn
@@ -143,17 +151,6 @@ export function ActionPanel({
             onClick={onResolveCombat}
           >
             Resolve Combat
-          </button>
-        </div>
-      ) : null}
-
-      {state.phase === 'resolve_room_token' ? (
-        <div className="mt-4">
-          <button
-            className="bg-amber-300 px-3 py-2 text-sm font-semibold text-stone-950"
-            onClick={onResolveRoom}
-          >
-            Resolve Room
           </button>
         </div>
       ) : null}
@@ -221,7 +218,7 @@ export function ActionPanel({
         </div>
       ) : null}
 
-      {hasHealingSpell ? (
+      {canUseHealingSpell ? (
         <div className="mt-4 grid gap-2">
           <h3 className="text-xs uppercase tracking-wide text-stone-400">
             Healing Spell

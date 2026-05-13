@@ -4,9 +4,10 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from '@testing-library/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -99,6 +100,19 @@ describe('Milestone 6 UI', () => {
         'Rotate the preview tile on the board, then confirm placement in the center of the tile.',
       ),
     ).toBeInTheDocument();
+  });
+
+  it('disables ending the turn while room resolution is pending', () => {
+    const state = createUiState({
+      phase: 'resolve_room_token',
+    });
+
+    render(<ActionPanel state={state} {...noopActions} />);
+
+    expect(screen.getByRole('button', { name: 'End Turn' })).toBeDisabled();
+    expect(
+      screen.queryByRole('button', { name: 'Resolve Room' }),
+    ).toBeNull();
   });
 
   it('shows a pending tile on the board in default orientation before placement', () => {
@@ -728,6 +742,79 @@ describe('Milestone 6 UI', () => {
     ).toBeNull();
   });
 
+  it('hides the healing spell action during non-free interaction phases', () => {
+    const base = createUiState({
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              inventory: {
+                ...player.inventory,
+                spells: [{ type: 'spell', spellKind: 'healing' }],
+              },
+            }
+          : player,
+      ),
+    });
+    const { rerender } = render(
+      <ActionPanel state={{ ...base, phase: 'combat' }} {...noopActions} />,
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'Use Healing Spell' }),
+    ).toBeNull();
+
+    rerender(
+      <ActionPanel
+        state={{
+          ...base,
+          phase: 'loot_resolution',
+          pendingLoot: {
+            source: 'ground_item',
+            position: { boardX: 0, boardY: 0 },
+            item: { type: 'weapon', bonus: 1 },
+          },
+        }}
+        {...noopActions}
+      />,
+    );
+    expect(
+      screen.queryByRole('button', { name: 'Use Healing Spell' }),
+    ).toBeNull();
+
+    rerender(
+      <ActionPanel
+        state={{ ...base, phase: 'resolve_room_token' }}
+        {...noopActions}
+      />,
+    );
+    expect(
+      screen.queryByRole('button', { name: 'Use Healing Spell' }),
+    ).toBeNull();
+
+    rerender(
+      <ActionPanel
+        state={{
+          ...base,
+          phase: 'choose_pending_tile_rotation',
+          pendingTile: {
+            origin: { boardX: 0, boardY: 0 },
+            target: { boardX: 1, boardY: 0 },
+            direction: 'B',
+            blueprintId: 'room_corner',
+            previewRotation: 0,
+            legalRotations: [0, 90],
+            skippedBlueprintIds: [],
+          },
+        }}
+        {...noopActions}
+      />,
+    );
+    expect(
+      screen.queryByRole('button', { name: 'Use Healing Spell' }),
+    ).toBeNull();
+  });
+
   it('shows healing spell target choices and tile-selection hint in the panel', () => {
     const state = createUiState({
       players: createUiState().players.map((player, index) =>
@@ -918,6 +1005,76 @@ describe('Milestone 6 UI', () => {
     expect(
       screen.queryByRole('button', { name: 'Select healing tile 1,0' }),
     ).toBeNull();
+  });
+
+  it('auto-resolves a discovered room into chest flow for human turns', async () => {
+    const state = createUiState({
+      phase: 'resolve_room_token',
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-room',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 0,
+          boardY: -1,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? { ...player, position: { boardX: 0, boardY: -1 } }
+          : player,
+      ),
+      tokenBag: [{ id: 'treasure_chest', kind: 'chest' }],
+      remainingSteps: 3,
+      lastMoveFrom: { boardX: 0, boardY: 0 },
+    });
+
+    render(<RoomAutoResolveHarness initialState={state} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('room-phase')).toHaveTextContent('await_move');
+    });
+
+    expect(screen.getByTestId('room-token')).toHaveTextContent('treasure_chest');
+    expect(screen.getByText('Move')).toBeInTheDocument();
+  });
+
+  it('auto-resolves a discovered room into combat for human turns', async () => {
+    const state = createUiState({
+      phase: 'resolve_room_token',
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-room',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 0,
+          boardY: -1,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? { ...player, position: { boardX: 0, boardY: -1 } }
+          : player,
+      ),
+      tokenBag: [{ id: 'giant_rat', kind: 'monster' }],
+      remainingSteps: 3,
+      lastMoveFrom: { boardX: 0, boardY: 0 },
+    });
+
+    render(<RoomAutoResolveHarness initialState={state} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('room-phase')).toHaveTextContent('combat');
+    });
+
+    expect(screen.getByText('Combat')).toBeInTheDocument();
+    expect(screen.getByTestId('room-monster')).toHaveTextContent('giant_rat');
   });
 
   it('offers movement again after self-healing when steps remain', () => {
@@ -2083,6 +2240,31 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
         {state.players[state.activePlayerIndex].inventory.spells.length}
       </div>
       <div data-testid="phase-label">{state.phase}</div>
+    </>
+  );
+}
+
+function RoomAutoResolveHarness({ initialState }: { initialState: GameState }) {
+  const [state, setState] = useState(initialState);
+
+  useEffect(() => {
+    if (
+      state.phase === 'resolve_room_token' &&
+      state.players[state.activePlayerIndex].kind === 'human'
+    ) {
+      setState((current) => applyGameAction(current, { type: 'resolveRoomToken' }));
+    }
+  }, [state]);
+
+  return (
+    <>
+      <ActionPanel state={state} {...noopActions} />
+      <div data-testid="room-phase">{state.phase}</div>
+      <div data-testid="room-token">
+        {state.board.find((tile) => tile.boardX === 0 && tile.boardY === -1)
+          ?.roomToken?.id ?? 'none'}
+      </div>
+      <div data-testid="room-monster">{state.combat?.monsterId ?? 'none'}</div>
     </>
   );
 }

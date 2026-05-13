@@ -13,6 +13,10 @@ import {
   getLootSwapChoices,
 } from '../engine/rules/inventory';
 
+function canUseHealingSpellNow(state: GameState): boolean {
+  return state.phase === 'turn_start' || state.phase === 'await_move';
+}
+
 export function getLegalAiActions(state: GameState): GameAction[] {
   if (state.phase === 'game_over') {
     return [];
@@ -107,6 +111,10 @@ function getLegalHealingSpellActions(
   state: GameState,
   activePlayer: Player,
 ): GameAction[] {
+  if (!canUseHealingSpellNow(state)) {
+    return [];
+  }
+
   const hasHealingSpell = activePlayer.inventory.spells.some(
     (spell) => spell.spellKind === 'healing',
   );

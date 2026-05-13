@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { applyGameAction } from './actions';
+import { createNewGame } from '../setup/createGame';
 
 describe('game action transitions', () => {
   it('starts a game through the action interface', () => {
@@ -52,5 +53,23 @@ describe('game action transitions', () => {
     });
 
     expect(rotatedState.pendingTile?.previewRotation).toBe(90);
+  });
+
+  it('does not allow ending the turn while a room token must be resolved', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'action-room-end-turn-seed',
+    });
+
+    expect(() =>
+      applyGameAction(
+        {
+          ...state,
+          phase: 'resolve_room_token',
+        },
+        { type: 'endTurn' },
+      ),
+    ).toThrow('Resolve the room token before ending the turn');
   });
 });
