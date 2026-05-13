@@ -210,6 +210,7 @@ Die Helden bekommen in der eigenen IP neue Namen. Technisch werden zunächst fun
 
 ### hero_warrior
 - darf einen Kampf einmal komplett neu würfeln
+- bei Unentschieden oder Niederlage darf er vor der Feuerzauber-Entscheidung beide Würfel einmal neu würfeln
 - verliert beim ersten misslungenen Versuch keinen Lebenspunkt, muss aber den zweiten Wurf akzeptieren
 - bei Verlust des letzten Lebenspunkts statt Ohnmacht sofort zu einer Heilquelle, komplett heilen
 

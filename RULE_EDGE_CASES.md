@@ -325,10 +325,14 @@ If multiple nearest free reachable tiles exist at the same search distance, the 
 ## 18. Combat: warrior reroll timing
 
 ### Situation
-The warrior archetype loses a combat roll.
+The warrior archetype rolls a combat result that is not a victory.
 
 ### Rule
-The warrior may reroll both dice once. If he chooses to reroll, the first result is ignored, no health is lost from that first lost result, and the second result must be accepted.
+If the first result is a draw or defeat, the warrior may reroll both dice once before any flame-spell decision is made.
+
+If he chooses to reroll, the first result is ignored, no health is lost from that first failed result, and the second result must be accepted.
+
+If the first result is already a victory, no warrior reroll decision is offered.
 
 ---
 
