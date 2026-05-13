@@ -239,7 +239,7 @@ function getHeroAbilityInfo(heroId: HeroId): string {
     case 'hero_warrior':
       return 'May reroll both combat dice once after a draw or defeat. Losing the last HP sends the Warrior to a healing tile.';
     case 'hero_warlock':
-      return 'May sacrifice 1 HP for +1 combat strength. May swap position with another player at turn start.';
+      return 'May sacrifice 1 HP for +1 combat strength after a draw or defeat. May swap position with another player at turn start.';
     case 'hero_thief':
       return 'Combat draws count as wins. The Thief may ignore monsters while moving.';
     case 'hero_swordsman':

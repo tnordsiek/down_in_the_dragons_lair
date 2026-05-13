@@ -182,6 +182,12 @@ export function GameScreen() {
   const handleDeclineWarriorReroll = () => {
     dispatch({ type: 'declineWarriorReroll' });
   };
+  const handleUseWarlockSacrifice = () => {
+    dispatch({ type: 'useWarlockSacrifice' });
+  };
+  const handleDeclineWarlockSacrifice = () => {
+    dispatch({ type: 'declineWarlockSacrifice' });
+  };
   const handleResolveCombatWithoutFlameSpells = () => {
     dispatch({ type: 'resolveCombatWithoutFlameSpells' });
   };
@@ -331,6 +337,8 @@ export function GameScreen() {
             onResolveCombat={handleResolveCombat}
             onUseWarriorReroll={handleUseWarriorReroll}
             onDeclineWarriorReroll={handleDeclineWarriorReroll}
+            onUseWarlockSacrifice={handleUseWarlockSacrifice}
+            onDeclineWarlockSacrifice={handleDeclineWarlockSacrifice}
             onResolveCombatWithoutFlameSpells={
               handleResolveCombatWithoutFlameSpells
             }

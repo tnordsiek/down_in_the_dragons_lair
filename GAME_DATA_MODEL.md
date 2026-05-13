@@ -216,6 +216,7 @@ Die Helden bekommen in der eigenen IP neue Namen. Technisch werden zunächst fun
 
 ### hero_warlock
 - darf 1 Lebenspunkt opfern, um +1 Kampfstärke zu erhalten
+- bei Unentschieden oder Niederlage darf er vor der Feuerzauber-Entscheidung 1 Lebenspunkt opfern, um +1 Kampfstärke zu erhalten, aber nur wenn dadurch mit den möglichen Folgeoptionen noch ein Sieg erreichbar bleibt
 - darf zu Zugbeginn für alle 4 Schritte die Position mit einem anderen Helden tauschen
 - der Tausch ist mit jedem anderen Helden auf dem Brett erlaubt
 - landet er durch den Tausch auf einem Feld mit Schatztruhe, gelten die normalen Regeln zum Öffnen der Truhe

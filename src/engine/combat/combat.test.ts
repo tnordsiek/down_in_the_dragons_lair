@@ -6,9 +6,11 @@ import { createNewGame } from '../setup/createGame';
 import { endTurn } from '../turns/turns';
 import {
   calculateCombatTotal,
+  declineWarlockSacrifice,
   declineWarriorReroll,
   getCombatOutcome,
   resolveCombat,
+  useWarlockSacrifice,
   useWarriorReroll,
 } from './combat';
 
@@ -162,6 +164,127 @@ describe('combat resolution', () => {
         initialBaseOutcome: 'defeat',
       }),
     );
+  });
+
+  it('pauses for warlock sacrifice before flame spell selection after a warlock draw', () => {
+    const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
+      ...player,
+      heroId: 'hero_warlock',
+      inventory: {
+        ...player.inventory,
+        spells: [{ type: 'spell', spellKind: 'flame' }],
+      },
+    }));
+    const pending = resolveCombat(state, { dice: [2, 3] });
+
+    expect(pending.phase).toBe('combat_warlock_sacrifice');
+    expect(pending.combat).toEqual(
+      expect.objectContaining({
+        initialRolledDice: [2, 3],
+        initialBaseOutcome: 'draw',
+      }),
+    );
+
+    const afterDecline = declineWarlockSacrifice(pending);
+
+    expect(afterDecline.phase).toBe('combat_flame_spells');
+    expect(afterDecline.combat).toEqual(
+      expect.objectContaining({
+        rolledDice: [2, 3],
+        pendingBaseOutcome: 'draw',
+        pendingWarlockSacrificeBonus: 0,
+      }),
+    );
+  });
+
+  it('applies warlock sacrifice before flame spell decisions', () => {
+    const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
+      ...player,
+      heroId: 'hero_warlock',
+      inventory: {
+        ...player.inventory,
+        spells: [{ type: 'spell', spellKind: 'flame' }],
+      },
+    }));
+    const pending = resolveCombat(state, { dice: [2, 2] });
+    const sacrificed = useWarlockSacrifice(pending);
+
+    expect(sacrificed.players[sacrificed.activePlayerIndex].hp).toBe(4);
+    expect(sacrificed.phase).toBe('combat_flame_spells');
+    expect(sacrificed.combat).toEqual(
+      expect.objectContaining({
+        rolledDice: [2, 2],
+        pendingBaseOutcome: 'draw',
+        pendingWarlockSacrificeBonus: 1,
+      }),
+    );
+  });
+
+  it('skips the warlock sacrifice step when sacrifice plus all flame spells still cannot win', () => {
+    const state = withActivePlayer(createCombatState('mummy'), (player) => ({
+      ...player,
+      heroId: 'hero_warlock',
+      inventory: {
+        ...player.inventory,
+        spells: [
+          { type: 'spell', spellKind: 'flame' },
+          { type: 'spell', spellKind: 'flame' },
+        ],
+      },
+    }));
+    const resolved = resolveCombat(state, { dice: [2, 2] });
+
+    expect(resolved.phase).toBe('turn_end');
+    expect(resolved.combat).toBeUndefined();
+  });
+
+  it('keeps the warlock sacrifice bonus when sacrificing down to 0 HP', () => {
+    const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
+      ...player,
+      heroId: 'hero_warlock',
+      hp: 1,
+    }));
+    const pending = resolveCombat(state, { dice: [2, 3] });
+    const resolved = useWarlockSacrifice(pending);
+
+    expect(resolved.players[resolved.activePlayerIndex]).toEqual(
+      expect.objectContaining({
+        hp: 0,
+        skipNextTurn: true,
+      }),
+    );
+    expect(resolved.eventLog.at(-1)?.combat).toEqual(
+      expect.objectContaining({
+        outcome: 'victory',
+        warlockSacrificeBonus: 1,
+      }),
+    );
+  });
+
+  it('skips the warlock sacrifice step after a warlock victory', () => {
+    const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
+      ...player,
+      heroId: 'hero_warlock',
+    }));
+
+    const resolved = resolveCombat(state, { dice: [6, 6] });
+
+    expect(resolved.phase).toBe('loot_resolution');
+  });
+
+  it('still offers the warlock sacrifice step when sacrifice plus flame spells can eventually win', () => {
+    const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
+      ...player,
+      heroId: 'hero_warlock',
+      inventory: {
+        ...player.inventory,
+        spells: [{ type: 'spell', spellKind: 'flame' }],
+      },
+    }));
+
+    const pending = resolveCombat(state, { dice: [1, 3] });
+
+    expect(pending.phase).toBe('combat_warlock_sacrifice');
   });
 
   it('resolves a defeat as retreat with one HP loss', () => {
@@ -448,7 +571,7 @@ function createCombatState(monsterId: MonsterId): GameState {
     aiCount: 1,
     seed: `combat-${monsterId}`,
   });
-  const activePlayer = base.players[base.activePlayerIndex];
+  const activePlayer = base.players[0];
   const originTile: PlacedTile = {
     tileInstanceId: 'tile-origin',
     blueprintId: 'tunnel_cross',
@@ -472,9 +595,10 @@ function createCombatState(monsterId: MonsterId): GameState {
   return {
     ...base,
     phase: 'combat',
+    activePlayerIndex: 0,
     board: [...base.board, originTile, combatTile],
     players: base.players.map((player, index) =>
-      index === base.activePlayerIndex
+      index === 0
         ? { ...player, position: { boardX: 1, boardY: -1 } }
         : player,
     ),

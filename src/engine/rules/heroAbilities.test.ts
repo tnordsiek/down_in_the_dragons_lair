@@ -9,9 +9,11 @@ import type {
   Token,
 } from '../core/types';
 import {
+  declineWarlockSacrifice,
   declineWarriorReroll,
   resolveCombat,
   resolveCombatWithFlameSpells,
+  useWarlockSacrifice,
   useWarriorReroll,
 } from '../combat/combat';
 import {
@@ -193,18 +195,45 @@ describe('hero_warrior abilities', () => {
 });
 
 describe('hero_warlock abilities', () => {
-  it('sacrifices 1 HP for +1 exactly once in combat', () => {
+  it('offers sacrificing 1 HP for +1 after a non-winning roll', () => {
     const state = createCombatState('hero_warlock', 'giant_rat');
-    const resolved = resolveCombat(state, {
+    const pending = resolveCombat(state, {
       dice: [2, 3],
-      useWarlockSacrifice: true,
     });
+    const resolved = useWarlockSacrifice(pending);
     const activePlayer = resolved.players[resolved.activePlayerIndex];
 
     expect(activePlayer.hp).toBe(4);
     expect(
       resolved.board.find((tile) => tile.roomToken?.id === 'giant_rat'),
     ).toBeUndefined();
+  });
+
+  it('lets the warlock keep the original draw before flame spells', () => {
+    const state = withActivePlayer(
+      createCombatState('hero_warlock', 'giant_rat'),
+      (player) => ({
+        ...player,
+        inventory: {
+          ...player.inventory,
+          spells: [{ type: 'spell', spellKind: 'flame' }],
+        },
+      }),
+    );
+    const pending = resolveCombat(state, { dice: [2, 3] });
+
+    expect(pending.phase).toBe('combat_warlock_sacrifice');
+
+    const declined = declineWarlockSacrifice(pending);
+
+    expect(declined.phase).toBe('combat_flame_spells');
+    expect(declined.combat).toEqual(
+      expect.objectContaining({
+        rolledDice: [2, 3],
+        pendingBaseOutcome: 'draw',
+        pendingWarlockSacrificeBonus: 0,
+      }),
+    );
   });
 
   it('swaps positions only at turn start and spends all four steps', () => {
@@ -243,7 +272,6 @@ describe('hero_warlock abilities', () => {
     );
     const resolved = resolveCombat(cursedCombatState, {
       dice: [2, 3],
-      useWarlockSacrifice: true,
     });
 
     expect(resolved.players[resolved.activePlayerIndex].hp).toBe(5);

@@ -255,6 +255,84 @@ describe('heuristic AI', () => {
       type: 'useWarriorReroll',
     });
   });
+
+  it('uses warlock sacrifice for a direct win and declines it otherwise', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-warlock-sacrifice-choice',
+    });
+    const winningState: GameState = {
+      ...base,
+      phase: 'combat_warlock_sacrifice',
+      activePlayerIndex: 0,
+      players: base.players.map((player, index) =>
+        index === 0 ? { ...player, heroId: 'hero_warlock' } : player,
+      ),
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        initialRolledDice: [2, 3],
+        initialBaseOutcome: 'draw',
+      },
+    };
+
+    expect(chooseHeuristicAiAction(winningState)).toEqual({
+      type: 'useWarlockSacrifice',
+    });
+
+    const decliningState: GameState = {
+      ...winningState,
+      combat: {
+        ...winningState.combat!,
+        initialRolledDice: [1, 1],
+        initialBaseOutcome: 'defeat',
+      },
+    };
+
+    expect(chooseHeuristicAiAction(decliningState)).toEqual({
+      type: 'declineWarlockSacrifice',
+    });
+  });
+
+  it('uses warlock sacrifice for a draw when a flame spell can convert it into a win', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-warlock-sacrifice-flame',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'combat_warlock_sacrifice',
+      activePlayerIndex: 0,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_warlock',
+              inventory: {
+                ...player.inventory,
+                spells: [{ type: 'spell', spellKind: 'flame' }],
+              },
+            }
+          : player,
+      ),
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        initialRolledDice: [1, 3],
+        initialBaseOutcome: 'defeat',
+      },
+    };
+
+    expect(chooseHeuristicAiAction(state)).toEqual({
+      type: 'useWarlockSacrifice',
+    });
+  });
 });
 
 function createDragonEndgameState(): GameState {

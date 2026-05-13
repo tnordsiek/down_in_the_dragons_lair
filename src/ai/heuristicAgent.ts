@@ -76,6 +76,7 @@ export function chooseHeuristicAiAction(
     state.phase === 'combat' ||
     state.phase === 'optional_post_combat' ||
     state.phase === 'combat_warrior_reroll' ||
+    state.phase === 'combat_warlock_sacrifice' ||
     state.phase === 'combat_flame_spells'
   ) {
     return chooseCombatAction(state, legalActions, config);
@@ -149,6 +150,10 @@ function chooseCombatAction(
     return requireAction(legalActions, 'useWarriorReroll');
   }
 
+  if (state.phase === 'combat_warlock_sacrifice') {
+    return chooseWarlockSacrificeAction(state, legalActions);
+  }
+
   if (state.phase === 'combat_flame_spells') {
     return chooseCombatFlameSpellAction(state, legalActions);
   }
@@ -184,11 +189,65 @@ function chooseCombatAction(
 
   return {
     ...combatAction,
-    useWarlockSacrifice:
-      hasActiveHeroAbility(activePlayer, 'hero_warlock') &&
-      activePlayer.hp > config.criticalHp,
     curseTargetPlayerId: chooseCurseTargetPlayerId(state, activePlayer),
   };
+}
+
+function chooseWarlockSacrificeAction(
+  state: GameState,
+  legalActions: GameAction[],
+): GameAction {
+  if (!state.combat?.initialRolledDice) {
+    return requireAction(legalActions, 'declineWarlockSacrifice');
+  }
+
+  const activePlayer = state.players[state.activePlayerIndex];
+  const monster = monsterDefinitions[state.combat.monsterId];
+  const sacrificeTotal = calculateCombatTotal(
+    activePlayer,
+    state.combat.initialRolledDice,
+    1 + (state.combat.pendingOracleBonus ?? 0),
+  );
+  const sacrificeOutcome = getCombatOutcomeForPlayer(
+    activePlayer,
+    sacrificeTotal,
+    monster.strength,
+  );
+
+  if (sacrificeOutcome === 'victory') {
+    return requireAction(legalActions, 'useWarlockSacrifice');
+  }
+
+  if (
+    sacrificeOutcome === 'draw' &&
+    activePlayer.inventory.spells.some((spell) => spell.spellKind === 'flame')
+  ) {
+    const winningWithFlame = Array.from(
+      {
+        length: activePlayer.inventory.spells.filter(
+          (spell) => spell.spellKind === 'flame',
+        ).length,
+      },
+      (_, index) => index + 1,
+    ).some((flameSpellCount) => {
+      const total = calculateCombatTotal(
+        activePlayer,
+        state.combat!.initialRolledDice!,
+        flameSpellCount + 1 + (state.combat?.pendingOracleBonus ?? 0),
+      );
+
+      return (
+        getCombatOutcomeForPlayer(activePlayer, total, monster.strength) ===
+        'victory'
+      );
+    });
+
+    if (winningWithFlame) {
+      return requireAction(legalActions, 'useWarlockSacrifice');
+    }
+  }
+
+  return requireAction(legalActions, 'declineWarlockSacrifice');
 }
 
 function chooseCombatFlameSpellAction(

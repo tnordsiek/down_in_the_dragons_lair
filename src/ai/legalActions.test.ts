@@ -224,6 +224,36 @@ describe('AI legal actions', () => {
     ]);
   });
 
+  it('offers only warlock sacrifice choices during the warlock sacrifice step', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'warlock-sacrifice-actions-seed',
+    });
+
+    expect(
+      getLegalAiActions({
+        ...state,
+        phase: 'combat_warlock_sacrifice',
+        activePlayerIndex: 0,
+        players: state.players.map((player, index) =>
+          index === 0 ? { ...player, heroId: 'hero_warlock' } : player,
+        ),
+        combat: {
+          playerId: state.players[0].id,
+          monsterId: 'giant_rat',
+          position: { boardX: 0, boardY: 0 },
+          enteredFrom: { boardX: 0, boardY: -1 },
+          initialRolledDice: [2, 3],
+          initialBaseOutcome: 'draw',
+        },
+      }),
+    ).toEqual([
+      { type: 'useWarlockSacrifice' },
+      { type: 'declineWarlockSacrifice' },
+    ]);
+  });
+
   it('offers healing spell actions during free movement phases', () => {
     const state = withHealingSpell(createNewGame({
       humanHeroId: 'hero_mage',

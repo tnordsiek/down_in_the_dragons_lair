@@ -92,6 +92,12 @@ export function getLegalAiActions(state: GameState): GameAction[] {
     return actions;
   }
 
+  if (state.phase === 'combat_warlock_sacrifice') {
+    actions.push({ type: 'useWarlockSacrifice' });
+    actions.push({ type: 'declineWarlockSacrifice' });
+    return actions;
+  }
+
   if (state.phase === 'combat_flame_spells') {
     actions.push({ type: 'resolveCombatWithoutFlameSpells' });
     actions.push(

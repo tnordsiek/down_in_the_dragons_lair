@@ -37,6 +37,8 @@ const noopActions = {
   onResolveCombat: vi.fn(),
   onUseWarriorReroll: vi.fn(),
   onDeclineWarriorReroll: vi.fn(),
+  onUseWarlockSacrifice: vi.fn(),
+  onDeclineWarlockSacrifice: vi.fn(),
   onResolveCombatWithoutFlameSpells: vi.fn(),
   onResolveCombatWithFlameSpells: vi.fn(),
   onSelectHealingSpellTarget: vi.fn(),
@@ -1168,6 +1170,64 @@ describe('Milestone 6 UI', () => {
 
     expect(onUseWarriorReroll).toHaveBeenCalledTimes(1);
     expect(onDeclineWarriorReroll).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows warlock sacrifice choices before flame spell choices', () => {
+    const onUseWarlockSacrifice = vi.fn();
+    const onDeclineWarlockSacrifice = vi.fn();
+    const state = createUiState({
+      phase: 'combat_warlock_sacrifice',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        initialRolledDice: [2, 3],
+        initialBaseOutcome: 'draw',
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_warlock',
+              inventory: {
+                ...player.inventory,
+                spells: [{ type: 'spell', spellKind: 'flame' }],
+              },
+            }
+          : player,
+      ),
+    });
+
+    render(
+      <ActionPanel
+        state={state}
+        {...noopActions}
+        onUseWarlockSacrifice={onUseWarlockSacrifice}
+        onDeclineWarlockSacrifice={onDeclineWarlockSacrifice}
+      />,
+    );
+
+    expect(
+      screen.getByText('Rolled 2 + 3 + weapons 0 = 5 and currently face draw'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Sacrifice 1 HP for +1' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Keep this result' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Do not use flame spells' }),
+    ).toBeNull();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Sacrifice 1 HP for +1' }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Keep this result' }));
+
+    expect(onUseWarlockSacrifice).toHaveBeenCalledTimes(1);
+    expect(onDeclineWarlockSacrifice).toHaveBeenCalledTimes(1);
   });
 
   it('hides the healing spell action during non-free interaction phases', () => {
@@ -2634,6 +2694,8 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
         onResolveCombat={vi.fn()}
         onUseWarriorReroll={vi.fn()}
         onDeclineWarriorReroll={vi.fn()}
+        onUseWarlockSacrifice={vi.fn()}
+        onDeclineWarlockSacrifice={vi.fn()}
         onResolveCombatWithoutFlameSpells={vi.fn()}
         onResolveCombatWithFlameSpells={vi.fn()}
         onResolveRoom={vi.fn()}

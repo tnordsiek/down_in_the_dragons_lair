@@ -183,6 +183,8 @@ function actionMessage(
     case 'resolveCombat':
     case 'useWarriorReroll':
     case 'declineWarriorReroll':
+    case 'useWarlockSacrifice':
+    case 'declineWarlockSacrifice':
     case 'resolveCombatWithoutFlameSpells':
     case 'resolveCombatWithFlameSpells':
       return undefined;

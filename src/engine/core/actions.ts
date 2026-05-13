@@ -1,9 +1,11 @@
 import type { GameAction, GameState } from './types';
 import {
+  declineWarlockSacrifice,
   declineWarriorReroll,
   resolveCombat,
   resolveCombatWithFlameSpells,
   resolveCombatWithoutFlameSpells,
+  useWarlockSacrifice,
   useWarriorReroll,
 } from '../combat/combat';
 import {
@@ -56,7 +58,6 @@ export function applyGameAction(
       return resolveCombat(state, {
         dice: action.dice,
         curseTargetPlayerId: action.curseTargetPlayerId,
-        useWarlockSacrifice: action.useWarlockSacrifice,
         swordsmanOneRerolls: action.swordsmanOneRerolls,
       });
     case 'useWarriorReroll':
@@ -65,6 +66,10 @@ export function applyGameAction(
       });
     case 'declineWarriorReroll':
       return declineWarriorReroll(state);
+    case 'useWarlockSacrifice':
+      return useWarlockSacrifice(state);
+    case 'declineWarlockSacrifice':
+      return declineWarlockSacrifice(state);
     case 'resolveCombatWithoutFlameSpells':
       return resolveCombatWithoutFlameSpells(state);
     case 'resolveCombatWithFlameSpells':

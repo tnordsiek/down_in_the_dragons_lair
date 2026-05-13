@@ -289,7 +289,7 @@ Inventory limits still apply: at most 2 weapons may be carried.
 The warlock archetype can sacrifice health for +1 combat strength.
 
 ### Rule
-The sacrifice may be used after the dice roll and after seeing current combat total. It may be used at most once per combat.
+If the first combat result is a draw or defeat, the warlock may choose to sacrifice 1 health for +1 combat strength after the dice roll and after seeing current combat total, but before any flame-spell decision is made. This choice is offered only if the sacrifice, together with any still-available flame spells, can still lead to a victory. It may be used at most once per combat.
 
 The sacrifice can reduce the hero to 0 health. If this happens, the combat bonus still applies, but the hero will be unconscious on the next turn unless another rule heals him before then.
 

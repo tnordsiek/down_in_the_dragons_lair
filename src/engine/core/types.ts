@@ -152,6 +152,7 @@ export type GamePhase =
   | 'resolve_room_token'
   | 'combat'
   | 'combat_warrior_reroll'
+  | 'combat_warlock_sacrifice'
   | 'combat_flame_spells'
   | 'loot_resolution'
   | 'optional_post_combat'
@@ -307,7 +308,6 @@ export type ResolveCombatAction = {
   type: 'resolveCombat';
   dice?: [number, number];
   curseTargetPlayerId?: string;
-  useWarlockSacrifice?: boolean;
   swordsmanOneRerolls?: number[];
 };
 
@@ -318,6 +318,14 @@ export type UseWarriorRerollAction = {
 
 export type DeclineWarriorRerollAction = {
   type: 'declineWarriorReroll';
+};
+
+export type UseWarlockSacrificeAction = {
+  type: 'useWarlockSacrifice';
+};
+
+export type DeclineWarlockSacrificeAction = {
+  type: 'declineWarlockSacrifice';
 };
 
 export type ResolveCombatWithoutFlameSpellsAction = {
@@ -377,6 +385,8 @@ export type GameAction =
   | ResolveCombatAction
   | UseWarriorRerollAction
   | DeclineWarriorRerollAction
+  | UseWarlockSacrificeAction
+  | DeclineWarlockSacrificeAction
   | ResolveCombatWithoutFlameSpellsAction
   | ResolveCombatWithFlameSpellsAction
   | OpenChestAction

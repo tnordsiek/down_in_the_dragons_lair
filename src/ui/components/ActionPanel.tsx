@@ -31,6 +31,8 @@ type ActionPanelProps = {
   onResolveCombat: () => void;
   onUseWarriorReroll: () => void;
   onDeclineWarriorReroll: () => void;
+  onUseWarlockSacrifice: () => void;
+  onDeclineWarlockSacrifice: () => void;
   onResolveCombatWithoutFlameSpells: () => void;
   onResolveCombatWithFlameSpells: (flameSpellCount: number) => void;
   onSwapLoot: (inventorySlot: { kind: 'weapon' | 'spell'; index: number }) => void;
@@ -53,6 +55,8 @@ export function ActionPanel({
   onResolveCombat,
   onUseWarriorReroll,
   onDeclineWarriorReroll,
+  onUseWarlockSacrifice,
+  onDeclineWarlockSacrifice,
   onResolveCombatWithoutFlameSpells,
   onResolveCombatWithFlameSpells,
   onSwapLoot,
@@ -209,6 +213,39 @@ export function ActionPanel({
             <button
               className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
               onClick={onDeclineWarriorReroll}
+            >
+              Keep this result
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {state.phase === 'combat_warlock_sacrifice' &&
+      combatMonster &&
+      initialCombatDice &&
+      initialCombatOutcome ? (
+        <div className="mt-4 grid gap-2">
+          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+            Warlock Sacrifice
+          </h3>
+          <p className="text-sm text-stone-200">
+            {monsterName(combatMonster.id)} strength {combatMonster.strength}
+          </p>
+          <p className="font-mono text-xs text-stone-300">
+            Rolled {initialCombatDice[0]} + {initialCombatDice[1]} + weapons{' '}
+            {weaponBonus} = {initialCombatDice[0] + initialCombatDice[1] + weaponBonus}
+            {` and currently face ${initialCombatOutcome}`}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="bg-red-700 px-3 py-2 text-sm font-semibold text-white"
+              onClick={onUseWarlockSacrifice}
+            >
+              Sacrifice 1 HP for +1
+            </button>
+            <button
+              className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
+              onClick={onDeclineWarlockSacrifice}
             >
               Keep this result
             </button>
