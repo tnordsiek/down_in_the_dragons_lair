@@ -96,11 +96,12 @@ export const useSetupStore = create<SetupState>((set) => ({
   dispatch: (action) =>
     set((state) => {
       try {
-        const nextState = applyGameAction(state.gameState, action);
+        const previousGameState = state.gameState;
+        const nextState = applyGameAction(previousGameState, action);
         const actingPlayer = state.gameState?.players[state.gameState.activePlayerIndex];
         const gameState = appendUiEvent(
           nextState,
-          actionMessage(action),
+          actionMessage(action, previousGameState, nextState),
           action,
           actingPlayer,
         );
@@ -163,7 +164,11 @@ function appendUiEvent(
   };
 }
 
-function actionMessage(action: GameAction): string | undefined {
+function actionMessage(
+  action: GameAction,
+  previousState?: GameState,
+  nextState?: GameState,
+): string | undefined {
   switch (action.type) {
     case 'movePlayer':
       return `Moved to ${action.target.boardX},${action.target.boardY}`;
@@ -180,7 +185,10 @@ function actionMessage(action: GameAction): string | undefined {
     case 'openChest':
       return 'Opened chest';
     case 'beginLoot':
-      return 'Started loot';
+      return nextState?.phase === 'loot_resolution' &&
+        previousState?.phase !== 'loot_resolution'
+        ? 'Started loot'
+        : 'Took loot';
     case 'takeLoot':
       return 'Took loot';
     case 'leaveLoot':

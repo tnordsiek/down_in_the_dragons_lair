@@ -140,7 +140,7 @@ describe('combat resolution', () => {
     expect(combatTile?.looseItems).toEqual([{ type: 'weapon', bonus: 1 }]);
   });
 
-  it('takes ground loot as a turn-ending action for later heroes', () => {
+  it('takes ground loot immediately as a turn-ending action when inventory space is free', () => {
     const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
       ...player,
       position: { boardX: 1, boardY: -1 },
@@ -159,8 +159,7 @@ describe('combat resolution', () => {
           : tile,
       ),
     };
-    const lootState = applyGameAction(prepared, { type: 'beginLoot' });
-    const resolved = applyGameAction(lootState, { type: 'takeLoot' });
+    const resolved = applyGameAction(prepared, { type: 'beginLoot' });
     const activePlayer = resolved.players[resolved.activePlayerIndex];
     const combatTile = resolved.board.find(
       (tile) => tile.boardX === 1 && tile.boardY === -1,
@@ -171,7 +170,44 @@ describe('combat resolution', () => {
       bonus: 1,
     });
     expect(resolved.phase).toBe('turn_end');
+    expect(resolved.pendingLoot).toBeUndefined();
     expect(combatTile?.looseItems).toEqual([]);
+  });
+
+  it('keeps ground loot in loot resolution when the matching inventory is full', () => {
+    const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
+      ...player,
+      position: { boardX: 1, boardY: -1 },
+      inventory: {
+        ...player.inventory,
+        weapons: [
+          { type: 'weapon', bonus: 2 },
+          { type: 'weapon', bonus: 3 },
+        ],
+      },
+    }));
+    const prepared = {
+      ...state,
+      phase: 'await_move' as const,
+      combat: undefined,
+      board: state.board.map((tile) =>
+        tile.boardX === 1 && tile.boardY === -1
+          ? {
+              ...tile,
+              roomToken: undefined,
+              looseItems: [{ type: 'weapon' as const, bonus: 1 as const }],
+            }
+          : tile,
+      ),
+    };
+    const resolved = applyGameAction(prepared, { type: 'beginLoot' });
+
+    expect(resolved.phase).toBe('loot_resolution');
+    expect(resolved.pendingLoot).toEqual({
+      source: 'ground_item',
+      position: { boardX: 1, boardY: -1 },
+      item: { type: 'weapon', bonus: 1 },
+    });
   });
 
   it('moves the single curse to the selected target after defeating a mummy', () => {

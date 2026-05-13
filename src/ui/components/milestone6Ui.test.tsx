@@ -712,6 +712,74 @@ describe('Milestone 6 UI', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows the ground-loot button as the only prompt when inventory space is free', () => {
+    const onBeginLoot = vi.fn();
+    const state = createUiState({
+      board: createUiState().board.map((tile) =>
+        tile.boardX === 0 && tile.boardY === 0
+          ? {
+              ...tile,
+              looseItems: [{ type: 'weapon', bonus: 1 }],
+            }
+          : tile,
+      ),
+    });
+
+    render(
+      <ActionPanel
+        state={state}
+        {...noopActions}
+        onBeginLoot={onBeginLoot}
+      />,
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Take Weapon +1' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Take' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Leave' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Take Weapon +1' }));
+
+    expect(onBeginLoot).toHaveBeenCalledOnce();
+  });
+
+  it('shows the loot-resolution swap choices when the matching inventory is full', () => {
+    const state = createUiState({
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              inventory: {
+                ...player.inventory,
+                weapons: [
+                  { type: 'weapon', bonus: 2 },
+                  { type: 'weapon', bonus: 3 },
+                ],
+              },
+            }
+          : player,
+      ),
+      phase: 'loot_resolution',
+      pendingLoot: {
+        source: 'ground_item',
+        position: { boardX: 0, boardY: 0 },
+        item: { type: 'weapon', bonus: 1 },
+      },
+    });
+
+    render(<ActionPanel state={state} {...noopActions} />);
+
+    expect(screen.queryByRole('button', { name: 'Take' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Leave' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Swap Weapon +2' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Swap Weapon +3' }),
+    ).toBeInTheDocument();
+  });
+
   it('shows the healing spell action only when the active hero carries one', () => {
     const withSpell = createUiState({
       players: createUiState().players.map((player, index) =>

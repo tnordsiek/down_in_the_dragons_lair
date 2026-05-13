@@ -55,6 +55,16 @@ export function beginGroundLoot(state: GameState): GameState {
     throw new Error('No loose item on active player tile');
   }
 
+  if (canStoreItem(activePlayer, item)) {
+    const player = addItemToInventory(activePlayer, item);
+    const updatedTile = {
+      ...tile,
+      looseItems: [],
+    };
+
+    return finalizeLootState(state, player, updatedTile);
+  }
+
   return {
     ...state,
     phase: 'loot_resolution',
