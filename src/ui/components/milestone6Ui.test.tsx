@@ -35,6 +35,8 @@ const noopActions = {
   onExplore: vi.fn(),
   onResolveRoom: vi.fn(),
   onResolveCombat: vi.fn(),
+  onResolveCombatWithoutFlameSpells: vi.fn(),
+  onResolveCombatWithFlameSpells: vi.fn(),
   onSelectHealingSpellTarget: vi.fn(),
   onStartHealingSpellSelection: vi.fn(),
   onSwapLoot: vi.fn(),
@@ -808,6 +810,56 @@ describe('Milestone 6 UI', () => {
     expect(
       screen.queryByRole('button', { name: 'Use Healing Spell' }),
     ).toBeNull();
+  });
+
+  it('shows flame spell combat choices only after a rolled combat needs a decision', () => {
+    const onResolveCombatWithFlameSpells = vi.fn();
+    const onResolveCombatWithoutFlameSpells = vi.fn();
+    const state = createUiState({
+      phase: 'combat_flame_spells',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        rolledDice: [2, 3],
+        pendingBaseOutcome: 'draw',
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_warrior',
+              inventory: {
+                ...player.inventory,
+                spells: [{ type: 'spell', spellKind: 'flame' }],
+              },
+            }
+          : player,
+      ),
+    });
+
+    render(
+      <ActionPanel
+        state={state}
+        {...noopActions}
+        onResolveCombatWithFlameSpells={onResolveCombatWithFlameSpells}
+        onResolveCombatWithoutFlameSpells={
+          onResolveCombatWithoutFlameSpells
+        }
+      />,
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Do not use flame spells' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Rolled 2 + 3 + weapons 0 = 5 and currently face draw'),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Use 1 Flame Spell' }),
+    );
+    expect(onResolveCombatWithFlameSpells).toHaveBeenCalledWith(1);
   });
 
   it('hides the healing spell action during non-free interaction phases', () => {
@@ -2027,9 +2079,9 @@ describe('Milestone 6 UI', () => {
     ).toHaveAttribute('title', 'Key: Opens a treasure chest');
   });
 
-  it('shows the newest event first and still limits the log to the last eight entries', () => {
+  it('shows the newest event first and still limits the log to the last twenty entries', () => {
     const state = createUiState({
-      eventLog: Array.from({ length: 10 }, (_, index) => ({
+      eventLog: Array.from({ length: 25 }, (_, index) => ({
         id: `event-${index}`,
         type: 'ui_action',
         message: `Event ${index}`,
@@ -2038,12 +2090,16 @@ describe('Milestone 6 UI', () => {
 
     const { container } = render(<EventLog state={state} />);
     const entries = Array.from(container.querySelectorAll('ol > li'));
+    const list = container.querySelector('ol');
 
-    expect(entries).toHaveLength(8);
-    expect(entries[0]).toHaveTextContent('Event 9');
-    expect(entries[1]).toHaveTextContent('Event 8');
-    expect(entries[7]).toHaveTextContent('Event 2');
-    expect(screen.queryByText('Event 1')).toBeNull();
+    expect(entries).toHaveLength(20);
+    expect(entries[0]).toHaveTextContent('Event 24');
+    expect(entries[1]).toHaveTextContent('Event 23');
+    expect(entries[19]).toHaveTextContent('Event 5');
+    expect(list).toHaveClass('max-h-48', 'overflow-auto');
+    expect(screen.queryByText('Event 4')).toBeNull();
+    expect(screen.queryByText('Event 3')).toBeNull();
+    expect(screen.queryByText('Event 2')).toBeNull();
     expect(screen.queryByText('Event 0')).toBeNull();
   });
 });

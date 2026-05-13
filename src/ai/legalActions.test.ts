@@ -153,6 +153,47 @@ describe('AI legal actions', () => {
     ).toBe(false);
   });
 
+  it('offers flame-spell combat resolution choices when a rolled combat can still improve', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'flame-combat-actions-seed',
+    });
+
+    expect(
+      getLegalAiActions({
+        ...state,
+        phase: 'combat_flame_spells',
+        activePlayerIndex: 0,
+        players: state.players.map((player, index) =>
+          index === 0
+            ? {
+                ...player,
+                heroId: 'hero_warrior',
+                inventory: {
+                  ...player.inventory,
+                  spells: [{ type: 'spell', spellKind: 'flame' }],
+                },
+              }
+            : player,
+        ),
+        combat: {
+          playerId: state.players[0].id,
+          monsterId: 'giant_rat',
+          position: { boardX: 0, boardY: 0 },
+          enteredFrom: { boardX: 0, boardY: -1 },
+          rolledDice: [2, 3],
+          pendingBaseOutcome: 'draw',
+        },
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        { type: 'resolveCombatWithoutFlameSpells' },
+        { type: 'resolveCombatWithFlameSpells', flameSpellCount: 1 },
+      ]),
+    );
+  });
+
   it('offers healing spell actions during free movement phases', () => {
     const state = withHealingSpell(createNewGame({
       humanHeroId: 'hero_mage',

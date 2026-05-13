@@ -181,6 +181,8 @@ function actionMessage(
     case 'resolveRoomToken':
       return undefined;
     case 'resolveCombat':
+    case 'resolveCombatWithoutFlameSpells':
+    case 'resolveCombatWithFlameSpells':
       return undefined;
     case 'openChest':
       return 'Opened chest';

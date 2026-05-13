@@ -24,7 +24,6 @@ export type CombatOutcome = 'victory' | 'draw' | 'defeat';
 
 export type ResolveCombatOptions = {
   dice?: [number, number];
-  flameSpellCount?: number;
   curseTargetPlayerId?: string;
   warriorRerollDice?: [number, number];
   useWarriorReroll?: boolean;
@@ -50,9 +49,8 @@ export function resolveCombat(
   const warlockSacrificeBonus = canUseWarlockSacrifice(activePlayer, options)
     ? 1
     : 0;
-  const flameSpellCount = options.flameSpellCount ?? 0;
+  const flameSpellCount = getAutomaticFlameSpellCount(activePlayer);
   const oracleBonus = getOracleCombatBonus(state);
-  const weaponBonus = getWeaponBonus(activePlayer);
   let resolvedDice = dice;
   let total = calculateCombatTotal(
     activePlayer,
@@ -64,10 +62,10 @@ export function resolveCombat(
     total,
     monster.strength,
   );
-  let stateWithSpentResources = spendFlameSpells(state, flameSpellCount);
+  let stateWithAppliedCosts = spendFlameSpells(state, flameSpellCount);
 
   if (warlockSacrificeBonus > 0) {
-    stateWithSpentResources = applyWarlockSacrifice(stateWithSpentResources);
+    stateWithAppliedCosts = applyWarlockSacrifice(stateWithAppliedCosts);
   }
 
   if (shouldUseWarriorReroll(activePlayer, outcome, options)) {
@@ -84,31 +82,73 @@ export function resolveCombat(
     outcome = getCombatOutcomeForPlayer(activePlayer, total, monster.strength);
   }
 
-  const combatEvent = createCombatEventDetails(
-    monster,
+  if (
+    shouldPauseForFlameSpells(
+      activePlayer,
+      monster.strength,
+      resolvedDice,
+      warlockSacrificeBonus,
+      oracleBonus,
+    )
+  ) {
+    return {
+      ...stateWithAppliedCosts,
+      phase: 'combat_flame_spells',
+      combat: {
+        ...state.combat,
+        rolledDice: resolvedDice,
+        pendingBaseOutcome: outcome,
+        pendingWarlockSacrificeBonus: warlockSacrificeBonus,
+        pendingOracleBonus: oracleBonus,
+        pendingCurseTargetPlayerId: options.curseTargetPlayerId,
+      },
+      rng: rng.snapshot(),
+    };
+  }
+
+  return resolveCombatOutcome(
+    { ...stateWithAppliedCosts, rng: rng.snapshot() },
     resolvedDice,
-    total,
-    outcome,
-    weaponBonus,
     flameSpellCount,
     warlockSacrificeBonus,
     oracleBonus,
+    options.curseTargetPlayerId,
   );
+}
 
-  if (outcome === 'victory') {
-    return resolveVictory(
-      { ...stateWithSpentResources, rng: rng.snapshot() },
-      monster,
-      dice,
-      combatEvent,
-      options.curseTargetPlayerId,
-    );
+export function resolveCombatWithoutFlameSpells(state: GameState): GameState {
+  return resolvePendingCombat(state, 0);
+}
+
+export function resolveCombatWithFlameSpells(
+  state: GameState,
+  flameSpellCount: number,
+): GameState {
+  const validChoices = getCombatFlameSpellChoices(state);
+
+  if (!validChoices.includes(flameSpellCount)) {
+    throw new Error('Invalid flame spell choice for pending combat');
   }
 
-  return resolveRetreat(
-    { ...stateWithSpentResources, rng: rng.snapshot() },
-    outcome,
-    combatEvent,
+  return resolvePendingCombat(state, flameSpellCount);
+}
+
+export function getCombatFlameSpellChoices(state: GameState): number[] {
+  if (state.phase !== 'combat_flame_spells' || !state.combat?.rolledDice) {
+    return [];
+  }
+
+  const activePlayer = state.players[state.activePlayerIndex];
+  const monster = monsterDefinitions[state.combat.monsterId];
+  const availableFlameSpells = getAvailableFlameSpellCount(activePlayer);
+
+  return getMeaningfulFlameSpellCounts(
+    activePlayer,
+    monster.strength,
+    state.combat.rolledDice,
+    state.combat.pendingWarlockSacrificeBonus ?? 0,
+    state.combat.pendingOracleBonus ?? 0,
+    availableFlameSpells,
   );
 }
 
@@ -216,6 +256,58 @@ function resolveVictory(
     ...stateWithEvent,
     victory: createVictoryState(stateWithEvent, activePlayer.id),
   };
+}
+
+function resolveCombatOutcome(
+  state: GameState,
+  dice: [number, number],
+  flameSpellCount: number,
+  warlockSacrificeBonus: number,
+  oracleBonus: number,
+  curseTargetPlayerId?: string,
+): GameState {
+  if (!state.combat) {
+    throw new Error('No combat to resolve');
+  }
+
+  const monster = monsterDefinitions[state.combat.monsterId];
+  const activePlayer = state.players[state.activePlayerIndex];
+  const stateWithSpentResources = spendFlameSpells(state, flameSpellCount);
+  const updatedActivePlayer =
+    stateWithSpentResources.players[stateWithSpentResources.activePlayerIndex];
+  const weaponBonus = getWeaponBonus(updatedActivePlayer);
+  const total = calculateCombatTotal(
+    updatedActivePlayer,
+    dice,
+    flameSpellCount + warlockSacrificeBonus + oracleBonus,
+  );
+  const outcome = getCombatOutcomeForPlayer(
+    updatedActivePlayer,
+    total,
+    monster.strength,
+  );
+  const combatEvent = createCombatEventDetails(
+    monster,
+    dice,
+    total,
+    outcome,
+    weaponBonus,
+    flameSpellCount,
+    warlockSacrificeBonus,
+    oracleBonus,
+  );
+
+  if (outcome === 'victory') {
+    return resolveVictory(
+      stateWithSpentResources,
+      monster,
+      dice,
+      combatEvent,
+      curseTargetPlayerId,
+    );
+  }
+
+  return resolveRetreat(stateWithSpentResources, outcome, combatEvent);
 }
 
 function resolveRetreat(
@@ -341,6 +433,26 @@ function spendFlameSpells(
   };
 }
 
+function resolvePendingCombat(
+  state: GameState,
+  flameSpellCount: number,
+): GameState {
+  if (state.phase !== 'combat_flame_spells' || !state.combat?.rolledDice) {
+    throw new Error(
+      'Flame spell selection can only resolve during pending combat flames',
+    );
+  }
+
+  return resolveCombatOutcome(
+    state,
+    state.combat.rolledDice,
+    flameSpellCount,
+    state.combat.pendingWarlockSacrificeBonus ?? 0,
+    state.combat.pendingOracleBonus ?? 0,
+    state.combat.pendingCurseTargetPlayerId,
+  );
+}
+
 function resolveSwordsmanDice(
   player: Player,
   dice: [number, number],
@@ -374,6 +486,40 @@ function canUseWarlockSacrifice(
   );
 }
 
+function getAutomaticFlameSpellCount(player: Player): number {
+  return hasActiveHeroAbility(player, 'hero_mage')
+    ? getAvailableFlameSpellCount(player)
+    : 0;
+}
+
+function getAvailableFlameSpellCount(player: Player): number {
+  return player.inventory.spells.filter((spell) => spell.spellKind === 'flame')
+    .length;
+}
+
+function shouldPauseForFlameSpells(
+  player: Player,
+  monsterStrength: number,
+  dice: [number, number],
+  warlockSacrificeBonus: number,
+  oracleBonus: number,
+): boolean {
+  if (hasActiveHeroAbility(player, 'hero_mage')) {
+    return false;
+  }
+
+  return (
+    getMeaningfulFlameSpellCounts(
+      player,
+      monsterStrength,
+      dice,
+      warlockSacrificeBonus,
+      oracleBonus,
+      getAvailableFlameSpellCount(player),
+    ).length > 0
+  );
+}
+
 function applyWarlockSacrifice(state: GameState): GameState {
   return {
     ...state,
@@ -396,6 +542,43 @@ function getOracleCombatBonus(state: GameState): number {
     state.remainingSteps === 3
     ? 1
     : 0;
+}
+
+function getMeaningfulFlameSpellCounts(
+  player: Player,
+  monsterStrength: number,
+  dice: [number, number],
+  warlockSacrificeBonus: number,
+  oracleBonus: number,
+  availableFlameSpells: number,
+): number[] {
+  if (availableFlameSpells <= 0) {
+    return [];
+  }
+
+  const baseTotal = calculateCombatTotal(
+    player,
+    dice,
+    warlockSacrificeBonus + oracleBonus,
+  );
+  const baseOutcome = getCombatOutcomeForPlayer(player, baseTotal, monsterStrength);
+
+  if (baseOutcome === 'victory') {
+    return [];
+  }
+
+  return Array.from({ length: availableFlameSpells }, (_, index) => index + 1).filter(
+    (flameSpellCount) =>
+      getCombatOutcomeForPlayer(
+        player,
+        calculateCombatTotal(
+          player,
+          dice,
+          flameSpellCount + warlockSacrificeBonus + oracleBonus,
+        ),
+        monsterStrength,
+      ) !== 'defeat',
+  );
 }
 
 function getWeaponBonus(player: Player): number {

@@ -6,6 +6,7 @@ import type {
   GameState,
   TileSide,
 } from '../../engine/core/types';
+import { getCombatFlameSpellChoices } from '../../engine/combat/combat';
 import { canStoreItem } from '../../engine/rules/inventory';
 import { getUiLegalActions } from '../../state/setupStore';
 import { heroName, monsterName, sideLabels } from '../labels';
@@ -28,6 +29,8 @@ type ActionPanelProps = {
   onExplore: (direction: TileSide) => void;
   onResolveRoom: () => void;
   onResolveCombat: () => void;
+  onResolveCombatWithoutFlameSpells: () => void;
+  onResolveCombatWithFlameSpells: (flameSpellCount: number) => void;
   onSwapLoot: (inventorySlot: { kind: 'weapon' | 'spell'; index: number }) => void;
   onTakeLoot: () => void;
   onOpenChest: () => void;
@@ -46,6 +49,8 @@ export function ActionPanel({
   onExplore,
   onResolveRoom,
   onResolveCombat,
+  onResolveCombatWithoutFlameSpells,
+  onResolveCombatWithFlameSpells,
   onSwapLoot,
   onTakeLoot,
   onOpenChest,
@@ -84,6 +89,9 @@ export function ActionPanel({
   const pendingLoot = state.pendingLoot;
   const canTakePendingLoot =
     pendingLoot !== undefined && canStoreItem(activePlayer, pendingLoot.item);
+  const flameSpellChoices = getCombatFlameSpellChoices(state);
+  const pendingCombatDice = state.combat?.rolledDice;
+  const pendingCombatOutcome = state.combat?.pendingBaseOutcome;
   const hasHealingSpell = activePlayer.inventory.spells.some(
     (spell) => spell.spellKind === 'healing',
   );
@@ -152,6 +160,39 @@ export function ActionPanel({
           >
             Resolve Combat
           </button>
+        </div>
+      ) : null}
+
+      {state.phase === 'combat_flame_spells' && combatMonster && pendingCombatDice ? (
+        <div className="mt-4 grid gap-2">
+          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+            Flame Spells
+          </h3>
+          <p className="text-sm text-stone-200">
+            {monsterName(combatMonster.id)} strength {combatMonster.strength}
+          </p>
+          <p className="font-mono text-xs text-stone-300">
+            Rolled {pendingCombatDice[0]} + {pendingCombatDice[1]} + weapons{' '}
+            {weaponBonus} = {pendingCombatDice[0] + pendingCombatDice[1] + weaponBonus}
+            {pendingCombatOutcome ? ` and currently face ${pendingCombatOutcome}` : ''}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
+              onClick={onResolveCombatWithoutFlameSpells}
+            >
+              Do not use flame spells
+            </button>
+            {flameSpellChoices.map((flameSpellCount) => (
+              <button
+                key={`combat-flame-${flameSpellCount}`}
+                className="border border-amber-500 px-3 py-2 text-sm text-amber-100"
+                onClick={() => onResolveCombatWithFlameSpells(flameSpellCount)}
+              >
+                Use {flameSpellCount} Flame Spell{flameSpellCount === 1 ? '' : 's'}
+              </button>
+            ))}
+          </div>
         </div>
       ) : null}
 

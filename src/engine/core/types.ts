@@ -150,6 +150,7 @@ export type GamePhase =
   | 'place_pending_tile'
   | 'resolve_room_token'
   | 'combat'
+  | 'combat_flame_spells'
   | 'loot_resolution'
   | 'optional_post_combat'
   | 'turn_end'
@@ -171,6 +172,11 @@ export interface CombatContext {
   position: BoardPosition;
   enteredFrom: BoardPosition;
   source?: 'movement' | 'warlock_swap';
+  rolledDice?: [number, number];
+  pendingBaseOutcome?: 'draw' | 'defeat';
+  pendingWarlockSacrificeBonus?: number;
+  pendingOracleBonus?: number;
+  pendingCurseTargetPlayerId?: string;
 }
 
 export interface PendingLoot {
@@ -279,12 +285,20 @@ export type ResolveRoomTokenAction = {
 export type ResolveCombatAction = {
   type: 'resolveCombat';
   dice?: [number, number];
-  flameSpellCount?: number;
   curseTargetPlayerId?: string;
   warriorRerollDice?: [number, number];
   useWarriorReroll?: boolean;
   useWarlockSacrifice?: boolean;
   swordsmanOneRerolls?: number[];
+};
+
+export type ResolveCombatWithoutFlameSpellsAction = {
+  type: 'resolveCombatWithoutFlameSpells';
+};
+
+export type ResolveCombatWithFlameSpellsAction = {
+  type: 'resolveCombatWithFlameSpells';
+  flameSpellCount: number;
 };
 
 export type OpenChestAction = {
@@ -333,6 +347,8 @@ export type GameAction =
   | PlacePendingTileAction
   | ResolveRoomTokenAction
   | ResolveCombatAction
+  | ResolveCombatWithoutFlameSpellsAction
+  | ResolveCombatWithFlameSpellsAction
   | OpenChestAction
   | BeginLootAction
   | TakeLootAction

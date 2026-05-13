@@ -8,7 +8,7 @@ import type {
   Player,
   Token,
 } from '../core/types';
-import { resolveCombat } from '../combat/combat';
+import { resolveCombat, resolveCombatWithFlameSpells } from '../combat/combat';
 import {
   getLegalExplorationDirections,
   getLegalKnownMoveDirections,
@@ -31,10 +31,10 @@ describe('hero_mage abilities', () => {
       }),
     );
     const resolved = resolveCombat(combatState, {
-      dice: [3, 3],
-      flameSpellCount: 1,
+      dice: [2, 3],
     });
 
+    expect(resolved.phase).toBe('loot_resolution');
     expect(
       resolved.players[resolved.activePlayerIndex].inventory.spells,
     ).toHaveLength(1);
@@ -69,10 +69,13 @@ describe('hero_mage abilities', () => {
         },
       }),
     );
-    const resolved = resolveCombat(combatState, {
-      dice: [3, 3],
-      flameSpellCount: 1,
+    const pending = resolveCombat(combatState, {
+      dice: [2, 2],
     });
+
+    expect(pending.phase).toBe('combat_flame_spells');
+
+    const resolved = resolveCombatWithFlameSpells(pending, 1);
 
     expect(
       resolved.players[resolved.activePlayerIndex].inventory.spells,

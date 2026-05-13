@@ -1,5 +1,9 @@
 import type { GameAction, GameState } from './types';
-import { resolveCombat } from '../combat/combat';
+import {
+  resolveCombat,
+  resolveCombatWithFlameSpells,
+  resolveCombatWithoutFlameSpells,
+} from '../combat/combat';
 import {
   drawPendingTileForExploration,
   placePendingTile,
@@ -49,13 +53,16 @@ export function applyGameAction(
     case 'resolveCombat':
       return resolveCombat(state, {
         dice: action.dice,
-        flameSpellCount: action.flameSpellCount,
         curseTargetPlayerId: action.curseTargetPlayerId,
         warriorRerollDice: action.warriorRerollDice,
         useWarriorReroll: action.useWarriorReroll,
         useWarlockSacrifice: action.useWarlockSacrifice,
         swordsmanOneRerolls: action.swordsmanOneRerolls,
       });
+    case 'resolveCombatWithoutFlameSpells':
+      return resolveCombatWithoutFlameSpells(state);
+    case 'resolveCombatWithFlameSpells':
+      return resolveCombatWithFlameSpells(state, action.flameSpellCount);
     case 'openChest':
       return openChest(state);
     case 'beginLoot':

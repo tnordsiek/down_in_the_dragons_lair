@@ -146,6 +146,12 @@ export function GameScreen() {
   const handleResolveCombat = () => {
     dispatch({ type: 'resolveCombat' });
   };
+  const handleResolveCombatWithoutFlameSpells = () => {
+    dispatch({ type: 'resolveCombatWithoutFlameSpells' });
+  };
+  const handleResolveCombatWithFlameSpells = (flameSpellCount: number) => {
+    dispatch({ type: 'resolveCombatWithFlameSpells', flameSpellCount });
+  };
   const handleOpenChest = () => {
     dispatch({ type: 'openChest' });
   };
@@ -287,6 +293,10 @@ export function GameScreen() {
             onExplore={handleExplore}
             onResolveRoom={handleResolveRoom}
             onResolveCombat={handleResolveCombat}
+            onResolveCombatWithoutFlameSpells={
+              handleResolveCombatWithoutFlameSpells
+            }
+            onResolveCombatWithFlameSpells={handleResolveCombatWithFlameSpells}
             onSelectHealingSpellTarget={handleSelectHealingSpellTarget}
             onStartHealingSpellSelection={handleStartHealingSpellSelection}
             onSwapLoot={handleSwapLoot}

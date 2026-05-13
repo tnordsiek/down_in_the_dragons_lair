@@ -167,6 +167,66 @@ describe('heuristic AI', () => {
       }),
     );
   });
+
+  it('uses the smallest winning flame spell choice only against monsters above strength nine', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-combat-flame-choice',
+    });
+    const highStrengthState: GameState = {
+      ...base,
+      phase: 'combat_flame_spells',
+      activePlayerIndex: 0,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_warrior',
+              inventory: {
+                ...player.inventory,
+                weapons: [
+                  { type: 'weapon', bonus: 3 },
+                  { type: 'weapon', bonus: 3 },
+                ],
+                spells: [
+                  { type: 'spell', spellKind: 'flame' },
+                  { type: 'spell', spellKind: 'flame' },
+                  { type: 'spell', spellKind: 'flame' },
+                ],
+              },
+            }
+          : player,
+      ),
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'skeleton_king',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        rolledDice: [2, 2],
+        pendingBaseOutcome: 'draw',
+      },
+    };
+
+    expect(chooseHeuristicAiAction(highStrengthState)).toEqual({
+      type: 'resolveCombatWithFlameSpells',
+      flameSpellCount: 1,
+    });
+
+    const lowStrengthState: GameState = {
+      ...highStrengthState,
+      combat: {
+        ...highStrengthState.combat!,
+        monsterId: 'skeleton_warrior',
+        rolledDice: [1, 2],
+        pendingBaseOutcome: 'draw',
+      },
+    };
+
+    expect(chooseHeuristicAiAction(lowStrengthState)).toEqual({
+      type: 'resolveCombatWithoutFlameSpells',
+    });
+  });
 });
 
 function createDragonEndgameState(): GameState {

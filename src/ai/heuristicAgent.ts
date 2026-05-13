@@ -9,6 +9,7 @@ import type {
 } from '../engine/core/types';
 import {
   calculateCombatTotal,
+  getCombatFlameSpellChoices,
   getCombatOutcomeForPlayer,
 } from '../engine/combat/combat';
 import {
@@ -71,7 +72,11 @@ export function chooseHeuristicAiAction(
     return healingSpellAction;
   }
 
-  if (state.phase === 'combat' || state.phase === 'optional_post_combat') {
+  if (
+    state.phase === 'combat' ||
+    state.phase === 'optional_post_combat' ||
+    state.phase === 'combat_flame_spells'
+  ) {
     return chooseCombatAction(state, legalActions, config);
   }
 
@@ -139,6 +144,10 @@ function chooseCombatAction(
   legalActions: GameAction[],
   config: AiHeuristicConfig,
 ): GameAction {
+  if (state.phase === 'combat_flame_spells') {
+    return chooseCombatFlameSpellAction(state, legalActions);
+  }
+
   const combatAction = requireAction(legalActions, 'resolveCombat');
 
   if (!state.combat) {
@@ -147,18 +156,14 @@ function chooseCombatAction(
 
   const activePlayer = state.players[state.activePlayerIndex];
   const monster = monsterDefinitions[state.combat.monsterId];
-  const availableFlameSpells = activePlayer.inventory.spells.filter(
-    (spell) => spell.spellKind === 'flame',
-  ).length;
-  const flameSpellCount = chooseFlameSpellCount(
-    activePlayer,
-    monster.strength,
-    availableFlameSpells,
-  );
+  const automaticFlameBonus = hasActiveHeroAbility(activePlayer, 'hero_mage')
+    ? activePlayer.inventory.spells.filter((spell) => spell.spellKind === 'flame')
+        .length
+    : 0;
   const winChance = estimateCombatWinChance(
     activePlayer,
     monster.strength,
-    flameSpellCount,
+    automaticFlameBonus,
   );
 
   if (state.phase === 'optional_post_combat') {
@@ -174,7 +179,6 @@ function chooseCombatAction(
 
   return {
     ...combatAction,
-    flameSpellCount,
     useWarriorReroll: hasActiveHeroAbility(activePlayer, 'hero_warrior'),
     useWarlockSacrifice:
       hasActiveHeroAbility(activePlayer, 'hero_warlock') &&
@@ -183,19 +187,53 @@ function chooseCombatAction(
   };
 }
 
-function chooseFlameSpellCount(
-  player: Player,
-  monsterStrength: number,
-  availableFlameSpells: number,
-): number {
-  if (availableFlameSpells === 0) {
-    return 0;
+function chooseCombatFlameSpellAction(
+  state: GameState,
+  legalActions: GameAction[],
+): GameAction {
+  const activePlayer = state.players[state.activePlayerIndex];
+  const monster = state.combat
+    ? monsterDefinitions[state.combat.monsterId]
+    : undefined;
+  const spellChoices = getCombatFlameSpellChoices(state).sort((left, right) => left - right);
+
+  if (!monster || spellChoices.length === 0) {
+    return requireAction(legalActions, 'resolveCombatWithoutFlameSpells');
   }
 
-  const baseAverageTotal = calculateCombatTotal(player, [3, 4]);
-  const needed = Math.max(0, monsterStrength + 1 - baseAverageTotal);
+  if (hasActiveHeroAbility(activePlayer, 'hero_mage')) {
+    return requireAction(legalActions, 'resolveCombatWithoutFlameSpells');
+  }
 
-  return Math.min(availableFlameSpells, needed);
+  if (monster.strength <= 9) {
+    return requireAction(legalActions, 'resolveCombatWithoutFlameSpells');
+  }
+
+  const winningChoice = spellChoices.find((flameSpellCount) => {
+    if (!state.combat?.rolledDice) {
+      return false;
+    }
+
+    const total = calculateCombatTotal(
+      activePlayer,
+      state.combat.rolledDice,
+      flameSpellCount +
+        (state.combat.pendingWarlockSacrificeBonus ?? 0) +
+        (state.combat.pendingOracleBonus ?? 0),
+    );
+
+    return (
+      getCombatOutcomeForPlayer(activePlayer, total, monster.strength) ===
+      'victory'
+    );
+  });
+
+  return winningChoice
+    ? {
+        type: 'resolveCombatWithFlameSpells',
+        flameSpellCount: winningChoice,
+      }
+    : requireAction(legalActions, 'resolveCombatWithoutFlameSpells');
 }
 
 function chooseCurseTargetPlayerId(

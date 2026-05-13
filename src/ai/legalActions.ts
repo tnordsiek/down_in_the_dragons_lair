@@ -1,5 +1,6 @@
 import { getTileAt } from '../engine/core/board';
 import type { BoardPosition, GameAction, GameState, Player } from '../engine/core/types';
+import { getCombatFlameSpellChoices } from '../engine/combat/combat';
 import {
   getLegalExplorationDirections,
   getLegalKnownMoves,
@@ -81,6 +82,18 @@ export function getLegalAiActions(state: GameState): GameAction[] {
     if (state.phase === 'optional_post_combat') {
       actions.push({ type: 'endTurn' });
     }
+
+    return actions;
+  }
+
+  if (state.phase === 'combat_flame_spells') {
+    actions.push({ type: 'resolveCombatWithoutFlameSpells' });
+    actions.push(
+      ...getCombatFlameSpellChoices(state).map((flameSpellCount) => ({
+        type: 'resolveCombatWithFlameSpells' as const,
+        flameSpellCount,
+      })),
+    );
 
     return actions;
   }

@@ -43,6 +43,85 @@ describe('combat resolution', () => {
     );
   });
 
+  it('pauses for flame spell selection after a draw when spells can improve the result', () => {
+    const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
+      ...player,
+      heroId: 'hero_warrior',
+      inventory: {
+        ...player.inventory,
+        spells: [{ type: 'spell', spellKind: 'flame' }],
+      },
+    }));
+    const pending = resolveCombat(state, { dice: [2, 3] });
+
+    expect(pending.phase).toBe('combat_flame_spells');
+    expect(pending.combat).toEqual(
+      expect.objectContaining({
+        rolledDice: [2, 3],
+        pendingBaseOutcome: 'draw',
+      }),
+    );
+
+    const resolved = applyGameAction(pending, {
+      type: 'resolveCombatWithFlameSpells',
+      flameSpellCount: 1,
+    });
+
+    expect(resolved.phase).toBe('loot_resolution');
+    expect(
+      resolved.players[resolved.activePlayerIndex].inventory.spells,
+    ).toHaveLength(0);
+    expect(resolved.eventLog.at(-1)?.combat).toEqual(
+      expect.objectContaining({
+        outcome: 'victory',
+        flameSpellCount: 1,
+      }),
+    );
+  });
+
+  it('allows declining flame spell use without consuming spells', () => {
+    const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
+      ...player,
+      heroId: 'hero_warrior',
+      inventory: {
+        ...player.inventory,
+        spells: [{ type: 'spell', spellKind: 'flame' }],
+      },
+    }));
+    const pending = resolveCombat(state, { dice: [2, 3] });
+    const resolved = applyGameAction(pending, {
+      type: 'resolveCombatWithoutFlameSpells',
+    });
+
+    expect(resolved.phase).toBe('turn_end');
+    expect(
+      resolved.players[resolved.activePlayerIndex].inventory.spells,
+    ).toHaveLength(1);
+    expect(resolved.eventLog.at(-1)?.combat).toEqual(
+      expect.objectContaining({
+        outcome: 'draw',
+        flameSpellCount: 0,
+      }),
+    );
+  });
+
+  it('does not pause when available flame spells still cannot avoid defeat', () => {
+    const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
+      ...player,
+      heroId: 'hero_warrior',
+      inventory: {
+        ...player.inventory,
+        spells: [{ type: 'spell', spellKind: 'flame' }],
+      },
+    }));
+    const resolved = resolveCombat(state, { dice: [1, 1] });
+
+    expect(resolved.phase).toBe('turn_end');
+    expect(
+      resolved.players[resolved.activePlayerIndex].inventory.spells,
+    ).toHaveLength(1);
+  });
+
   it('resolves a defeat as retreat with one HP loss', () => {
     const state = createCombatState('giant_rat');
     const resolved = resolveCombat(state, { dice: [1, 1] });

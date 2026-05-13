@@ -7,7 +7,7 @@ type EventLogProps = {
 };
 
 export function EventLog({ state, lastError }: EventLogProps) {
-  const visibleEvents = state.eventLog.slice(-8).reverse();
+  const visibleEvents = state.eventLog.slice(-20).reverse();
 
   return (
     <section
