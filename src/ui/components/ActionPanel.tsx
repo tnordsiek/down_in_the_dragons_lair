@@ -141,6 +141,20 @@ export function ActionPanel({
         </div>
       ) : null}
 
+      {state.phase === 'turn_skip' && activePlayer.skipNextTurn ? (
+        <div className="mt-4 grid gap-2">
+          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+            Unconscious
+          </h3>
+          <p className="text-sm text-stone-200">
+            This hero is unconscious and must skip this turn.
+          </p>
+          <p className="text-sm text-stone-400">
+            End the turn to finish the skipped round and recover afterward.
+          </p>
+        </div>
+      ) : null}
+
       {state.phase === 'combat' && combatMonster ? (
         <div className="mt-4 grid gap-2">
           <h3 className="text-xs uppercase tracking-wide text-stone-400">

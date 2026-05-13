@@ -144,6 +144,7 @@ export interface HeroDefinition {
 export type GamePhase =
   | 'setup'
   | 'turn_start'
+  | 'turn_skip'
   | 'await_move'
   | 'draw_pending_tile'
   | 'choose_pending_tile_rotation'

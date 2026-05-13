@@ -148,18 +148,53 @@ describe('combat resolution', () => {
   });
 
   it('recovers 1 HP after skipping an unconscious turn', () => {
-    const state = withActivePlayer(
+    const defeatedState = withActivePlayer(
       createCombatState('giant_rat'),
       (player) => ({
         ...player,
+        hp: 1,
+      }),
+    );
+    const resolved = resolveCombat(defeatedState, { dice: [1, 1] });
+    const unconsciousPlayerId = resolved.players[resolved.activePlayerIndex].id;
+
+    expect(resolved.players[resolved.activePlayerIndex]).toEqual(
+      expect.objectContaining({
         hp: 0,
         skipNextTurn: true,
       }),
     );
-    const activePlayerId = state.players[state.activePlayerIndex].id;
-    const ended = endTurn(state);
-    const recoveredPlayer = ended.players.find(
-      (player) => player.id === activePlayerId,
+
+    const otherPlayersTurn = endTurn(resolved);
+    const beforeSkippedTurnPlayer = otherPlayersTurn.players.find(
+      (player) => player.id === unconsciousPlayerId,
+    );
+
+    expect(otherPlayersTurn.phase).toBe('turn_start');
+    expect(otherPlayersTurn.activePlayerIndex).not.toBe(resolved.activePlayerIndex);
+    expect(beforeSkippedTurnPlayer).toEqual(
+      expect.objectContaining({
+        hp: 0,
+        skipNextTurn: true,
+      }),
+    );
+
+    const skippedTurnState = endTurn(otherPlayersTurn);
+    const skippedActivePlayer =
+      skippedTurnState.players[skippedTurnState.activePlayerIndex];
+
+    expect(skippedTurnState.phase).toBe('turn_skip');
+    expect(skippedActivePlayer.id).toBe(unconsciousPlayerId);
+    expect(skippedActivePlayer).toEqual(
+      expect.objectContaining({
+        hp: 0,
+        skipNextTurn: true,
+      }),
+    );
+
+    const recoveredTurn = endTurn(skippedTurnState);
+    const recoveredPlayer = recoveredTurn.players.find(
+      (player) => player.id === unconsciousPlayerId,
     );
 
     expect(recoveredPlayer).toEqual(

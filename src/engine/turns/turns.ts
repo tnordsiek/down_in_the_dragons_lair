@@ -10,20 +10,21 @@ export function endTurn(state: GameState): GameState {
     throw new Error('Resolve the room token before ending the turn');
   }
 
-  const activePlayerSkipsTurn =
-    state.players[state.activePlayerIndex].skipNextTurn;
-  const recoveredState = recoverUnconsciousActivePlayer(state);
-  const healedState = activePlayerSkipsTurn
-    ? recoveredState
-    : applyHealingIfOnHealingTile(recoveredState);
+  const activePlayer = state.players[state.activePlayerIndex];
+  const resolvedCurrentState =
+    activePlayer.skipNextTurn && state.phase === 'turn_skip'
+    ? recoverUnconsciousActivePlayer(state)
+    : applyHealingIfOnHealingTile(state);
   const activePlayerIndex =
-    (healedState.activePlayerIndex + 1) % healedState.players.length;
+    (resolvedCurrentState.activePlayerIndex + 1) %
+    resolvedCurrentState.players.length;
+  const nextActivePlayer = resolvedCurrentState.players[activePlayerIndex];
 
   return {
-    ...healedState,
-    phase: 'turn_start',
+    ...resolvedCurrentState,
+    phase: nextActivePlayer.skipNextTurn ? 'turn_skip' : 'turn_start',
     activePlayerIndex,
-    remainingSteps: 4,
+    remainingSteps: nextActivePlayer.skipNextTurn ? 0 : 4,
     pendingTile: undefined,
     pendingLoot: undefined,
     lastMoveFrom: undefined,

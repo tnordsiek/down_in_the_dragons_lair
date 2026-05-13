@@ -145,6 +145,35 @@ describe('Milestone 6 UI', () => {
     ).toBeDisabled();
   });
 
+  it('shows an unconscious skip-turn hint in the action panel', () => {
+    const state = createUiState({
+      phase: 'turn_skip',
+      remainingSteps: 0,
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              hp: 0,
+              skipNextTurn: true,
+            }
+          : player,
+      ),
+    });
+
+    render(<ActionPanel state={state} {...noopActions} />);
+
+    expect(screen.getByText('Unconscious')).toBeInTheDocument();
+    expect(
+      screen.getByText('This hero is unconscious and must skip this turn.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'End the turn to finish the skipped round and recover afterward.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'End Turn' })).toBeEnabled();
+  });
+
   it('rotates a pending tile preview through board controls and confirms valid rotations', () => {
     const state = createUiState({
       phase: 'choose_pending_tile_rotation',

@@ -212,6 +212,31 @@ describe('AI legal actions', () => {
       ]),
     );
   });
+
+  it('allows only end turn during a skipped unconscious turn', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'skip-turn-actions-seed',
+    });
+
+    expect(
+      getLegalAiActions({
+        ...state,
+        phase: 'turn_skip',
+        activePlayerIndex: 0,
+        players: state.players.map((player, index) =>
+          index === 0
+            ? {
+                ...player,
+                hp: 0,
+                skipNextTurn: true,
+              }
+            : player,
+        ),
+      }),
+    ).toEqual([{ type: 'endTurn' }]);
+  });
 });
 
 function createPortalState(): GameState {
