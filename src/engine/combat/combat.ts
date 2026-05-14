@@ -69,7 +69,7 @@ export function resolveCombat(
       combat: {
         ...state.combat,
         initialRolledDice: dice,
-        initialBaseOutcome: outcome,
+        initialBaseOutcome: toPendingCombatOutcome(outcome),
         pendingWarlockSacrificeBonus: warlockSacrificeBonus,
         pendingOracleBonus: oracleBonus,
         pendingCurseTargetPlayerId: options.curseTargetPlayerId,
@@ -93,7 +93,7 @@ export function resolveCombat(
       combat: {
         ...state.combat,
         initialRolledDice: dice,
-        initialBaseOutcome: outcome,
+        initialBaseOutcome: toPendingCombatOutcome(outcome),
         pendingWarlockSacrificeBonus: 0,
         pendingOracleBonus: oracleBonus,
         pendingCurseTargetPlayerId: options.curseTargetPlayerId,
@@ -117,7 +117,7 @@ export function resolveCombat(
       combat: {
         ...state.combat,
         rolledDice: dice,
-        pendingBaseOutcome: outcome,
+        pendingBaseOutcome: toPendingCombatOutcome(outcome),
         pendingWarlockSacrificeBonus: warlockSacrificeBonus,
         pendingOracleBonus: oracleBonus,
         pendingCurseTargetPlayerId: options.curseTargetPlayerId,
@@ -183,7 +183,7 @@ export function useWarriorReroll(
       combat: {
         ...state.combat,
         rolledDice: rerollDice,
-        pendingBaseOutcome: outcome,
+        pendingBaseOutcome: toPendingCombatOutcome(outcome),
       },
     };
   }
@@ -288,7 +288,7 @@ export function useWarlockSacrifice(state: GameState): GameState {
       combat: {
         ...state.combat,
         rolledDice: state.combat.initialRolledDice,
-        pendingBaseOutcome: outcome,
+        pendingBaseOutcome: toPendingCombatOutcome(outcome),
         pendingWarlockSacrificeBonus: warlockSacrificeBonus,
       },
     };
@@ -721,6 +721,14 @@ function getAutomaticFlameSpellCount(player: Player): number {
 function getAvailableFlameSpellCount(player: Player): number {
   return player.inventory.spells.filter((spell) => spell.spellKind === 'flame')
     .length;
+}
+
+function toPendingCombatOutcome(outcome: CombatOutcome): 'draw' | 'defeat' {
+  if (outcome === 'victory') {
+    throw new Error('Pending combat outcome cannot be a victory');
+  }
+
+  return outcome;
 }
 
 function shouldPauseForFlameSpells(
