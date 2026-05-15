@@ -15,7 +15,11 @@ import {
 } from '../engine/rules/inventory';
 
 function canUseHealingSpellNow(state: GameState): boolean {
-  return state.phase === 'turn_start' || state.phase === 'await_move';
+  return (
+    state.phase === 'turn_start' ||
+    state.phase === 'await_move' ||
+    state.phase === 'optional_monster_combat'
+  );
 }
 
 export function getLegalAiActions(state: GameState): GameAction[] {
@@ -74,6 +78,12 @@ export function getLegalAiActions(state: GameState): GameAction[] {
     return actions;
   }
 
+  if (state.phase === 'optional_monster_combat') {
+    if (state.combat) {
+      actions.push({ type: 'startOptionalCombat' });
+    }
+  }
+
   if (state.phase === 'combat' || state.phase === 'optional_post_combat') {
     if (state.combat) {
       actions.push({ type: 'resolveCombat' });
@@ -110,7 +120,11 @@ export function getLegalAiActions(state: GameState): GameAction[] {
     return actions;
   }
 
-  if (state.phase === 'turn_start' || state.phase === 'await_move') {
+  if (
+    state.phase === 'turn_start' ||
+    state.phase === 'await_move' ||
+    state.phase === 'optional_monster_combat'
+  ) {
     if (canBeginGroundLoot(state)) {
       actions.push({ type: 'beginLoot' });
     }

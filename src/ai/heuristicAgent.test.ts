@@ -256,6 +256,80 @@ describe('heuristic AI', () => {
     });
   });
 
+  it('starts optional thief combat only when the fight is worthwhile', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-optional-thief-combat',
+    });
+    const strongState: GameState = {
+      ...base,
+      phase: 'optional_monster_combat',
+      activePlayerIndex: 0,
+      remainingSteps: 0,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_thief',
+              inventory: {
+                ...player.inventory,
+                weapons: [
+                  { type: 'weapon', bonus: 3 },
+                  { type: 'weapon', bonus: 3 },
+                ],
+              },
+            }
+          : player,
+      ),
+      board: [
+        {
+          ...base.board[0],
+          roomToken: { id: 'giant_rat', kind: 'monster' },
+        },
+      ],
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: 0 },
+      },
+    };
+
+    expect(chooseHeuristicAiAction(strongState)).toEqual({
+      type: 'startOptionalCombat',
+    });
+
+    const weakState: GameState = {
+      ...strongState,
+      players: strongState.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              inventory: {
+                ...player.inventory,
+                weapons: [],
+              },
+            }
+          : player,
+      ),
+      combat: {
+        ...strongState.combat!,
+        monsterId: 'dragon',
+      },
+      board: [
+        {
+          ...strongState.board[0],
+          roomToken: { id: 'dragon', kind: 'monster' },
+        },
+      ],
+    };
+
+    expect(chooseHeuristicAiAction(weakState)).toEqual({
+      type: 'endTurn',
+    });
+  });
+
   it('uses warlock sacrifice for a direct win and declines it otherwise', () => {
     const base = createNewGame({
       humanHeroId: 'hero_mage',

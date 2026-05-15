@@ -180,6 +180,8 @@ function actionMessage(
       return `Placed tile at ${action.rotation} degrees`;
     case 'resolveRoomToken':
       return undefined;
+    case 'startOptionalCombat':
+      return 'Started combat';
     case 'resolveCombat':
     case 'useWarriorReroll':
     case 'declineWarriorReroll':

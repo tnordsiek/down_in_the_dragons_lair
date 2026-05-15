@@ -73,6 +73,7 @@ export function chooseHeuristicAiAction(
   }
 
   if (
+    state.phase === 'optional_monster_combat' ||
     state.phase === 'combat' ||
     state.phase === 'optional_post_combat' ||
     state.phase === 'combat_warrior_reroll' ||
@@ -156,6 +157,42 @@ function chooseCombatAction(
 
   if (state.phase === 'combat_flame_spells') {
     return chooseCombatFlameSpellAction(state, legalActions);
+  }
+
+  if (state.phase === 'optional_monster_combat') {
+    const startCombatAction = requireAction(legalActions, 'startOptionalCombat');
+
+    if (!state.combat) {
+      return requireAction(legalActions, 'endTurn');
+    }
+
+    const activePlayer = state.players[state.activePlayerIndex];
+    const monster = monsterDefinitions[state.combat.monsterId];
+    const automaticFlameBonus = hasActiveHeroAbility(activePlayer, 'hero_mage')
+      ? activePlayer.inventory.spells.filter((spell) => spell.spellKind === 'flame')
+          .length
+      : 0;
+    const winChance = estimateCombatWinChance(
+      activePlayer,
+      monster.strength,
+      automaticFlameBonus,
+    );
+    const minimumWinChance =
+      monster.id === 'dragon'
+        ? config.minimumDragonWinChance
+        : config.minimumRepeatCombatWinChance;
+
+    if (winChance >= minimumWinChance) {
+      return startCombatAction;
+    }
+
+    const movementAction = chooseMovementAction(state, legalActions, config);
+
+    if (movementAction) {
+      return movementAction;
+    }
+
+    return requireAction(legalActions, 'endTurn');
   }
 
   const combatAction = requireAction(legalActions, 'resolveCombat');

@@ -16,7 +16,11 @@ export function getLegalKnownMoves(state: GameState): KnownMove[] {
   if (
     !originTile ||
     state.remainingSteps <= 0 ||
-    (state.phase !== 'turn_start' && state.phase !== 'await_move')
+    ![
+      'turn_start',
+      'await_move',
+      'optional_monster_combat',
+    ].includes(state.phase)
   ) {
     return [];
   }
@@ -85,7 +89,11 @@ export function getLegalExplorationDirections(state: GameState): TileSide[] {
     !originTile ||
     state.remainingSteps <= 0 ||
     state.tileStack.length === 0 ||
-    (state.phase !== 'turn_start' && state.phase !== 'await_move')
+    ![
+      'turn_start',
+      'await_move',
+      'optional_monster_combat',
+    ].includes(state.phase)
   ) {
     return [];
   }

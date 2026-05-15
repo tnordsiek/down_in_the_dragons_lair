@@ -112,6 +112,40 @@ describe('AI legal actions', () => {
     ).toEqual([{ type: 'resolveRoomToken' }]);
   });
 
+  it('offers optional thief combat alongside free actions on a monster tile', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_thief',
+      aiCount: 1,
+      seed: 'optional-monster-actions-seed',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'optional_monster_combat',
+      activePlayerIndex: 0,
+      remainingSteps: 2,
+      board: [
+        {
+          ...base.board[0],
+          roomToken: { id: 'giant_rat', kind: 'monster' },
+        },
+      ],
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: 0 },
+      },
+    };
+
+    expect(getLegalAiActions(state)).toEqual(
+      expect.arrayContaining([
+        { type: 'startOptionalCombat' },
+        { type: 'endTurn' },
+        expect.objectContaining({ type: 'declareExplorationDirection' }),
+      ]),
+    );
+  });
+
   it('does not offer healing spell actions during combat', () => {
     const state = withHealingSpell(createNewGame({
       humanHeroId: 'hero_mage',

@@ -150,6 +150,7 @@ export type GamePhase =
   | 'choose_pending_tile_rotation'
   | 'place_pending_tile'
   | 'resolve_room_token'
+  | 'optional_monster_combat'
   | 'combat'
   | 'combat_warrior_reroll'
   | 'combat_warlock_sacrifice'
@@ -304,6 +305,10 @@ export type ResolveRoomTokenAction = {
   type: 'resolveRoomToken';
 };
 
+export type StartOptionalCombatAction = {
+  type: 'startOptionalCombat';
+};
+
 export type ResolveCombatAction = {
   type: 'resolveCombat';
   dice?: [number, number];
@@ -382,6 +387,7 @@ export type GameAction =
   | RotatePendingTilePreviewAction
   | PlacePendingTileAction
   | ResolveRoomTokenAction
+  | StartOptionalCombatAction
   | ResolveCombatAction
   | UseWarriorRerollAction
   | DeclineWarriorRerollAction

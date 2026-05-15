@@ -18,7 +18,11 @@ type HealingSpellSelectionState =
   | { mode: 'select_tile'; targetPlayerId: string };
 
 function canUseHealingSpellNow(state: GameState): boolean {
-  return state.phase === 'turn_start' || state.phase === 'await_move';
+  return (
+    state.phase === 'turn_start' ||
+    state.phase === 'await_move' ||
+    state.phase === 'optional_monster_combat'
+  );
 }
 
 type ActionPanelProps = {
@@ -28,6 +32,7 @@ type ActionPanelProps = {
   onLeaveLoot: () => void;
   onExplore: (direction: TileSide) => void;
   onResolveRoom: () => void;
+  onStartOptionalCombat: () => void;
   onResolveCombat: () => void;
   onUseWarriorReroll: () => void;
   onDeclineWarriorReroll: () => void;
@@ -52,6 +57,7 @@ export function ActionPanel({
   onLeaveLoot,
   onExplore,
   onResolveRoom,
+  onStartOptionalCombat,
   onResolveCombat,
   onUseWarriorReroll,
   onDeclineWarriorReroll,
@@ -162,6 +168,27 @@ export function ActionPanel({
           <p className="text-sm text-stone-400">
             End the turn to finish the skipped round and recover afterward.
           </p>
+        </div>
+      ) : null}
+
+      {state.phase === 'optional_monster_combat' && combatMonster ? (
+        <div className="mt-4 grid gap-2">
+          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+            Monster Encounter
+          </h3>
+          <p className="text-sm text-stone-200">
+            {monsterName(combatMonster.id)} strength {combatMonster.strength}
+          </p>
+          <p className="text-sm text-stone-300">
+            The Thief may ignore this monster, move on, stay here, or start combat.
+          </p>
+          <button
+            className="w-fit bg-red-700 px-3 py-2 text-sm font-semibold text-white"
+            data-asset-id="ui_icon_attack"
+            onClick={onStartOptionalCombat}
+          >
+            Fight Monster
+          </button>
         </div>
       ) : null}
 

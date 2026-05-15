@@ -30,7 +30,11 @@ type HealingSpellSelectionState =
 function canUseHealingSpellNow(
   state: NonNullable<ReturnType<typeof useSetupStore.getState>['gameState']>,
 ): boolean {
-  return state.phase === 'turn_start' || state.phase === 'await_move';
+  return (
+    state.phase === 'turn_start' ||
+    state.phase === 'await_move' ||
+    state.phase === 'optional_monster_combat'
+  );
 }
 
 export function GameScreen() {
@@ -175,6 +179,9 @@ export function GameScreen() {
   };
   const handleResolveCombat = () => {
     dispatch({ type: 'resolveCombat' });
+  };
+  const handleStartOptionalCombat = () => {
+    dispatch({ type: 'startOptionalCombat' });
   };
   const handleUseWarriorReroll = () => {
     dispatch({ type: 'useWarriorReroll' });
@@ -334,6 +341,7 @@ export function GameScreen() {
             onMove={handleMove}
             onExplore={handleExplore}
             onResolveRoom={handleResolveRoom}
+            onStartOptionalCombat={handleStartOptionalCombat}
             onResolveCombat={handleResolveCombat}
             onUseWarriorReroll={handleUseWarriorReroll}
             onDeclineWarriorReroll={handleDeclineWarriorReroll}

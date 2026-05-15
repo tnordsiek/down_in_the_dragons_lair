@@ -32,10 +32,29 @@ export type UseWarriorRerollOptions = {
   dice?: [number, number];
 };
 
+export function startOptionalCombat(state: GameState): GameState {
+  if (state.phase !== 'optional_monster_combat' || !state.combat) {
+    throw new Error(
+      'Optional combat can only start during pending thief monster combat',
+    );
+  }
+
+  return {
+    ...state,
+    phase: 'combat',
+  };
+}
+
 export function resolveCombat(
   state: GameState,
   options: ResolveCombatOptions = {},
 ): GameState {
+  if (state.phase !== 'combat' && state.phase !== 'optional_post_combat') {
+    throw new Error(
+      'Combat can only resolve during the combat or optional post-combat phase',
+    );
+  }
+
   if (!state.combat) {
     throw new Error('No combat to resolve');
   }

@@ -9,6 +9,7 @@ import type {
   Token,
 } from '../core/types';
 import {
+  startOptionalCombat,
   declineWarlockSacrifice,
   declineWarriorReroll,
   resolveCombat,
@@ -22,6 +23,7 @@ import {
 } from '../movement/movement';
 import { moveActivePlayer } from '../movement/performMove';
 import { createNewGame } from '../setup/createGame';
+import { endTurn } from '../turns/turns';
 import { resolveRoomToken } from './rooms';
 import { swapWarlockPosition } from './warlock';
 
@@ -282,7 +284,7 @@ describe('hero_warlock abilities', () => {
 });
 
 describe('hero_thief abilities', () => {
-  it('wins combat draws and can ignore monsters while uncursed', () => {
+  it('wins combat draws and gets optional combat on monster tiles while uncursed', () => {
     const drawState = createCombatState('hero_thief', 'giant_rat');
     const resolvedDraw = resolveCombat(drawState, { dice: [2, 3] });
 
@@ -296,8 +298,45 @@ describe('hero_thief abilities', () => {
     });
     const moved = moveActivePlayer(moveState, { boardX: 0, boardY: -1 });
 
-    expect(moved.phase).toBe('await_move');
-    expect(moved.combat).toBeUndefined();
+    expect(moved.phase).toBe('optional_monster_combat');
+    expect(moved.combat).toEqual(
+      expect.objectContaining({ monsterId: 'giant_rat' }),
+    );
+  });
+
+  it('may start or skip combat after discovering a monster', () => {
+    const roomState = createRoomState('hero_thief', [
+      { id: 'giant_rat', kind: 'monster' },
+    ]);
+    const resolvedRoom = resolveRoomToken(roomState);
+
+    expect(resolvedRoom.phase).toBe('optional_monster_combat');
+    expect(startOptionalCombat(resolvedRoom).phase).toBe('combat');
+    expect(endTurn(resolvedRoom).phase).toBe('turn_start');
+  });
+
+  it('keeps optional combat available when starting the turn on a monster tile', () => {
+    const moved = moveActivePlayer(
+      createKnownMovementState('hero_thief', {
+        targetHasMonster: true,
+        targetConnects: true,
+      }),
+      { boardX: 0, boardY: -1 },
+    );
+    const nextTurn = endTurn({
+      ...moved,
+      players: moved.players.map((player, index) =>
+        index === 1
+          ? { ...player, skipNextTurn: true, hp: 0 }
+          : player,
+      ),
+    });
+    const thiefTurn = endTurn(nextTurn);
+
+    expect(thiefTurn.phase).toBe('optional_monster_combat');
+    expect(thiefTurn.combat).toEqual(
+      expect.objectContaining({ monsterId: 'giant_rat' }),
+    );
   });
 
   it('loses monster-ignore and draw-win abilities while cursed', () => {
@@ -328,6 +367,33 @@ describe('hero_thief abilities', () => {
     });
 
     expect(moved.phase).toBe('combat');
+  });
+
+  it('must still fight at turn start while cursed on a monster tile', () => {
+    const moved = moveActivePlayer(
+      withActivePlayer(
+        createKnownMovementState('hero_thief', {
+          targetHasMonster: true,
+          targetConnects: true,
+        }),
+        (player) => ({ ...player, isCursed: true }),
+      ),
+      { boardX: 0, boardY: -1 },
+    );
+    const nextTurn = endTurn({
+      ...moved,
+      players: moved.players.map((player, index) =>
+        index === 1
+          ? { ...player, skipNextTurn: true, hp: 0 }
+          : player,
+      ),
+    });
+    const thiefTurn = endTurn(nextTurn);
+
+    expect(thiefTurn.phase).toBe('combat');
+    expect(thiefTurn.combat).toEqual(
+      expect.objectContaining({ monsterId: 'giant_rat' }),
+    );
   });
 });
 

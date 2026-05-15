@@ -74,6 +74,22 @@ describe('room and chest rules', () => {
     );
   });
 
+  it('gives an uncursed thief optional combat when a monster token is drawn', () => {
+    const state = createRoomState(
+      {
+        id: 'giant_rat',
+        kind: 'monster',
+      },
+      { heroId: 'hero_thief' },
+    );
+    const resolved = resolveRoomToken(state);
+
+    expect(resolved.phase).toBe('optional_monster_combat');
+    expect(resolved.combat).toEqual(
+      expect.objectContaining({ monsterId: 'giant_rat' }),
+    );
+  });
+
   it('opens a chest only with a key, consuming the key and chest', () => {
     const state = createRoomState({
       id: 'treasure_chest',
@@ -107,10 +123,12 @@ describe('room and chest rules', () => {
 
 function createRoomState(
   token: GameState['tokenBag'][number],
-  overrides: Partial<Pick<GameState, 'remainingSteps'>> = {},
+  overrides: Partial<Pick<GameState, 'remainingSteps'>> & {
+    heroId?: 'hero_mage' | 'hero_thief';
+  } = {},
 ): GameState {
   const base = createNewGame({
-    humanHeroId: 'hero_mage',
+    humanHeroId: overrides.heroId ?? 'hero_mage',
     aiCount: 1,
     seed: `room-${token.id}`,
   });
@@ -126,10 +144,11 @@ function createRoomState(
 
   return {
     ...base,
+    activePlayerIndex: 0,
     phase: 'resolve_room_token',
     board: [...base.board, roomTile],
     players: base.players.map((player, index) =>
-      index === base.activePlayerIndex
+      index === 0
         ? { ...player, position: { boardX: 0, boardY: -1 } }
         : player,
     ),

@@ -1,5 +1,11 @@
 import { getTileAt } from '../core/board';
-import type { GameState, HeroId, Player } from '../core/types';
+import type {
+  CombatContext,
+  GameState,
+  HeroId,
+  MonsterId,
+  Player,
+} from '../core/types';
 
 export function hasActiveHeroAbility(player: Player, heroId: HeroId): boolean {
   return player.heroId === heroId && !player.isCursed;
@@ -34,4 +40,20 @@ export function hasMonsterOnActiveTile(state: GameState): boolean {
   const tile = getTileAt(state.board, activePlayer.position);
 
   return tile?.roomToken?.kind === 'monster';
+}
+
+export function getActiveTileMonsterCombat(state: GameState): CombatContext | undefined {
+  const activePlayer = getActivePlayer(state);
+  const tile = getTileAt(state.board, activePlayer.position);
+
+  if (tile?.roomToken?.kind !== 'monster') {
+    return undefined;
+  }
+
+  return {
+    playerId: activePlayer.id,
+    monsterId: tile.roomToken.id as MonsterId,
+    position: activePlayer.position,
+    enteredFrom: state.lastMoveFrom ?? activePlayer.position,
+  };
 }

@@ -1,4 +1,9 @@
 import type { GameState } from '../core/types';
+import { getTileAt } from '../core/board';
+import {
+  getActiveTileMonsterCombat,
+  hasActiveHeroAbility,
+} from '../rules/abilities';
 import { applyHealingIfOnHealingTile } from '../rules/healing';
 
 export function endTurn(state: GameState): GameState {
@@ -19,16 +24,34 @@ export function endTurn(state: GameState): GameState {
     (resolvedCurrentState.activePlayerIndex + 1) %
     resolvedCurrentState.players.length;
   const nextActivePlayer = resolvedCurrentState.players[activePlayerIndex];
+  const nextPlayerTile = getTileAt(
+    resolvedCurrentState.board,
+    nextActivePlayer.position,
+  );
+  const nextPlayerMonster = nextPlayerTile?.roomToken?.kind === 'monster';
+  const nextCombat = nextPlayerMonster
+    ? getActiveTileMonsterCombat({
+        ...resolvedCurrentState,
+        activePlayerIndex,
+      })
+    : undefined;
+  const nextPhase = nextActivePlayer.skipNextTurn
+    ? 'turn_skip'
+    : nextPlayerMonster
+      ? hasActiveHeroAbility(nextActivePlayer, 'hero_thief')
+        ? 'optional_monster_combat'
+        : 'combat'
+      : 'turn_start';
 
   return {
     ...resolvedCurrentState,
-    phase: nextActivePlayer.skipNextTurn ? 'turn_skip' : 'turn_start',
+    phase: nextPhase,
     activePlayerIndex,
     remainingSteps: nextActivePlayer.skipNextTurn ? 0 : 4,
     pendingTile: undefined,
     pendingLoot: undefined,
     lastMoveFrom: undefined,
-    combat: undefined,
+    combat: nextCombat,
   };
 }
 

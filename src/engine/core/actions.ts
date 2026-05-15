@@ -1,5 +1,6 @@
 import type { GameAction, GameState } from './types';
 import {
+  startOptionalCombat,
   declineWarlockSacrifice,
   declineWarriorReroll,
   resolveCombat,
@@ -54,6 +55,8 @@ export function applyGameAction(
       return placePendingTile(state, action.rotation);
     case 'resolveRoomToken':
       return resolveRoomToken(state);
+    case 'startOptionalCombat':
+      return startOptionalCombat(state);
     case 'resolveCombat':
       return resolveCombat(state, {
         dice: action.dice,

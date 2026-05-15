@@ -7,7 +7,11 @@ import type {
   PlacedTile,
   Token,
 } from '../core/types';
-import { getActivePlayer, hasActiveHeroAbility } from './abilities';
+import {
+  getActivePlayer,
+  getActiveTileMonsterCombat,
+  hasActiveHeroAbility,
+} from './abilities';
 
 export type ResolveRoomTokenOptions = {
   oracleChoiceIndex?: 0 | 1;
@@ -63,12 +67,22 @@ export function resolveRoomToken(
     }, roomEvent);
   }
 
+  const thiefMayIgnoreMonster = hasActiveHeroAbility(activePlayer, 'hero_thief');
+  const combat = createCombatContext(state, tile, token);
+
   return appendGameEvent({
     ...state,
-    phase: 'combat',
+    phase: thiefMayIgnoreMonster ? 'optional_monster_combat' : 'combat',
     board,
     tokenBag: remainingTokenBag,
-    combat: createCombatContext(state, tile, token),
+    combat:
+      thiefMayIgnoreMonster
+        ? getActiveTileMonsterCombat({
+            ...state,
+            board,
+            tokenBag: remainingTokenBag,
+          }) ?? combat
+        : combat,
   }, roomEvent);
 }
 

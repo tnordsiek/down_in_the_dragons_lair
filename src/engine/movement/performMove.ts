@@ -1,6 +1,9 @@
 import { getTileAt, samePosition } from '../core/board';
 import type { BoardPosition, GameState, MonsterId } from '../core/types';
-import { hasActiveHeroAbility } from '../rules/abilities';
+import {
+  getActiveTileMonsterCombat,
+  hasActiveHeroAbility,
+} from '../rules/abilities';
 import { getLegalKnownMoves } from './movement';
 
 export function moveActivePlayer(
@@ -38,12 +41,22 @@ export function moveActivePlayer(
       ? { ...player, position: targetPosition }
       : player,
   );
+  const optionalCombat = canIgnoreMonster
+    ? getActiveTileMonsterCombat({
+        ...state,
+        players,
+        activePlayerIndex: state.activePlayerIndex,
+        lastMoveFrom: activePlayer.position,
+      })
+    : undefined;
 
   return {
     ...state,
     phase:
       targetMonster && !canIgnoreMonster
         ? 'combat'
+        : targetMonster && canIgnoreMonster
+          ? 'optional_monster_combat'
         : remainingSteps > 0
           ? 'await_move'
           : 'turn_end',
@@ -58,6 +71,6 @@ export function moveActivePlayer(
             position: targetPosition,
             enteredFrom: activePlayer.position,
           }
-        : state.combat,
+        : optionalCombat,
   };
 }

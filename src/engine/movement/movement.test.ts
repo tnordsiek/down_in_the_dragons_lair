@@ -110,6 +110,39 @@ describe('movement rules', () => {
       'adjacent',
     ]);
   });
+
+  it('keeps move and exploration options available during optional monster combat', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_thief',
+      aiCount: 1,
+      seed: 'optional-monster-move-seed',
+    });
+
+    const optionalCombatState: GameState = {
+      ...state,
+      phase: 'optional_monster_combat',
+      remainingSteps: 2,
+      board: [
+        {
+          ...state.board[0],
+          roomToken: { id: 'giant_rat', kind: 'monster' },
+        },
+      ],
+      combat: {
+        playerId: state.players[0].id,
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: 0 },
+      },
+    };
+
+    expect(getLegalExplorationDirections(optionalCombatState)).toEqual([
+      'A',
+      'B',
+      'C',
+      'D',
+    ]);
+  });
 });
 
 function createPortalState(overrides: Partial<GameState> = {}): GameState {
