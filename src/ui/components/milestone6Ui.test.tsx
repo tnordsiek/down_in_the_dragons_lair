@@ -34,6 +34,7 @@ const noopActions = {
   onMove: vi.fn(),
   onExplore: vi.fn(),
   onResolveRoom: vi.fn(),
+  onStartOptionalCombat: vi.fn(),
   onResolveCombat: vi.fn(),
   onUseWarriorReroll: vi.fn(),
   onDeclineWarriorReroll: vi.fn(),
@@ -2691,6 +2692,7 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
         onLeaveLoot={vi.fn()}
         onMove={vi.fn()}
         onOpenChest={vi.fn()}
+        onStartOptionalCombat={vi.fn()}
         onResolveCombat={vi.fn()}
         onUseWarriorReroll={vi.fn()}
         onDeclineWarriorReroll={vi.fn()}

@@ -21,7 +21,7 @@ describe('App', () => {
       constructor(public src = '') {}
     }
 
-    window.Audio = MockAudio as typeof Audio;
+    window.Audio = MockAudio as unknown as typeof Audio;
   });
 
   afterAll(() => {
