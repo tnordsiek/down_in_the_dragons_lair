@@ -68,7 +68,11 @@ describe('asset manifest runtime mapping', () => {
     'sfx_combat_draw',
     'sfx_combat_loss',
     'sfx_heal',
+    'sfx_teleport',
     'sfx_game_over',
+    'music_menu_loop',
+    'music_game_loop',
+    'music_end_screen',
   ];
 
   it('resolves visual and audio assets by stable assetId', () => {
@@ -95,6 +99,9 @@ describe('asset manifest runtime mapping', () => {
     );
     expect(getAssetUrl('ui_logo_header')).toBe('/assets/ui/ui_logo_header.png');
     expect(getAssetUrl('ui_dice_06')).toBe('/assets/ui/ui_dice_06.png');
+    expect(getAssetUrl('music_game_loop')).toBe(
+      '/assets/sounds/music_game_loop.ogg',
+    );
   });
 
   it('keeps asset IDs unique', () => {

@@ -12,6 +12,7 @@ import type {
 } from '../../engine/core/types';
 import { useSetupStore } from '../../state/setupStore';
 import { ActionPanel } from '../components/ActionPanel';
+import { AudioToggleGroup } from '../components/AudioToggleGroup';
 import {
   BoardView,
   getBoardSelectableHealingPositions,
@@ -265,6 +266,7 @@ export function GameScreen() {
           <header className="grid h-[120px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 border-b border-stone-800 pb-2">
             <div className="flex justify-start">
               <div className="flex items-center gap-2">
+                <AudioToggleGroup />
                 <button
                   className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
                   onClick={() => focusMap({ boardX: 0, boardY: 0 }, true)}

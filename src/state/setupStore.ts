@@ -12,18 +12,33 @@ import {
   loadPersistedGameState,
   savePersistedGameState,
 } from './persistence';
+import {
+  loadAudioSettings,
+  saveAudioSettings,
+} from './audioSettings';
+
+export type PendingAudioCue = {
+  id: number;
+  assetId: string;
+};
 
 type SetupState = {
   selectedHeroId: HeroId;
   aiCount: number;
   seed: string;
+  musicEnabled: boolean;
+  sfxEnabled: boolean;
   gameState?: GameState;
   hasSavedGame: boolean;
   lastError?: string;
   persistenceError?: string;
+  pendingAudioCues: PendingAudioCue[];
   setSelectedHeroId: (heroId: HeroId) => void;
   setAiCount: (aiCount: number) => void;
   setSeed: (seed: string) => void;
+  toggleMusicEnabled: () => void;
+  toggleSfxEnabled: () => void;
+  clearPendingAudioCues: () => void;
   startGame: () => void;
   resumeSavedGame: () => void;
   dispatch: (action: GameAction) => void;
@@ -36,17 +51,44 @@ const initialGameState =
   persistedGameState?.ok === true ? persistedGameState.state : undefined;
 const initialPersistenceError =
   persistedGameState?.ok === false ? persistedGameState.error : undefined;
+const initialAudioSettings = loadAudioSettings();
 
 export const useSetupStore = create<SetupState>((set) => ({
   selectedHeroId: 'hero_mage',
   aiCount: 1,
   seed: 'v1-local-seed',
+  musicEnabled: initialAudioSettings.musicEnabled,
+  sfxEnabled: initialAudioSettings.sfxEnabled,
   gameState: initialGameState,
   hasSavedGame: initialGameState !== undefined,
   persistenceError: initialPersistenceError,
+  pendingAudioCues: [],
   setSelectedHeroId: (selectedHeroId) => set({ selectedHeroId }),
   setAiCount: (aiCount) => set({ aiCount }),
   setSeed: (seed) => set({ seed }),
+  toggleMusicEnabled: () =>
+    set((state) => {
+      const musicEnabled = !state.musicEnabled;
+
+      saveAudioSettings({
+        musicEnabled,
+        sfxEnabled: state.sfxEnabled,
+      });
+
+      return { musicEnabled };
+    }),
+  toggleSfxEnabled: () =>
+    set((state) => {
+      const sfxEnabled = !state.sfxEnabled;
+
+      saveAudioSettings({
+        musicEnabled: state.musicEnabled,
+        sfxEnabled,
+      });
+
+      return { sfxEnabled };
+    }),
+  clearPendingAudioCues: () => set({ pendingAudioCues: [] }),
   startGame: () =>
     set((state) => {
       const gameState = applyGameAction(undefined, {
@@ -62,6 +104,7 @@ export const useSetupStore = create<SetupState>((set) => ({
         hasSavedGame: true,
         lastError: undefined,
         persistenceError: undefined,
+        pendingAudioCues: [],
       };
     }),
   resumeSavedGame: () =>
@@ -91,6 +134,7 @@ export const useSetupStore = create<SetupState>((set) => ({
         hasSavedGame: true,
         lastError: undefined,
         persistenceError: undefined,
+        pendingAudioCues: [],
       };
     }),
   dispatch: (action) =>
@@ -98,6 +142,11 @@ export const useSetupStore = create<SetupState>((set) => ({
       try {
         const previousGameState = state.gameState;
         const nextState = applyGameAction(previousGameState, action);
+        const pendingAudioCues = collectPendingAudioCues(
+          action,
+          previousGameState,
+          nextState,
+        );
         const actingPlayer = state.gameState?.players[state.gameState.activePlayerIndex];
         const gameState = appendUiEvent(
           nextState,
@@ -113,6 +162,7 @@ export const useSetupStore = create<SetupState>((set) => ({
           hasSavedGame: true,
           lastError: undefined,
           persistenceError: undefined,
+          pendingAudioCues,
         };
       } catch (error) {
         return {
@@ -125,6 +175,7 @@ export const useSetupStore = create<SetupState>((set) => ({
       gameState: undefined,
       hasSavedGame: loadPersistedGameState()?.ok === true,
       lastError: undefined,
+      pendingAudioCues: [],
     })),
   clearSavedGame: () =>
     set(() => {
@@ -135,6 +186,7 @@ export const useSetupStore = create<SetupState>((set) => ({
         hasSavedGame: false,
         lastError: undefined,
         persistenceError: undefined,
+        pendingAudioCues: [],
       };
     }),
 }));
@@ -219,4 +271,94 @@ export function getUiLegalActions(state: GameState) {
     knownMoves: getLegalKnownMoves(state),
     explorationDirections: getLegalExplorationDirections(state),
   };
+}
+
+let nextPendingAudioCueId = 0;
+
+function collectPendingAudioCues(
+  action: GameAction,
+  previousState: GameState | undefined,
+  nextState: GameState,
+): PendingAudioCue[] {
+  const assetIds = new Set<string>();
+
+  switch (action.type) {
+    case 'movePlayer': {
+      const move = previousState
+        ? getLegalKnownMoves(previousState).find(
+            (candidate) =>
+              candidate.target.boardX === action.target.boardX &&
+              candidate.target.boardY === action.target.boardY,
+          )
+        : undefined;
+
+      if (move?.kind === 'teleport') {
+        assetIds.add('sfx_teleport');
+      }
+      break;
+    }
+    case 'placePendingTile':
+      assetIds.add('sfx_tile_place');
+      break;
+    case 'resolveCombat':
+    case 'useWarriorReroll':
+    case 'resolveCombatWithoutFlameSpells':
+    case 'resolveCombatWithFlameSpells':
+      assetIds.add('sfx_combat_roll');
+      break;
+    case 'openChest':
+      assetIds.add('sfx_chest_open');
+      break;
+    case 'useHealingSpell':
+      assetIds.add('sfx_heal');
+      break;
+    default:
+      break;
+  }
+
+  if (previousState) {
+    const nextEvents = nextState.eventLog.slice(previousState.eventLog.length);
+
+    for (const event of nextEvents) {
+      if (event.type === 'room_resolved' && event.room?.tokenKind === 'monster') {
+        assetIds.add('sfx_monster_reveal');
+      }
+
+      if (event.type === 'combat_resolved' && event.combat) {
+        assetIds.add(
+          event.combat.outcome === 'victory'
+            ? 'sfx_combat_win'
+            : event.combat.outcome === 'draw'
+              ? 'sfx_combat_draw'
+              : 'sfx_combat_loss',
+        );
+      }
+    }
+
+    if (
+      action.type !== 'useHealingSpell' &&
+      nextState.players.some((player, index) => {
+        const previousPlayer = previousState.players[index];
+
+        return (
+          player.hp > previousPlayer.hp ||
+          (!player.isCursed && previousPlayer.isCursed)
+        );
+      })
+    ) {
+      assetIds.add('sfx_heal');
+    }
+
+    if (
+      previousState.phase !== 'game_over' &&
+      nextState.phase === 'game_over'
+    ) {
+      assetIds.add('sfx_game_over');
+    }
+  }
+
+  return Array.from(assetIds, (assetId) => ({
+    id: nextPendingAudioCueId++,
+    assetId,
+  }));
 }

@@ -1,14 +1,41 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { useSetupStore } from '../state/setupStore';
 import { persistedGameStateKey } from '../state/persistence';
 import { App } from './App';
 
 describe('App', () => {
+  const originalAudio = window.Audio;
+
+  beforeAll(() => {
+    class MockAudio {
+      currentTime = 0;
+
+      loop = false;
+
+      pause = vi.fn();
+
+      play = vi.fn(() => Promise.resolve());
+
+      constructor(public src = '') {}
+    }
+
+    window.Audio = MockAudio as typeof Audio;
+  });
+
+  afterAll(() => {
+    window.Audio = originalAudio;
+  });
+
   afterEach(() => {
     act(() => {
       useSetupStore.getState().clearSavedGame();
+      useSetupStore.setState({
+        musicEnabled: true,
+        sfxEnabled: true,
+        pendingAudioCues: [],
+      });
     });
     window.localStorage.clear();
   });
@@ -35,6 +62,10 @@ describe('App', () => {
         name: 'Wortmarke oder kompaktes Logo fuer den Startscreen',
       }).length,
     ).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'Music on' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Audio Effects on' }),
+    ).toBeInTheDocument();
     expect(screen.getByText('v1.1')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Imprint' })).toBeInTheDocument();
   });
@@ -55,6 +86,10 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Imprint' })).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Center Map' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Music on' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Audio Effects on' }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('img', { name: "Down in the Dragon's Lair" }),
@@ -97,6 +132,8 @@ describe('App', () => {
       .closest('header');
     const centerMapButton = screen.getByRole('button', { name: 'Center Map' });
     const newGameButton = screen.getByRole('button', { name: 'New Game' });
+    const musicButton = screen.getByRole('button', { name: 'Music on' });
+    const sfxButton = screen.getByRole('button', { name: 'Audio Effects on' });
     const leftHeaderCell = header?.firstElementChild;
     const centerHeaderCell = header?.children[1];
     const rightHeaderCell = header?.children[2];
@@ -115,6 +152,8 @@ describe('App', () => {
       'lg:overflow-y-auto',
     );
     expect(header).toHaveClass('h-[120px]', 'pb-2');
+    expect(leftHeaderCell).toContainElement(musicButton);
+    expect(leftHeaderCell).toContainElement(sfxButton);
     expect(leftHeaderCell).toContainElement(centerMapButton);
     expect(leftHeaderCell).toContainElement(newGameButton);
     expect(centerHeaderCell).toContainElement(
@@ -185,6 +224,29 @@ describe('App', () => {
 
     expect(
       screen.getByText('Unsupported game state schema: 999'),
+    ).toBeInTheDocument();
+  });
+
+  it('keeps audio toggle state consistent between start and game screens', () => {
+    render(<App />);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Music on' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Audio Effects on' }));
+    });
+
+    expect(screen.getByRole('button', { name: 'Music off' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Audio Effects off' }),
+    ).toBeInTheDocument();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
+    });
+
+    expect(screen.getByRole('button', { name: 'Music off' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Audio Effects off' }),
     ).toBeInTheDocument();
   });
 });

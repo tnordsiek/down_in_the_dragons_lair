@@ -2,6 +2,7 @@ import { getAssetUrl, useAsset } from '../../data/assets';
 import { heroDefinitions, heroIds } from '../../data/heroes';
 import type { HeroId } from '../../engine/core/types';
 import { useSetupStore } from '../../state/setupStore';
+import { AudioToggleGroup } from '../components/AudioToggleGroup';
 import { FooterMeta } from '../components/FooterMeta';
 
 export function StartScreen() {
@@ -37,7 +38,10 @@ export function StartScreen() {
               />
             ) : null}
           </div>
-          <p className="text-sm text-stone-300">Local browser game</p>
+          <div className="flex items-center gap-4">
+            <AudioToggleGroup />
+            <p className="text-sm text-stone-300">Local browser game</p>
+          </div>
         </header>
 
         <div className="grid flex-1 gap-8 py-12 md:grid-cols-[1.2fr_0.8fr] md:items-center">
