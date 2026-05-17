@@ -2981,6 +2981,7 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
         onOpenChest={vi.fn()}
         onStartOptionalCombat={vi.fn()}
         onResolveCombat={vi.fn()}
+        onUseSwordswomanReroll={vi.fn()}
         onUseWarriorReroll={vi.fn()}
         onDeclineWarriorReroll={vi.fn()}
         onUseWarlockSacrifice={vi.fn()}
