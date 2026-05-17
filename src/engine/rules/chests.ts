@@ -1,6 +1,7 @@
 import { treasurePointValues } from '../../data/rewards';
 import { getTileAt, samePosition } from '../core/board';
 import type { GameState } from '../core/types';
+import { getContinuationPhaseAfterAction } from '../turns/continuation';
 
 export function openChest(state: GameState): GameState {
   const activePlayer = state.players[state.activePlayerIndex];
@@ -14,9 +15,8 @@ export function openChest(state: GameState): GameState {
     throw new Error('A key is required to open a treasure chest');
   }
 
-  return {
+  const updatedState: GameState = {
     ...state,
-    phase: 'turn_end',
     players: state.players.map((player, index) =>
       index === state.activePlayerIndex
         ? {
@@ -32,5 +32,13 @@ export function openChest(state: GameState): GameState {
         ? { ...boardTile, roomToken: undefined }
         : boardTile,
     ),
+  };
+  const phase = getContinuationPhaseAfterAction(updatedState);
+
+  return {
+    ...updatedState,
+    phase,
+    turnContinuationReason:
+      phase === 'await_move' ? updatedState.turnContinuationReason : undefined,
   };
 }

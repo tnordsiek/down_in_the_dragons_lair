@@ -342,7 +342,11 @@ If the first result is already a victory, no warrior reroll decision is offered.
 The swordsman archetype rolls one or more 1s.
 
 ### Rule
-Each die showing 1 may be rerolled until it shows a value greater than 1.
+Each die showing 1 must be rerolled until it shows a value greater than 1.
+
+The reroll is resolved as an explicit player step. All dice currently showing 1 are rerolled together, while dice not showing 1 keep their current values.
+
+If one or more rerolled dice show 1 again, the same reroll step repeats until no die shows 1.
 
 The final dice result after resolving this ability is used for combat and for checking whether a 6 was rolled.
 
@@ -356,7 +360,13 @@ The swordsman archetype rolls at least one 6 in combat.
 ### Rule
 If not cursed, the swordsman may continue his turn after combat instead of ending it, provided he has steps remaining or has a legal follow-up action.
 
-If the combat ended in draw or defeat, he may attack the same monster again instead.
+If the combat ended in draw or defeat, he retreats like any other hero to the tile from which he entered the monster tile.
+
+If that combat included at least one final 6, the continuation still applies after the retreat. The swordsman may then move again from the retreat tile if steps remain, or use any otherwise legal follow-up action.
+
+If the combat result was a defeat and the swordsman reaches 0 health from that defeat, the turn ends immediately despite the rolled 6.
+
+A later attack against that same monster requires entering the monster tile again; retreat alone does not expose an immediate repeat attack.
 
 ---
 

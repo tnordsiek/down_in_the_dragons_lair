@@ -258,6 +258,34 @@ describe('AI legal actions', () => {
     ]);
   });
 
+  it('offers only the swordswoman reroll action during the swordswoman reroll step', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'swordswoman-reroll-actions-seed',
+    });
+
+    expect(
+      getLegalAiActions({
+        ...state,
+        phase: 'combat_swordsman_reroll',
+        activePlayerIndex: 0,
+        players: state.players.map((player, index) =>
+          index === 0 ? { ...player, heroId: 'hero_swordsman' } : player,
+        ),
+        combat: {
+          playerId: state.players[0].id,
+          monsterId: 'giant_rat',
+          position: { boardX: 0, boardY: 0 },
+          enteredFrom: { boardX: 0, boardY: -1 },
+          initialRolledDice: [1, 4],
+          rolledDice: [1, 4],
+          swordsmanRerollCount: 0,
+        },
+      }),
+    ).toEqual([{ type: 'useSwordswomanReroll' }]);
+  });
+
   it('offers only warlock sacrifice choices during the warlock sacrifice step', () => {
     const state = createNewGame({
       humanHeroId: 'hero_mage',
@@ -305,6 +333,51 @@ describe('AI legal actions', () => {
         expect.objectContaining({ type: 'useHealingSpell' }),
       ]),
     );
+  });
+
+  it('keeps only non-movement follow-up actions legal during continued swordsman turns at zero steps', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_swordsman',
+      aiCount: 1,
+      seed: 'swordsman-follow-up-actions-seed',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'await_move',
+      activePlayerIndex: 0,
+      remainingSteps: 0,
+      turnContinuationReason: 'swordsman_on_six',
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              inventory: {
+                ...player.inventory,
+                spells: [{ type: 'spell', spellKind: 'healing' }],
+              },
+            }
+          : player,
+      ),
+      board: [
+        {
+          ...base.board[0],
+          looseItems: [{ type: 'weapon', bonus: 1 }],
+        },
+      ],
+    };
+    const actions = getLegalAiActions(state);
+
+    expect(actions).toEqual(
+      expect.arrayContaining([
+        { type: 'beginLoot' },
+        expect.objectContaining({ type: 'useHealingSpell' }),
+        { type: 'endTurn' },
+      ]),
+    );
+    expect(actions.some((action) => action.type === 'movePlayer')).toBe(false);
+    expect(
+      actions.some((action) => action.type === 'declareExplorationDirection'),
+    ).toBe(false);
   });
 
   it('allows only end turn during a skipped unconscious turn', () => {

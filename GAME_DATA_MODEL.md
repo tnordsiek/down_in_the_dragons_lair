@@ -229,9 +229,13 @@ Die Helden bekommen in der eigenen IP neue Namen. Technisch werden zunächst fun
 - ist sie verflucht und steht auf einem Monsterfeld, muss sie zu Beginn des nächsten Zugs kämpfen
 
 ### hero_swordsman
-- geworfene Einsen dürfen wiederholt werden, bis kein Ergebnis 1 mehr zeigt
-- wenn mindestens eine 6 fällt, darf der Zug nach gewonnenem Kampf fortgesetzt werden
-- bei Unentschieden oder Niederlage darf dasselbe Monster erneut angegriffen werden
+- nach einem Kampfwurf müssen alle Würfel mit einer 1 vom Spieler erneut geworfen werden, bis kein Ergebnis 1 mehr zeigt
+- nur Würfel mit einer 1 werden erneut geworfen; alle anderen Würfel bleiben unverändert
+- wenn im finalen Würfelergebnis eines Kampfes mindestens eine 6 fällt, darf der Zug nach dem Kampf mit verbleibenden Bewegungspunkten und legalen Folgeaktionen fortgesetzt werden
+- fällt sie bei einer Niederlage dabei auf 0 Lebenspunkte, endet der Zug trotzdem sofort
+- diese Prüfung erfolgt bei jedem Kampf erneut; sie kann also in einem Zug mehrfach hintereinander auslösen
+- bei Unentschieden oder Niederlage weicht sie wie alle anderen Helden auf das Feld zurück, von dem sie den Kampf betreten hat
+- ein erneuter Kampf gegen dasselbe Monster ist nur durch späteres erneutes Betreten des Monsterfelds möglich
 
 ### hero_oracle
 - +1 im Kampf, wenn direkt nach dem ersten Schritt gekämpft wird

@@ -152,6 +152,7 @@ export type GamePhase =
   | 'resolve_room_token'
   | 'optional_monster_combat'
   | 'combat'
+  | 'combat_swordsman_reroll'
   | 'combat_warrior_reroll'
   | 'combat_warlock_sacrifice'
   | 'combat_flame_spells'
@@ -177,6 +178,7 @@ export interface CombatContext {
   enteredFrom: BoardPosition;
   source?: 'movement' | 'warlock_swap';
   initialRolledDice?: [number, number];
+  swordsmanRerollCount?: number;
   initialBaseOutcome?: 'draw' | 'defeat';
   rolledDice?: [number, number];
   pendingBaseOutcome?: 'draw' | 'defeat';
@@ -251,6 +253,8 @@ export interface VictoryState {
   winnerPlayerIds: string[];
 }
 
+export type TurnContinuationReason = 'swordsman_on_six';
+
 export interface SerializedRngState {
   seed: string;
   state: number;
@@ -269,6 +273,7 @@ export interface GameState {
   lastMoveFrom?: BoardPosition;
   combat?: CombatContext;
   pendingLoot?: PendingLoot;
+  turnContinuationReason?: TurnContinuationReason;
   eventLog: GameEvent[];
   victory?: VictoryState;
   rng: SerializedRngState;
@@ -313,7 +318,11 @@ export type ResolveCombatAction = {
   type: 'resolveCombat';
   dice?: [number, number];
   curseTargetPlayerId?: string;
-  swordsmanOneRerolls?: number[];
+};
+
+export type UseSwordswomanRerollAction = {
+  type: 'useSwordswomanReroll';
+  dice?: [number, number];
 };
 
 export type UseWarriorRerollAction = {
@@ -389,6 +398,7 @@ export type GameAction =
   | ResolveRoomTokenAction
   | StartOptionalCombatAction
   | ResolveCombatAction
+  | UseSwordswomanRerollAction
   | UseWarriorRerollAction
   | DeclineWarriorRerollAction
   | UseWarlockSacrificeAction

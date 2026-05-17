@@ -6,7 +6,11 @@ import type {
   GameState,
   TileSide,
 } from '../../engine/core/types';
-import { getCombatFlameSpellChoices } from '../../engine/combat/combat';
+import {
+  calculateCombatTotal,
+  getCombatFlameSpellChoices,
+  getCombatOutcomeForPlayer,
+} from '../../engine/combat/combat';
 import { canStoreItem } from '../../engine/rules/inventory';
 import { getUiLegalActions } from '../../state/setupStore';
 import { heroName, monsterName, sideLabels } from '../labels';
@@ -34,6 +38,7 @@ type ActionPanelProps = {
   onResolveRoom: () => void;
   onStartOptionalCombat: () => void;
   onResolveCombat: () => void;
+  onUseSwordswomanReroll: () => void;
   onUseWarriorReroll: () => void;
   onDeclineWarriorReroll: () => void;
   onUseWarlockSacrifice: () => void;
@@ -59,6 +64,7 @@ export function ActionPanel({
   onResolveRoom,
   onStartOptionalCombat,
   onResolveCombat,
+  onUseSwordswomanReroll,
   onUseWarriorReroll,
   onDeclineWarriorReroll,
   onUseWarlockSacrifice,
@@ -108,6 +114,20 @@ export function ActionPanel({
   const initialCombatOutcome = state.combat?.initialBaseOutcome;
   const pendingCombatDice = state.combat?.rolledDice;
   const pendingCombatOutcome = state.combat?.pendingBaseOutcome;
+  const pendingSwordswomanTotal =
+    state.phase === 'combat_swordsman_reroll' &&
+    combatMonster &&
+    pendingCombatDice
+      ? calculateCombatTotal(activePlayer, pendingCombatDice)
+      : undefined;
+  const pendingSwordswomanOutcome =
+    pendingSwordswomanTotal !== undefined && combatMonster
+      ? getCombatOutcomeForPlayer(
+          activePlayer,
+          pendingSwordswomanTotal,
+          combatMonster.strength,
+        )
+      : undefined;
   const hasHealingSpell = activePlayer.inventory.spells.some(
     (spell) => spell.spellKind === 'healing',
   );
@@ -244,6 +264,39 @@ export function ActionPanel({
               Keep this result
             </button>
           </div>
+        </div>
+      ) : null}
+
+      {state.phase === 'combat_swordsman_reroll' &&
+      combatMonster &&
+      pendingCombatDice ? (
+        <div className="mt-4 grid gap-2">
+          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+            Swordswoman Reroll
+          </h3>
+          <p className="text-sm text-stone-200">
+            {monsterName(combatMonster.id)} strength {combatMonster.strength}
+          </p>
+          <p className="font-mono text-xs text-stone-300">
+            Current dice {pendingCombatDice[0]} + {pendingCombatDice[1]}
+            {pendingCombatDice.includes(1)
+              ? ' · reroll every die showing 1'
+              : ''}
+          </p>
+          {pendingSwordswomanTotal !== undefined &&
+          pendingSwordswomanOutcome ? (
+            <p className="font-mono text-xs text-stone-300">
+              Current result {pendingCombatDice[0]} + {pendingCombatDice[1]} +
+              weapons {weaponBonus} = {pendingSwordswomanTotal}
+              {` and currently faces ${pendingSwordswomanOutcome}`}
+            </p>
+          ) : null}
+          <button
+            className="bg-red-700 px-3 py-2 text-sm font-semibold text-white"
+            onClick={onUseSwordswomanReroll}
+          >
+            Reroll 1s
+          </button>
         </div>
       ) : null}
 

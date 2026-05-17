@@ -235,6 +235,7 @@ function actionMessage(
     case 'startOptionalCombat':
       return 'Started combat';
     case 'resolveCombat':
+    case 'useSwordswomanReroll':
     case 'useWarriorReroll':
     case 'declineWarriorReroll':
     case 'useWarlockSacrifice':
@@ -301,6 +302,7 @@ function collectPendingAudioCues(
       assetIds.add('sfx_tile_place');
       break;
     case 'resolveCombat':
+    case 'useSwordswomanReroll':
     case 'useWarriorReroll':
     case 'resolveCombatWithoutFlameSpells':
     case 'resolveCombatWithFlameSpells':

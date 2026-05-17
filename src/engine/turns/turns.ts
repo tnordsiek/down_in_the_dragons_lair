@@ -52,6 +52,7 @@ export function endTurn(state: GameState): GameState {
     pendingLoot: undefined,
     lastMoveFrom: undefined,
     combat: nextCombat,
+    turnContinuationReason: undefined,
   };
 }
 

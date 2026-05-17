@@ -243,7 +243,7 @@ function getHeroAbilityInfo(heroId: HeroId): string {
     case 'hero_thief':
       return 'Combat draws count as wins. The Thief may ignore monsters while moving.';
     case 'hero_swordsman':
-      return 'Rerolls combat dice that show 1. A rolled 6 after victory can allow continued movement.';
+      return 'After a combat roll, rerolls every die showing 1 until none remain. Each combat with a final rolled 6 keeps the turn open for remaining movement and follow-up actions.';
     case 'hero_oracle':
       return 'Draws two room tokens and chooses one. Gains +1 combat strength before the first step is spent.';
   }

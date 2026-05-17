@@ -11,6 +11,7 @@ import {
   getCombatOutcome,
   resolveCombat,
   useWarlockSacrifice,
+  useSwordswomanReroll,
   useWarriorReroll,
 } from './combat';
 
@@ -297,6 +298,141 @@ describe('combat resolution', () => {
     expect(resolved.phase).toBe('turn_end');
   });
 
+  it('retreats the swordsman on defeat instead of keeping combat open', () => {
+    const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
+      ...player,
+      heroId: 'hero_swordsman',
+    }));
+    const resolved = resolveCombat(state, { dice: [2, 2] });
+
+    expect(resolved.phase).toBe('turn_end');
+    expect(resolved.combat).toBeUndefined();
+    expect(resolved.players[resolved.activePlayerIndex]).toEqual(
+      expect.objectContaining({
+        hp: 4,
+        position: { boardX: 1, boardY: 0 },
+      }),
+    );
+    expect(resolved.eventLog.at(-1)?.combat).toEqual(
+      expect.objectContaining({
+        outcome: 'defeat',
+        retreatPosition: { boardX: 1, boardY: 0 },
+      }),
+    );
+  });
+
+  it('pauses for swordswoman rerolls and rerolls only dice showing 1', () => {
+    const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
+      ...player,
+      heroId: 'hero_swordsman',
+    }));
+    const pending = resolveCombat(state, { dice: [1, 4] });
+    const resolved = useSwordswomanReroll(pending, { dice: [6, 2] });
+
+    expect(pending.phase).toBe('combat_swordsman_reroll');
+    expect(pending.combat).toEqual(
+      expect.objectContaining({
+        initialRolledDice: [1, 4],
+        rolledDice: [1, 4],
+      }),
+    );
+    expect(resolved.eventLog.at(-1)?.combat).toEqual(
+      expect.objectContaining({
+        dice: [6, 4],
+      }),
+    );
+  });
+
+  it('repeats the swordswoman reroll step while any die still shows 1', () => {
+    const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
+      ...player,
+      heroId: 'hero_swordsman',
+    }));
+    const pending = resolveCombat(state, { dice: [1, 1] });
+    const rerolledOnce = useSwordswomanReroll(pending, { dice: [1, 5] });
+    const resolved = useSwordswomanReroll(rerolledOnce, { dice: [6, 2] });
+
+    expect(rerolledOnce.phase).toBe('combat_swordsman_reroll');
+    expect(rerolledOnce.combat?.rolledDice).toEqual([1, 5]);
+    expect(resolved.eventLog.at(-1)?.combat).toEqual(
+      expect.objectContaining({
+        dice: [6, 5],
+      }),
+    );
+  });
+
+  it('keeps the turn open after a drawn combat with a six once the swordswoman retreats', () => {
+    const state = withActivePlayer(
+      createCombatState('skeleton_turnkey'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_swordsman',
+      }),
+    );
+    const pending = resolveCombat(state, { dice: [6, 1] });
+    const resolved = useSwordswomanReroll(pending, { dice: [2, 2] });
+
+    expect(resolved.phase).toBe('await_move');
+    expect(resolved.turnContinuationReason).toBe('swordsman_on_six');
+    expect(resolved.players[resolved.activePlayerIndex]?.position).toEqual({
+      boardX: 1,
+      boardY: 0,
+    });
+    expect(resolved.eventLog.at(-1)?.combat).toEqual(
+      expect.objectContaining({
+        outcome: 'draw',
+        dice: [6, 2],
+        retreatPosition: { boardX: 1, boardY: 0 },
+      }),
+    );
+  });
+
+  it('keeps the turn open after a defeated combat with a six when the swordswoman still has HP left', () => {
+    const state = withActivePlayer(createCombatState('dragon'), (player) => ({
+      ...player,
+      heroId: 'hero_swordsman',
+    }));
+    const pending = resolveCombat(state, { dice: [6, 1] });
+    const resolved = useSwordswomanReroll(pending, { dice: [2, 2] });
+
+    expect(resolved.phase).toBe('await_move');
+    expect(resolved.turnContinuationReason).toBe('swordsman_on_six');
+    expect(resolved.players[resolved.activePlayerIndex]).toEqual(
+      expect.objectContaining({
+        hp: 4,
+        skipNextTurn: false,
+        position: { boardX: 1, boardY: 0 },
+      }),
+    );
+    expect(resolved.eventLog.at(-1)?.combat).toEqual(
+      expect.objectContaining({
+        outcome: 'defeat',
+        dice: [6, 2],
+        retreatPosition: { boardX: 1, boardY: 0 },
+      }),
+    );
+  });
+
+  it('ends the turn after a defeated combat with a six when the swordswoman drops to 0 HP', () => {
+    const state = withActivePlayer(createCombatState('dragon'), (player) => ({
+      ...player,
+      heroId: 'hero_swordsman',
+      hp: 1,
+    }));
+    const pending = resolveCombat(state, { dice: [6, 1] });
+    const resolved = useSwordswomanReroll(pending, { dice: [2, 2] });
+
+    expect(resolved.phase).toBe('turn_end');
+    expect(resolved.turnContinuationReason).toBeUndefined();
+    expect(resolved.players[resolved.activePlayerIndex]).toEqual(
+      expect.objectContaining({
+        hp: 0,
+        skipNextTurn: true,
+        position: { boardX: 1, boardY: 0 },
+      }),
+    );
+  });
+
   it('marks the player unconscious when losing the last HP', () => {
     const state = withActivePlayer(
       createCombatState('giant_rat'),
@@ -563,6 +699,86 @@ describe('combat resolution', () => {
       state.players[otherPlayerIndex].id,
     ]);
   });
+
+  it('keeps the turn open for a swordsman victory with a six when only follow-up actions remain', () => {
+    const state = withActivePlayer(createCombatState('fallen'), (player) => ({
+      ...player,
+      heroId: 'hero_swordsman',
+      inventory: {
+        ...player.inventory,
+        weapons: [
+          { type: 'weapon', bonus: 3 },
+          { type: 'weapon', bonus: 3 },
+        ],
+        spells: [{ type: 'spell', spellKind: 'healing' }],
+      },
+    }));
+    const resolved = resolveCombat(
+      {
+        ...state,
+        remainingSteps: 0,
+      },
+      { dice: [6, 6] },
+    );
+
+    expect(resolved.phase).toBe('await_move');
+    expect(resolved.remainingSteps).toBe(0);
+    expect(resolved.turnContinuationReason).toBe('swordsman_on_six');
+  });
+
+  it('continues moving after resolving combat reward loot from a swordsman victory with a six', () => {
+    const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
+      ...player,
+      heroId: 'hero_swordsman',
+    }));
+    const resolved = resolveCombat(state, { dice: [6, 6] });
+    const afterLoot = applyGameAction(resolved, { type: 'leaveLoot' });
+
+    expect(resolved.phase).toBe('loot_resolution');
+    expect(afterLoot.phase).toBe('await_move');
+    expect(afterLoot.remainingSteps).toBe(3);
+    expect(afterLoot.turnContinuationReason).toBe('swordsman_on_six');
+  });
+
+  it('can trigger the swordsman six continuation multiple times in one turn', () => {
+    const state = createChainedCombatState(['fallen', 'fallen']);
+    const firstVictory = resolveCombat(state, { dice: [6, 6] });
+    const moved = applyGameAction(firstVictory, {
+      type: 'movePlayer',
+      target: { boardX: 1, boardY: -2 },
+    });
+    const secondVictory = resolveCombat(moved, { dice: [6, 6] });
+
+    expect(firstVictory.phase).toBe('await_move');
+    expect(moved.phase).toBe('combat');
+    expect(secondVictory.phase).toBe('await_move');
+    expect(secondVictory.remainingSteps).toBe(2);
+    expect(secondVictory.turnContinuationReason).toBe('swordsman_on_six');
+  });
+
+  it('does not carry a previous swordsman six continuation into a later non-six victory', () => {
+    const state = withActivePlayer(
+      createChainedCombatState(['fallen', 'giant_rat']),
+      (player) => ({
+        ...player,
+        inventory: {
+          ...player.inventory,
+          weapons: [{ type: 'weapon', bonus: 2 }],
+        },
+      }),
+    );
+    const firstVictory = resolveCombat(state, { dice: [6, 6] });
+    const moved = applyGameAction(firstVictory, {
+      type: 'movePlayer',
+      target: { boardX: 1, boardY: -2 },
+    });
+    const secondVictory = resolveCombat(moved, { dice: [2, 2] });
+    const afterLoot = applyGameAction(secondVictory, { type: 'leaveLoot' });
+
+    expect(secondVictory.phase).toBe('loot_resolution');
+    expect(secondVictory.turnContinuationReason).toBeUndefined();
+    expect(afterLoot.phase).toBe('turn_end');
+  });
 });
 
 function createCombatState(monsterId: MonsterId): GameState {
@@ -638,4 +854,39 @@ function withPlayerTreasure(
       index === playerIndex ? { ...player, treasurePoints } : player,
     ),
   };
+}
+
+function createChainedCombatState(monsterIds: [MonsterId, MonsterId]): GameState {
+  const base = createCombatState(monsterIds[0]);
+
+  return withActivePlayer(
+    {
+      ...base,
+      board: [
+        ...base.board,
+        {
+          tileInstanceId: 'tile-second-combat',
+          blueprintId: 'room_straight',
+          rotation: 0,
+          boardX: 1,
+          boardY: -2,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: monsterIds[1], kind: 'monster' },
+        },
+      ],
+      remainingSteps: 3,
+    },
+    (player) => ({
+      ...player,
+      heroId: 'hero_swordsman',
+      inventory: {
+        ...player.inventory,
+        weapons: [
+          { type: 'weapon', bonus: 3 },
+          { type: 'weapon', bonus: 3 },
+        ],
+      },
+    }),
+  );
 }

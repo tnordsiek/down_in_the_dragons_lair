@@ -17,6 +17,7 @@ import {
 } from '../rules/abilities';
 import { healPlayer, isHealingPosition } from '../rules/healing';
 import { createCombatRewardLoot } from '../rules/inventory';
+import { getContinuationPhaseAfterAction } from '../turns/continuation';
 import { createVictoryState } from '../victory/scoring';
 import { canTilesConnect, adjacentPosition } from '../movement/topology';
 
@@ -25,10 +26,13 @@ export type CombatOutcome = 'victory' | 'draw' | 'defeat';
 export type ResolveCombatOptions = {
   dice?: [number, number];
   curseTargetPlayerId?: string;
-  swordsmanOneRerolls?: number[];
 };
 
 export type UseWarriorRerollOptions = {
+  dice?: [number, number];
+};
+
+export type UseSwordswomanRerollOptions = {
   dice?: [number, number];
 };
 
@@ -63,9 +67,27 @@ export function resolveCombat(
   const activePlayer = state.players[state.activePlayerIndex];
   const rng = restoreSeededRng(state.rng);
   const initialDice = options.dice ?? [rng.rollDie(6), rng.rollDie(6)];
-  const dice = resolveSwordsmanDice(activePlayer, initialDice, options, () =>
-    rng.rollDie(6),
+  const pendingSwordswomanReroll = shouldPauseForSwordswomanReroll(
+    activePlayer,
+    initialDice,
   );
+
+  if (pendingSwordswomanReroll) {
+    return {
+      ...state,
+      phase: 'combat_swordsman_reroll',
+      combat: {
+        ...state.combat,
+        initialRolledDice: initialDice,
+        rolledDice: initialDice,
+        swordsmanRerollCount: 0,
+        pendingCurseTargetPlayerId: options.curseTargetPlayerId,
+      },
+      rng: rng.snapshot(),
+    };
+  }
+
+  const dice = initialDice;
   const warlockSacrificeBonus = 0;
   const flameSpellCount = getAutomaticFlameSpellCount(activePlayer);
   const oracleBonus = getOracleCombatBonus(state);
@@ -155,6 +177,64 @@ export function resolveCombat(
   );
 }
 
+export function useSwordswomanReroll(
+  state: GameState,
+  options: UseSwordswomanRerollOptions = {},
+): GameState {
+  if (state.phase !== 'combat_swordsman_reroll' || !state.combat?.rolledDice) {
+    throw new Error(
+      'Swordswoman reroll can only resolve during pending swordswoman combat reroll',
+    );
+  }
+
+  const activePlayer = state.players[state.activePlayerIndex];
+
+  if (!hasActiveHeroAbility(activePlayer, 'hero_swordsman')) {
+    throw new Error('Only the active uncursed swordswoman may use this reroll');
+  }
+
+  const currentDice = state.combat.rolledDice;
+
+  if (!currentDice.includes(1)) {
+    throw new Error('Swordswoman reroll requires at least one die showing 1');
+  }
+
+  const rng = restoreSeededRng(state.rng);
+  const rerollDice = options.dice ?? [rng.rollDie(6), rng.rollDie(6)];
+  let rerollIndex = 0;
+  const resolvedDice = currentDice.map((die) => {
+    if (die !== 1) {
+      return die;
+    }
+
+    const nextDie = rerollDice[rerollIndex];
+    rerollIndex += 1;
+    return nextDie;
+  }) as [number, number];
+  const updatedState = {
+    ...state,
+    rng: rng.snapshot(),
+    combat: {
+      ...state.combat,
+      rolledDice: resolvedDice,
+      swordsmanRerollCount: (state.combat.swordsmanRerollCount ?? 0) + 1,
+    },
+  };
+
+  if (resolvedDice.includes(1)) {
+    return {
+      ...updatedState,
+      phase: 'combat_swordsman_reroll',
+    };
+  }
+
+  return continueResolvedCombat(
+    updatedState,
+    resolvedDice,
+    state.combat.pendingCurseTargetPlayerId,
+  );
+}
+
 export function useWarriorReroll(
   state: GameState,
   options: UseWarriorRerollOptions = {},
@@ -168,51 +248,13 @@ export function useWarriorReroll(
     );
   }
 
-  const activePlayer = state.players[state.activePlayerIndex];
-  const monster = monsterDefinitions[state.combat.monsterId];
   const rng = restoreSeededRng(state.rng);
   const rerollDice = options.dice ?? [rng.rollDie(6), rng.rollDie(6)];
-  const flameSpellCount = getAutomaticFlameSpellCount(activePlayer);
-  const warlockSacrificeBonus = state.combat.pendingWarlockSacrificeBonus ?? 0;
-  const oracleBonus = state.combat.pendingOracleBonus ?? 0;
-  const total = calculateCombatTotal(
-    activePlayer,
-    rerollDice,
-    flameSpellCount + warlockSacrificeBonus + oracleBonus,
-  );
-  const outcome = getCombatOutcomeForPlayer(
-    activePlayer,
-    total,
-    monster.strength,
-  );
   const stateWithUpdatedRng = { ...state, rng: rng.snapshot() };
 
-  if (
-    shouldPauseForFlameSpells(
-      activePlayer,
-      monster.strength,
-      rerollDice,
-      warlockSacrificeBonus,
-      oracleBonus,
-    )
-  ) {
-    return {
-      ...stateWithUpdatedRng,
-      phase: 'combat_flame_spells',
-      combat: {
-        ...state.combat,
-        rolledDice: rerollDice,
-        pendingBaseOutcome: toPendingCombatOutcome(outcome),
-      },
-    };
-  }
-
-  return resolveCombatOutcome(
+  return continueResolvedCombat(
     stateWithUpdatedRng,
     rerollDice,
-    flameSpellCount,
-    warlockSacrificeBonus,
-    oracleBonus,
     state.combat.pendingCurseTargetPlayerId,
   );
 }
@@ -480,7 +522,24 @@ function resolveVictory(
     ? 'game_over'
     : combatRewardLoot
       ? 'loot_resolution'
-      : getPostVictoryPhase(activePlayer, state, dice);
+      : getPostVictoryPhase(activePlayer, {
+          ...state,
+          players,
+          board: state.board.map((tile) =>
+            samePosition(tile, combatTile)
+              ? { ...tile, roomToken: undefined }
+              : tile,
+          ),
+          combat: undefined,
+          pendingLoot: combatRewardLoot,
+          turnContinuationReason: canSwordswomanContinueAfterCombat(
+            activePlayer,
+            activePlayer,
+            dice,
+          )
+            ? 'swordsman_on_six'
+            : undefined,
+        }, dice);
   const stateAfterReward: GameState = {
     ...state,
     phase,
@@ -492,6 +551,13 @@ function resolveVictory(
     ),
     combat: undefined,
     pendingLoot: combatRewardLoot,
+    turnContinuationReason: canSwordswomanContinueAfterCombat(
+      activePlayer,
+      activePlayer,
+      dice,
+    )
+      ? 'swordsman_on_six'
+      : undefined,
   };
   const stateWithEvent = appendGameEvent(stateAfterReward, {
     type: 'combat_resolved',
@@ -573,19 +639,6 @@ function resolveRetreat(
   const combat = state.combat!;
   const activePlayer = state.players[state.activePlayerIndex];
 
-  if (shouldSwordsmanKeepCombat(activePlayer, outcome)) {
-    return appendGameEvent({
-      ...state,
-      phase: 'optional_post_combat',
-      combat,
-    }, {
-      type: 'combat_resolved',
-      message: `Resolved combat against ${monsterDefinitions[combat.monsterId].displayName}`,
-      ...createPlayerEventFields(activePlayer),
-      combat: combatEvent,
-    });
-  }
-
   const warlockFallback =
     combat.source === 'warlock_swap'
       ? getWarlockSwapFallback(state, combat.position)
@@ -621,12 +674,29 @@ function resolveRetreat(
       : retreatedPlayer;
   });
 
-  return appendGameEvent({
+  const resolvedActivePlayer = players[state.activePlayerIndex];
+  const continuationReason = canSwordswomanContinueAfterCombat(
+    activePlayer,
+    resolvedActivePlayer,
+    combatEvent.dice,
+  )
+    ? 'swordsman_on_six'
+    : undefined;
+  const stateAfterRetreat: GameState = {
     ...state,
     phase: 'turn_end',
     players,
     combat: undefined,
+    turnContinuationReason: continuationReason,
     rng: warlockFallback?.rng ?? state.rng,
+  };
+  const phase = continuationReason
+    ? getContinuationPhaseAfterAction(stateAfterRetreat)
+    : 'turn_end';
+
+  return appendGameEvent({
+    ...stateAfterRetreat,
+    phase,
   }, {
     type: 'combat_resolved',
     message: `Resolved combat against ${monsterDefinitions[combat.monsterId].displayName}`,
@@ -706,29 +776,6 @@ function resolvePendingCombat(
     state.combat.pendingOracleBonus ?? 0,
     state.combat.pendingCurseTargetPlayerId,
   );
-}
-
-function resolveSwordsmanDice(
-  player: Player,
-  dice: [number, number],
-  options: ResolveCombatOptions,
-  rollDie: () => number,
-): [number, number] {
-  if (!hasActiveHeroAbility(player, 'hero_swordsman')) {
-    return dice;
-  }
-
-  const rerolls = [...(options.swordsmanOneRerolls ?? [])];
-
-  return dice.map((die) => {
-    let resolvedDie = die;
-
-    while (resolvedDie === 1) {
-      resolvedDie = rerolls.shift() ?? rollDie();
-    }
-
-    return resolvedDie;
-  }) as [number, number];
 }
 
 function getAutomaticFlameSpellCount(player: Player): number {
@@ -868,6 +915,13 @@ function shouldPauseForWarriorReroll(
   return hasActiveHeroAbility(player, 'hero_warrior') && outcome !== 'victory';
 }
 
+function shouldPauseForSwordswomanReroll(
+  player: Player,
+  dice: [number, number],
+): boolean {
+  return hasActiveHeroAbility(player, 'hero_swordsman') && dice.includes(1);
+}
+
 function shouldPauseForWarlockSacrifice(
   player: Player,
   monsterStrength: number,
@@ -914,19 +968,76 @@ function getPostVictoryPhase(
   state: GameState,
   dice: [number, number],
 ): GameState['phase'] {
-  return hasActiveHeroAbility(player, 'hero_swordsman') &&
-    dice.includes(6) &&
-    state.remainingSteps > 0
-    ? 'await_move'
+  return canSwordswomanContinueAfterCombat(player, player, dice)
+    ? getContinuationPhaseAfterAction(state)
     : 'turn_end';
 }
 
-function shouldSwordsmanKeepCombat(
-  player: Player,
-  outcome: CombatOutcome,
+function canSwordswomanContinueAfterCombat(
+  heroBeforeCombat: Player,
+  playerAfterCombat: Player,
+  dice: [number, number],
 ): boolean {
   return (
-    hasActiveHeroAbility(player, 'hero_swordsman') && outcome !== 'victory'
+    hasActiveHeroAbility(heroBeforeCombat, 'hero_swordsman') &&
+    dice.includes(6) &&
+    playerAfterCombat.hp > 0 &&
+    !playerAfterCombat.skipNextTurn
+  );
+}
+
+function continueResolvedCombat(
+  state: GameState,
+  dice: [number, number],
+  curseTargetPlayerId?: string,
+): GameState {
+  if (!state.combat) {
+    throw new Error('No combat to continue');
+  }
+
+  const activePlayer = state.players[state.activePlayerIndex];
+  const monster = monsterDefinitions[state.combat.monsterId];
+  const flameSpellCount = getAutomaticFlameSpellCount(activePlayer);
+  const warlockSacrificeBonus = state.combat.pendingWarlockSacrificeBonus ?? 0;
+  const oracleBonus = state.combat.pendingOracleBonus ?? 0;
+  const total = calculateCombatTotal(
+    activePlayer,
+    dice,
+    flameSpellCount + warlockSacrificeBonus + oracleBonus,
+  );
+  const outcome = getCombatOutcomeForPlayer(
+    activePlayer,
+    total,
+    monster.strength,
+  );
+
+  if (
+    shouldPauseForFlameSpells(
+      activePlayer,
+      monster.strength,
+      dice,
+      warlockSacrificeBonus,
+      oracleBonus,
+    )
+  ) {
+    return {
+      ...state,
+      phase: 'combat_flame_spells',
+      combat: {
+        ...state.combat,
+        rolledDice: dice,
+        pendingBaseOutcome: toPendingCombatOutcome(outcome),
+      },
+    };
+  }
+
+  return resolveCombatOutcome(
+    state,
+    dice,
+    flameSpellCount,
+    warlockSacrificeBonus,
+    oracleBonus,
+    curseTargetPlayerId,
   );
 }
 

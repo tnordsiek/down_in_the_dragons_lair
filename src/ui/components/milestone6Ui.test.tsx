@@ -36,6 +36,7 @@ const noopActions = {
   onResolveRoom: vi.fn(),
   onStartOptionalCombat: vi.fn(),
   onResolveCombat: vi.fn(),
+  onUseSwordswomanReroll: vi.fn(),
   onUseWarriorReroll: vi.fn(),
   onDeclineWarriorReroll: vi.fn(),
   onUseWarlockSacrifice: vi.fn(),
@@ -648,6 +649,212 @@ describe('Milestone 6 UI', () => {
     ).toHaveClass('max-h-[108px]');
   });
 
+  it('shows the pending swordswoman reroll dice in the header before combat resolves', () => {
+    const state = createUiState({
+      phase: 'combat_swordsman_reroll',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        initialRolledDice: [1, 4],
+        rolledDice: [1, 4],
+        swordsmanRerollCount: 0,
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_swordsman',
+            }
+          : player,
+      ),
+      eventLog: [
+        {
+          id: 'event-combat-old',
+          type: 'combat_resolved',
+          message: 'Resolved combat against Giant Rat',
+          playerId: 'player_human',
+          playerHeroId: 'hero_mage',
+          playerLabel: 'Mage (player_human)',
+          combat: {
+            monsterId: 'giant_rat',
+            monsterStrength: 5,
+            dice: [6, 6],
+            total: 12,
+            outcome: 'victory',
+            weaponBonus: 0,
+            flameSpellCount: 0,
+            warlockSacrificeBonus: 0,
+            oracleBonus: 0,
+          },
+        },
+      ],
+    });
+
+    render(<GameScreen />);
+    act(() => {
+      useSetupStore.setState({ gameState: state });
+    });
+
+    expect(screen.getByRole('img', { name: 'Combat die 1: 1' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_01.png',
+    );
+    expect(screen.getByRole('img', { name: 'Combat die 2: 4' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_04.png',
+    );
+  });
+
+  it('updates the header dice after a partial swordswoman reroll', () => {
+    const state = createUiState({
+      phase: 'combat_swordsman_reroll',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        initialRolledDice: [1, 1],
+        rolledDice: [1, 6],
+        swordsmanRerollCount: 1,
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_swordsman',
+            }
+          : player,
+      ),
+      eventLog: [
+        {
+          id: 'event-combat-old',
+          type: 'combat_resolved',
+          message: 'Resolved combat against Giant Rat',
+          playerId: 'player_human',
+          playerHeroId: 'hero_mage',
+          playerLabel: 'Mage (player_human)',
+          combat: {
+            monsterId: 'giant_rat',
+            monsterStrength: 5,
+            dice: [2, 3],
+            total: 5,
+            outcome: 'draw',
+            weaponBonus: 0,
+            flameSpellCount: 0,
+            warlockSacrificeBonus: 0,
+            oracleBonus: 0,
+          },
+        },
+      ],
+    });
+
+    render(<GameScreen />);
+    act(() => {
+      useSetupStore.setState({ gameState: state });
+    });
+
+    expect(screen.getByRole('img', { name: 'Combat die 1: 1' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_01.png',
+    );
+    expect(screen.getByRole('img', { name: 'Combat die 2: 6' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_06.png',
+    );
+  });
+
+  it('offers the swordswoman reroll in the real GameScreen flow after resolving a 1', () => {
+    const state = createUiState({
+      phase: 'combat',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_swordsman',
+            }
+          : player,
+      ),
+    });
+
+    useSetupStore.setState({
+      gameState: state,
+      hasSavedGame: false,
+      lastError: undefined,
+    });
+
+    render(<GameScreen />);
+
+    act(() => {
+      useSetupStore.getState().dispatch({ type: 'resolveCombat', dice: [1, 4] });
+    });
+
+    expect(screen.getByRole('button', { name: 'Reroll 1s' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Combat die 1: 1' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_01.png',
+    );
+    expect(screen.getByRole('img', { name: 'Combat die 2: 4' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_04.png',
+    );
+  });
+
+  it('keeps offering the swordswoman reroll in the real GameScreen flow after a partial reroll', () => {
+    const state = createUiState({
+      phase: 'combat',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_swordsman',
+            }
+          : player,
+      ),
+    });
+
+    useSetupStore.setState({
+      gameState: state,
+      hasSavedGame: false,
+      lastError: undefined,
+    });
+
+    render(<GameScreen />);
+
+    act(() => {
+      useSetupStore.getState().dispatch({ type: 'resolveCombat', dice: [1, 1] });
+    });
+    act(() => {
+      useSetupStore.getState().dispatch({
+        type: 'useSwordswomanReroll',
+        dice: [1, 6],
+      });
+    });
+
+    expect(screen.getByRole('button', { name: 'Reroll 1s' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Combat die 1: 1' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_01.png',
+    );
+    expect(screen.getByRole('img', { name: 'Combat die 2: 6' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_06.png',
+    );
+  });
+
   it('renders mapped hero and monster images on the board', () => {
     const state = createUiState({
       board: [
@@ -1171,6 +1378,86 @@ describe('Milestone 6 UI', () => {
 
     expect(onUseWarriorReroll).toHaveBeenCalledTimes(1);
     expect(onDeclineWarriorReroll).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows swordswoman reroll feedback when one or more dice show 1', () => {
+    const onUseSwordswomanReroll = vi.fn();
+    const state = createUiState({
+      phase: 'combat_swordsman_reroll',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        initialRolledDice: [1, 4],
+        rolledDice: [1, 4],
+        swordsmanRerollCount: 0,
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_swordsman',
+            }
+          : player,
+      ),
+    });
+
+    render(
+      <ActionPanel
+        state={state}
+        {...noopActions}
+        onUseSwordswomanReroll={onUseSwordswomanReroll}
+      />,
+    );
+
+    expect(
+      screen.getByText('Current dice 1 + 4 · reroll every die showing 1'),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText(
+        'Current result 1 + 4 + weapons 0 = 5 and currently faces draw',
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reroll 1s' }));
+
+    expect(onUseSwordswomanReroll).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the current combat result after a partial swordswoman reroll', () => {
+    const state = createUiState({
+      phase: 'combat_swordsman_reroll',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        initialRolledDice: [1, 1],
+        rolledDice: [1, 6],
+        swordsmanRerollCount: 1,
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_swordsman',
+            }
+          : player,
+      ),
+    });
+
+    render(<ActionPanel state={state} {...noopActions} />);
+
+    expect(
+      screen.getByText(/Current dice 1 \+ 6 .* reroll every die showing 1/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Current result 1 + 6 + weapons 0 = 7 and currently faces victory',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('shows warlock sacrifice choices before flame spell choices', () => {

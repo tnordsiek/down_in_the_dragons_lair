@@ -6,6 +6,7 @@ import {
   resolveCombat,
   resolveCombatWithFlameSpells,
   resolveCombatWithoutFlameSpells,
+  useSwordswomanReroll,
   useWarlockSacrifice,
   useWarriorReroll,
 } from '../combat/combat';
@@ -61,7 +62,10 @@ export function applyGameAction(
       return resolveCombat(state, {
         dice: action.dice,
         curseTargetPlayerId: action.curseTargetPlayerId,
-        swordsmanOneRerolls: action.swordsmanOneRerolls,
+      });
+    case 'useSwordswomanReroll':
+      return useSwordswomanReroll(state, {
+        dice: action.dice,
       });
     case 'useWarriorReroll':
       return useWarriorReroll(state, {

@@ -76,6 +76,7 @@ export function chooseHeuristicAiAction(
     state.phase === 'optional_monster_combat' ||
     state.phase === 'combat' ||
     state.phase === 'optional_post_combat' ||
+    state.phase === 'combat_swordsman_reroll' ||
     state.phase === 'combat_warrior_reroll' ||
     state.phase === 'combat_warlock_sacrifice' ||
     state.phase === 'combat_flame_spells'
@@ -149,6 +150,10 @@ function chooseCombatAction(
 ): GameAction {
   if (state.phase === 'combat_warrior_reroll') {
     return requireAction(legalActions, 'useWarriorReroll');
+  }
+
+  if (state.phase === 'combat_swordsman_reroll') {
+    return requireAction(legalActions, 'useSwordswomanReroll');
   }
 
   if (state.phase === 'combat_warlock_sacrifice') {

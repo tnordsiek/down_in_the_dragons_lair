@@ -7,6 +7,7 @@ import type {
   Player,
   RewardDefinition,
 } from '../core/types';
+import { getContinuationPhaseAfterAction } from '../turns/continuation';
 
 type LootSwapSlot =
   | { kind: 'weapon'; index: number }
@@ -186,9 +187,8 @@ function finalizeLootState(
   activePlayer: Player,
   tile: PlacedTile,
 ): GameState {
-  return {
+  const updatedState: GameState = {
     ...state,
-    phase: 'turn_end',
     players: state.players.map((player, index) =>
       index === state.activePlayerIndex ? activePlayer : player,
     ),
@@ -196,6 +196,14 @@ function finalizeLootState(
       samePosition(boardTile, tile) ? tile : boardTile,
     ),
     pendingLoot: undefined,
+  };
+  const phase = getContinuationPhaseAfterAction(updatedState);
+
+  return {
+    ...updatedState,
+    phase,
+    turnContinuationReason:
+      phase === 'await_move' ? updatedState.turnContinuationReason : undefined,
   };
 }
 

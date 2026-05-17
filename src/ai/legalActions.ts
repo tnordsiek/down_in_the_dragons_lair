@@ -96,6 +96,11 @@ export function getLegalAiActions(state: GameState): GameAction[] {
     return actions;
   }
 
+  if (state.phase === 'combat_swordsman_reroll') {
+    actions.push({ type: 'useSwordswomanReroll' });
+    return actions;
+  }
+
   if (state.phase === 'combat_warrior_reroll') {
     actions.push({ type: 'useWarriorReroll' });
     actions.push({ type: 'declineWarriorReroll' });

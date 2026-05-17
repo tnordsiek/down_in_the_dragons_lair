@@ -256,6 +256,35 @@ describe('heuristic AI', () => {
     });
   });
 
+  it('always takes the swordswoman reroll during the swordswoman reroll step', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-swordswoman-reroll-choice',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'combat_swordsman_reroll',
+      activePlayerIndex: 0,
+      players: base.players.map((player, index) =>
+        index === 0 ? { ...player, heroId: 'hero_swordsman' } : player,
+      ),
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        initialRolledDice: [1, 4],
+        rolledDice: [1, 4],
+        swordsmanRerollCount: 0,
+      },
+    };
+
+    expect(chooseHeuristicAiAction(state)).toEqual({
+      type: 'useSwordswomanReroll',
+    });
+  });
+
   it('starts optional thief combat only when the fight is worthwhile', () => {
     const base = createNewGame({
       humanHeroId: 'hero_mage',
@@ -406,6 +435,29 @@ describe('heuristic AI', () => {
     expect(chooseHeuristicAiAction(state)).toEqual({
       type: 'useWarlockSacrifice',
     });
+  });
+
+  it('uses legal follow-up actions during a continued swordsman turn with zero steps', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_swordsman',
+      aiCount: 1,
+      seed: 'ai-swordsman-follow-up',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'await_move',
+      activePlayerIndex: 0,
+      remainingSteps: 0,
+      turnContinuationReason: 'swordsman_on_six',
+      board: [
+        {
+          ...base.board[0],
+          looseItems: [{ type: 'weapon', bonus: 1 }],
+        },
+      ],
+    };
+
+    expect(chooseHeuristicAiAction(state)).toEqual({ type: 'beginLoot' });
   });
 });
 

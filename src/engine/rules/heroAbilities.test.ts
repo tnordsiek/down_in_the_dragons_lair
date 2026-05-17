@@ -14,6 +14,7 @@ import {
   declineWarriorReroll,
   resolveCombat,
   resolveCombatWithFlameSpells,
+  useSwordswomanReroll,
   useWarlockSacrifice,
   useWarriorReroll,
 } from '../combat/combat';
@@ -400,24 +401,136 @@ describe('hero_thief abilities', () => {
 describe('hero_swordsman abilities', () => {
   it('rerolls ones and continues after a won combat with a six', () => {
     const state = createCombatState('hero_swordsman', 'giant_rat');
-    const resolved = resolveCombat(state, {
+    const pending = resolveCombat(state, {
       dice: [1, 1],
-      swordsmanOneRerolls: [6, 2],
+    });
+    const resolved = useSwordswomanReroll(pending, {
+      dice: [6, 2],
     });
 
+    expect(pending.phase).toBe('combat_swordsman_reroll');
     expect(resolved.phase).toBe('loot_resolution');
     expect(resolved.pendingLoot?.item).toEqual({ type: 'weapon', bonus: 1 });
     expect(
       resolved.board.find((tile) => tile.roomToken?.id === 'giant_rat'),
     ).toBeUndefined();
+    expect(resolved.turnContinuationReason).toBe('swordsman_on_six');
   });
 
-  it('may keep the same monster available after draw or defeat', () => {
+  it('can keep the turn open at zero steps when a six leaves follow-up actions available', () => {
+    const state = withActivePlayer(
+      {
+        ...createCombatState('hero_swordsman', 'fallen'),
+        remainingSteps: 0,
+      },
+      (player) => ({
+        ...player,
+        inventory: {
+          ...player.inventory,
+          weapons: [
+            { type: 'weapon', bonus: 3 },
+            { type: 'weapon', bonus: 3 },
+          ],
+          spells: [{ type: 'spell', spellKind: 'healing' }],
+        },
+      }),
+    );
+    const resolved = resolveCombat(state, { dice: [6, 6] });
+
+    expect(resolved.phase).toBe('await_move');
+    expect(resolved.remainingSteps).toBe(0);
+  });
+
+  it('retreats like other heroes after draw or defeat', () => {
     const state = createCombatState('hero_swordsman', 'giant_rat');
     const resolved = resolveCombat(state, { dice: [2, 3] });
 
-    expect(resolved.phase).toBe('optional_post_combat');
-    expect(resolved.combat?.monsterId).toBe('giant_rat');
+    expect(resolved.phase).toBe('turn_end');
+    expect(resolved.combat).toBeUndefined();
+    expect(resolved.players[resolved.activePlayerIndex]).toEqual(
+      expect.objectContaining({
+        hp: 5,
+        position: { boardX: 1, boardY: 0 },
+      }),
+    );
+    expect(resolved.eventLog.at(-1)?.combat).toEqual(
+      expect.objectContaining({
+        outcome: 'draw',
+        retreatPosition: { boardX: 1, boardY: 0 },
+      }),
+    );
+  });
+
+  it('keeps moving after a draw with a six once she has retreated', () => {
+    const state = createCombatState('hero_swordsman', 'skeleton_turnkey');
+    const pending = resolveCombat(state, { dice: [6, 1] });
+    const resolved = useSwordswomanReroll(pending, { dice: [2, 2] });
+
+    expect(pending.phase).toBe('combat_swordsman_reroll');
+    expect(resolved.phase).toBe('await_move');
+    expect(resolved.players[resolved.activePlayerIndex]).toEqual(
+      expect.objectContaining({
+        hp: 5,
+        position: { boardX: 1, boardY: 0 },
+      }),
+    );
+    expect(resolved.turnContinuationReason).toBe('swordsman_on_six');
+  });
+
+  it('keeps moving after a defeat with a six while she still has HP left', () => {
+    const state = createCombatState('hero_swordsman', 'dragon');
+    const pending = resolveCombat(state, { dice: [6, 1] });
+    const resolved = useSwordswomanReroll(pending, { dice: [2, 2] });
+
+    expect(resolved.phase).toBe('await_move');
+    expect(resolved.players[resolved.activePlayerIndex]).toEqual(
+      expect.objectContaining({
+        hp: 4,
+        skipNextTurn: false,
+        position: { boardX: 1, boardY: 0 },
+      }),
+    );
+    expect(resolved.turnContinuationReason).toBe('swordsman_on_six');
+  });
+
+  it('ends the turn after a defeat with a six if she falls to 0 HP', () => {
+    const state = withActivePlayer(
+      createCombatState('hero_swordsman', 'dragon'),
+      (player) => ({
+        ...player,
+        hp: 1,
+      }),
+    );
+    const pending = resolveCombat(state, { dice: [6, 1] });
+    const resolved = useSwordswomanReroll(pending, { dice: [2, 2] });
+
+    expect(resolved.phase).toBe('turn_end');
+    expect(resolved.players[resolved.activePlayerIndex]).toEqual(
+      expect.objectContaining({
+        hp: 0,
+        skipNextTurn: true,
+        position: { boardX: 1, boardY: 0 },
+      }),
+    );
+    expect(resolved.turnContinuationReason).toBeUndefined();
+  });
+
+  it('must re-enter the monster tile to fight again after a draw', () => {
+    const state = createCombatState('hero_swordsman', 'skeleton_turnkey');
+    const retriedState = useSwordswomanReroll(
+      resolveCombat(state, { dice: [6, 1] }),
+      { dice: [2, 2] },
+    );
+    const movedBack = moveActivePlayer(retriedState, { boardX: 1, boardY: -1 });
+
+    expect(retriedState.phase).toBe('await_move');
+    expect(movedBack.phase).toBe('combat');
+    expect(movedBack.combat).toEqual(
+      expect.objectContaining({
+        monsterId: 'skeleton_turnkey',
+        enteredFrom: { boardX: 1, boardY: 0 },
+      }),
+    );
   });
 
   it('uses standard dice and post-combat flow while cursed', () => {
@@ -430,7 +543,6 @@ describe('hero_swordsman abilities', () => {
     );
     const resolved = resolveCombat(state, {
       dice: [1, 1],
-      swordsmanOneRerolls: [6, 6],
     });
 
     expect(resolved.phase).toBe('turn_end');

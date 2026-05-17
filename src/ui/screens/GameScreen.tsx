@@ -45,7 +45,7 @@ export function GameScreen() {
   const resetGame = useSetupStore((store) => store.resetGame);
   const headerLogo = useAsset('ui_logo_header');
   const headerLogoUrl = getAssetUrl(headerLogo.assetId);
-  const latestCombatDice = getLatestCombatDice(state?.eventLog);
+  const latestCombatDice = getLatestCombatDice(state);
   const [cameraRequest, setCameraRequest] = useState({
     nonce: 0,
     position: { boardX: 0, boardY: 0 },
@@ -180,6 +180,9 @@ export function GameScreen() {
   };
   const handleResolveCombat = () => {
     dispatch({ type: 'resolveCombat' });
+  };
+  const handleUseSwordswomanReroll = () => {
+    dispatch({ type: 'useSwordswomanReroll' });
   };
   const handleStartOptionalCombat = () => {
     dispatch({ type: 'startOptionalCombat' });
@@ -345,6 +348,7 @@ export function GameScreen() {
             onResolveRoom={handleResolveRoom}
             onStartOptionalCombat={handleStartOptionalCombat}
             onResolveCombat={handleResolveCombat}
+            onUseSwordswomanReroll={handleUseSwordswomanReroll}
             onUseWarriorReroll={handleUseWarriorReroll}
             onDeclineWarriorReroll={handleDeclineWarriorReroll}
             onUseWarlockSacrifice={handleUseWarlockSacrifice}
@@ -489,14 +493,21 @@ export function GameScreen() {
 }
 
 function getLatestCombatDice(
-  eventLog?: GameEvent[],
+  state?: NonNullable<ReturnType<typeof useSetupStore.getState>['gameState']>,
 ): [number, number] | undefined {
-  if (!eventLog) {
+  if (!state) {
     return undefined;
   }
 
-  for (let index = eventLog.length - 1; index >= 0; index -= 1) {
-    const event = eventLog[index];
+  if (
+    state.phase === 'combat_swordsman_reroll' &&
+    state.combat?.rolledDice
+  ) {
+    return state.combat.rolledDice;
+  }
+
+  for (let index = state.eventLog.length - 1; index >= 0; index -= 1) {
+    const event = state.eventLog[index];
 
     if (event.type === 'combat_resolved' && event.combat) {
       return event.combat.dice;
