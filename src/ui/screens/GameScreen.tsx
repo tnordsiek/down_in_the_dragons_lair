@@ -506,6 +506,27 @@ function getLatestCombatDice(
     return state.combat.rolledDice;
   }
 
+  if (
+    state.phase === 'combat_flame_spells' &&
+    state.combat?.rolledDice
+  ) {
+    return state.combat.rolledDice;
+  }
+
+  if (
+    state.phase === 'combat_warrior_reroll' &&
+    state.combat?.initialRolledDice
+  ) {
+    return state.combat.initialRolledDice;
+  }
+
+  if (
+    state.phase === 'combat_warlock_sacrifice' &&
+    state.combat?.initialRolledDice
+  ) {
+    return state.combat.initialRolledDice;
+  }
+
   for (let index = state.eventLog.length - 1; index >= 0; index -= 1) {
     const event = state.eventLog[index];
 

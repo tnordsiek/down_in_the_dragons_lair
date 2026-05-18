@@ -765,6 +765,177 @@ describe('Milestone 6 UI', () => {
     );
   });
 
+  it('shows warrior reroll dice in the header while the reroll choice is pending', () => {
+    const state = createUiState({
+      phase: 'combat_warrior_reroll',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        initialRolledDice: [2, 3],
+        initialBaseOutcome: 'draw',
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_warrior',
+            }
+          : player,
+      ),
+      eventLog: [
+        {
+          id: 'event-combat-old',
+          type: 'combat_resolved',
+          message: 'Resolved combat against Giant Rat',
+          playerId: 'player_human',
+          playerHeroId: 'hero_mage',
+          playerLabel: 'Mage (player_human)',
+          combat: {
+            monsterId: 'giant_rat',
+            monsterStrength: 5,
+            dice: [6, 6],
+            total: 12,
+            outcome: 'victory',
+            weaponBonus: 0,
+            flameSpellCount: 0,
+            warlockSacrificeBonus: 0,
+            oracleBonus: 0,
+          },
+        },
+      ],
+    });
+
+    render(<GameScreen />);
+    act(() => {
+      useSetupStore.setState({ gameState: state });
+    });
+
+    expect(screen.getByRole('img', { name: 'Combat die 1: 2' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_02.png',
+    );
+    expect(screen.getByRole('img', { name: 'Combat die 2: 3' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_03.png',
+    );
+  });
+
+  it('shows warlock sacrifice dice in the header while the sacrifice choice is pending', () => {
+    const state = createUiState({
+      phase: 'combat_warlock_sacrifice',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        initialRolledDice: [2, 3],
+        initialBaseOutcome: 'draw',
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_warlock',
+            }
+          : player,
+      ),
+      eventLog: [
+        {
+          id: 'event-combat-old',
+          type: 'combat_resolved',
+          message: 'Resolved combat against Giant Rat',
+          playerId: 'player_human',
+          playerHeroId: 'hero_mage',
+          playerLabel: 'Mage (player_human)',
+          combat: {
+            monsterId: 'giant_rat',
+            monsterStrength: 5,
+            dice: [6, 6],
+            total: 12,
+            outcome: 'victory',
+            weaponBonus: 0,
+            flameSpellCount: 0,
+            warlockSacrificeBonus: 0,
+            oracleBonus: 0,
+          },
+        },
+      ],
+    });
+
+    render(<GameScreen />);
+    act(() => {
+      useSetupStore.setState({ gameState: state });
+    });
+
+    expect(screen.getByRole('img', { name: 'Combat die 1: 2' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_02.png',
+    );
+    expect(screen.getByRole('img', { name: 'Combat die 2: 3' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_03.png',
+    );
+  });
+
+  it('shows flame spell prompt dice in the header while flame spell choice is pending', () => {
+    const state = createUiState({
+      phase: 'combat_flame_spells',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        rolledDice: [2, 3],
+        pendingBaseOutcome: 'draw',
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_warrior',
+            }
+          : player,
+      ),
+      eventLog: [
+        {
+          id: 'event-combat-old',
+          type: 'combat_resolved',
+          message: 'Resolved combat against Giant Rat',
+          playerId: 'player_human',
+          playerHeroId: 'hero_mage',
+          playerLabel: 'Mage (player_human)',
+          combat: {
+            monsterId: 'giant_rat',
+            monsterStrength: 5,
+            dice: [6, 6],
+            total: 12,
+            outcome: 'victory',
+            weaponBonus: 0,
+            flameSpellCount: 0,
+            warlockSacrificeBonus: 0,
+            oracleBonus: 0,
+          },
+        },
+      ],
+    });
+
+    render(<GameScreen />);
+    act(() => {
+      useSetupStore.setState({ gameState: state });
+    });
+
+    expect(screen.getByRole('img', { name: 'Combat die 1: 2' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_02.png',
+    );
+    expect(screen.getByRole('img', { name: 'Combat die 2: 3' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_03.png',
+    );
+  });
+
   it('offers the swordswoman reroll in the real GameScreen flow after resolving a 1', () => {
     const state = createUiState({
       phase: 'combat',
@@ -852,6 +1023,143 @@ describe('Milestone 6 UI', () => {
     expect(screen.getByRole('img', { name: 'Combat die 2: 6' })).toHaveAttribute(
       'src',
       '/assets/ui/ui_dice_06.png',
+    );
+  });
+
+  it('shows warrior pending dice in the real GameScreen flow after a rolled draw', () => {
+    const state = createUiState({
+      phase: 'combat',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_warrior',
+            }
+          : player,
+      ),
+    });
+
+    useSetupStore.setState({
+      gameState: state,
+      hasSavedGame: false,
+      lastError: undefined,
+    });
+
+    render(<GameScreen />);
+
+    act(() => {
+      useSetupStore.getState().dispatch({ type: 'resolveCombat', dice: [2, 3] });
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'Reroll both dice' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Combat die 1: 2' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_02.png',
+    );
+    expect(screen.getByRole('img', { name: 'Combat die 2: 3' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_03.png',
+    );
+  });
+
+  it('shows warlock pending dice in the real GameScreen flow after a rolled draw', () => {
+    const state = createUiState({
+      phase: 'combat',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_warlock',
+            }
+          : player,
+      ),
+    });
+
+    useSetupStore.setState({
+      gameState: state,
+      hasSavedGame: false,
+      lastError: undefined,
+    });
+
+    render(<GameScreen />);
+
+    act(() => {
+      useSetupStore.getState().dispatch({ type: 'resolveCombat', dice: [2, 3] });
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'Sacrifice 1 HP for +1' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Combat die 1: 2' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_02.png',
+    );
+    expect(screen.getByRole('img', { name: 'Combat die 2: 3' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_03.png',
+    );
+  });
+
+  it('shows flame spell pending dice in the real GameScreen flow after a rolled draw', () => {
+    const state = createUiState({
+      phase: 'combat',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_mage',
+              isCursed: true,
+              inventory: {
+                ...player.inventory,
+                spells: [{ type: 'spell', spellKind: 'flame' }],
+              },
+            }
+          : player,
+      ),
+    });
+
+    useSetupStore.setState({
+      gameState: state,
+      hasSavedGame: false,
+      lastError: undefined,
+    });
+
+    render(<GameScreen />);
+
+    act(() => {
+      useSetupStore.getState().dispatch({ type: 'resolveCombat', dice: [2, 3] });
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'Do not use flame spells' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Combat die 1: 2' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_02.png',
+    );
+    expect(screen.getByRole('img', { name: 'Combat die 2: 3' })).toHaveAttribute(
+      'src',
+      '/assets/ui/ui_dice_03.png',
     );
   });
 
