@@ -623,7 +623,7 @@ export function ActionPanel({
 }
 
 function tokenChoiceLabel(token: Token): string {
-  return token.kind === 'chest'
+  return token.id === 'treasure_chest'
     ? 'Treasure Chest'
     : monsterName(token.id);
 }
