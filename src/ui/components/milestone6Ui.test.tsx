@@ -936,6 +936,41 @@ describe('Milestone 6 UI', () => {
     );
   });
 
+  it('shows the warlock sacrifice bonus in the flame spell combat math after sacrificing', () => {
+    const state = createUiState({
+      phase: 'combat_flame_spells',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        rolledDice: [2, 2],
+        pendingBaseOutcome: 'draw',
+        pendingWarlockSacrificeBonus: 1,
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_warlock',
+              inventory: {
+                ...player.inventory,
+                spells: [{ type: 'spell', spellKind: 'flame' }],
+              },
+            }
+          : player,
+      ),
+    });
+
+    render(<ActionPanel state={state} {...noopActions} />);
+
+    expect(
+      screen.getByText(
+        'Rolled 2 + 2 + weapons 0 + sacrifice 1 = 5 and currently face draw',
+      ),
+    ).toBeInTheDocument();
+  });
+
   it('offers the swordswoman reroll in the real GameScreen flow after resolving a 1', () => {
     const state = createUiState({
       phase: 'combat',

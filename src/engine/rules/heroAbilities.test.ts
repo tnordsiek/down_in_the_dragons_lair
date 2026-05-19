@@ -239,6 +239,34 @@ describe('hero_warlock abilities', () => {
     );
   });
 
+  it('offers sacrifice when only sacrifice plus a flame spell can turn the roll into a victory', () => {
+    const state = withActivePlayer(
+      createCombatState('hero_warlock', 'giant_rat'),
+      (player) => ({
+        ...player,
+        inventory: {
+          ...player.inventory,
+          spells: [{ type: 'spell', spellKind: 'flame' }],
+        },
+      }),
+    );
+    const pending = resolveCombat(state, { dice: [1, 3] });
+
+    expect(pending.phase).toBe('combat_warlock_sacrifice');
+
+    const sacrificed = useWarlockSacrifice(pending);
+
+    expect(sacrificed.phase).toBe('combat_flame_spells');
+    expect(sacrificed.players[sacrificed.activePlayerIndex].hp).toBe(4);
+    expect(sacrificed.combat).toEqual(
+      expect.objectContaining({
+        rolledDice: [1, 3],
+        pendingBaseOutcome: 'draw',
+        pendingWarlockSacrificeBonus: 1,
+      }),
+    );
+  });
+
   it('swaps positions only at turn start and spends all four steps', () => {
     const state = createSwapState(false);
     const target = state.players.find(

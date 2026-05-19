@@ -114,6 +114,15 @@ export function ActionPanel({
   const initialCombatOutcome = state.combat?.initialBaseOutcome;
   const pendingCombatDice = state.combat?.rolledDice;
   const pendingCombatOutcome = state.combat?.pendingBaseOutcome;
+  const pendingWarlockSacrificeBonus =
+    state.combat?.pendingWarlockSacrificeBonus ?? 0;
+  const pendingCombatTotal =
+    pendingCombatDice !== undefined
+      ? pendingCombatDice[0] +
+        pendingCombatDice[1] +
+        weaponBonus +
+        pendingWarlockSacrificeBonus
+      : undefined;
   const pendingSwordswomanTotal =
     state.phase === 'combat_swordsman_reroll' &&
     combatMonster &&
@@ -343,7 +352,12 @@ export function ActionPanel({
           </p>
           <p className="font-mono text-xs text-stone-300">
             Rolled {pendingCombatDice[0]} + {pendingCombatDice[1]} + weapons{' '}
-            {weaponBonus} = {pendingCombatDice[0] + pendingCombatDice[1] + weaponBonus}
+            {weaponBonus}
+            {pendingWarlockSacrificeBonus > 0
+              ? ` + sacrifice ${pendingWarlockSacrificeBonus}`
+              : ''}
+            {' = '}
+            {pendingCombatTotal}
             {pendingCombatOutcome ? ` and currently face ${pendingCombatOutcome}` : ''}
           </p>
           <div className="flex flex-wrap gap-2">
