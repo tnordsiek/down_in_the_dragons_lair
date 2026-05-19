@@ -33,6 +33,7 @@ const noopActions = {
   onLeaveLoot: vi.fn(),
   onMove: vi.fn(),
   onExplore: vi.fn(),
+  onChooseOracleRoomToken: vi.fn(),
   onResolveRoom: vi.fn(),
   onStartOptionalCombat: vi.fn(),
   onResolveCombat: vi.fn(),
@@ -2310,6 +2311,81 @@ describe('Milestone 6 UI', () => {
     expect(screen.getByTestId('room-monster')).toHaveTextContent('giant_rat');
   });
 
+  it('shows the human oracle room choice, blocks end turn, and resolves the selected option', async () => {
+    const state = createUiState({
+      phase: 'resolve_room_token',
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-room',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 0,
+          boardY: -1,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_oracle',
+              kind: 'human',
+              position: { boardX: 0, boardY: -1 },
+            }
+          : player,
+      ),
+      tokenBag: [
+        { id: 'giant_rat', kind: 'monster' },
+        { id: 'treasure_chest', kind: 'chest' },
+        { id: 'dragon', kind: 'monster' },
+      ],
+      remainingSteps: 3,
+      lastMoveFrom: { boardX: 0, boardY: 0 },
+    });
+
+    useSetupStore.setState({
+      gameState: state,
+      hasSavedGame: false,
+      lastError: undefined,
+    });
+
+    render(<GameScreen />);
+
+    await waitFor(() => {
+      expect(useSetupStore.getState().gameState?.phase).toBe(
+        'resolve_room_token_oracle_choice',
+      );
+    });
+
+    expect(screen.getByText('Oracle Choice')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Choose option 1: Giant Rat' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Choose option 2: Treasure Chest' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'End Turn' })).toBeDisabled();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Choose option 2: Treasure Chest' }),
+    );
+
+    await waitFor(() => {
+      expect(useSetupStore.getState().gameState?.phase).toBe('await_move');
+    });
+
+    expect(
+      screen.getByText('Resolved room: found Treasure Chest'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Found Treasure Chest at 0,-1 · Oracle drew Giant Rat / Treasure Chest · Oracle chose option 2',
+      ),
+    ).toBeInTheDocument();
+  });
+
   it('offers movement again after self-healing when steps remain', () => {
     const state = createUiState({
       phase: 'await_move',
@@ -3435,6 +3511,7 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
         onExplore={vi.fn()}
         onLeaveLoot={vi.fn()}
         onMove={vi.fn()}
+        onChooseOracleRoomToken={vi.fn()}
         onOpenChest={vi.fn()}
         onStartOptionalCombat={vi.fn()}
         onResolveCombat={vi.fn()}

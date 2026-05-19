@@ -112,6 +112,31 @@ describe('AI legal actions', () => {
     ).toEqual([{ type: 'resolveRoomToken' }]);
   });
 
+  it('offers only the two oracle room token choices while an oracle choice is pending', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_oracle',
+      aiCount: 1,
+      seed: 'oracle-room-choice-actions-seed',
+    });
+
+    expect(
+      getLegalAiActions({
+        ...state,
+        phase: 'resolve_room_token_oracle_choice',
+        pendingOracleRoomChoice: {
+          drawnTokens: [
+            { id: 'giant_rat', kind: 'monster' },
+            { id: 'treasure_chest', kind: 'chest' },
+          ],
+          position: { boardX: 0, boardY: -1 },
+        },
+      }),
+    ).toEqual([
+      { type: 'chooseOracleRoomToken', choiceIndex: 0 },
+      { type: 'chooseOracleRoomToken', choiceIndex: 1 },
+    ]);
+  });
+
   it('offers optional thief combat alongside free actions on a monster tile', () => {
     const base = createNewGame({
       humanHeroId: 'hero_thief',

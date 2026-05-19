@@ -23,7 +23,7 @@ import {
   swapPendingLoot,
   takePendingLoot,
 } from '../rules/inventory';
-import { resolveRoomToken } from '../rules/rooms';
+import { chooseOracleRoomToken, resolveRoomToken } from '../rules/rooms';
 import { castHealingSpell } from '../rules/spells';
 import { swapWarlockPosition } from '../rules/warlock';
 import { createNewGame } from '../setup/createGame';
@@ -56,6 +56,8 @@ export function applyGameAction(
       return placePendingTile(state, action.rotation);
     case 'resolveRoomToken':
       return resolveRoomToken(state);
+    case 'chooseOracleRoomToken':
+      return chooseOracleRoomToken(state, action.choiceIndex);
     case 'startOptionalCombat':
       return startOptionalCombat(state);
     case 'resolveCombat':

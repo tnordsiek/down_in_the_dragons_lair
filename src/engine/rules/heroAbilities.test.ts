@@ -25,7 +25,7 @@ import {
 import { moveActivePlayer } from '../movement/performMove';
 import { createNewGame } from '../setup/createGame';
 import { endTurn } from '../turns/turns';
-import { resolveRoomToken } from './rooms';
+import { chooseOracleRoomToken, resolveRoomToken } from './rooms';
 import { swapWarlockPosition } from './warlock';
 
 describe('hero_mage abilities', () => {
@@ -609,11 +609,13 @@ describe('hero_oracle abilities', () => {
       { id: 'dragon', kind: 'monster' },
       { id: 'treasure_chest', kind: 'chest' },
     ]);
-    const resolved = resolveRoomToken(state, { oracleChoiceIndex: 1 });
+    const pending = resolveRoomToken(state);
+    const resolved = chooseOracleRoomToken(pending, 1);
     const room = resolved.board.find(
       (tile) => tile.boardX === 0 && tile.boardY === -1,
     );
 
+    expect(pending.phase).toBe('resolve_room_token_oracle_choice');
     expect(room?.roomToken).toEqual({ id: 'treasure_chest', kind: 'chest' });
     expect(resolved.tokenBag).toEqual([{ id: 'dragon', kind: 'monster' }]);
   });

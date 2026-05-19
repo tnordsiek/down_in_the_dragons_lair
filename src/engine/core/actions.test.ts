@@ -72,4 +72,54 @@ describe('game action transitions', () => {
       ),
     ).toThrow('Resolve the room token before ending the turn');
   });
+
+  it('can choose between two drawn oracle room tokens through the action interface', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_oracle',
+      aiCount: 1,
+      seed: 'action-oracle-room-seed',
+    });
+
+    const pending = applyGameAction(
+      {
+        ...state,
+        activePlayerIndex: 0,
+        phase: 'resolve_room_token',
+        board: [
+          ...state.board,
+          {
+            tileInstanceId: 'tile-room',
+            blueprintId: 'room_cross',
+            rotation: 0,
+            boardX: 0,
+            boardY: -1,
+            discovered: true,
+            looseItems: [],
+          },
+        ],
+        players: state.players.map((player, index) =>
+          index === 0
+            ? { ...player, position: { boardX: 0, boardY: -1 } }
+            : player,
+        ),
+        tokenBag: [
+          { id: 'giant_rat', kind: 'monster' },
+          { id: 'treasure_chest', kind: 'chest' },
+        ],
+        lastMoveFrom: { boardX: 0, boardY: 0 },
+      },
+      { type: 'resolveRoomToken' },
+    );
+    const chosen = applyGameAction(pending, {
+      type: 'chooseOracleRoomToken',
+      choiceIndex: 1,
+    });
+
+    expect(pending.phase).toBe('resolve_room_token_oracle_choice');
+    expect(chosen.phase).toBe('await_move');
+    expect(
+      chosen.board.find((tile) => tile.boardX === 0 && tile.boardY === -1)
+        ?.roomToken,
+    ).toEqual({ id: 'treasure_chest', kind: 'chest' });
+  });
 });

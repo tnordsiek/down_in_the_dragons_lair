@@ -231,6 +231,7 @@ function actionMessage(
     case 'placePendingTile':
       return `Placed tile at ${action.rotation} degrees`;
     case 'resolveRoomToken':
+    case 'chooseOracleRoomToken':
       return undefined;
     case 'startOptionalCombat':
       return 'Started combat';

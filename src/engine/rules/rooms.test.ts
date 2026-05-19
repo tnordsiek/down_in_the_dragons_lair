@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import { createSeededRng } from '../../utils/rng';
 import type { GameState, PlacedTile } from '../core/types';
 import { createNewGame } from '../setup/createGame';
 import { openChest } from './chests';
-import { resolveRoomToken } from './rooms';
+import { chooseOracleRoomToken, resolveRoomToken } from './rooms';
 
 describe('room and chest rules', () => {
   it('places a chest token from the bag, consumes it, and allows moving when steps remain', () => {
@@ -90,6 +91,135 @@ describe('room and chest rules', () => {
     );
   });
 
+  it('pauses for a human oracle choice when two or more tokens are available', () => {
+    const state = createRoomState(
+      { id: 'giant_rat', kind: 'monster' },
+      {
+        heroId: 'hero_oracle',
+        tokenBag: [
+          { id: 'giant_rat', kind: 'monster' },
+          { id: 'treasure_chest', kind: 'chest' },
+          { id: 'dragon', kind: 'monster' },
+        ],
+      },
+    );
+    const pending = resolveRoomToken(state);
+
+    expect(pending.phase).toBe('resolve_room_token_oracle_choice');
+    expect(pending.pendingOracleRoomChoice).toEqual({
+      drawnTokens: [
+        { id: 'giant_rat', kind: 'monster' },
+        { id: 'treasure_chest', kind: 'chest' },
+      ],
+      position: { boardX: 0, boardY: -1 },
+    });
+    expect(pending.tokenBag).toEqual([{ id: 'dragon', kind: 'monster' }]);
+  });
+
+  it('resolves the chosen oracle token and returns the other token to the bag', () => {
+    const state = createRoomState(
+      { id: 'giant_rat', kind: 'monster' },
+      {
+        heroId: 'hero_oracle',
+        tokenBag: [
+          { id: 'giant_rat', kind: 'monster' },
+          { id: 'treasure_chest', kind: 'chest' },
+          { id: 'dragon', kind: 'monster' },
+        ],
+      },
+    );
+    const pending = resolveRoomToken(state);
+    const resolved = chooseOracleRoomToken(pending, 1);
+
+    expect(resolved.phase).toBe('await_move');
+    expect(
+      resolved.board.find((tile) => tile.boardX === 0 && tile.boardY === -1)
+        ?.roomToken,
+    ).toEqual({ id: 'treasure_chest', kind: 'chest' });
+    expect(resolved.tokenBag).toEqual([
+      { id: 'giant_rat', kind: 'monster' },
+      { id: 'dragon', kind: 'monster' },
+    ]);
+    expect(resolved.eventLog.at(-1)).toEqual(
+      expect.objectContaining({
+        type: 'room_resolved',
+        room: expect.objectContaining({
+          tokenId: 'treasure_chest',
+          oracleChoiceIndex: 1,
+          oracleDrawnTokenIds: ['giant_rat', 'treasure_chest'],
+        }),
+      }),
+    );
+  });
+
+  it('reinserts the returned oracle token uniformly instead of forcing it to the top in direct resolution', () => {
+    const state = createRoomState(
+      { id: 'giant_rat', kind: 'monster' },
+      {
+        heroId: 'hero_oracle',
+        seed: 'oracle-reinsert-5',
+        tokenBag: [
+          { id: 'giant_rat', kind: 'monster' },
+          { id: 'treasure_chest', kind: 'chest' },
+          { id: 'dragon', kind: 'monster' },
+          { id: 'mummy', kind: 'monster' },
+        ],
+      },
+    );
+    const aiOracleState = {
+      ...state,
+      rng: createSeededRng('oracle-reinsert-5').snapshot(),
+      players: state.players.map((player, index) =>
+        index === 0 ? { ...player, kind: 'ai' as const } : player,
+      ),
+    };
+    const resolved = resolveRoomToken(aiOracleState, { oracleChoiceIndex: 1 });
+
+    expect(resolved.tokenBag).toEqual([
+      { id: 'dragon', kind: 'monster' },
+      { id: 'giant_rat', kind: 'monster' },
+      { id: 'mummy', kind: 'monster' },
+    ]);
+    expect(
+      resolved.tokenBag.filter((token) => token.id === 'giant_rat'),
+    ).toHaveLength(1);
+    expect(resolved.rng).not.toEqual(aiOracleState.rng);
+  });
+
+  it('reinserts the returned oracle token uniformly after a human oracle choice', () => {
+    const state = createRoomState(
+      { id: 'giant_rat', kind: 'monster' },
+      {
+        heroId: 'hero_oracle',
+        seed: 'oracle-reinsert-5',
+        tokenBag: [
+          { id: 'giant_rat', kind: 'monster' },
+          { id: 'treasure_chest', kind: 'chest' },
+          { id: 'dragon', kind: 'monster' },
+          { id: 'mummy', kind: 'monster' },
+        ],
+      },
+    );
+    const pending = resolveRoomToken(state);
+    const resolved = chooseOracleRoomToken(
+      {
+        ...pending,
+        rng: createSeededRng('oracle-reinsert-5').snapshot(),
+      },
+      1,
+    );
+
+    expect(resolved.tokenBag).toEqual([
+      { id: 'dragon', kind: 'monster' },
+      { id: 'giant_rat', kind: 'monster' },
+      { id: 'mummy', kind: 'monster' },
+    ]);
+    expect(
+      resolved.tokenBag.filter((token) => token.id === 'giant_rat'),
+    ).toHaveLength(1);
+    expect(resolved.rng).not.toEqual(state.rng);
+  });
+
   it('opens a chest only with a key, consuming the key and chest', () => {
     const state = createRoomState({
       id: 'treasure_chest',
@@ -124,13 +254,15 @@ describe('room and chest rules', () => {
 function createRoomState(
   token: GameState['tokenBag'][number],
   overrides: Partial<Pick<GameState, 'remainingSteps'>> & {
-    heroId?: 'hero_mage' | 'hero_thief';
+    heroId?: 'hero_mage' | 'hero_thief' | 'hero_oracle';
+    tokenBag?: GameState['tokenBag'];
+    seed?: string;
   } = {},
 ): GameState {
   const base = createNewGame({
     humanHeroId: overrides.heroId ?? 'hero_mage',
     aiCount: 1,
-    seed: `room-${token.id}`,
+    seed: overrides.seed ?? `room-${token.id}`,
   });
   const roomTile: PlacedTile = {
     tileInstanceId: 'tile-room',
@@ -152,7 +284,7 @@ function createRoomState(
         ? { ...player, position: { boardX: 0, boardY: -1 } }
         : player,
     ),
-    tokenBag: [token],
+    tokenBag: overrides.tokenBag ?? [token],
     remainingSteps: overrides.remainingSteps ?? 3,
     lastMoveFrom: { boardX: 0, boardY: 0 },
   };

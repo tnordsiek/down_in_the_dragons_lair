@@ -10,6 +10,7 @@ export function isEndTurnBlockedPhase(phase: GameState['phase']): boolean {
   return (
     phase === 'loot_resolution' ||
     phase === 'resolve_room_token' ||
+    phase === 'resolve_room_token_oracle_choice' ||
     phase === 'combat' ||
     phase === 'combat_swordsman_reroll' ||
     phase === 'combat_warrior_reroll' ||
@@ -27,6 +28,10 @@ export function endTurn(state: GameState): GameState {
 
     if (state.phase === 'resolve_room_token') {
       throw new Error('Resolve the room token before ending the turn');
+    }
+
+    if (state.phase === 'resolve_room_token_oracle_choice') {
+      throw new Error('Choose an oracle room token before ending the turn');
     }
 
     throw new Error('Resolve the pending combat before ending the turn');

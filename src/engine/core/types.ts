@@ -150,6 +150,7 @@ export type GamePhase =
   | 'choose_pending_tile_rotation'
   | 'place_pending_tile'
   | 'resolve_room_token'
+  | 'resolve_room_token_oracle_choice'
   | 'optional_monster_combat'
   | 'combat'
   | 'combat_swordsman_reroll'
@@ -193,6 +194,11 @@ export interface PendingLoot {
   item: Item;
 }
 
+export interface PendingOracleRoomChoice {
+  drawnTokens: [Token, Token];
+  position: BoardPosition;
+}
+
 export interface GameEventActionDetails {
   actionType: string;
 }
@@ -202,6 +208,7 @@ export interface GameEventRoomDetails {
   tokenKind: Token['kind'];
   position: BoardPosition;
   oracleChoiceIndex?: 0 | 1;
+  oracleDrawnTokenIds?: [TokenId, TokenId];
 }
 
 export interface GameEventCombatDetails {
@@ -273,6 +280,7 @@ export interface GameState {
   lastMoveFrom?: BoardPosition;
   combat?: CombatContext;
   pendingLoot?: PendingLoot;
+  pendingOracleRoomChoice?: PendingOracleRoomChoice;
   turnContinuationReason?: TurnContinuationReason;
   eventLog: GameEvent[];
   victory?: VictoryState;
@@ -308,6 +316,11 @@ export type RotatePendingTilePreviewAction = {
 
 export type ResolveRoomTokenAction = {
   type: 'resolveRoomToken';
+};
+
+export type ChooseOracleRoomTokenAction = {
+  type: 'chooseOracleRoomToken';
+  choiceIndex: 0 | 1;
 };
 
 export type StartOptionalCombatAction = {
@@ -396,6 +409,7 @@ export type GameAction =
   | RotatePendingTilePreviewAction
   | PlacePendingTileAction
   | ResolveRoomTokenAction
+  | ChooseOracleRoomTokenAction
   | StartOptionalCombatAction
   | ResolveCombatAction
   | UseSwordswomanRerollAction

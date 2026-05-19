@@ -178,6 +178,9 @@ export function GameScreen() {
   const handleResolveRoom = () => {
     dispatch({ type: 'resolveRoomToken' });
   };
+  const handleChooseOracleRoomToken = (choiceIndex: 0 | 1) => {
+    dispatch({ type: 'chooseOracleRoomToken', choiceIndex });
+  };
   const handleResolveCombat = () => {
     dispatch({ type: 'resolveCombat' });
   };
@@ -345,6 +348,7 @@ export function GameScreen() {
             onLeaveLoot={handleLeaveLoot}
             onMove={handleMove}
             onExplore={handleExplore}
+            onChooseOracleRoomToken={handleChooseOracleRoomToken}
             onResolveRoom={handleResolveRoom}
             onStartOptionalCombat={handleStartOptionalCombat}
             onResolveCombat={handleResolveCombat}

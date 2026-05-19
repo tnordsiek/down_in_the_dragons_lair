@@ -4,6 +4,7 @@ import { getTileAt } from '../../engine/core/board';
 import type {
   BoardPosition,
   GameState,
+  Token,
   TileSide,
 } from '../../engine/core/types';
 import {
@@ -36,6 +37,7 @@ type ActionPanelProps = {
   onBeginLoot: () => void;
   onLeaveLoot: () => void;
   onExplore: (direction: TileSide) => void;
+  onChooseOracleRoomToken: (choiceIndex: 0 | 1) => void;
   onResolveRoom: () => void;
   onStartOptionalCombat: () => void;
   onResolveCombat: () => void;
@@ -62,6 +64,7 @@ export function ActionPanel({
   onBeginLoot,
   onLeaveLoot,
   onExplore,
+  onChooseOracleRoomToken,
   onResolveRoom,
   onStartOptionalCombat,
   onResolveCombat,
@@ -148,6 +151,7 @@ export function ActionPanel({
           (player) => player.id === healingSpellSelection.targetPlayerId,
         )
       : undefined;
+  const pendingOracleRoomChoice = state.pendingOracleRoomChoice;
 
   return (
     <section
@@ -195,6 +199,33 @@ export function ActionPanel({
           <p className="text-sm text-stone-400">
             End the turn to finish the skipped round and recover afterward.
           </p>
+        </div>
+      ) : null}
+
+      {state.phase === 'resolve_room_token_oracle_choice' &&
+      pendingOracleRoomChoice ? (
+        <div className="mt-4 grid gap-2">
+          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+            Oracle Choice
+          </h3>
+          <p className="text-sm text-stone-200">
+            Drawn room tokens at {pendingOracleRoomChoice.position.boardX},
+            {pendingOracleRoomChoice.position.boardY}
+          </p>
+          <p className="text-sm text-stone-300">
+            Choose one token to resolve. The other returns to the bag.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {pendingOracleRoomChoice.drawnTokens.map((token, index) => (
+              <button
+                key={`${token.id}-${index}`}
+                className="border border-amber-500 px-3 py-2 text-sm text-amber-100"
+                onClick={() => onChooseOracleRoomToken(index as 0 | 1)}
+              >
+                Choose option {index + 1}: {tokenChoiceLabel(token)}
+              </button>
+            ))}
+          </div>
         </div>
       ) : null}
 
@@ -582,4 +613,10 @@ export function ActionPanel({
       </div>
     </section>
   );
+}
+
+function tokenChoiceLabel(token: Token): string {
+  return token.kind === 'chest'
+    ? 'Treasure Chest'
+    : monsterName(token.id);
 }

@@ -92,6 +92,15 @@ export function chooseHeuristicAiAction(
     return requireAction(legalActions, 'resolveRoomToken');
   }
 
+  if (state.phase === 'resolve_room_token_oracle_choice') {
+    return (
+      legalActions.find(
+        (action) =>
+          action.type === 'chooseOracleRoomToken' && action.choiceIndex === 0,
+      ) ?? requireAction(legalActions, 'chooseOracleRoomToken')
+    );
+  }
+
   if (state.phase === 'choose_pending_tile_rotation') {
     return choosePlacementAction(state, legalActions);
   }

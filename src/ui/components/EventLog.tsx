@@ -1,4 +1,4 @@
-import type { GameState } from '../../engine/core/types';
+import type { GameState, TokenId } from '../../engine/core/types';
 import { heroName, monsterName } from '../labels';
 
 type EventLogProps = {
@@ -91,12 +91,17 @@ function renderRoomDetails(event: GameState['eventLog'][number]): string {
     room.tokenKind === 'chest'
       ? 'Treasure Chest'
       : monsterName(room.tokenId as Parameters<typeof monsterName>[0]);
-  const oracleSuffix =
+  const oracleDrawnSuffix = room.oracleDrawnTokenIds
+    ? ` · Oracle drew ${room.oracleDrawnTokenIds
+        .map((tokenId) => tokenDisplayLabel(tokenId))
+        .join(' / ')}`
+    : '';
+  const oracleChoiceSuffix =
     room.oracleChoiceIndex !== undefined
       ? ` · Oracle chose option ${room.oracleChoiceIndex + 1}`
       : '';
 
-  return `Found ${foundLabel} at ${room.position.boardX},${room.position.boardY}${oracleSuffix}`;
+  return `Found ${foundLabel} at ${room.position.boardX},${room.position.boardY}${oracleDrawnSuffix}${oracleChoiceSuffix}`;
 }
 
 function renderCombatBreakdown(event: GameState['eventLog'][number]): string {
@@ -125,6 +130,10 @@ function renderCombatBreakdown(event: GameState['eventLog'][number]): string {
   }
 
   return parts.join(' · ');
+}
+
+function tokenDisplayLabel(tokenId: TokenId): string {
+  return tokenId === 'treasure_chest' ? 'Treasure Chest' : monsterName(tokenId);
 }
 
 function capitalize(value: string): string {

@@ -79,6 +79,15 @@ export function getLegalAiActions(state: GameState): GameAction[] {
     return actions;
   }
 
+  if (state.phase === 'resolve_room_token_oracle_choice') {
+    if (state.pendingOracleRoomChoice) {
+      actions.push({ type: 'chooseOracleRoomToken', choiceIndex: 0 });
+      actions.push({ type: 'chooseOracleRoomToken', choiceIndex: 1 });
+    }
+
+    return actions;
+  }
+
   if (state.phase === 'optional_monster_combat') {
     if (state.combat) {
       actions.push({ type: 'startOptionalCombat' });
