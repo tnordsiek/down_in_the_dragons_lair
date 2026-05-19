@@ -409,15 +409,17 @@ describe('hero_thief abilities', () => {
       ),
       { boardX: 0, boardY: -1 },
     );
-    const nextTurn = endTurn({
+    const thiefTurn = endTurn({
       ...moved,
+      activePlayerIndex: 1,
+      phase: 'turn_skip',
+      combat: undefined,
       players: moved.players.map((player, index) =>
         index === 1
           ? { ...player, skipNextTurn: true, hp: 0 }
           : player,
       ),
     });
-    const thiefTurn = endTurn(nextTurn);
 
     expect(thiefTurn.phase).toBe('combat');
     expect(thiefTurn.combat).toEqual(

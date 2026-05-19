@@ -936,6 +936,120 @@ describe('Milestone 6 UI', () => {
     );
   });
 
+  it('disables End Turn during unresolved combat prompts but keeps it available before optional thief combat', () => {
+    const combatState = createUiState({
+      phase: 'combat',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+      },
+    });
+    const swordswomanState = createUiState({
+      phase: 'combat_swordsman_reroll',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        initialRolledDice: [1, 4],
+        rolledDice: [1, 4],
+        swordsmanRerollCount: 0,
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0 ? { ...player, heroId: 'hero_swordsman' } : player,
+      ),
+    });
+    const warriorState = createUiState({
+      phase: 'combat_warrior_reroll',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        initialRolledDice: [2, 3],
+        initialBaseOutcome: 'draw',
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0 ? { ...player, heroId: 'hero_warrior' } : player,
+      ),
+    });
+    const warlockState = createUiState({
+      phase: 'combat_warlock_sacrifice',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        initialRolledDice: [2, 3],
+        initialBaseOutcome: 'draw',
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0 ? { ...player, heroId: 'hero_warlock' } : player,
+      ),
+    });
+    const flameState = createUiState({
+      phase: 'combat_flame_spells',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        rolledDice: [2, 3],
+        pendingBaseOutcome: 'draw',
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_warrior',
+              inventory: {
+                ...player.inventory,
+                spells: [{ type: 'spell', spellKind: 'flame' }],
+              },
+            }
+          : player,
+      ),
+    });
+    const thiefState = createUiState({
+      phase: 'optional_monster_combat',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+      },
+      board: [
+        {
+          ...createUiState().board[0],
+          roomToken: { id: 'giant_rat', kind: 'monster' },
+        },
+      ],
+      players: createUiState().players.map((player, index) =>
+        index === 0 ? { ...player, heroId: 'hero_thief' } : player,
+      ),
+    });
+
+    const { rerender } = render(<ActionPanel state={combatState} {...noopActions} />);
+    expect(screen.getByRole('button', { name: 'End Turn' })).toBeDisabled();
+
+    rerender(<ActionPanel state={swordswomanState} {...noopActions} />);
+    expect(screen.getByRole('button', { name: 'End Turn' })).toBeDisabled();
+
+    rerender(<ActionPanel state={warriorState} {...noopActions} />);
+    expect(screen.getByRole('button', { name: 'End Turn' })).toBeDisabled();
+
+    rerender(<ActionPanel state={warlockState} {...noopActions} />);
+    expect(screen.getByRole('button', { name: 'End Turn' })).toBeDisabled();
+
+    rerender(<ActionPanel state={flameState} {...noopActions} />);
+    expect(screen.getByRole('button', { name: 'End Turn' })).toBeDisabled();
+
+    rerender(<ActionPanel state={thiefState} {...noopActions} />);
+    expect(screen.getByRole('button', { name: 'End Turn' })).toBeEnabled();
+  });
+
   it('shows the warlock sacrifice bonus in the flame spell combat math after sacrificing', () => {
     const state = createUiState({
       phase: 'combat_flame_spells',

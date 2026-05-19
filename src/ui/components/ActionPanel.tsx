@@ -12,6 +12,7 @@ import {
   getCombatOutcomeForPlayer,
 } from '../../engine/combat/combat';
 import { canStoreItem } from '../../engine/rules/inventory';
+import { isEndTurnBlockedPhase } from '../../engine/turns/turns';
 import { getUiLegalActions } from '../../state/setupStore';
 import { heroName, monsterName, sideLabels } from '../labels';
 import { itemLabel } from '../items';
@@ -164,10 +165,7 @@ export function ActionPanel({
         </div>
         <button
           className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
-          disabled={
-            state.phase === 'loot_resolution' ||
-            state.phase === 'resolve_room_token'
-          }
+          disabled={isEndTurnBlockedPhase(state.phase)}
           onClick={onEndTurn}
         >
           End Turn

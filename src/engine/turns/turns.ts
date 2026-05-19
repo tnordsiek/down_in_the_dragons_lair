@@ -6,13 +6,30 @@ import {
 } from '../rules/abilities';
 import { applyHealingIfOnHealingTile } from '../rules/healing';
 
-export function endTurn(state: GameState): GameState {
-  if (state.phase === 'loot_resolution') {
-    throw new Error('Resolve or leave pending loot before ending the turn');
-  }
+export function isEndTurnBlockedPhase(phase: GameState['phase']): boolean {
+  return (
+    phase === 'loot_resolution' ||
+    phase === 'resolve_room_token' ||
+    phase === 'combat' ||
+    phase === 'combat_swordsman_reroll' ||
+    phase === 'combat_warrior_reroll' ||
+    phase === 'combat_warlock_sacrifice' ||
+    phase === 'combat_flame_spells' ||
+    phase === 'optional_post_combat'
+  );
+}
 
-  if (state.phase === 'resolve_room_token') {
-    throw new Error('Resolve the room token before ending the turn');
+export function endTurn(state: GameState): GameState {
+  if (isEndTurnBlockedPhase(state.phase)) {
+    if (state.phase === 'loot_resolution') {
+      throw new Error('Resolve or leave pending loot before ending the turn');
+    }
+
+    if (state.phase === 'resolve_room_token') {
+      throw new Error('Resolve the room token before ending the turn');
+    }
+
+    throw new Error('Resolve the pending combat before ending the turn');
   }
 
   const activePlayer = state.players[state.activePlayerIndex];

@@ -48,6 +48,51 @@ describe('combat resolution', () => {
     );
   });
 
+  it('does not allow ending the turn while combat is still unresolved', () => {
+    const baseState = createCombatState('giant_rat');
+    const warriorPending = resolveCombat(
+      withActivePlayer(baseState, (player) => ({
+        ...player,
+        heroId: 'hero_warrior',
+        inventory: {
+          ...player.inventory,
+          spells: [{ type: 'spell', spellKind: 'flame' }],
+        },
+      })),
+      { dice: [2, 3] },
+    );
+    const warlockPending = resolveCombat(
+      withActivePlayer(baseState, (player) => ({
+        ...player,
+        heroId: 'hero_warlock',
+        inventory: {
+          ...player.inventory,
+          spells: [{ type: 'spell', spellKind: 'flame' }],
+        },
+      })),
+      { dice: [2, 3] },
+    );
+    const flamePending = declineWarriorReroll(warriorPending);
+    const swordswomanPending = resolveCombat(
+      withActivePlayer(baseState, (player) => ({
+        ...player,
+        heroId: 'hero_swordsman',
+      })),
+      { dice: [1, 4] },
+    );
+    const optionalPostCombatState = {
+      ...baseState,
+      phase: 'optional_post_combat' as const,
+    };
+
+    expect(() => endTurn(baseState)).toThrow(/pending combat/i);
+    expect(() => endTurn(swordswomanPending)).toThrow(/pending combat/i);
+    expect(() => endTurn(warriorPending)).toThrow(/pending combat/i);
+    expect(() => endTurn(warlockPending)).toThrow(/pending combat/i);
+    expect(() => endTurn(flamePending)).toThrow(/pending combat/i);
+    expect(() => endTurn(optionalPostCombatState)).toThrow(/pending combat/i);
+  });
+
   it('pauses for warrior reroll before flame spell selection after a warrior draw', () => {
     const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
       ...player,

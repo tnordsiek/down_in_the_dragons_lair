@@ -13,6 +13,7 @@ import {
   canStoreItem,
   getLootSwapChoices,
 } from '../engine/rules/inventory';
+import { isEndTurnBlockedPhase } from '../engine/turns/turns';
 
 function canUseHealingSpellNow(state: GameState): boolean {
   return (
@@ -89,10 +90,6 @@ export function getLegalAiActions(state: GameState): GameAction[] {
       actions.push({ type: 'resolveCombat' });
     }
 
-    if (state.phase === 'optional_post_combat') {
-      actions.push({ type: 'endTurn' });
-    }
-
     return actions;
   }
 
@@ -146,7 +143,9 @@ export function getLegalAiActions(state: GameState): GameAction[] {
     );
   }
 
-  actions.push({ type: 'endTurn' });
+  if (!isEndTurnBlockedPhase(state.phase)) {
+    actions.push({ type: 'endTurn' });
+  }
 
   return actions;
 }

@@ -316,6 +316,27 @@ describe('AI legal actions', () => {
     ]);
   });
 
+  it('does not offer end turn while a legacy optional post-combat retry is pending', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'optional-post-combat-actions-seed',
+    });
+
+    expect(
+      getLegalAiActions({
+        ...state,
+        phase: 'optional_post_combat',
+        combat: {
+          playerId: state.players[0].id,
+          monsterId: 'giant_rat',
+          position: { boardX: 0, boardY: 0 },
+          enteredFrom: { boardX: 0, boardY: -1 },
+        },
+      }),
+    ).toEqual([{ type: 'resolveCombat' }]);
+  });
+
   it('offers healing spell actions during free movement phases', () => {
     const state = withHealingSpell(createNewGame({
       humanHeroId: 'hero_mage',
