@@ -358,6 +358,78 @@ describe('Milestone 6 UI', () => {
     );
   });
 
+  it('shows Oracle Sight +1 in the pre-roll combat overview when the oracle bonus is active', () => {
+    const state = createUiState({
+      phase: 'combat',
+      remainingSteps: 3,
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0 ? { ...player, heroId: 'hero_oracle' } : player,
+      ),
+    });
+
+    render(<ActionPanel state={state} {...noopActions} />);
+
+    expect(
+      screen.getByText(
+        '2d6 + weapons +0 + Oracle Sight +1 + flame spells (0 available) must beat 5',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('does not show Oracle Sight +1 in the pre-roll combat overview after the first step window has passed', () => {
+    const state = createUiState({
+      phase: 'combat',
+      remainingSteps: 2,
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0 ? { ...player, heroId: 'hero_oracle' } : player,
+      ),
+    });
+
+    render(<ActionPanel state={state} {...noopActions} />);
+
+    expect(
+      screen.getByText('2d6 + weapons +0 + flame spells (0 available) must beat 5'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Oracle Sight \+1/)).toBeNull();
+  });
+
+  it('does not show Oracle Sight +1 in the pre-roll combat overview while the oracle is cursed', () => {
+    const state = createUiState({
+      phase: 'combat',
+      remainingSteps: 3,
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'giant_rat',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+      },
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? { ...player, heroId: 'hero_oracle', isCursed: true }
+          : player,
+      ),
+    });
+
+    render(<ActionPanel state={state} {...noopActions} />);
+
+    expect(
+      screen.getByText('2d6 + weapons +0 + flame spells (0 available) must beat 5'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Oracle Sight \+1/)).toBeNull();
+  });
+
   it('renders start-player rolls and tiebreaks inside a single game-start log entry', () => {
     const state = createUiState({
       eventLog: [

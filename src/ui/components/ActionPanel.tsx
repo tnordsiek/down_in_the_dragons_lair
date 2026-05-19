@@ -12,6 +12,7 @@ import {
   getCombatFlameSpellChoices,
   getCombatOutcomeForPlayer,
 } from '../../engine/combat/combat';
+import { hasActiveHeroAbility } from '../../engine/rules/abilities';
 import { canStoreItem } from '../../engine/rules/inventory';
 import { isEndTurnBlockedPhase } from '../../engine/turns/turns';
 import { getUiLegalActions } from '../../state/setupStore';
@@ -152,6 +153,10 @@ export function ActionPanel({
         )
       : undefined;
   const pendingOracleRoomChoice = state.pendingOracleRoomChoice;
+  const hasActiveOracleCombatBonus =
+    state.phase === 'combat' &&
+    hasActiveHeroAbility(activePlayer, 'hero_oracle') &&
+    state.remainingSteps === 3;
 
   return (
     <section
@@ -259,8 +264,10 @@ export function ActionPanel({
             {monsterName(combatMonster.id)} strength {combatMonster.strength}
           </p>
           <p className="font-mono text-xs text-stone-300">
-            2d6 + weapons +{weaponBonus} + flame spells ({availableFlameSpells}{' '}
-            available) must beat {combatMonster.strength}
+            2d6 + weapons +{weaponBonus}
+            {hasActiveOracleCombatBonus ? ' + Oracle Sight +1' : ''}
+            {' + flame spells ('}
+            {availableFlameSpells} available) must beat {combatMonster.strength}
           </p>
           <button
             className="w-fit bg-red-700 px-3 py-2 text-sm font-semibold text-white"
