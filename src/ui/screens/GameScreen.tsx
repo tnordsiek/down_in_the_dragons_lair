@@ -6,21 +6,18 @@ import { getLegalAiActions } from '../../ai/legalActions';
 import { getAssetUrl, useAsset } from '../../data/assets';
 import type {
   BoardPosition,
-  GameEvent,
   RotationDirection,
   TileSide,
 } from '../../engine/core/types';
 import { useSetupStore } from '../../state/setupStore';
 import { ActionPanel } from '../components/ActionPanel';
 import { AudioToggleGroup } from '../components/AudioToggleGroup';
-import {
-  BoardView,
-  getBoardSelectableHealingPositions,
-} from '../components/BoardView';
+import { BoardView } from '../components/BoardView';
 import { EndScreen } from '../components/EndScreen';
 import { EventLog } from '../components/EventLog';
 import { FooterMeta } from '../components/FooterMeta';
 import { PlayerPanel } from '../components/PlayerPanel';
+import { getBoardSelectableHealingPositions } from '../components/boardViewUtils';
 import { heroName } from '../labels';
 
 type HealingSpellSelectionState =
@@ -193,9 +190,6 @@ export function GameScreen() {
       type: 'placePendingTile',
       rotation: state.pendingTile.previewRotation,
     });
-  };
-  const handleResolveRoom = () => {
-    dispatch({ type: 'resolveRoomToken' });
   };
   const handleChooseOracleRoomToken = (choiceIndex: 0 | 1) => {
     dispatch({ type: 'chooseOracleRoomToken', choiceIndex });
@@ -387,7 +381,6 @@ export function GameScreen() {
             onMove={handleMove}
             onExplore={handleExplore}
             onChooseOracleRoomToken={handleChooseOracleRoomToken}
-            onResolveRoom={handleResolveRoom}
             onStartOptionalCombat={handleStartOptionalCombat}
             onResolveCombat={handleResolveCombat}
             onSelectCurseTarget={handleSelectCurseTarget}

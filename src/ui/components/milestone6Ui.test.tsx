@@ -16,15 +16,13 @@ import { applyGameAction } from '../../engine/core/actions';
 import { createNewGame } from '../../engine/setup/createGame';
 import type { GameState } from '../../engine/core/types';
 import { ActionPanel } from './ActionPanel';
-import {
-  BoardView,
-  getBoardSelectableHealingPositions,
-} from './BoardView';
+import { BoardView } from './BoardView';
 import { EndScreen } from './EndScreen';
 import { EventLog } from './EventLog';
 import { GameScreen } from '../screens/GameScreen';
 import { PlayerPanel } from './PlayerPanel';
 import { useSetupStore } from '../../state/setupStore';
+import { getBoardSelectableHealingPositions } from './boardViewUtils';
 import { heroName } from '../labels';
 
 const noopActions = {
@@ -37,7 +35,6 @@ const noopActions = {
   onMove: vi.fn(),
   onExplore: vi.fn(),
   onChooseOracleRoomToken: vi.fn(),
-  onResolveRoom: vi.fn(),
   onStartOptionalCombat: vi.fn(),
   onResolveCombat: vi.fn(),
   onSelectCurseTarget: vi.fn(),
@@ -3914,7 +3911,6 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
         onDeclineWarlockSacrifice={vi.fn()}
         onResolveCombatWithoutFlameSpells={vi.fn()}
         onResolveCombatWithFlameSpells={vi.fn()}
-        onResolveRoom={vi.fn()}
         onSelectHealingSpellTarget={(targetPlayerId) =>
           setHealingSpellSelection({ mode: 'select_tile', targetPlayerId })
         }

@@ -14,6 +14,13 @@ export default tseslint.config(
       ecmaVersion: 2022,
       globals: globals.browser,
     },
+  },
+  {
+    files: ['src/app/**/*.tsx', 'src/ui/**/*.tsx'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: globals.browser,
+    },
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,

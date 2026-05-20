@@ -99,7 +99,7 @@ export function resolveCombat(
     total,
     monster.strength,
   );
-  let stateWithAppliedCosts = spendFlameSpells(state, flameSpellCount);
+  const stateWithAppliedCosts = spendFlameSpells(state, flameSpellCount);
 
   if (shouldPauseForWarriorReroll(activePlayer, outcome)) {
     return {
@@ -609,7 +609,6 @@ function resolveCombatOutcome(
   }
 
   const monster = monsterDefinitions[state.combat.monsterId];
-  const activePlayer = state.players[state.activePlayerIndex];
   const stateWithSpentResources = spendFlameSpells(state, flameSpellCount);
   const updatedActivePlayer =
     stateWithSpentResources.players[stateWithSpentResources.activePlayerIndex];

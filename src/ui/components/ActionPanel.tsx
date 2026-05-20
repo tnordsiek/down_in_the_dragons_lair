@@ -42,7 +42,6 @@ type ActionPanelProps = {
   onLeaveLoot: () => void;
   onExplore: (direction: TileSide) => void;
   onChooseOracleRoomToken: (choiceIndex: 0 | 1) => void;
-  onResolveRoom: () => void;
   onStartOptionalCombat: () => void;
   onResolveCombat: () => void;
   onSelectCurseTarget: (targetPlayerId: string) => void;
@@ -74,7 +73,6 @@ export function ActionPanel({
   onLeaveLoot,
   onExplore,
   onChooseOracleRoomToken,
-  onResolveRoom,
   onStartOptionalCombat,
   onResolveCombat,
   onSelectCurseTarget,

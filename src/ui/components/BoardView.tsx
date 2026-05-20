@@ -19,7 +19,6 @@ import {
 } from '../../engine/movement/movement';
 import { getReachableKnownMovePaths } from '../../engine/movement/reachable';
 import { adjacentPosition } from '../../engine/movement/topology';
-import { getDiscoveredHealingPositions } from '../../engine/rules/abilities';
 import { itemAssetId, itemLabel } from '../items';
 import { heroName, monsterName } from '../labels';
 import {
@@ -602,12 +601,6 @@ export function BoardView({
       </div>
     </section>
   );
-}
-
-export function getBoardSelectableHealingPositions(
-  state: GameState,
-): BoardPosition[] {
-  return getDiscoveredHealingPositions(state);
 }
 
 function positionKey(position: BoardPosition): string {

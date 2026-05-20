@@ -52,8 +52,14 @@ npm run test
 npm run lint
 npm run format
 npm run build
+npm run verify
 npm run test:e2e
 ```
+
+Empfohlener lokaler Vorab-Check:
+- bei gezielten Aenderungen zuerst `npm run test -- <betroffene datei>`
+- vor Abschluss eines Arbeitsblocks immer `npm run build`
+- fuer einen kompletten manuellen Schnellcheck ohne E2E: `npm run verify`
 
 ## Veröffentlichung
 Der V1-Produktions-Build wird mit `npm run build` erzeugt. `vite.config.ts` setzt im GitHub-Actions-Kontext automatisch den passenden `base`-Pfad für GitHub Pages Projektseiten.
