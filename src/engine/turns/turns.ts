@@ -8,6 +8,7 @@ import { applyHealingIfOnHealingTile } from '../rules/healing';
 
 export function isEndTurnBlockedPhase(phase: GameState['phase']): boolean {
   return (
+    phase === 'choose_pending_tile_rotation' ||
     phase === 'loot_resolution' ||
     phase === 'resolve_room_token' ||
     phase === 'resolve_room_token_oracle_choice' ||
@@ -23,6 +24,12 @@ export function isEndTurnBlockedPhase(phase: GameState['phase']): boolean {
 
 export function endTurn(state: GameState): GameState {
   if (isEndTurnBlockedPhase(state.phase)) {
+    if (state.phase === 'choose_pending_tile_rotation') {
+      throw new Error(
+        'Confirm the pending tile rotation before ending the turn',
+      );
+    }
+
     if (state.phase === 'loot_resolution') {
       throw new Error('Resolve or leave pending loot before ending the turn');
     }

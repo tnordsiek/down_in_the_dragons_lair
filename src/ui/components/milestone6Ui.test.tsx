@@ -125,6 +125,25 @@ describe('Milestone 6 UI', () => {
     ).toBeNull();
   });
 
+  it('disables ending the turn while a pending tile rotation must be confirmed', () => {
+    const state = createUiState({
+      phase: 'choose_pending_tile_rotation',
+      pendingTile: {
+        origin: { boardX: 0, boardY: 0 },
+        target: { boardX: 1, boardY: 0 },
+        direction: 'B',
+        blueprintId: 'room_corner',
+        previewRotation: 0,
+        legalRotations: [0, 90],
+        skippedBlueprintIds: [],
+      },
+    });
+
+    render(<ActionPanel state={state} {...noopActions} />);
+
+    expect(screen.getByRole('button', { name: 'End Turn' })).toBeDisabled();
+  });
+
   it('shows a pending tile on the board in default orientation before placement', () => {
     const state = createUiState({
       phase: 'choose_pending_tile_rotation',

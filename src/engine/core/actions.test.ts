@@ -73,6 +73,33 @@ describe('game action transitions', () => {
     ).toThrow('Resolve the room token before ending the turn');
   });
 
+  it('does not allow ending the turn while a pending tile rotation must be confirmed', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'action-pending-tile-end-turn-seed',
+    });
+
+    expect(() =>
+      applyGameAction(
+        {
+          ...state,
+          phase: 'choose_pending_tile_rotation',
+          pendingTile: {
+            origin: { boardX: 0, boardY: 0 },
+            target: { boardX: 0, boardY: -1 },
+            direction: 'A',
+            blueprintId: 'room_corner',
+            previewRotation: 0,
+            legalRotations: [0, 90],
+            skippedBlueprintIds: [],
+          },
+        },
+        { type: 'endTurn' },
+      ),
+    ).toThrow('Confirm the pending tile rotation before ending the turn');
+  });
+
   it('can choose between two drawn oracle room tokens through the action interface', () => {
     const state = createNewGame({
       humanHeroId: 'hero_oracle',
