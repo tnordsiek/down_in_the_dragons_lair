@@ -313,12 +313,12 @@ describe('hero_warlock abilities', () => {
               ...player,
               inventory: {
                 ...player.inventory,
-                keyCount: 1,
+                keyCount: 1 as const,
               },
             }
           : player,
       ),
-    };
+    } satisfies GameState;
     const lootTarget = lootState.players.find(
       (player) => player.id !== 'player_human',
     )!;
@@ -346,21 +346,21 @@ describe('hero_warlock abilities', () => {
         base.board[0],
         {
           ...base.board[1],
-          blueprintId: 'tunnel_straight',
-          rotation: 90,
+          blueprintId: 'tunnel_straight' as const,
+          rotation: 90 as const,
           roomToken: { id: 'dragon' as const, kind: 'monster' as const },
         },
         {
           tileInstanceId: 'tile-fallback',
-          blueprintId: 'tunnel_straight',
-          rotation: 90,
+          blueprintId: 'tunnel_straight' as const,
+          rotation: 90 as const,
           boardX: 3,
           boardY: 0,
           discovered: true,
           looseItems: [],
         },
       ],
-    };
+    } satisfies GameState;
     const target = state.players.find((player) => player.id !== 'player_human')!;
     const swapped = swapWarlockPosition(state, target.id);
     const resolved = resolveCombat(swapped, { dice: [2, 3] });
