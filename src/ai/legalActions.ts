@@ -102,6 +102,18 @@ export function getLegalAiActions(state: GameState): GameAction[] {
     return actions;
   }
 
+  if (state.phase === 'combat_curse_target') {
+    actions.push(
+      ...state.players
+        .filter((player) => player.id !== activePlayer.id)
+        .map((player) => ({
+          type: 'selectCurseTarget' as const,
+          targetPlayerId: player.id,
+        })),
+    );
+    return actions;
+  }
+
   if (state.phase === 'combat_swordsman_reroll') {
     actions.push({ type: 'useSwordswomanReroll' });
     return actions;

@@ -157,6 +157,7 @@ export type GamePhase =
   | 'combat_warrior_reroll'
   | 'combat_warlock_sacrifice'
   | 'combat_flame_spells'
+  | 'combat_curse_target'
   | 'loot_resolution'
   | 'optional_post_combat'
   | 'turn_end'
@@ -185,7 +186,8 @@ export interface CombatContext {
   pendingBaseOutcome?: 'draw' | 'defeat';
   pendingWarlockSacrificeBonus?: number;
   pendingOracleBonus?: number;
-  pendingCurseTargetPlayerId?: string;
+  pendingResolutionPhase?: GamePhase;
+  pendingCombatEvent?: GameEventCombatDetails;
 }
 
 export interface PendingLoot {
@@ -222,6 +224,7 @@ export interface GameEventCombatDetails {
   warlockSacrificeBonus: number;
   oracleBonus: number;
   curseTargetPlayerId?: string;
+  curseTargetPlayerLabel?: string;
   retreatPosition?: BoardPosition;
 }
 
@@ -330,7 +333,11 @@ export type StartOptionalCombatAction = {
 export type ResolveCombatAction = {
   type: 'resolveCombat';
   dice?: [number, number];
-  curseTargetPlayerId?: string;
+};
+
+export type SelectCurseTargetAction = {
+  type: 'selectCurseTarget';
+  targetPlayerId: string;
 };
 
 export type UseSwordswomanRerollAction = {
@@ -412,6 +419,7 @@ export type GameAction =
   | ChooseOracleRoomTokenAction
   | StartOptionalCombatAction
   | ResolveCombatAction
+  | SelectCurseTargetAction
   | UseSwordswomanRerollAction
   | UseWarriorRerollAction
   | DeclineWarriorRerollAction

@@ -25,7 +25,6 @@ export type CombatOutcome = 'victory' | 'draw' | 'defeat';
 
 export type ResolveCombatOptions = {
   dice?: [number, number];
-  curseTargetPlayerId?: string;
 };
 
 export type UseWarriorRerollOptions = {
@@ -81,7 +80,6 @@ export function resolveCombat(
         initialRolledDice: initialDice,
         rolledDice: initialDice,
         swordsmanRerollCount: 0,
-        pendingCurseTargetPlayerId: options.curseTargetPlayerId,
       },
       rng: rng.snapshot(),
     };
@@ -113,7 +111,6 @@ export function resolveCombat(
         initialBaseOutcome: toPendingCombatOutcome(outcome),
         pendingWarlockSacrificeBonus: warlockSacrificeBonus,
         pendingOracleBonus: oracleBonus,
-        pendingCurseTargetPlayerId: options.curseTargetPlayerId,
       },
       rng: rng.snapshot(),
     };
@@ -137,7 +134,6 @@ export function resolveCombat(
         initialBaseOutcome: toPendingCombatOutcome(outcome),
         pendingWarlockSacrificeBonus: 0,
         pendingOracleBonus: oracleBonus,
-        pendingCurseTargetPlayerId: options.curseTargetPlayerId,
       },
       rng: rng.snapshot(),
     };
@@ -161,7 +157,6 @@ export function resolveCombat(
         pendingBaseOutcome: toPendingCombatOutcome(outcome),
         pendingWarlockSacrificeBonus: warlockSacrificeBonus,
         pendingOracleBonus: oracleBonus,
-        pendingCurseTargetPlayerId: options.curseTargetPlayerId,
       },
       rng: rng.snapshot(),
     };
@@ -173,7 +168,6 @@ export function resolveCombat(
     flameSpellCount,
     warlockSacrificeBonus,
     oracleBonus,
-    options.curseTargetPlayerId,
   );
 }
 
@@ -231,7 +225,6 @@ export function useSwordswomanReroll(
   return continueResolvedCombat(
     updatedState,
     resolvedDice,
-    state.combat.pendingCurseTargetPlayerId,
   );
 }
 
@@ -255,7 +248,6 @@ export function useWarriorReroll(
   return continueResolvedCombat(
     stateWithUpdatedRng,
     rerollDice,
-    state.combat.pendingCurseTargetPlayerId,
   );
 }
 
@@ -302,7 +294,6 @@ export function declineWarriorReroll(state: GameState): GameState {
     flameSpellCount,
     warlockSacrificeBonus,
     oracleBonus,
-    state.combat.pendingCurseTargetPlayerId,
   );
 }
 
@@ -361,7 +352,6 @@ export function useWarlockSacrifice(state: GameState): GameState {
     flameSpellCount,
     warlockSacrificeBonus,
     oracleBonus,
-    state.combat.pendingCurseTargetPlayerId,
   );
 }
 
@@ -409,7 +399,41 @@ export function declineWarlockSacrifice(state: GameState): GameState {
     flameSpellCount,
     warlockSacrificeBonus,
     oracleBonus,
-    state.combat.pendingCurseTargetPlayerId,
+  );
+}
+
+export function selectCurseTarget(
+  state: GameState,
+  targetPlayerId: string,
+): GameState {
+  if (state.phase !== 'combat_curse_target' || !state.combat) {
+    throw new Error('Curse target selection is only available after defeating a mummy');
+  }
+
+  const activePlayer = state.players[state.activePlayerIndex];
+  const target = getCurseTarget(state.players, activePlayer.id, targetPlayerId);
+
+  if (!target) {
+    throw new Error('Mummy curse requires another hero target');
+  }
+
+  const pendingCombatEvent = state.combat.pendingCombatEvent;
+  const pendingResolutionPhase = state.combat.pendingResolutionPhase;
+
+  if (!pendingCombatEvent || !pendingResolutionPhase) {
+    throw new Error('Missing pending mummy curse resolution state');
+  }
+
+  return finalizeVictoryState(
+    state,
+    monsterDefinitions[state.combat.monsterId],
+    applyCurseToTarget(state.players, target.id),
+    pendingResolutionPhase,
+    {
+      ...pendingCombatEvent,
+      curseTargetPlayerId: target.id,
+      curseTargetPlayerLabel: createPlayerEventFields(target).playerLabel,
+    },
   );
 }
 
@@ -489,7 +513,6 @@ function resolveVictory(
   monster: MonsterDefinition,
   dice: [number, number],
   combatEvent: GameEventCombatDetails,
-  curseTargetPlayerId?: string,
 ): GameState {
   const combat = state.combat!;
   const combatTile = getTileAt(state.board, combat.position);
@@ -501,10 +524,10 @@ function resolveVictory(
   const activePlayer = state.players[state.activePlayerIndex];
   const reward = monster.reward;
   const combatRewardLoot = createCombatRewardLoot(reward, combat.position);
-  let players = state.players;
+  let playersAfterReward = state.players;
 
   if (reward.type === 'treasure') {
-    players = state.players.map((player, index) =>
+    playersAfterReward = state.players.map((player, index) =>
       index === state.activePlayerIndex
         ? {
             ...player,
@@ -514,9 +537,16 @@ function resolveVictory(
     );
   }
 
-  if (monster.onDefeatEffect === 'curse_other_player') {
-    players = applyCurse(players, activePlayer.id, curseTargetPlayerId);
-  }
+  const boardAfterVictory = state.board.map((tile) =>
+    samePosition(tile, combatTile) ? { ...tile, roomToken: undefined } : tile,
+  );
+  const turnContinuationReason = canSwordswomanContinueAfterCombat(
+    activePlayer,
+    activePlayer,
+    dice,
+  )
+    ? 'swordsman_on_six'
+    : undefined;
 
   const phase: GameState['phase'] = monster.isAncientDragon
     ? 'game_over'
@@ -524,59 +554,47 @@ function resolveVictory(
       ? 'loot_resolution'
       : getPostVictoryPhase(activePlayer, {
           ...state,
-          players,
-          board: state.board.map((tile) =>
-            samePosition(tile, combatTile)
-              ? { ...tile, roomToken: undefined }
-              : tile,
-          ),
+          players: playersAfterReward,
+          board: boardAfterVictory,
           combat: undefined,
           pendingLoot: combatRewardLoot,
-          turnContinuationReason: canSwordswomanContinueAfterCombat(
-            activePlayer,
-            activePlayer,
-            dice,
-          )
-            ? 'swordsman_on_six'
-            : undefined,
+          turnContinuationReason,
         }, dice);
-  const stateAfterReward: GameState = {
+  const preparedVictoryState: GameState = {
     ...state,
     phase,
-    players,
-    board: state.board.map((tile) =>
-      samePosition(tile, combatTile)
-        ? { ...tile, roomToken: undefined }
-        : tile,
-    ),
-    combat: undefined,
+    players: playersAfterReward,
+    board: boardAfterVictory,
     pendingLoot: combatRewardLoot,
-    turnContinuationReason: canSwordswomanContinueAfterCombat(
-      activePlayer,
-      activePlayer,
-      dice,
-    )
-      ? 'swordsman_on_six'
-      : undefined,
+    turnContinuationReason,
   };
-  const stateWithEvent = appendGameEvent(stateAfterReward, {
-    type: 'combat_resolved',
-    message: `Resolved combat and defeated ${monster.displayName}`,
-    ...createPlayerEventFields(activePlayer),
-    combat: {
-      ...combatEvent,
-      curseTargetPlayerId,
-    },
-  });
 
-  if (!monster.isAncientDragon) {
-    return stateWithEvent;
+  if (monster.onDefeatEffect === 'curse_other_player') {
+    const validTargets = getValidCurseTargets(
+      playersAfterReward,
+      activePlayer.id,
+    );
+
+    if (validTargets.length > 0) {
+      return {
+        ...preparedVictoryState,
+        phase: 'combat_curse_target',
+        combat: {
+          ...combat,
+          pendingResolutionPhase: phase,
+          pendingCombatEvent: combatEvent,
+        },
+      };
+    }
   }
 
-  return {
-    ...stateWithEvent,
-    victory: createVictoryState(stateWithEvent, activePlayer.id),
-  };
+  return finalizeVictoryState(
+    preparedVictoryState,
+    monster,
+    playersAfterReward,
+    phase,
+    combatEvent,
+  );
 }
 
 function resolveCombatOutcome(
@@ -585,7 +603,6 @@ function resolveCombatOutcome(
   flameSpellCount: number,
   warlockSacrificeBonus: number,
   oracleBonus: number,
-  curseTargetPlayerId?: string,
 ): GameState {
   if (!state.combat) {
     throw new Error('No combat to resolve');
@@ -624,7 +641,6 @@ function resolveCombatOutcome(
       monster,
       dice,
       combatEvent,
-      curseTargetPlayerId,
     );
   }
 
@@ -774,7 +790,6 @@ function resolvePendingCombat(
     flameSpellCount,
     state.combat.pendingWarlockSacrificeBonus ?? 0,
     state.combat.pendingOracleBonus ?? 0,
-    state.combat.pendingCurseTargetPlayerId,
   );
 }
 
@@ -989,7 +1004,6 @@ function canSwordswomanContinueAfterCombat(
 function continueResolvedCombat(
   state: GameState,
   dice: [number, number],
-  curseTargetPlayerId?: string,
 ): GameState {
   if (!state.combat) {
     throw new Error('No combat to continue');
@@ -1037,7 +1051,6 @@ function continueResolvedCombat(
     flameSpellCount,
     warlockSacrificeBonus,
     oracleBonus,
-    curseTargetPlayerId,
   );
 }
 
@@ -1102,23 +1115,56 @@ function getWarlockSwapFallback(
   return undefined;
 }
 
-function applyCurse(
+function finalizeVictoryState(
+  state: GameState,
+  monster: MonsterDefinition,
   players: Player[],
-  activePlayerId: string,
-  curseTargetPlayerId?: string,
-): Player[] {
-  const target =
-    players.find(
-      (player) =>
-        player.id === curseTargetPlayerId && player.id !== activePlayerId,
-    ) ?? players.find((player) => player.id !== activePlayerId);
+  phase: GameState['phase'],
+  combatEvent: GameEventCombatDetails,
+): GameState {
+  const activePlayer = players[state.activePlayerIndex];
+  const stateWithEvent = appendGameEvent(
+    {
+      ...state,
+      phase,
+      players,
+      combat: undefined,
+    },
+    {
+      type: 'combat_resolved',
+      message: `Resolved combat and defeated ${monster.displayName}`,
+      ...createPlayerEventFields(activePlayer),
+      combat: combatEvent,
+    },
+  );
 
-  if (!target) {
-    return players;
+  if (phase !== 'game_over') {
+    return stateWithEvent;
   }
 
+  return {
+    ...stateWithEvent,
+    victory: createVictoryState(stateWithEvent, activePlayer.id),
+  };
+}
+
+function getValidCurseTargets(players: Player[], activePlayerId: string): Player[] {
+  return players.filter((player) => player.id !== activePlayerId);
+}
+
+function getCurseTarget(
+  players: Player[],
+  activePlayerId: string,
+  targetPlayerId?: string,
+): Player | undefined {
+  return players.find(
+    (player) => player.id === targetPlayerId && player.id !== activePlayerId,
+  );
+}
+
+function applyCurseToTarget(players: Player[], targetPlayerId: string): Player[] {
   return players.map((player) => ({
     ...player,
-    isCursed: player.id === target.id,
+    isCursed: player.id === targetPlayerId,
   }));
 }

@@ -76,6 +76,7 @@ export function chooseHeuristicAiAction(
     state.phase === 'optional_monster_combat' ||
     state.phase === 'combat' ||
     state.phase === 'optional_post_combat' ||
+    state.phase === 'combat_curse_target' ||
     state.phase === 'combat_swordsman_reroll' ||
     state.phase === 'combat_warrior_reroll' ||
     state.phase === 'combat_warlock_sacrifice' ||
@@ -173,6 +174,21 @@ function chooseCombatAction(
     return chooseCombatFlameSpellAction(state, legalActions);
   }
 
+  if (state.phase === 'combat_curse_target') {
+    const targetPlayerId = chooseCurseTargetPlayerId(
+      state,
+      state.players[state.activePlayerIndex],
+    );
+
+    return (
+      legalActions.find(
+        (action) =>
+          action.type === 'selectCurseTarget' &&
+          action.targetPlayerId === targetPlayerId,
+      ) ?? requireAction(legalActions, 'selectCurseTarget')
+    );
+  }
+
   if (state.phase === 'optional_monster_combat') {
     const startCombatAction = requireAction(legalActions, 'startOptionalCombat');
 
@@ -238,10 +254,7 @@ function chooseCombatAction(
     }
   }
 
-  return {
-    ...combatAction,
-    curseTargetPlayerId: chooseCurseTargetPlayerId(state, activePlayer),
-  };
+  return combatAction;
 }
 
 function chooseWarlockSacrificeAction(

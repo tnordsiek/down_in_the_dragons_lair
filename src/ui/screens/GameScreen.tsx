@@ -184,6 +184,9 @@ export function GameScreen() {
   const handleResolveCombat = () => {
     dispatch({ type: 'resolveCombat' });
   };
+  const handleSelectCurseTarget = (targetPlayerId: string) => {
+    dispatch({ type: 'selectCurseTarget', targetPlayerId });
+  };
   const handleUseSwordswomanReroll = () => {
     dispatch({ type: 'useSwordswomanReroll' });
   };
@@ -352,6 +355,7 @@ export function GameScreen() {
             onResolveRoom={handleResolveRoom}
             onStartOptionalCombat={handleStartOptionalCombat}
             onResolveCombat={handleResolveCombat}
+            onSelectCurseTarget={handleSelectCurseTarget}
             onUseSwordswomanReroll={handleUseSwordswomanReroll}
             onUseWarriorReroll={handleUseWarriorReroll}
             onDeclineWarriorReroll={handleDeclineWarriorReroll}
@@ -515,6 +519,13 @@ function getLatestCombatDice(
     state.combat?.rolledDice
   ) {
     return state.combat.rolledDice;
+  }
+
+  if (
+    state.phase === 'combat_curse_target' &&
+    state.combat?.pendingCombatEvent
+  ) {
+    return state.combat.pendingCombatEvent.dice;
   }
 
   if (

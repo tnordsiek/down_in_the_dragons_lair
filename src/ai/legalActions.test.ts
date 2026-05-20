@@ -362,6 +362,31 @@ describe('AI legal actions', () => {
     ).toEqual([{ type: 'resolveCombat' }]);
   });
 
+  it('offers only other heroes as mummy curse targets during the curse selection step', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 2,
+      seed: 'mummy-curse-actions-seed',
+    });
+
+    expect(
+      getLegalAiActions({
+        ...state,
+        phase: 'combat_curse_target',
+        activePlayerIndex: 0,
+        combat: {
+          playerId: state.players[0].id,
+          monsterId: 'mummy',
+          position: { boardX: 0, boardY: 0 },
+          enteredFrom: { boardX: 0, boardY: -1 },
+        },
+      }),
+    ).toEqual([
+      { type: 'selectCurseTarget', targetPlayerId: 'player_ai_1' },
+      { type: 'selectCurseTarget', targetPlayerId: 'player_ai_2' },
+    ]);
+  });
+
   it('offers healing spell actions during free movement phases', () => {
     const state = withHealingSpell(createNewGame({
       humanHeroId: 'hero_mage',

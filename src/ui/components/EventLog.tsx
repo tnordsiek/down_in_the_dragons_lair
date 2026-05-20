@@ -119,7 +119,9 @@ function renderCombatBreakdown(event: GameState['eventLog'][number]): string {
     parts.push(`warlock sacrifice +${combat.warlockSacrificeBonus}`);
   }
 
-  if (combat.curseTargetPlayerId) {
+  if (combat.curseTargetPlayerLabel) {
+    parts.push(`curse -> ${combat.curseTargetPlayerLabel}`);
+  } else if (combat.curseTargetPlayerId) {
     parts.push(`curse -> ${combat.curseTargetPlayerId}`);
   }
 

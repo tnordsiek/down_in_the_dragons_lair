@@ -37,6 +37,7 @@ const noopActions = {
   onResolveRoom: vi.fn(),
   onStartOptionalCombat: vi.fn(),
   onResolveCombat: vi.fn(),
+  onSelectCurseTarget: vi.fn(),
   onUseSwordswomanReroll: vi.fn(),
   onUseWarriorReroll: vi.fn(),
   onDeclineWarriorReroll: vi.fn(),
@@ -428,6 +429,74 @@ describe('Milestone 6 UI', () => {
       screen.getByText('2d6 + weapons +0 + flame spells (0 available) must beat 5'),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Oracle Sight \+1/)).toBeNull();
+  });
+
+  it('shows mummy curse target choices for another hero and excludes the active player', () => {
+    const state = createUiState({
+      phase: 'combat_curse_target',
+      combat: {
+        playerId: 'player_human',
+        monsterId: 'mummy',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+      },
+    });
+    const onSelectCurseTarget = vi.fn();
+
+    render(
+      <ActionPanel
+        state={state}
+        {...noopActions}
+        onSelectCurseTarget={onSelectCurseTarget}
+      />,
+    );
+
+    expect(screen.getByText('Mummy Curse')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Mummy defeated. Choose another hero to receive the curse.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Thief' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Mage' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
+
+    expect(onSelectCurseTarget).toHaveBeenCalledWith('player_ai_1');
+  });
+
+  it('renders the chosen mummy curse target in the event log with a player label', () => {
+    const state = createUiState({
+      eventLog: [
+        {
+          id: 'event-curse',
+          type: 'combat_resolved',
+          message: 'Resolved combat and defeated Mummy',
+          playerId: 'player_human',
+          playerHeroId: 'hero_mage',
+          playerLabel: 'Mage (player_human)',
+          combat: {
+            monsterId: 'mummy',
+            monsterStrength: 7,
+            dice: [6, 4],
+            total: 10,
+            outcome: 'victory',
+            weaponBonus: 0,
+            flameSpellCount: 0,
+            warlockSacrificeBonus: 0,
+            oracleBonus: 0,
+            curseTargetPlayerId: 'player_ai_1',
+            curseTargetPlayerLabel: 'Thief (player_ai_1)',
+          },
+        },
+      ],
+    });
+
+    render(<EventLog state={state} />);
+
+    expect(
+      screen.getByText(/curse -> Thief \(player_ai_1\)/),
+    ).toBeInTheDocument();
   });
 
   it('renders start-player rolls and tiebreaks inside a single game-start log entry', () => {
@@ -3587,6 +3656,7 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
         onOpenChest={vi.fn()}
         onStartOptionalCombat={vi.fn()}
         onResolveCombat={vi.fn()}
+        onSelectCurseTarget={vi.fn()}
         onUseSwordswomanReroll={vi.fn()}
         onUseWarriorReroll={vi.fn()}
         onDeclineWarriorReroll={vi.fn()}

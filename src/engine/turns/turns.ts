@@ -16,6 +16,7 @@ export function isEndTurnBlockedPhase(phase: GameState['phase']): boolean {
     phase === 'combat_warrior_reroll' ||
     phase === 'combat_warlock_sacrifice' ||
     phase === 'combat_flame_spells' ||
+    phase === 'combat_curse_target' ||
     phase === 'optional_post_combat'
   );
 }

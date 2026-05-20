@@ -437,6 +437,37 @@ describe('heuristic AI', () => {
     });
   });
 
+  it('chooses the deterministic mummy curse target during the curse selection step', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 2,
+      seed: 'ai-mummy-curse-choice',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'combat_curse_target',
+      activePlayerIndex: 0,
+      players: base.players.map((player, index) =>
+        index === 1
+          ? { ...player, treasurePoints: 3 }
+          : index === 2
+            ? { ...player, treasurePoints: 7 }
+            : player,
+      ),
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'mummy',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+      },
+    };
+
+    expect(chooseHeuristicAiAction(state)).toEqual({
+      type: 'selectCurseTarget',
+      targetPlayerId: 'player_ai_2',
+    });
+  });
+
   it('uses legal follow-up actions during a continued swordsman turn with zero steps', () => {
     const base = createNewGame({
       humanHeroId: 'hero_swordsman',

@@ -91,6 +91,13 @@ describe('combat resolution', () => {
     expect(() => endTurn(warlockPending)).toThrow(/pending combat/i);
     expect(() => endTurn(flamePending)).toThrow(/pending combat/i);
     expect(() => endTurn(optionalPostCombatState)).toThrow(/pending combat/i);
+    expect(
+      () =>
+        endTurn({
+          ...baseState,
+          phase: 'combat_curse_target',
+        }),
+    ).toThrow(/pending combat/i);
   });
 
   it('pauses for warrior reroll before flame spell selection after a warrior draw', () => {
@@ -670,15 +677,37 @@ describe('combat resolution', () => {
     });
   });
 
+  it('pauses for explicit mummy curse target selection after a human victory', () => {
+    const state = createCombatState('mummy');
+    const resolved = resolveCombat(state, {
+      dice: [6, 6],
+    });
+
+    expect(resolved.phase).toBe('combat_curse_target');
+    expect(resolved.combat).toEqual(
+      expect.objectContaining({
+        pendingResolutionPhase: 'loot_resolution',
+        pendingCombatEvent: expect.objectContaining({
+          outcome: 'victory',
+          monsterId: 'mummy',
+        }),
+      }),
+    );
+    expect(resolved.board[0].roomToken).toBeUndefined();
+  });
+
   it('moves the single curse to the selected target after defeating a mummy', () => {
     const state = createCombatState('mummy');
     const activePlayer = state.players[state.activePlayerIndex];
     const target = state.players.find(
       (player) => player.id !== activePlayer.id,
     )!;
-    const resolved = resolveCombat(state, {
+    const pending = resolveCombat(state, {
       dice: [6, 6],
-      curseTargetPlayerId: target.id,
+    });
+    const resolved = applyGameAction(pending, {
+      type: 'selectCurseTarget',
+      targetPlayerId: target.id,
     });
 
     expect(
@@ -686,6 +715,39 @@ describe('combat resolution', () => {
         .filter((player) => player.isCursed)
         .map((player) => player.id),
     ).toEqual([target.id]);
+    expect(resolved.phase).toBe('loot_resolution');
+    expect(resolved.eventLog.at(-1)?.combat).toEqual(
+      expect.objectContaining({
+        curseTargetPlayerId: target.id,
+        curseTargetPlayerLabel: expect.stringContaining(target.id),
+      }),
+    );
+  });
+
+  it('rejects selecting the active player as the mummy curse target', () => {
+    const state = createCombatState('mummy');
+    const pending = resolveCombat(state, { dice: [6, 6] });
+    const activePlayerId = state.players[state.activePlayerIndex].id;
+
+    expect(() =>
+      applyGameAction(pending, {
+        type: 'selectCurseTarget',
+        targetPlayerId: activePlayerId,
+      }),
+    ).toThrow(/another hero target/i);
+  });
+
+  it('skips mummy curse target selection when no other valid hero exists', () => {
+    const state = createCombatState('mummy');
+    const soloState: GameState = {
+      ...state,
+      players: [state.players[state.activePlayerIndex]],
+      activePlayerIndex: 0,
+    };
+    const resolved = resolveCombat(soloState, { dice: [6, 6] });
+
+    expect(resolved.phase).toBe('loot_resolution');
+    expect(resolved.players[0].isCursed).toBe(false);
   });
 
   it('heals and removes curse when ending a turn on a healing tile', () => {

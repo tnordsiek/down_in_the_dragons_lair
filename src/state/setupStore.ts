@@ -236,6 +236,7 @@ function actionMessage(
     case 'startOptionalCombat':
       return 'Started combat';
     case 'resolveCombat':
+    case 'selectCurseTarget':
     case 'useSwordswomanReroll':
     case 'useWarriorReroll':
     case 'declineWarriorReroll':

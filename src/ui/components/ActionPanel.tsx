@@ -42,6 +42,7 @@ type ActionPanelProps = {
   onResolveRoom: () => void;
   onStartOptionalCombat: () => void;
   onResolveCombat: () => void;
+  onSelectCurseTarget: (targetPlayerId: string) => void;
   onUseSwordswomanReroll: () => void;
   onUseWarriorReroll: () => void;
   onDeclineWarriorReroll: () => void;
@@ -69,6 +70,7 @@ export function ActionPanel({
   onResolveRoom,
   onStartOptionalCombat,
   onResolveCombat,
+  onSelectCurseTarget,
   onUseSwordswomanReroll,
   onUseWarriorReroll,
   onDeclineWarriorReroll,
@@ -276,6 +278,32 @@ export function ActionPanel({
           >
             Resolve Combat
           </button>
+        </div>
+      ) : null}
+
+      {state.phase === 'combat_curse_target' &&
+      combatMonster &&
+      state.players.some((player) => player.id !== activePlayer.id) ? (
+        <div className="mt-4 grid gap-2">
+          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+            Mummy Curse
+          </h3>
+          <p className="text-sm text-stone-200">
+            {monsterName(combatMonster.id)} defeated. Choose another hero to receive the curse.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {state.players
+              .filter((player) => player.id !== activePlayer.id)
+              .map((player) => (
+                <button
+                  key={`curse-target-${player.id}`}
+                  className="border border-amber-500 px-3 py-2 text-sm text-amber-100"
+                  onClick={() => onSelectCurseTarget(player.id)}
+                >
+                  {heroName(player.heroId)}
+                </button>
+              ))}
+          </div>
         </div>
       ) : null}
 
