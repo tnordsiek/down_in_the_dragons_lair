@@ -53,7 +53,9 @@ describe('App', () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText('Code powered by Codex')).toBeInTheDocument();
-    expect(screen.getByText('Graphics powered by Gemini')).toBeInTheDocument();
+    expect(
+      screen.getByText('Graphics powered by Nano Banana'),
+    ).toBeInTheDocument();
     expect(
       screen.getByText('Concept and AI Direction by fnord GAMES (2026)'),
     ).toBeInTheDocument();
@@ -66,7 +68,7 @@ describe('App', () => {
     expect(
       screen.getByRole('button', { name: 'Audio Effects on' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('v1.1')).toBeInTheDocument();
+    expect(screen.getByText('v1.2')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Imprint' })).toBeInTheDocument();
   });
 
@@ -82,7 +84,7 @@ describe('App', () => {
       screen.getByRole('heading', { name: 'Actions' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Players')).toBeInTheDocument();
-    expect(screen.getByText('v1.1 fnord GAMES 2026')).toBeInTheDocument();
+    expect(screen.getByText('v1.2 fnord GAMES 2026')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Imprint' })).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Center Map' }),

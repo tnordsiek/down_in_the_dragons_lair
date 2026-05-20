@@ -143,7 +143,7 @@ export function StartScreen() {
 
         <div className="pointer-events-none absolute bottom-8 left-6 text-left text-xs leading-5 text-stone-400 sm:left-8">
           <p>Code powered by Codex</p>
-          <p>Graphics powered by Gemini</p>
+          <p>Graphics powered by Nano Banana</p>
           <p>Concept and AI Direction by fnord GAMES (2026)</p>
         </div>
         <FooterMeta align="left" />

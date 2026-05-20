@@ -23,6 +23,9 @@ type HealingSpellSelectionState =
   | { mode: 'idle' }
   | { mode: 'select_target' }
   | { mode: 'select_tile'; targetPlayerId: string };
+type WarlockSwapSelectionState =
+  | { mode: 'idle' }
+  | { mode: 'select_target' };
 
 function canUseHealingSpellNow(state: GameState): boolean {
   return (
@@ -58,6 +61,10 @@ type ActionPanelProps = {
   onStartHealingSpellSelection: () => void;
   onCancelHealingSpellSelection: () => void;
   onSelectHealingSpellTarget: (targetPlayerId: string) => void;
+  warlockSwapSelection: WarlockSwapSelectionState;
+  onStartWarlockSwapSelection: () => void;
+  onCancelWarlockSwapSelection: () => void;
+  onSelectWarlockSwapTarget: (targetPlayerId: string) => void;
 };
 
 export function ActionPanel({
@@ -86,6 +93,10 @@ export function ActionPanel({
   onStartHealingSpellSelection,
   onCancelHealingSpellSelection,
   onSelectHealingSpellTarget,
+  warlockSwapSelection,
+  onStartWarlockSwapSelection,
+  onCancelWarlockSwapSelection,
+  onSelectWarlockSwapTarget,
 }: ActionPanelProps) {
   const legalActions = getUiLegalActions(state);
   const activePlayer = state.players[state.activePlayerIndex];
@@ -159,6 +170,7 @@ export function ActionPanel({
     state.phase === 'combat' &&
     hasActiveHeroAbility(activePlayer, 'hero_oracle') &&
     state.remainingSteps === 3;
+  const canUseWarlockSwap = legalActions.warlockSwapTargets.length > 0;
 
   return (
     <section
@@ -441,6 +453,46 @@ export function ActionPanel({
               </button>
             ))}
           </div>
+        </div>
+      ) : null}
+
+      {canUseWarlockSwap ? (
+        <div className="mt-4 grid gap-2">
+          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+            Warlock Swap
+          </h3>
+          {warlockSwapSelection.mode === 'idle' ? (
+            <button
+              className="w-fit border border-violet-500 px-3 py-2 text-sm text-violet-100"
+              onClick={onStartWarlockSwapSelection}
+            >
+              Swap Position
+            </button>
+          ) : null}
+          {warlockSwapSelection.mode === 'select_target' ? (
+            <>
+              <p className="text-sm text-stone-300">
+                Choose another hero to swap positions with.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {legalActions.warlockSwapTargets.map((player) => (
+                  <button
+                    key={`warlock-swap-target-${player.id}`}
+                    className="border border-violet-500 px-3 py-2 text-sm text-violet-100"
+                    onClick={() => onSelectWarlockSwapTarget(player.id)}
+                  >
+                    {heroName(player.heroId)}
+                  </button>
+                ))}
+                <button
+                  className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
+                  onClick={onCancelWarlockSwapSelection}
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          ) : null}
         </div>
       ) : null}
 

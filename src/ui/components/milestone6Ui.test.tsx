@@ -25,11 +25,14 @@ import { EventLog } from './EventLog';
 import { GameScreen } from '../screens/GameScreen';
 import { PlayerPanel } from './PlayerPanel';
 import { useSetupStore } from '../../state/setupStore';
+import { heroName } from '../labels';
 
 const noopActions = {
   healingSpellSelection: { mode: 'idle' as const },
+  warlockSwapSelection: { mode: 'idle' as const },
   onCancelHealingSpellSelection: vi.fn(),
   onBeginLoot: vi.fn(),
+  onCancelWarlockSwapSelection: vi.fn(),
   onLeaveLoot: vi.fn(),
   onMove: vi.fn(),
   onExplore: vi.fn(),
@@ -46,7 +49,9 @@ const noopActions = {
   onResolveCombatWithoutFlameSpells: vi.fn(),
   onResolveCombatWithFlameSpells: vi.fn(),
   onSelectHealingSpellTarget: vi.fn(),
+  onSelectWarlockSwapTarget: vi.fn(),
   onStartHealingSpellSelection: vi.fn(),
+  onStartWarlockSwapSelection: vi.fn(),
   onSwapLoot: vi.fn(),
   onTakeLoot: vi.fn(),
   onOpenChest: vi.fn(),
@@ -2272,6 +2277,89 @@ describe('Milestone 6 UI', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows the warlock swap action only for an uncursed human warlock at turn start with all four steps', () => {
+    const withSwap = createUiState({
+      phase: 'turn_start',
+      remainingSteps: 4,
+      players: createUiState().players.map((player, index) =>
+        index === 0 ? { ...player, heroId: 'hero_warlock' } : player,
+      ),
+    });
+    const cursedWarlock = {
+      ...withSwap,
+      players: withSwap.players.map((player, index) =>
+        index === 0 ? { ...player, isCursed: true } : player,
+      ),
+    };
+    const wrongPhase = { ...withSwap, phase: 'await_move' as const };
+    const wrongSteps = { ...withSwap, remainingSteps: 3 };
+    const { rerender } = render(
+      <ActionPanel state={withSwap} {...noopActions} />,
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Swap Position' }),
+    ).toBeInTheDocument();
+
+    rerender(<ActionPanel state={cursedWarlock} {...noopActions} />);
+    expect(screen.queryByRole('button', { name: 'Swap Position' })).toBeNull();
+
+    rerender(<ActionPanel state={wrongPhase} {...noopActions} />);
+    expect(screen.queryByRole('button', { name: 'Swap Position' })).toBeNull();
+
+    rerender(<ActionPanel state={wrongSteps} {...noopActions} />);
+    expect(screen.queryByRole('button', { name: 'Swap Position' })).toBeNull();
+  });
+
+  it('shows warlock swap target choices for every other hero and supports cancel', () => {
+    const state = {
+      ...createUiStateWithPlayerCount(3, [
+        'hero_warlock',
+        'hero_thief',
+        'hero_oracle',
+      ]),
+      activePlayerIndex: 0,
+      phase: 'turn_start' as const,
+      remainingSteps: 4,
+    };
+    const onStartWarlockSwapSelection = vi.fn();
+    const onSelectWarlockSwapTarget = vi.fn();
+    const onCancelWarlockSwapSelection = vi.fn();
+    const { rerender } = render(
+      <ActionPanel
+        state={state}
+        {...noopActions}
+        onStartWarlockSwapSelection={onStartWarlockSwapSelection}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Swap Position' }));
+    expect(onStartWarlockSwapSelection).toHaveBeenCalledOnce();
+
+    rerender(
+      <ActionPanel
+        state={state}
+        {...noopActions}
+        warlockSwapSelection={{ mode: 'select_target' }}
+        onSelectWarlockSwapTarget={onSelectWarlockSwapTarget}
+        onCancelWarlockSwapSelection={onCancelWarlockSwapSelection}
+      />,
+    );
+
+    expect(
+      screen.getByText('Choose another hero to swap positions with.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Thief' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Oracle' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Warlock' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
+    expect(onSelectWarlockSwapTarget).toHaveBeenCalledWith('player_ai_1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(onCancelWarlockSwapSelection).toHaveBeenCalledOnce();
+  });
+
   it('highlights legal exploration targets on the board and explores by tile click', () => {
     const state = createUiState();
     const onExplore = vi.fn();
@@ -2291,6 +2379,149 @@ describe('Milestone 6 UI', () => {
 
     expect(onExplore).toHaveBeenCalledOnce();
     expect(onExplore).toHaveBeenCalledWith('B');
+  });
+
+  it('swaps the human warlock with the selected hero and writes a readable log entry', () => {
+    const state = createUiState({
+      phase: 'turn_start',
+      remainingSteps: 4,
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-target',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 2,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? { ...player, heroId: 'hero_warlock', position: { boardX: 0, boardY: 0 } }
+          : { ...player, heroId: 'hero_thief', position: { boardX: 2, boardY: 0 } },
+      ),
+    });
+
+    render(<WarlockSwapHarness initialState={state} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Swap Position' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
+
+    expect(screen.getByTestId('warlock-phase')).toHaveTextContent('turn_end');
+    expect(screen.getByTestId('warlock-position')).toHaveTextContent('2,0');
+    expect(screen.getByTestId('warlock-target-position-player_ai_1')).toHaveTextContent(
+      '0,0',
+    );
+    expect(screen.getByText('Swapped with Thief to 2,0')).toBeInTheDocument();
+  });
+
+  it('keeps chest and ground-loot follow-up actions available after a human warlock swap', () => {
+    const chestState = createUiState({
+      phase: 'turn_start',
+      remainingSteps: 4,
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-target',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 2,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'treasure_chest', kind: 'chest' },
+        },
+      ],
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_warlock',
+              position: { boardX: 0, boardY: 0 },
+              inventory: {
+                ...player.inventory,
+                keyCount: 1,
+              },
+            }
+          : { ...player, heroId: 'hero_thief', position: { boardX: 2, boardY: 0 } },
+      ),
+    });
+    const lootState = createUiState({
+      phase: 'turn_start',
+      remainingSteps: 4,
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-target',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 2,
+          boardY: 0,
+          discovered: true,
+          looseItems: [{ type: 'weapon', bonus: 1 }],
+        },
+      ],
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? { ...player, heroId: 'hero_warlock', position: { boardX: 0, boardY: 0 } }
+          : { ...player, heroId: 'hero_thief', position: { boardX: 2, boardY: 0 } },
+      ),
+    });
+    const { unmount } = render(<WarlockSwapHarness initialState={chestState} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Swap Position' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
+
+    expect(screen.getByTestId('warlock-phase')).toHaveTextContent('await_move');
+    expect(screen.getByRole('button', { name: 'Open Chest' })).toBeInTheDocument();
+
+    unmount();
+    render(<WarlockSwapHarness initialState={lootState} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Swap Position' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
+
+    expect(screen.getByTestId('warlock-phase')).toHaveTextContent('await_move');
+    expect(
+      screen.getByRole('button', { name: 'Take Weapon +1' }),
+    ).toBeInTheDocument();
+  });
+
+  it('starts immediate combat after a human warlock swaps onto a monster tile', () => {
+    const state = createUiState({
+      phase: 'turn_start',
+      remainingSteps: 4,
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-target',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 2,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'giant_rat', kind: 'monster' },
+        },
+      ],
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? { ...player, heroId: 'hero_warlock', position: { boardX: 0, boardY: 0 } }
+          : { ...player, heroId: 'hero_thief', position: { boardX: 2, boardY: 0 } },
+      ),
+    });
+
+    render(<WarlockSwapHarness initialState={state} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Swap Position' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
+
+    expect(screen.getByTestId('warlock-phase')).toHaveTextContent('combat');
+    expect(
+      screen.getByRole('button', { name: 'Resolve Combat' }),
+    ).toBeInTheDocument();
   });
 
   it('highlights discovered healing tiles in yellow and selects them by click', () => {
@@ -3690,6 +3921,10 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
         onStartHealingSpellSelection={() =>
           setHealingSpellSelection({ mode: 'select_target' })
         }
+        warlockSwapSelection={{ mode: 'idle' }}
+        onCancelWarlockSwapSelection={vi.fn()}
+        onSelectWarlockSwapTarget={vi.fn()}
+        onStartWarlockSwapSelection={vi.fn()}
         onSwapLoot={vi.fn()}
         onTakeLoot={vi.fn()}
       />
@@ -3725,6 +3960,74 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
         {state.players[state.activePlayerIndex].inventory.spells.length}
       </div>
       <div data-testid="phase-label">{state.phase}</div>
+    </>
+  );
+}
+
+function WarlockSwapHarness({ initialState }: { initialState: GameState }) {
+  const [state, setState] = useState(initialState);
+  const [warlockSwapSelection, setWarlockSwapSelection] = useState<
+    { mode: 'idle' } | { mode: 'select_target' }
+  >({ mode: 'idle' });
+  const activePlayer = state.players[state.activePlayerIndex];
+  const otherPlayers = state.players.filter(
+    (player) => player.id !== activePlayer.id,
+  );
+
+  return (
+    <>
+      <ActionPanel
+        state={state}
+        {...noopActions}
+        healingSpellSelection={{ mode: 'idle' }}
+        warlockSwapSelection={warlockSwapSelection}
+        onCancelWarlockSwapSelection={() =>
+          setWarlockSwapSelection({ mode: 'idle' })
+        }
+        onSelectWarlockSwapTarget={(targetPlayerId) => {
+          const targetPlayer = state.players.find(
+            (player) => player.id === targetPlayerId,
+          );
+
+          flushSync(() => {
+            setWarlockSwapSelection({ mode: 'idle' });
+          });
+
+          setState((current) => {
+            const nextState = applyGameAction(current, {
+              type: 'swapWarlockPosition',
+              targetPlayerId,
+            });
+
+            return {
+              ...nextState,
+              eventLog: [
+                ...nextState.eventLog,
+                {
+                  id: `event-${nextState.eventLog.length}`,
+                  type: 'ui_action',
+                  message: targetPlayer
+                    ? `Swapped with ${heroName(targetPlayer.heroId)} to ${targetPlayer.position.boardX},${targetPlayer.position.boardY}`
+                    : 'Swapped warlock position',
+                },
+              ],
+            };
+          });
+        }}
+        onStartWarlockSwapSelection={() =>
+          setWarlockSwapSelection({ mode: 'select_target' })
+        }
+      />
+      <EventLog state={state} />
+      <div data-testid="warlock-phase">{state.phase}</div>
+      <div data-testid="warlock-position">
+        {activePlayer.position.boardX},{activePlayer.position.boardY}
+      </div>
+      {otherPlayers.map((player) => (
+        <div key={player.id} data-testid={`warlock-target-position-${player.id}`}>
+          {player.position.boardX},{player.position.boardY}
+        </div>
+      ))}
     </>
   );
 }

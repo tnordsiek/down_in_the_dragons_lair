@@ -8,6 +8,7 @@ import type {
   Player,
   Token,
 } from '../core/types';
+import { applyGameAction } from '../core/actions';
 import {
   startOptionalCombat,
   declineWarlockSacrifice,
@@ -282,6 +283,106 @@ describe('hero_warlock abilities', () => {
     expect(() =>
       swapWarlockPosition({ ...state, phase: 'await_move' }, target.id),
     ).toThrow(/turn start/);
+  });
+
+  it('keeps ground-loot and chest follow-up actions available after a non-combat swap', () => {
+    const lootState = {
+      ...createSwapState(false),
+      board: createSwapState(false).board.map((tile) =>
+        tile.boardX === 2 && tile.boardY === 0
+          ? {
+              ...tile,
+              looseItems: [{ type: 'weapon' as const, bonus: 1 as const }],
+            }
+          : tile,
+      ),
+    };
+    const chestState = {
+      ...createSwapState(false),
+      board: createSwapState(false).board.map((tile) =>
+        tile.boardX === 2 && tile.boardY === 0
+          ? {
+              ...tile,
+              roomToken: { id: 'treasure_chest' as const, kind: 'chest' as const },
+            }
+          : tile,
+      ),
+      players: createSwapState(false).players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              inventory: {
+                ...player.inventory,
+                keyCount: 1,
+              },
+            }
+          : player,
+      ),
+    };
+    const lootTarget = lootState.players.find(
+      (player) => player.id !== 'player_human',
+    )!;
+    const chestTarget = chestState.players.find(
+      (player) => player.id !== 'player_human',
+    )!;
+
+    const swappedToLoot = swapWarlockPosition(lootState, lootTarget.id);
+    const afterLoot = applyGameAction(swappedToLoot, { type: 'beginLoot' });
+    const swappedToChest = swapWarlockPosition(chestState, chestTarget.id);
+
+    expect(swappedToLoot.phase).toBe('await_move');
+    expect(afterLoot.players[afterLoot.activePlayerIndex].inventory.weapons).toContainEqual({
+      type: 'weapon',
+      bonus: 1,
+    });
+    expect(swappedToChest.phase).toBe('await_move');
+  });
+
+  it('starts immediate monster combat from a swap and uses the documented fallback after a failed swap combat', () => {
+    const base = createSwapState(false);
+    const state = {
+      ...base,
+      board: [
+        base.board[0],
+        {
+          ...base.board[1],
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          roomToken: { id: 'dragon' as const, kind: 'monster' as const },
+        },
+        {
+          tileInstanceId: 'tile-fallback',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 3,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    };
+    const target = state.players.find((player) => player.id !== 'player_human')!;
+    const swapped = swapWarlockPosition(state, target.id);
+    const resolved = resolveCombat(swapped, { dice: [2, 3] });
+
+    expect(swapped.phase).toBe('combat');
+    expect(swapped.combat).toEqual(
+      expect.objectContaining({
+        source: 'warlock_swap',
+        position: { boardX: 2, boardY: 0 },
+        monsterId: 'dragon',
+      }),
+    );
+    expect(resolved.players[resolved.activePlayerIndex].position).toEqual({
+      boardX: 3,
+      boardY: 0,
+    });
+    expect(resolved.eventLog.at(-1)?.combat).toEqual(
+      expect.objectContaining({
+        outcome: 'defeat',
+        retreatPosition: { boardX: 3, boardY: 0 },
+      }),
+    );
   });
 
   it('disables swap and sacrifice while cursed', () => {

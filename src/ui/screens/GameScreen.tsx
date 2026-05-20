@@ -27,6 +27,9 @@ type HealingSpellSelectionState =
   | { mode: 'idle' }
   | { mode: 'select_target' }
   | { mode: 'select_tile'; targetPlayerId: string };
+type WarlockSwapSelectionState =
+  | { mode: 'idle' }
+  | { mode: 'select_target' };
 
 function canUseHealingSpellNow(
   state: NonNullable<ReturnType<typeof useSetupStore.getState>['gameState']>,
@@ -53,6 +56,8 @@ export function GameScreen() {
   });
   const [healingSpellSelection, setHealingSpellSelection] =
     useState<HealingSpellSelectionState>({ mode: 'idle' });
+  const [warlockSwapSelection, setWarlockSwapSelection] =
+    useState<WarlockSwapSelectionState>({ mode: 'idle' });
   const [dismissedStartOverlayEventId, setDismissedStartOverlayEventId] =
     useState<string | null>(null);
   const latestEvent = state?.eventLog[state.eventLog.length - 1];
@@ -106,6 +111,9 @@ export function GameScreen() {
       if (healingSpellSelection.mode !== 'idle') {
         setHealingSpellSelection({ mode: 'idle' });
       }
+      if (warlockSwapSelection.mode !== 'idle') {
+        setWarlockSwapSelection({ mode: 'idle' });
+      }
 
       return;
     }
@@ -132,7 +140,18 @@ export function GameScreen() {
     ) {
       setHealingSpellSelection({ mode: 'idle' });
     }
-  }, [healingSpellSelection, state]);
+    const canUseWarlockSwap =
+      activePlayer.kind === 'human' &&
+      state.phase === 'turn_start' &&
+      state.remainingSteps === 4 &&
+      activePlayer.heroId === 'hero_warlock' &&
+      !activePlayer.isCursed &&
+      state.players.some((player) => player.id !== activePlayer.id);
+
+    if (!canUseWarlockSwap && warlockSwapSelection.mode !== 'idle') {
+      setWarlockSwapSelection({ mode: 'idle' });
+    }
+  }, [healingSpellSelection, state, warlockSwapSelection]);
 
   useEffect(() => {
     if (!state) {
@@ -260,6 +279,22 @@ export function GameScreen() {
       healingPosition,
     });
   };
+  const handleStartWarlockSwapSelection = () => {
+    setWarlockSwapSelection({ mode: 'select_target' });
+  };
+  const handleCancelWarlockSwapSelection = () => {
+    setWarlockSwapSelection({ mode: 'idle' });
+  };
+  const handleSelectWarlockSwapTarget = (targetPlayerId: string) => {
+    flushSync(() => {
+      setWarlockSwapSelection({ mode: 'idle' });
+    });
+
+    dispatch({
+      type: 'swapWarlockPosition',
+      targetPlayerId,
+    });
+  };
   const focusMap = (position: BoardPosition, resetZoom = false) => {
     setCameraRequest((current) => ({
       nonce: current.nonce + 1,
@@ -371,6 +406,10 @@ export function GameScreen() {
             onTakeLoot={handleTakeLoot}
             onOpenChest={handleOpenChest}
             onEndTurn={handleEndTurn}
+            warlockSwapSelection={warlockSwapSelection}
+            onStartWarlockSwapSelection={handleStartWarlockSwapSelection}
+            onCancelWarlockSwapSelection={handleCancelWarlockSwapSelection}
+            onSelectWarlockSwapTarget={handleSelectWarlockSwapTarget}
           />
           <PlayerPanel
             state={state}
@@ -495,7 +534,7 @@ export function GameScreen() {
           </div>
         </div>
       ) : null}
-      <FooterMeta align="left" versionLabel="v1.1 fnord GAMES 2026" />
+      <FooterMeta align="left" versionLabel="v1.2 fnord GAMES 2026" />
     </main>
   );
 }

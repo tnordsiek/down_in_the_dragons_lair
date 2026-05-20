@@ -13,6 +13,12 @@ export function getContinuationPhaseAfterAction(
     return 'await_move';
   }
 
+  return getZeroStepFollowUpPhase(state);
+}
+
+export function getZeroStepFollowUpPhase(
+  state: GameState,
+): GameState['phase'] {
   return hasNonMovementFollowUpAction(state) ? 'await_move' : 'turn_end';
 }
 
@@ -22,8 +28,12 @@ function hasNonMovementFollowUpAction(state: GameState): boolean {
   const hasHealingSpell = activePlayer.inventory.spells.some(
     (spell) => spell.spellKind === 'healing',
   );
+  const canOpenChest =
+    activeTile?.roomToken?.id === 'treasure_chest' &&
+    activePlayer.inventory.keyCount > 0;
 
   return (
+    canOpenChest ||
     (activeTile?.looseItems.length ?? 0) > 0 ||
     (hasHealingSpell && getDiscoveredHealingPositions(state).length > 0)
   );

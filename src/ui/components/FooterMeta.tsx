@@ -7,7 +7,7 @@ type FooterMetaProps = {
 
 export function FooterMeta({
   align = 'right',
-  versionLabel = 'v1.1',
+  versionLabel = 'v1.2',
 }: FooterMetaProps) {
   const [isImprintOpen, setIsImprintOpen] = useState(false);
   const isLeftAligned = align === 'left';

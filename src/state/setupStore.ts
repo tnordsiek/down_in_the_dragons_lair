@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { heroDisplayNames } from '../data/displayNames';
 import { applyGameAction } from '../engine/core/actions';
 import { createPlayerEventFields } from '../engine/core/events';
 import type { GameAction, GameState, HeroId } from '../engine/core/types';
@@ -7,6 +8,7 @@ import {
   getLegalExplorationDirections,
   getLegalKnownMoves,
 } from '../engine/movement/movement';
+import { hasActiveHeroAbility } from '../engine/rules/abilities';
 import {
   clearPersistedGameState,
   loadPersistedGameState,
@@ -260,8 +262,15 @@ function actionMessage(
       return 'Swapped loot';
     case 'useHealingSpell':
       return 'Used healing spell';
-    case 'swapWarlockPosition':
-      return 'Swapped warlock position';
+    case 'swapWarlockPosition': {
+      const targetPlayer = previousState?.players.find(
+        (player) => player.id === action.targetPlayerId,
+      );
+
+      return targetPlayer
+        ? `Swapped with ${heroDisplayNames[targetPlayer.heroId]} to ${targetPlayer.position.boardX},${targetPlayer.position.boardY}`
+        : 'Swapped warlock position';
+    }
     case 'endTurn':
       return 'Ended turn';
     case 'startGame':
@@ -270,9 +279,17 @@ function actionMessage(
 }
 
 export function getUiLegalActions(state: GameState) {
+  const activePlayer = state.players[state.activePlayerIndex];
+
   return {
     knownMoves: getLegalKnownMoves(state),
     explorationDirections: getLegalExplorationDirections(state),
+    warlockSwapTargets:
+      state.phase === 'turn_start' &&
+      state.remainingSteps === 4 &&
+      hasActiveHeroAbility(activePlayer, 'hero_warlock')
+        ? state.players.filter((player) => player.id !== activePlayer.id)
+        : [],
   };
 }
 

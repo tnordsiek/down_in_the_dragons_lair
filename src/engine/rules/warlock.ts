@@ -1,5 +1,6 @@
 import { getTileAt } from '../core/board';
 import type { GameState, MonsterId } from '../core/types';
+import { getZeroStepFollowUpPhase } from '../turns/continuation';
 import { hasActiveHeroAbility } from './abilities';
 
 export function swapWarlockPosition(
@@ -30,23 +31,27 @@ export function swapWarlockPosition(
     targetTile?.roomToken?.kind === 'monster'
       ? targetTile.roomToken
       : undefined;
+  const players = state.players.map((player, index) => {
+    if (index === state.activePlayerIndex) {
+      return { ...player, position: targetOriginalPosition };
+    }
 
-  return {
+    if (player.id === targetPlayer.id) {
+      return { ...player, position: activeOriginalPosition };
+    }
+
+    return player;
+  });
+  const swappedState = {
     ...state,
-    phase: targetMonster ? 'combat' : 'turn_end',
-    players: state.players.map((player, index) => {
-      if (index === state.activePlayerIndex) {
-        return { ...player, position: targetOriginalPosition };
-      }
-
-      if (player.id === targetPlayer.id) {
-        return { ...player, position: activeOriginalPosition };
-      }
-
-      return player;
-    }),
+    players,
     remainingSteps: 0,
     lastMoveFrom: activeOriginalPosition,
+  } satisfies GameState;
+
+  return {
+    ...swappedState,
+    phase: targetMonster ? 'combat' : getZeroStepFollowUpPhase(swappedState),
     combat: targetMonster
       ? {
           playerId: activePlayer.id,
