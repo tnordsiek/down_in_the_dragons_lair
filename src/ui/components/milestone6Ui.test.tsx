@@ -3317,27 +3317,59 @@ describe('Milestone 6 UI', () => {
     );
   });
 
-  it('shows game end ranking', () => {
+  it('shows winners separately from the dragon slayer and keeps ranking sorted by treasure points', () => {
     const state = createUiState({
       phase: 'game_over',
       victory: {
         defeatedDragonByPlayerId: 'player_human',
-        winnerPlayerIds: ['player_ai_1'],
+        winnerPlayerIds: ['player_ai_1', 'player_ai_2'],
       },
-      players: createUiState().players.map((player, index) => ({
+      players: createNewGame({
+        humanHeroId: 'hero_mage',
+        aiCount: 2,
+        seed: 'end-screen-ranking',
+      }).players.map((player, index) => ({
         ...player,
-        treasurePoints: index === 0 ? 10 : 20,
+        heroId:
+          index === 0
+            ? 'hero_mage'
+            : index === 1
+              ? 'hero_thief'
+              : 'hero_warrior',
+        treasurePoints:
+          index === 0
+            ? 1.5
+            : index === 1
+              ? 3.5
+              : 3.5,
       })),
     });
 
     render(<EndScreen state={state} onNewGame={vi.fn()} />);
 
     expect(screen.getByText('Game Over')).toBeInTheDocument();
+    expect(screen.getByText('Shared Victory')).toBeInTheDocument();
     expect(
-      screen.getByText('Dragon defeated by player_human'),
+      screen.getByText('Thief (AI 1) and Warrior (AI 2)'),
     ).toBeInTheDocument();
-    expect(screen.getByText('player_ai_1')).toBeInTheDocument();
-    expect(screen.getByText('20')).toBeInTheDocument();
+    expect(screen.getByText('Dragon Slayer')).toBeInTheDocument();
+    expect(screen.getAllByText('Mage (Human)')).toHaveLength(2);
+    expect(
+      screen.getByText('Dragon treasure worth 1.5 points is included in the final score.'),
+    ).toBeInTheDocument();
+
+    const rankingRows = [
+      screen.getByTestId('end-screen-rank-player_ai_1'),
+      screen.getByTestId('end-screen-rank-player_ai_2'),
+      screen.getByTestId('end-screen-rank-player_human'),
+    ];
+
+    expect(within(rankingRows[0]).getByText('Thief (AI 1)')).toBeInTheDocument();
+    expect(within(rankingRows[0]).getByText('3.5 pts')).toBeInTheDocument();
+    expect(within(rankingRows[1]).getByText('Warrior (AI 2)')).toBeInTheDocument();
+    expect(within(rankingRows[1]).getByText('3.5 pts')).toBeInTheDocument();
+    expect(within(rankingRows[2]).getByText('Mage (Human)')).toBeInTheDocument();
+    expect(within(rankingRows[2]).getByText('1.5 pts')).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'New Game' }),
     ).toBeInTheDocument();

@@ -94,10 +94,17 @@ test('resumes a saved dragon fight and shows final ranking', async ({
   await page.getByRole('button', { name: 'Resolve Combat' }).click();
 
   await expect(page.getByRole('heading', { name: 'Game Over' })).toBeVisible();
-  await expect(page.getByText('Dragon defeated by player_human')).toBeVisible();
+  const endScreen = page.locator('[data-asset-id="bg_end_screen"]');
+
+  await expect(endScreen.getByText('Winner')).toBeVisible();
+  await expect(endScreen.getByText('Dragon Slayer')).toBeVisible();
+  await expect(endScreen.getByText('Thief (Human)').first()).toBeVisible();
   await expect(
-    page
-      .locator('[data-asset-id="bg_end_screen"]')
-      .getByText('player_human', { exact: true }),
+    endScreen.getByText(
+      'Dragon treasure worth 1.5 points is included in the final score.',
+    ),
+  ).toBeVisible();
+  await expect(
+    endScreen.getByTestId('end-screen-rank-player_human').getByText('2.5 pts'),
   ).toBeVisible();
 });

@@ -4,7 +4,10 @@ test('starts the playable game screen', async ({ page }) => {
   await page.goto('/');
 
   await expect(
-    page.getByRole('heading', { name: "Down in the Dragon's Lair" }),
+    page.getByRole('heading', { name: 'Game Setup' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Start Game' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Start Game' }).click();
 
