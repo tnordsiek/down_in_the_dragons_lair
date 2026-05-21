@@ -27,12 +27,12 @@ describe('createNewGame', () => {
 
   it('is reproducible for player order, start player and draw stacks', () => {
     const first = createNewGame({
-      humanHeroId: 'hero_thief',
+      humanHeroId: 'hero_rogue',
       aiCount: 4,
       seed: 'same-seed',
     });
     const second = createNewGame({
-      humanHeroId: 'hero_thief',
+      humanHeroId: 'hero_rogue',
       aiCount: 4,
       seed: 'same-seed',
     });

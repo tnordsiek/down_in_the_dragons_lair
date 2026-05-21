@@ -7,13 +7,13 @@ import { createNewGame } from '../setup/createGame';
 import { endTurn } from '../turns/turns';
 import {
   calculateCombatTotal,
-  declineWarlockSacrifice,
-  declineWarriorReroll,
+  declineWitchSacrifice,
+  declineValkyrieReroll,
   getCombatOutcome,
   resolveCombat,
-  useWarlockSacrifice,
-  useSwordswomanReroll,
-  useWarriorReroll,
+  useWitchSacrifice,
+  useBladeReroll,
+  useValkyrieReroll,
 } from './combat';
 
 describe('combat resolution', () => {
@@ -54,7 +54,7 @@ describe('combat resolution', () => {
     const warriorPending = resolveCombat(
       withActivePlayer(baseState, (player) => ({
         ...player,
-        heroId: 'hero_warrior',
+        heroId: 'hero_valkyrie',
         inventory: {
           ...player.inventory,
           spells: [{ type: 'spell', spellKind: 'flame' }],
@@ -65,7 +65,7 @@ describe('combat resolution', () => {
     const warlockPending = resolveCombat(
       withActivePlayer(baseState, (player) => ({
         ...player,
-        heroId: 'hero_warlock',
+        heroId: 'hero_witch',
         inventory: {
           ...player.inventory,
           spells: [{ type: 'spell', spellKind: 'flame' }],
@@ -73,11 +73,11 @@ describe('combat resolution', () => {
       })),
       { dice: [2, 3] },
     );
-    const flamePending = declineWarriorReroll(warriorPending);
+    const flamePending = declineValkyrieReroll(warriorPending);
     const swordswomanPending = resolveCombat(
       withActivePlayer(baseState, (player) => ({
         ...player,
-        heroId: 'hero_swordsman',
+        heroId: 'hero_blade',
       })),
       { dice: [1, 4] },
     );
@@ -101,10 +101,10 @@ describe('combat resolution', () => {
     ).toThrow(/pending combat/i);
   });
 
-  it('pauses for warrior reroll before flame spell selection after a warrior draw', () => {
+  it('pauses for valkyrie reroll before flame spell selection after a valkyrie draw', () => {
     const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
       ...player,
-      heroId: 'hero_warrior',
+      heroId: 'hero_valkyrie',
       inventory: {
         ...player.inventory,
         spells: [{ type: 'spell', spellKind: 'flame' }],
@@ -112,7 +112,7 @@ describe('combat resolution', () => {
     }));
     const pending = resolveCombat(state, { dice: [2, 3] });
 
-    expect(pending.phase).toBe('combat_warrior_reroll');
+    expect(pending.phase).toBe('combat_valkyrie_reroll');
     expect(pending.combat).toEqual(
       expect.objectContaining({
         initialRolledDice: [2, 3],
@@ -120,7 +120,7 @@ describe('combat resolution', () => {
       }),
     );
 
-    const afterDecline = declineWarriorReroll(pending);
+    const afterDecline = declineValkyrieReroll(pending);
 
     expect(afterDecline.phase).toBe('combat_flame_spells');
     expect(afterDecline.combat).toEqual(
@@ -150,14 +150,14 @@ describe('combat resolution', () => {
   it('allows declining flame spell use without consuming spells', () => {
     const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
       ...player,
-      heroId: 'hero_warrior',
+      heroId: 'hero_valkyrie',
       inventory: {
         ...player.inventory,
         spells: [{ type: 'spell', spellKind: 'flame' }],
       },
     }));
     const pending = resolveCombat(state, { dice: [2, 3] });
-    const withKeptRoll = declineWarriorReroll(pending);
+    const withKeptRoll = declineValkyrieReroll(pending);
     const resolved = applyGameAction(withKeptRoll, {
       type: 'resolveCombatWithoutFlameSpells',
     });
@@ -177,14 +177,14 @@ describe('combat resolution', () => {
   it('does not pause when available flame spells still cannot avoid defeat', () => {
     const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
       ...player,
-      heroId: 'hero_warrior',
+      heroId: 'hero_valkyrie',
       inventory: {
         ...player.inventory,
         spells: [{ type: 'spell', spellKind: 'flame' }],
       },
     }));
     const pending = resolveCombat(state, { dice: [1, 1] });
-    const resolved = useWarriorReroll(pending, { dice: [1, 1] });
+    const resolved = useValkyrieReroll(pending, { dice: [1, 1] });
 
     expect(resolved.phase).toBe('turn_end');
     expect(
@@ -192,10 +192,10 @@ describe('combat resolution', () => {
     ).toHaveLength(1);
   });
 
-  it('skips the warrior reroll step after a warrior victory', () => {
+  it('skips the valkyrie reroll step after a valkyrie victory', () => {
     const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
       ...player,
-      heroId: 'hero_warrior',
+      heroId: 'hero_valkyrie',
     }));
 
     const resolved = resolveCombat(state, { dice: [6, 6] });
@@ -203,15 +203,15 @@ describe('combat resolution', () => {
     expect(resolved.phase).toBe('loot_resolution');
   });
 
-  it('offers a warrior reroll after a defeat', () => {
+  it('offers a valkyrie reroll after a defeat', () => {
     const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
       ...player,
-      heroId: 'hero_warrior',
+      heroId: 'hero_valkyrie',
     }));
 
     const pending = resolveCombat(state, { dice: [1, 1] });
 
-    expect(pending.phase).toBe('combat_warrior_reroll');
+    expect(pending.phase).toBe('combat_valkyrie_reroll');
     expect(pending.combat).toEqual(
       expect.objectContaining({
         initialRolledDice: [1, 1],
@@ -220,10 +220,10 @@ describe('combat resolution', () => {
     );
   });
 
-  it('pauses for warlock sacrifice before flame spell selection after a warlock draw', () => {
+  it('pauses for witch sacrifice before flame spell selection after a witch draw', () => {
     const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
       ...player,
-      heroId: 'hero_warlock',
+      heroId: 'hero_witch',
       inventory: {
         ...player.inventory,
         spells: [{ type: 'spell', spellKind: 'flame' }],
@@ -231,7 +231,7 @@ describe('combat resolution', () => {
     }));
     const pending = resolveCombat(state, { dice: [2, 3] });
 
-    expect(pending.phase).toBe('combat_warlock_sacrifice');
+    expect(pending.phase).toBe('combat_witch_sacrifice');
     expect(pending.combat).toEqual(
       expect.objectContaining({
         initialRolledDice: [2, 3],
@@ -239,29 +239,29 @@ describe('combat resolution', () => {
       }),
     );
 
-    const afterDecline = declineWarlockSacrifice(pending);
+    const afterDecline = declineWitchSacrifice(pending);
 
     expect(afterDecline.phase).toBe('combat_flame_spells');
     expect(afterDecline.combat).toEqual(
       expect.objectContaining({
         rolledDice: [2, 3],
         pendingBaseOutcome: 'draw',
-        pendingWarlockSacrificeBonus: 0,
+        pendingWitchSacrificeBonus: 0,
       }),
     );
   });
 
-  it('applies warlock sacrifice before flame spell decisions', () => {
+  it('applies witch sacrifice before flame spell decisions', () => {
     const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
       ...player,
-      heroId: 'hero_warlock',
+      heroId: 'hero_witch',
       inventory: {
         ...player.inventory,
         spells: [{ type: 'spell', spellKind: 'flame' }],
       },
     }));
     const pending = resolveCombat(state, { dice: [2, 2] });
-    const sacrificed = useWarlockSacrifice(pending);
+    const sacrificed = useWitchSacrifice(pending);
 
     expect(sacrificed.players[sacrificed.activePlayerIndex].hp).toBe(4);
     expect(sacrificed.phase).toBe('combat_flame_spells');
@@ -269,15 +269,15 @@ describe('combat resolution', () => {
       expect.objectContaining({
         rolledDice: [2, 2],
         pendingBaseOutcome: 'draw',
-        pendingWarlockSacrificeBonus: 1,
+        pendingWitchSacrificeBonus: 1,
       }),
     );
   });
 
-  it('skips the warlock sacrifice step when sacrifice plus all flame spells still cannot win', () => {
+  it('skips the witch sacrifice step when sacrifice plus all flame spells still cannot win', () => {
     const state = withActivePlayer(createCombatState('mummy'), (player) => ({
       ...player,
-      heroId: 'hero_warlock',
+      heroId: 'hero_witch',
       inventory: {
         ...player.inventory,
         spells: [
@@ -292,14 +292,14 @@ describe('combat resolution', () => {
     expect(resolved.combat).toBeUndefined();
   });
 
-  it('keeps the warlock sacrifice bonus when sacrificing down to 0 HP', () => {
+  it('keeps the witch sacrifice bonus when sacrificing down to 0 HP', () => {
     const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
       ...player,
-      heroId: 'hero_warlock',
+      heroId: 'hero_witch',
       hp: 1,
     }));
     const pending = resolveCombat(state, { dice: [2, 3] });
-    const resolved = useWarlockSacrifice(pending);
+    const resolved = useWitchSacrifice(pending);
 
     expect(resolved.players[resolved.activePlayerIndex]).toEqual(
       expect.objectContaining({
@@ -315,10 +315,10 @@ describe('combat resolution', () => {
     );
   });
 
-  it('skips the warlock sacrifice step after a warlock victory', () => {
+  it('skips the witch sacrifice step after a witch victory', () => {
     const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
       ...player,
-      heroId: 'hero_warlock',
+      heroId: 'hero_witch',
     }));
 
     const resolved = resolveCombat(state, { dice: [6, 6] });
@@ -326,10 +326,10 @@ describe('combat resolution', () => {
     expect(resolved.phase).toBe('loot_resolution');
   });
 
-  it('still offers the warlock sacrifice step when sacrifice plus flame spells can eventually win', () => {
+  it('still offers the witch sacrifice step when sacrifice plus flame spells can eventually win', () => {
     const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
       ...player,
-      heroId: 'hero_warlock',
+      heroId: 'hero_witch',
       inventory: {
         ...player.inventory,
         spells: [{ type: 'spell', spellKind: 'flame' }],
@@ -338,7 +338,7 @@ describe('combat resolution', () => {
 
     const pending = resolveCombat(state, { dice: [1, 3] });
 
-    expect(pending.phase).toBe('combat_warlock_sacrifice');
+    expect(pending.phase).toBe('combat_witch_sacrifice');
   });
 
   it('resolves a defeat as retreat with one HP loss', () => {
@@ -351,10 +351,10 @@ describe('combat resolution', () => {
     expect(resolved.phase).toBe('turn_end');
   });
 
-  it('retreats the swordsman on defeat instead of keeping combat open', () => {
+  it('retreats the blade on defeat instead of keeping combat open', () => {
     const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
       ...player,
-      heroId: 'hero_swordsman',
+      heroId: 'hero_blade',
     }));
     const resolved = resolveCombat(state, { dice: [2, 2] });
 
@@ -374,15 +374,15 @@ describe('combat resolution', () => {
     );
   });
 
-  it('pauses for swordswoman rerolls and rerolls only dice showing 1', () => {
+  it('pauses for blade rerolls and rerolls only dice showing 1', () => {
     const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
       ...player,
-      heroId: 'hero_swordsman',
+      heroId: 'hero_blade',
     }));
     const pending = resolveCombat(state, { dice: [1, 4] });
-    const resolved = useSwordswomanReroll(pending, { dice: [6, 2] });
+    const resolved = useBladeReroll(pending, { dice: [6, 2] });
 
-    expect(pending.phase).toBe('combat_swordsman_reroll');
+    expect(pending.phase).toBe('combat_blade_reroll');
     expect(pending.combat).toEqual(
       expect.objectContaining({
         initialRolledDice: [1, 4],
@@ -396,16 +396,16 @@ describe('combat resolution', () => {
     );
   });
 
-  it('repeats the swordswoman reroll step while any die still shows 1', () => {
+  it('repeats the blade reroll step while any die still shows 1', () => {
     const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
       ...player,
-      heroId: 'hero_swordsman',
+      heroId: 'hero_blade',
     }));
     const pending = resolveCombat(state, { dice: [1, 1] });
-    const rerolledOnce = useSwordswomanReroll(pending, { dice: [1, 5] });
-    const resolved = useSwordswomanReroll(rerolledOnce, { dice: [6, 2] });
+    const rerolledOnce = useBladeReroll(pending, { dice: [1, 5] });
+    const resolved = useBladeReroll(rerolledOnce, { dice: [6, 2] });
 
-    expect(rerolledOnce.phase).toBe('combat_swordsman_reroll');
+    expect(rerolledOnce.phase).toBe('combat_blade_reroll');
     expect(rerolledOnce.combat?.rolledDice).toEqual([1, 5]);
     expect(resolved.eventLog.at(-1)?.combat).toEqual(
       expect.objectContaining({
@@ -414,19 +414,19 @@ describe('combat resolution', () => {
     );
   });
 
-  it('keeps the turn open after a drawn combat with a six once the swordswoman retreats', () => {
+  it('keeps the turn open after a drawn combat with a six once the blade retreats', () => {
     const state = withActivePlayer(
       createCombatState('skeleton_turnkey'),
       (player) => ({
         ...player,
-        heroId: 'hero_swordsman',
+        heroId: 'hero_blade',
       }),
     );
     const pending = resolveCombat(state, { dice: [6, 1] });
-    const resolved = useSwordswomanReroll(pending, { dice: [2, 2] });
+    const resolved = useBladeReroll(pending, { dice: [2, 2] });
 
     expect(resolved.phase).toBe('await_move');
-    expect(resolved.turnContinuationReason).toBe('swordsman_on_six');
+    expect(resolved.turnContinuationReason).toBe('blade_on_six');
     expect(resolved.players[resolved.activePlayerIndex]?.position).toEqual({
       boardX: 1,
       boardY: 0,
@@ -440,16 +440,16 @@ describe('combat resolution', () => {
     );
   });
 
-  it('keeps the turn open after a defeated combat with a six when the swordswoman still has HP left', () => {
+  it('keeps the turn open after a defeated combat with a six when the blade still has HP left', () => {
     const state = withActivePlayer(createCombatState('dragon'), (player) => ({
       ...player,
-      heroId: 'hero_swordsman',
+      heroId: 'hero_blade',
     }));
     const pending = resolveCombat(state, { dice: [6, 1] });
-    const resolved = useSwordswomanReroll(pending, { dice: [2, 2] });
+    const resolved = useBladeReroll(pending, { dice: [2, 2] });
 
     expect(resolved.phase).toBe('await_move');
-    expect(resolved.turnContinuationReason).toBe('swordsman_on_six');
+    expect(resolved.turnContinuationReason).toBe('blade_on_six');
     expect(resolved.players[resolved.activePlayerIndex]).toEqual(
       expect.objectContaining({
         hp: 4,
@@ -466,14 +466,14 @@ describe('combat resolution', () => {
     );
   });
 
-  it('ends the turn after a defeated combat with a six when the swordswoman drops to 0 HP', () => {
+  it('ends the turn after a defeated combat with a six when the blade drops to 0 HP', () => {
     const state = withActivePlayer(createCombatState('dragon'), (player) => ({
       ...player,
-      heroId: 'hero_swordsman',
+      heroId: 'hero_blade',
       hp: 1,
     }));
     const pending = resolveCombat(state, { dice: [6, 1] });
-    const resolved = useSwordswomanReroll(pending, { dice: [2, 2] });
+    const resolved = useBladeReroll(pending, { dice: [2, 2] });
 
     expect(resolved.phase).toBe('turn_end');
     expect(resolved.turnContinuationReason).toBeUndefined();
@@ -811,10 +811,10 @@ describe('combat resolution', () => {
     ]);
   });
 
-  it('keeps the turn open for a swordsman victory with a six when only follow-up actions remain', () => {
+  it('keeps the turn open for a blade victory with a six when only follow-up actions remain', () => {
     const state = withActivePlayer(createCombatState('fallen'), (player) => ({
       ...player,
-      heroId: 'hero_swordsman',
+      heroId: 'hero_blade',
       inventory: {
         ...player.inventory,
         weapons: [
@@ -834,13 +834,13 @@ describe('combat resolution', () => {
 
     expect(resolved.phase).toBe('await_move');
     expect(resolved.remainingSteps).toBe(0);
-    expect(resolved.turnContinuationReason).toBe('swordsman_on_six');
+    expect(resolved.turnContinuationReason).toBe('blade_on_six');
   });
 
-  it('continues moving after resolving combat reward loot from a swordsman victory with a six', () => {
+  it('continues moving after resolving combat reward loot from a blade victory with a six', () => {
     const state = withActivePlayer(createCombatState('giant_rat'), (player) => ({
       ...player,
-      heroId: 'hero_swordsman',
+      heroId: 'hero_blade',
     }));
     const resolved = resolveCombat(state, { dice: [6, 6] });
     const afterLoot = applyGameAction(resolved, { type: 'leaveLoot' });
@@ -848,10 +848,10 @@ describe('combat resolution', () => {
     expect(resolved.phase).toBe('loot_resolution');
     expect(afterLoot.phase).toBe('await_move');
     expect(afterLoot.remainingSteps).toBe(3);
-    expect(afterLoot.turnContinuationReason).toBe('swordsman_on_six');
+    expect(afterLoot.turnContinuationReason).toBe('blade_on_six');
   });
 
-  it('can trigger the swordsman six continuation multiple times in one turn', () => {
+  it('can trigger the blade six continuation multiple times in one turn', () => {
     const state = createChainedCombatState(['fallen', 'fallen']);
     const firstVictory = resolveCombat(state, { dice: [6, 6] });
     const moved = applyGameAction(firstVictory, {
@@ -864,10 +864,10 @@ describe('combat resolution', () => {
     expect(moved.phase).toBe('combat');
     expect(secondVictory.phase).toBe('await_move');
     expect(secondVictory.remainingSteps).toBe(2);
-    expect(secondVictory.turnContinuationReason).toBe('swordsman_on_six');
+    expect(secondVictory.turnContinuationReason).toBe('blade_on_six');
   });
 
-  it('does not carry a previous swordsman six continuation into a later non-six victory', () => {
+  it('does not carry a previous blade six continuation into a later non-six victory', () => {
     const state = withActivePlayer(
       createChainedCombatState(['fallen', 'giant_rat']),
       (player) => ({
@@ -990,7 +990,7 @@ function createChainedCombatState(monsterIds: [MonsterId, MonsterId]): GameState
     },
     (player) => ({
       ...player,
-      heroId: 'hero_swordsman',
+      heroId: 'hero_blade',
       inventory: {
         ...player.inventory,
         weapons: [

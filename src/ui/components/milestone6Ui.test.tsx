@@ -27,28 +27,28 @@ import { heroName } from '../labels';
 
 const noopActions = {
   healingSpellSelection: { mode: 'idle' as const },
-  warlockSwapSelection: { mode: 'idle' as const },
+  witchSwapSelection: { mode: 'idle' as const },
   onCancelHealingSpellSelection: vi.fn(),
   onBeginLoot: vi.fn(),
-  onCancelWarlockSwapSelection: vi.fn(),
+  onCancelWitchSwapSelection: vi.fn(),
   onLeaveLoot: vi.fn(),
   onMove: vi.fn(),
   onExplore: vi.fn(),
-  onChooseOracleRoomToken: vi.fn(),
+  onChooseSeeressRoomToken: vi.fn(),
   onStartOptionalCombat: vi.fn(),
   onResolveCombat: vi.fn(),
   onSelectCurseTarget: vi.fn(),
-  onUseSwordswomanReroll: vi.fn(),
-  onUseWarriorReroll: vi.fn(),
-  onDeclineWarriorReroll: vi.fn(),
-  onUseWarlockSacrifice: vi.fn(),
-  onDeclineWarlockSacrifice: vi.fn(),
+  onUseBladeReroll: vi.fn(),
+  onUseValkyrieReroll: vi.fn(),
+  onDeclineValkyrieReroll: vi.fn(),
+  onUseWitchSacrifice: vi.fn(),
+  onDeclineWitchSacrifice: vi.fn(),
   onResolveCombatWithoutFlameSpells: vi.fn(),
   onResolveCombatWithFlameSpells: vi.fn(),
   onSelectHealingSpellTarget: vi.fn(),
-  onSelectWarlockSwapTarget: vi.fn(),
+  onSelectWitchSwapTarget: vi.fn(),
   onStartHealingSpellSelection: vi.fn(),
-  onStartWarlockSwapSelection: vi.fn(),
+  onStartWitchSwapSelection: vi.fn(),
   onSwapLoot: vi.fn(),
   onTakeLoot: vi.fn(),
   onOpenChest: vi.fn(),
@@ -356,7 +356,7 @@ describe('Milestone 6 UI', () => {
       screen.getByText('Giant Rat strength 5 · dice 6 + 4 · total 14'),
     ).toBeInTheDocument();
     expect(
-      screen.getByText('weapons +2 · flame +1 · oracle +1'),
+      screen.getByText('weapons +2 · flame +1 · seeress +1'),
     ).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Key' })).toHaveAttribute(
       'src',
@@ -380,7 +380,7 @@ describe('Milestone 6 UI', () => {
     );
   });
 
-  it('shows Oracle Sight +1 in the pre-roll combat overview when the oracle bonus is active', () => {
+  it('shows Seeress Sight +1 in the pre-roll combat overview when the seeress bonus is active', () => {
     const state = createUiState({
       phase: 'combat',
       remainingSteps: 3,
@@ -391,7 +391,7 @@ describe('Milestone 6 UI', () => {
         enteredFrom: { boardX: 0, boardY: -1 },
       },
       players: createUiState().players.map((player, index) =>
-        index === 0 ? { ...player, heroId: 'hero_oracle' } : player,
+        index === 0 ? { ...player, heroId: 'hero_seeress' } : player,
       ),
     });
 
@@ -399,12 +399,12 @@ describe('Milestone 6 UI', () => {
 
     expect(
       screen.getByText(
-        '2d6 + weapons +0 + Oracle Sight +1 + flame spells (0 available) must beat 5',
+        '2d6 + weapons +0 + Seeress Sight +1 + flame spells (0 available) must beat 5',
       ),
     ).toBeInTheDocument();
   });
 
-  it('does not show Oracle Sight +1 in the pre-roll combat overview after the first step window has passed', () => {
+  it('does not show Seeress Sight +1 in the pre-roll combat overview after the first step window has passed', () => {
     const state = createUiState({
       phase: 'combat',
       remainingSteps: 2,
@@ -415,7 +415,7 @@ describe('Milestone 6 UI', () => {
         enteredFrom: { boardX: 0, boardY: -1 },
       },
       players: createUiState().players.map((player, index) =>
-        index === 0 ? { ...player, heroId: 'hero_oracle' } : player,
+        index === 0 ? { ...player, heroId: 'hero_seeress' } : player,
       ),
     });
 
@@ -424,10 +424,10 @@ describe('Milestone 6 UI', () => {
     expect(
       screen.getByText('2d6 + weapons +0 + flame spells (0 available) must beat 5'),
     ).toBeInTheDocument();
-    expect(screen.queryByText(/Oracle Sight \+1/)).toBeNull();
+    expect(screen.queryByText(/Seeress Sight \+1/)).toBeNull();
   });
 
-  it('does not show Oracle Sight +1 in the pre-roll combat overview while the oracle is cursed', () => {
+  it('does not show Seeress Sight +1 in the pre-roll combat overview while the seeress is cursed', () => {
     const state = createUiState({
       phase: 'combat',
       remainingSteps: 3,
@@ -439,7 +439,7 @@ describe('Milestone 6 UI', () => {
       },
       players: createUiState().players.map((player, index) =>
         index === 0
-          ? { ...player, heroId: 'hero_oracle', isCursed: true }
+          ? { ...player, heroId: 'hero_seeress', isCursed: true }
           : player,
       ),
     });
@@ -449,7 +449,7 @@ describe('Milestone 6 UI', () => {
     expect(
       screen.getByText('2d6 + weapons +0 + flame spells (0 available) must beat 5'),
     ).toBeInTheDocument();
-    expect(screen.queryByText(/Oracle Sight \+1/)).toBeNull();
+    expect(screen.queryByText(/Seeress Sight \+1/)).toBeNull();
   });
 
   it('shows mummy curse target choices for another hero and excludes the active player', () => {
@@ -478,10 +478,10 @@ describe('Milestone 6 UI', () => {
         'Mummy defeated. Choose another hero to receive the curse.',
       ),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Thief' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Rogue' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Mage' })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rogue' }));
 
     expect(onSelectCurseTarget).toHaveBeenCalledWith('player_ai_1');
   });
@@ -507,7 +507,7 @@ describe('Milestone 6 UI', () => {
             warlockSacrificeBonus: 0,
             oracleBonus: 0,
             curseTargetPlayerId: 'player_ai_1',
-            curseTargetPlayerLabel: 'Thief (AI 1)',
+            curseTargetPlayerLabel: 'Rogue (AI 1)',
           },
         },
       ],
@@ -516,7 +516,7 @@ describe('Milestone 6 UI', () => {
     render(<EventLog state={state} />);
 
     expect(
-      screen.getByText(/curse -> Thief \(AI 1\)/),
+      screen.getByText(/curse -> Rogue \(AI 1\)/),
     ).toBeInTheDocument();
   });
 
@@ -543,14 +543,14 @@ describe('Milestone 6 UI', () => {
                   },
                   {
                     playerId: 'player_ai_1',
-                    playerHeroId: 'hero_thief',
-                    playerLabel: 'Thief (AI 1)',
+                    playerHeroId: 'hero_rogue',
+                    playerLabel: 'Rogue (AI 1)',
                     roll: 6,
                   },
                   {
                     playerId: 'player_ai_2',
-                    playerHeroId: 'hero_warrior',
-                    playerLabel: 'Warrior (AI 2)',
+                    playerHeroId: 'hero_valkyrie',
+                    playerLabel: 'Valkyrie (AI 2)',
                     roll: 2,
                   },
                 ],
@@ -566,8 +566,8 @@ describe('Milestone 6 UI', () => {
                   },
                   {
                     playerId: 'player_ai_1',
-                    playerHeroId: 'hero_thief',
-                    playerLabel: 'Thief (AI 1)',
+                    playerHeroId: 'hero_rogue',
+                    playerLabel: 'Rogue (AI 1)',
                     roll: 3,
                   },
                 ],
@@ -584,19 +584,19 @@ describe('Milestone 6 UI', () => {
     expect(screen.getByText('Mage takes the first turn')).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Start rolls: Mage (Human) 6 · Thief (AI 1) 6 · Warrior (AI 2) 2',
+        'Start rolls: Mage (Human) 6 · Rogue (AI 1) 6 · Valkyrie (AI 2) 2',
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText('Tiebreak 1: Mage (Human) 5 · Thief (AI 1) 3'),
+      screen.getByText('Tiebreak 1: Mage (Human) 5 · Rogue (AI 1) 3'),
     ).toBeInTheDocument();
   });
 
   it('shows a start-player overlay with roll tables and turn order before the game begins', () => {
     const baseState = createUiStateWithPlayerCount(3, [
       'hero_mage',
-      'hero_thief',
-      'hero_warrior',
+      'hero_rogue',
+      'hero_valkyrie',
     ]);
     const state: GameState = {
       ...baseState,
@@ -605,10 +605,10 @@ describe('Milestone 6 UI', () => {
         {
           id: 'event-start',
           type: 'game_started',
-          message: 'Game started. Thief (AI 1) takes the first turn.',
+          message: 'Game started. Rogue (AI 1) takes the first turn.',
           playerId: 'player_ai_1',
-          playerHeroId: 'hero_thief',
-          playerLabel: 'Thief (AI 1)',
+          playerHeroId: 'hero_rogue',
+          playerLabel: 'Rogue (AI 1)',
           startPlayer: {
             rounds: [
               {
@@ -622,14 +622,14 @@ describe('Milestone 6 UI', () => {
                   },
                   {
                     playerId: 'player_ai_1',
-                    playerHeroId: 'hero_thief',
-                    playerLabel: 'Thief (AI 1)',
+                    playerHeroId: 'hero_rogue',
+                    playerLabel: 'Rogue (AI 1)',
                     roll: 6,
                   },
                   {
                     playerId: 'player_ai_2',
-                    playerHeroId: 'hero_warrior',
-                    playerLabel: 'Warrior (AI 2)',
+                    playerHeroId: 'hero_valkyrie',
+                    playerLabel: 'Valkyrie (AI 2)',
                     roll: 6,
                   },
                 ],
@@ -639,14 +639,14 @@ describe('Milestone 6 UI', () => {
                 rolls: [
                   {
                     playerId: 'player_ai_1',
-                    playerHeroId: 'hero_thief',
-                    playerLabel: 'Thief (AI 1)',
+                    playerHeroId: 'hero_rogue',
+                    playerLabel: 'Rogue (AI 1)',
                     roll: 5,
                   },
                   {
                     playerId: 'player_ai_2',
-                    playerHeroId: 'hero_warrior',
-                    playerLabel: 'Warrior (AI 2)',
+                    playerHeroId: 'hero_valkyrie',
+                    playerLabel: 'Valkyrie (AI 2)',
                     roll: 2,
                   },
                 ],
@@ -669,7 +669,7 @@ describe('Milestone 6 UI', () => {
     const tables = within(overlay).getAllByRole('table');
 
     expect(
-      within(overlay).getByRole('heading', { name: 'Thief begins the game' }),
+      within(overlay).getByRole('heading', { name: 'Rogue begins the game' }),
     ).toBeInTheDocument();
     expect(
       within(overlay).getByText('Click anywhere to begin'),
@@ -681,10 +681,10 @@ describe('Milestone 6 UI', () => {
     expect(within(tables[0]).getByText('Human')).toBeInTheDocument();
     expect(within(tables[0]).getByText('Mage')).toBeInTheDocument();
     expect(within(tables[0]).getByText('4')).toBeInTheDocument();
-    expect(within(tables[1]).getByText('Warrior')).toBeInTheDocument();
+    expect(within(tables[1]).getByText('Valkyrie')).toBeInTheDocument();
     expect(within(tables[2]).getByText('1')).toBeInTheDocument();
     expect(within(tables[2]).getByText('AI 1')).toBeInTheDocument();
-    expect(within(tables[2]).getByText('Thief')).toBeInTheDocument();
+    expect(within(tables[2]).getByText('Rogue')).toBeInTheDocument();
     expect(within(tables[2]).getByText('2')).toBeInTheDocument();
     expect(within(tables[2]).getByText('AI 2')).toBeInTheDocument();
     expect(within(tables[2]).getByText('3')).toBeInTheDocument();
@@ -814,9 +814,9 @@ describe('Milestone 6 UI', () => {
     ).toHaveClass('max-h-[108px]');
   });
 
-  it('shows the pending swordswoman reroll dice in the header before combat resolves', () => {
+  it('shows the pending blade reroll dice in the header before combat resolves', () => {
     const state = createUiState({
-      phase: 'combat_swordsman_reroll',
+      phase: 'combat_blade_reroll',
       combat: {
         playerId: 'player_human',
         monsterId: 'giant_rat',
@@ -824,13 +824,13 @@ describe('Milestone 6 UI', () => {
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [1, 4],
         rolledDice: [1, 4],
-        swordsmanRerollCount: 0,
+        bladeRerollCount: 0,
       },
       players: createUiState().players.map((player, index) =>
         index === 0
           ? {
               ...player,
-              heroId: 'hero_swordsman',
+              heroId: 'hero_blade',
             }
           : player,
       ),
@@ -872,9 +872,9 @@ describe('Milestone 6 UI', () => {
     );
   });
 
-  it('updates the header dice after a partial swordswoman reroll', () => {
+  it('updates the header dice after a partial blade reroll', () => {
     const state = createUiState({
-      phase: 'combat_swordsman_reroll',
+      phase: 'combat_blade_reroll',
       combat: {
         playerId: 'player_human',
         monsterId: 'giant_rat',
@@ -882,13 +882,13 @@ describe('Milestone 6 UI', () => {
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [1, 1],
         rolledDice: [1, 6],
-        swordsmanRerollCount: 1,
+        bladeRerollCount: 1,
       },
       players: createUiState().players.map((player, index) =>
         index === 0
           ? {
               ...player,
-              heroId: 'hero_swordsman',
+              heroId: 'hero_blade',
             }
           : player,
       ),
@@ -930,9 +930,9 @@ describe('Milestone 6 UI', () => {
     );
   });
 
-  it('shows warrior reroll dice in the header while the reroll choice is pending', () => {
+  it('shows valkyrie reroll dice in the header while the reroll choice is pending', () => {
     const state = createUiState({
-      phase: 'combat_warrior_reroll',
+      phase: 'combat_valkyrie_reroll',
       combat: {
         playerId: 'player_human',
         monsterId: 'giant_rat',
@@ -945,7 +945,7 @@ describe('Milestone 6 UI', () => {
         index === 0
           ? {
               ...player,
-              heroId: 'hero_warrior',
+              heroId: 'hero_valkyrie',
             }
           : player,
       ),
@@ -987,9 +987,9 @@ describe('Milestone 6 UI', () => {
     );
   });
 
-  it('shows warlock sacrifice dice in the header while the sacrifice choice is pending', () => {
+  it('shows witch sacrifice dice in the header while the sacrifice choice is pending', () => {
     const state = createUiState({
-      phase: 'combat_warlock_sacrifice',
+      phase: 'combat_witch_sacrifice',
       combat: {
         playerId: 'player_human',
         monsterId: 'giant_rat',
@@ -1002,7 +1002,7 @@ describe('Milestone 6 UI', () => {
         index === 0
           ? {
               ...player,
-              heroId: 'hero_warlock',
+              heroId: 'hero_witch',
             }
           : player,
       ),
@@ -1059,7 +1059,7 @@ describe('Milestone 6 UI', () => {
         index === 0
           ? {
               ...player,
-              heroId: 'hero_warrior',
+              heroId: 'hero_valkyrie',
             }
           : player,
       ),
@@ -1101,7 +1101,7 @@ describe('Milestone 6 UI', () => {
     );
   });
 
-  it('disables End Turn during unresolved combat prompts but keeps it available before optional thief combat', () => {
+  it('disables End Turn during unresolved combat prompts but keeps it available before optional rogue combat', () => {
     const combatState = createUiState({
       phase: 'combat',
       combat: {
@@ -1112,7 +1112,7 @@ describe('Milestone 6 UI', () => {
       },
     });
     const swordswomanState = createUiState({
-      phase: 'combat_swordsman_reroll',
+      phase: 'combat_blade_reroll',
       combat: {
         playerId: 'player_human',
         monsterId: 'giant_rat',
@@ -1120,14 +1120,14 @@ describe('Milestone 6 UI', () => {
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [1, 4],
         rolledDice: [1, 4],
-        swordsmanRerollCount: 0,
+        bladeRerollCount: 0,
       },
       players: createUiState().players.map((player, index) =>
-        index === 0 ? { ...player, heroId: 'hero_swordsman' } : player,
+        index === 0 ? { ...player, heroId: 'hero_blade' } : player,
       ),
     });
     const warriorState = createUiState({
-      phase: 'combat_warrior_reroll',
+      phase: 'combat_valkyrie_reroll',
       combat: {
         playerId: 'player_human',
         monsterId: 'giant_rat',
@@ -1137,11 +1137,11 @@ describe('Milestone 6 UI', () => {
         initialBaseOutcome: 'draw',
       },
       players: createUiState().players.map((player, index) =>
-        index === 0 ? { ...player, heroId: 'hero_warrior' } : player,
+        index === 0 ? { ...player, heroId: 'hero_valkyrie' } : player,
       ),
     });
     const warlockState = createUiState({
-      phase: 'combat_warlock_sacrifice',
+      phase: 'combat_witch_sacrifice',
       combat: {
         playerId: 'player_human',
         monsterId: 'giant_rat',
@@ -1151,7 +1151,7 @@ describe('Milestone 6 UI', () => {
         initialBaseOutcome: 'draw',
       },
       players: createUiState().players.map((player, index) =>
-        index === 0 ? { ...player, heroId: 'hero_warlock' } : player,
+        index === 0 ? { ...player, heroId: 'hero_witch' } : player,
       ),
     });
     const flameState = createUiState({
@@ -1168,7 +1168,7 @@ describe('Milestone 6 UI', () => {
         index === 0
           ? {
               ...player,
-              heroId: 'hero_warrior',
+              heroId: 'hero_valkyrie',
               inventory: {
                 ...player.inventory,
                 spells: [{ type: 'spell', spellKind: 'flame' }],
@@ -1192,7 +1192,7 @@ describe('Milestone 6 UI', () => {
         },
       ],
       players: createUiState().players.map((player, index) =>
-        index === 0 ? { ...player, heroId: 'hero_thief' } : player,
+        index === 0 ? { ...player, heroId: 'hero_rogue' } : player,
       ),
     });
 
@@ -1215,7 +1215,7 @@ describe('Milestone 6 UI', () => {
     expect(screen.getByRole('button', { name: 'End Turn' })).toBeEnabled();
   });
 
-  it('shows the warlock sacrifice bonus in the flame spell combat math after sacrificing', () => {
+  it('shows the witch sacrifice bonus in the flame spell combat math after sacrificing', () => {
     const state = createUiState({
       phase: 'combat_flame_spells',
       combat: {
@@ -1225,13 +1225,13 @@ describe('Milestone 6 UI', () => {
         enteredFrom: { boardX: 0, boardY: -1 },
         rolledDice: [2, 2],
         pendingBaseOutcome: 'draw',
-        pendingWarlockSacrificeBonus: 1,
+        pendingWitchSacrificeBonus: 1,
       },
       players: createUiState().players.map((player, index) =>
         index === 0
           ? {
               ...player,
-              heroId: 'hero_warlock',
+              heroId: 'hero_witch',
               inventory: {
                 ...player.inventory,
                 spells: [{ type: 'spell', spellKind: 'flame' }],
@@ -1250,7 +1250,7 @@ describe('Milestone 6 UI', () => {
     ).toBeInTheDocument();
   });
 
-  it('offers the swordswoman reroll in the real GameScreen flow after resolving a 1', () => {
+  it('offers the blade reroll in the real GameScreen flow after resolving a 1', () => {
     const state = createUiState({
       phase: 'combat',
       combat: {
@@ -1263,7 +1263,7 @@ describe('Milestone 6 UI', () => {
         index === 0
           ? {
               ...player,
-              heroId: 'hero_swordsman',
+              heroId: 'hero_blade',
             }
           : player,
       ),
@@ -1292,7 +1292,7 @@ describe('Milestone 6 UI', () => {
     );
   });
 
-  it('keeps offering the swordswoman reroll in the real GameScreen flow after a partial reroll', () => {
+  it('keeps offering the blade reroll in the real GameScreen flow after a partial reroll', () => {
     const state = createUiState({
       phase: 'combat',
       combat: {
@@ -1305,7 +1305,7 @@ describe('Milestone 6 UI', () => {
         index === 0
           ? {
               ...player,
-              heroId: 'hero_swordsman',
+              heroId: 'hero_blade',
             }
           : player,
       ),
@@ -1324,7 +1324,7 @@ describe('Milestone 6 UI', () => {
     });
     act(() => {
       useSetupStore.getState().dispatch({
-        type: 'useSwordswomanReroll',
+        type: 'useBladeReroll',
         dice: [1, 6],
       });
     });
@@ -1340,7 +1340,7 @@ describe('Milestone 6 UI', () => {
     );
   });
 
-  it('shows warrior pending dice in the real GameScreen flow after a rolled draw', () => {
+  it('shows valkyrie pending dice in the real GameScreen flow after a rolled draw', () => {
     const state = createUiState({
       phase: 'combat',
       combat: {
@@ -1353,7 +1353,7 @@ describe('Milestone 6 UI', () => {
         index === 0
           ? {
               ...player,
-              heroId: 'hero_warrior',
+              heroId: 'hero_valkyrie',
             }
           : player,
       ),
@@ -1384,7 +1384,7 @@ describe('Milestone 6 UI', () => {
     );
   });
 
-  it('shows warlock pending dice in the real GameScreen flow after a rolled draw', () => {
+  it('shows witch pending dice in the real GameScreen flow after a rolled draw', () => {
     const state = createUiState({
       phase: 'combat',
       combat: {
@@ -1397,7 +1397,7 @@ describe('Milestone 6 UI', () => {
         index === 0
           ? {
               ...player,
-              heroId: 'hero_warlock',
+              heroId: 'hero_witch',
             }
           : player,
       ),
@@ -1514,8 +1514,8 @@ describe('Milestone 6 UI', () => {
   it('stacks multiple hero tokens from the top of the tile and keeps the active player in front', () => {
     const baseState = createUiStateWithPlayerCount(3, [
       'hero_mage',
-      'hero_warrior',
-      'hero_oracle',
+      'hero_valkyrie',
+      'hero_seeress',
     ]);
     const state = {
       ...baseState,
@@ -1559,10 +1559,10 @@ describe('Milestone 6 UI', () => {
   it('keeps stacked hero tokens compact for larger player counts', () => {
     const baseState = createUiStateWithPlayerCount(5, [
       'hero_mage',
-      'hero_warrior',
-      'hero_warlock',
-      'hero_thief',
-      'hero_oracle',
+      'hero_valkyrie',
+      'hero_witch',
+      'hero_rogue',
+      'hero_seeress',
     ]);
     const state = {
       ...baseState,
@@ -1913,7 +1913,7 @@ describe('Milestone 6 UI', () => {
         index === 0
           ? {
               ...player,
-              heroId: 'hero_warrior',
+              heroId: 'hero_valkyrie',
               inventory: {
                 ...player.inventory,
                 spells: [{ type: 'spell', spellKind: 'flame' }],
@@ -1946,11 +1946,11 @@ describe('Milestone 6 UI', () => {
     expect(onResolveCombatWithFlameSpells).toHaveBeenCalledWith(1);
   });
 
-  it('shows warrior reroll choices before flame spell choices', () => {
-    const onUseWarriorReroll = vi.fn();
-    const onDeclineWarriorReroll = vi.fn();
+  it('shows valkyrie reroll choices before flame spell choices', () => {
+    const onUseValkyrieReroll = vi.fn();
+    const onDeclineValkyrieReroll = vi.fn();
     const state = createUiState({
-      phase: 'combat_warrior_reroll',
+      phase: 'combat_valkyrie_reroll',
       combat: {
         playerId: 'player_human',
         monsterId: 'giant_rat',
@@ -1963,7 +1963,7 @@ describe('Milestone 6 UI', () => {
         index === 0
           ? {
               ...player,
-              heroId: 'hero_warrior',
+              heroId: 'hero_valkyrie',
               inventory: {
                 ...player.inventory,
                 spells: [{ type: 'spell', spellKind: 'flame' }],
@@ -1977,8 +1977,8 @@ describe('Milestone 6 UI', () => {
       <ActionPanel
         state={state}
         {...noopActions}
-        onUseWarriorReroll={onUseWarriorReroll}
-        onDeclineWarriorReroll={onDeclineWarriorReroll}
+        onUseValkyrieReroll={onUseValkyrieReroll}
+        onDeclineValkyrieReroll={onDeclineValkyrieReroll}
       />,
     );
 
@@ -1998,14 +1998,14 @@ describe('Milestone 6 UI', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reroll both dice' }));
     fireEvent.click(screen.getByRole('button', { name: 'Keep this result' }));
 
-    expect(onUseWarriorReroll).toHaveBeenCalledTimes(1);
-    expect(onDeclineWarriorReroll).toHaveBeenCalledTimes(1);
+    expect(onUseValkyrieReroll).toHaveBeenCalledTimes(1);
+    expect(onDeclineValkyrieReroll).toHaveBeenCalledTimes(1);
   });
 
-  it('shows swordswoman reroll feedback when one or more dice show 1', () => {
-    const onUseSwordswomanReroll = vi.fn();
+  it('shows blade reroll feedback when one or more dice show 1', () => {
+    const onUseBladeReroll = vi.fn();
     const state = createUiState({
-      phase: 'combat_swordsman_reroll',
+      phase: 'combat_blade_reroll',
       combat: {
         playerId: 'player_human',
         monsterId: 'giant_rat',
@@ -2013,13 +2013,13 @@ describe('Milestone 6 UI', () => {
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [1, 4],
         rolledDice: [1, 4],
-        swordsmanRerollCount: 0,
+        bladeRerollCount: 0,
       },
       players: createUiState().players.map((player, index) =>
         index === 0
           ? {
               ...player,
-              heroId: 'hero_swordsman',
+              heroId: 'hero_blade',
             }
           : player,
       ),
@@ -2029,7 +2029,7 @@ describe('Milestone 6 UI', () => {
       <ActionPanel
         state={state}
         {...noopActions}
-        onUseSwordswomanReroll={onUseSwordswomanReroll}
+        onUseBladeReroll={onUseBladeReroll}
       />,
     );
 
@@ -2045,12 +2045,12 @@ describe('Milestone 6 UI', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Reroll 1s' }));
 
-    expect(onUseSwordswomanReroll).toHaveBeenCalledTimes(1);
+    expect(onUseBladeReroll).toHaveBeenCalledTimes(1);
   });
 
-  it('shows the current combat result after a partial swordswoman reroll', () => {
+  it('shows the current combat result after a partial blade reroll', () => {
     const state = createUiState({
-      phase: 'combat_swordsman_reroll',
+      phase: 'combat_blade_reroll',
       combat: {
         playerId: 'player_human',
         monsterId: 'giant_rat',
@@ -2058,13 +2058,13 @@ describe('Milestone 6 UI', () => {
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [1, 1],
         rolledDice: [1, 6],
-        swordsmanRerollCount: 1,
+        bladeRerollCount: 1,
       },
       players: createUiState().players.map((player, index) =>
         index === 0
           ? {
               ...player,
-              heroId: 'hero_swordsman',
+              heroId: 'hero_blade',
             }
           : player,
       ),
@@ -2082,11 +2082,11 @@ describe('Milestone 6 UI', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows warlock sacrifice choices before flame spell choices', () => {
-    const onUseWarlockSacrifice = vi.fn();
-    const onDeclineWarlockSacrifice = vi.fn();
+  it('shows witch sacrifice choices before flame spell choices', () => {
+    const onUseWitchSacrifice = vi.fn();
+    const onDeclineWitchSacrifice = vi.fn();
     const state = createUiState({
-      phase: 'combat_warlock_sacrifice',
+      phase: 'combat_witch_sacrifice',
       combat: {
         playerId: 'player_human',
         monsterId: 'giant_rat',
@@ -2099,7 +2099,7 @@ describe('Milestone 6 UI', () => {
         index === 0
           ? {
               ...player,
-              heroId: 'hero_warlock',
+              heroId: 'hero_witch',
               inventory: {
                 ...player.inventory,
                 spells: [{ type: 'spell', spellKind: 'flame' }],
@@ -2113,8 +2113,8 @@ describe('Milestone 6 UI', () => {
       <ActionPanel
         state={state}
         {...noopActions}
-        onUseWarlockSacrifice={onUseWarlockSacrifice}
-        onDeclineWarlockSacrifice={onDeclineWarlockSacrifice}
+        onUseWitchSacrifice={onUseWitchSacrifice}
+        onDeclineWitchSacrifice={onDeclineWitchSacrifice}
       />,
     );
 
@@ -2136,8 +2136,8 @@ describe('Milestone 6 UI', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Keep this result' }));
 
-    expect(onUseWarlockSacrifice).toHaveBeenCalledTimes(1);
-    expect(onDeclineWarlockSacrifice).toHaveBeenCalledTimes(1);
+    expect(onUseWitchSacrifice).toHaveBeenCalledTimes(1);
+    expect(onDeclineWitchSacrifice).toHaveBeenCalledTimes(1);
   });
 
   it('hides the healing spell action during non-free interaction phases', () => {
@@ -2276,15 +2276,15 @@ describe('Milestone 6 UI', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows the warlock swap action only for an uncursed human warlock at turn start with all four steps', () => {
+  it('shows the witch swap action only for an uncursed human witch at turn start with all four steps', () => {
     const withSwap = createUiState({
       phase: 'turn_start',
       remainingSteps: 4,
       players: createUiState().players.map((player, index) =>
-        index === 0 ? { ...player, heroId: 'hero_warlock' } : player,
+        index === 0 ? { ...player, heroId: 'hero_witch' } : player,
       ),
     });
-    const cursedWarlock = {
+    const cursedWitch = {
       ...withSwap,
       players: withSwap.players.map((player, index) =>
         index === 0 ? { ...player, isCursed: true } : player,
@@ -2300,7 +2300,7 @@ describe('Milestone 6 UI', () => {
       screen.getByRole('button', { name: 'Swap Position' }),
     ).toBeInTheDocument();
 
-    rerender(<ActionPanel state={cursedWarlock} {...noopActions} />);
+    rerender(<ActionPanel state={cursedWitch} {...noopActions} />);
     expect(screen.queryByRole('button', { name: 'Swap Position' })).toBeNull();
 
     rerender(<ActionPanel state={wrongPhase} {...noopActions} />);
@@ -2310,53 +2310,53 @@ describe('Milestone 6 UI', () => {
     expect(screen.queryByRole('button', { name: 'Swap Position' })).toBeNull();
   });
 
-  it('shows warlock swap target choices for every other hero and supports cancel', () => {
+  it('shows witch swap target choices for every other hero and supports cancel', () => {
     const state = {
       ...createUiStateWithPlayerCount(3, [
-        'hero_warlock',
-        'hero_thief',
-        'hero_oracle',
+        'hero_witch',
+        'hero_rogue',
+        'hero_seeress',
       ]),
       activePlayerIndex: 0,
       phase: 'turn_start' as const,
       remainingSteps: 4,
     };
-    const onStartWarlockSwapSelection = vi.fn();
-    const onSelectWarlockSwapTarget = vi.fn();
-    const onCancelWarlockSwapSelection = vi.fn();
+    const onStartWitchSwapSelection = vi.fn();
+    const onSelectWitchSwapTarget = vi.fn();
+    const onCancelWitchSwapSelection = vi.fn();
     const { rerender } = render(
       <ActionPanel
         state={state}
         {...noopActions}
-        onStartWarlockSwapSelection={onStartWarlockSwapSelection}
+        onStartWitchSwapSelection={onStartWitchSwapSelection}
       />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Swap Position' }));
-    expect(onStartWarlockSwapSelection).toHaveBeenCalledOnce();
+    expect(onStartWitchSwapSelection).toHaveBeenCalledOnce();
 
     rerender(
       <ActionPanel
         state={state}
         {...noopActions}
-        warlockSwapSelection={{ mode: 'select_target' }}
-        onSelectWarlockSwapTarget={onSelectWarlockSwapTarget}
-        onCancelWarlockSwapSelection={onCancelWarlockSwapSelection}
+        witchSwapSelection={{ mode: 'select_target' }}
+        onSelectWitchSwapTarget={onSelectWitchSwapTarget}
+        onCancelWitchSwapSelection={onCancelWitchSwapSelection}
       />,
     );
 
     expect(
       screen.getByText('Choose another hero to swap positions with.'),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Thief' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Oracle' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Warlock' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Rogue' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Seeress' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Witch' })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
-    expect(onSelectWarlockSwapTarget).toHaveBeenCalledWith('player_ai_1');
+    fireEvent.click(screen.getByRole('button', { name: 'Rogue' }));
+    expect(onSelectWitchSwapTarget).toHaveBeenCalledWith('player_ai_1');
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(onCancelWarlockSwapSelection).toHaveBeenCalledOnce();
+    expect(onCancelWitchSwapSelection).toHaveBeenCalledOnce();
   });
 
   it('highlights legal exploration targets on the board and explores by tile click', () => {
@@ -2380,7 +2380,7 @@ describe('Milestone 6 UI', () => {
     expect(onExplore).toHaveBeenCalledWith('B');
   });
 
-  it('swaps the human warlock with the selected hero and writes a readable log entry', () => {
+  it('swaps the human witch with the selected hero and writes a readable log entry', () => {
     const state = createUiState({
       phase: 'turn_start',
       remainingSteps: 4,
@@ -2398,25 +2398,25 @@ describe('Milestone 6 UI', () => {
       ],
       players: createUiState().players.map((player, index) =>
         index === 0
-          ? { ...player, heroId: 'hero_warlock', position: { boardX: 0, boardY: 0 } }
-          : { ...player, heroId: 'hero_thief', position: { boardX: 2, boardY: 0 } },
+          ? { ...player, heroId: 'hero_witch', position: { boardX: 0, boardY: 0 } }
+          : { ...player, heroId: 'hero_rogue', position: { boardX: 2, boardY: 0 } },
       ),
     });
 
-    render(<WarlockSwapHarness initialState={state} />);
+    render(<WitchSwapHarness initialState={state} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Swap Position' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rogue' }));
 
-    expect(screen.getByTestId('warlock-phase')).toHaveTextContent('turn_end');
-    expect(screen.getByTestId('warlock-position')).toHaveTextContent('2,0');
-    expect(screen.getByTestId('warlock-target-position-player_ai_1')).toHaveTextContent(
+    expect(screen.getByTestId('witch-phase')).toHaveTextContent('turn_end');
+    expect(screen.getByTestId('witch-position')).toHaveTextContent('2,0');
+    expect(screen.getByTestId('witch-target-position-player_ai_1')).toHaveTextContent(
       '0,0',
     );
-    expect(screen.getByText('Swapped with Thief to 2,0')).toBeInTheDocument();
+    expect(screen.getByText('Swapped with Rogue to 2,0')).toBeInTheDocument();
   });
 
-  it('keeps chest and ground-loot follow-up actions available after a human warlock swap', () => {
+  it('keeps chest and ground-loot follow-up actions available after a human witch swap', () => {
     const chestState = createUiState({
       phase: 'turn_start',
       remainingSteps: 4,
@@ -2437,14 +2437,14 @@ describe('Milestone 6 UI', () => {
         index === 0
           ? {
               ...player,
-              heroId: 'hero_warlock',
+              heroId: 'hero_witch',
               position: { boardX: 0, boardY: 0 },
               inventory: {
                 ...player.inventory,
                 keyCount: 1,
               },
             }
-          : { ...player, heroId: 'hero_thief', position: { boardX: 2, boardY: 0 } },
+          : { ...player, heroId: 'hero_rogue', position: { boardX: 2, boardY: 0 } },
       ),
     });
     const lootState = createUiState({
@@ -2464,31 +2464,31 @@ describe('Milestone 6 UI', () => {
       ],
       players: createUiState().players.map((player, index) =>
         index === 0
-          ? { ...player, heroId: 'hero_warlock', position: { boardX: 0, boardY: 0 } }
-          : { ...player, heroId: 'hero_thief', position: { boardX: 2, boardY: 0 } },
+          ? { ...player, heroId: 'hero_witch', position: { boardX: 0, boardY: 0 } }
+          : { ...player, heroId: 'hero_rogue', position: { boardX: 2, boardY: 0 } },
       ),
     });
-    const { unmount } = render(<WarlockSwapHarness initialState={chestState} />);
+    const { unmount } = render(<WitchSwapHarness initialState={chestState} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Swap Position' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rogue' }));
 
-    expect(screen.getByTestId('warlock-phase')).toHaveTextContent('await_move');
+    expect(screen.getByTestId('witch-phase')).toHaveTextContent('await_move');
     expect(screen.getByRole('button', { name: 'Open Chest' })).toBeInTheDocument();
 
     unmount();
-    render(<WarlockSwapHarness initialState={lootState} />);
+    render(<WitchSwapHarness initialState={lootState} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Swap Position' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rogue' }));
 
-    expect(screen.getByTestId('warlock-phase')).toHaveTextContent('await_move');
+    expect(screen.getByTestId('witch-phase')).toHaveTextContent('await_move');
     expect(
       screen.getByRole('button', { name: 'Take Weapon +1' }),
     ).toBeInTheDocument();
   });
 
-  it('starts immediate combat after a human warlock swaps onto a monster tile', () => {
+  it('starts immediate combat after a human witch swaps onto a monster tile', () => {
     const state = createUiState({
       phase: 'turn_start',
       remainingSteps: 4,
@@ -2507,17 +2507,17 @@ describe('Milestone 6 UI', () => {
       ],
       players: createUiState().players.map((player, index) =>
         index === 0
-          ? { ...player, heroId: 'hero_warlock', position: { boardX: 0, boardY: 0 } }
-          : { ...player, heroId: 'hero_thief', position: { boardX: 2, boardY: 0 } },
+          ? { ...player, heroId: 'hero_witch', position: { boardX: 0, boardY: 0 } }
+          : { ...player, heroId: 'hero_rogue', position: { boardX: 2, boardY: 0 } },
       ),
     });
 
-    render(<WarlockSwapHarness initialState={state} />);
+    render(<WitchSwapHarness initialState={state} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Swap Position' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rogue' }));
 
-    expect(screen.getByTestId('warlock-phase')).toHaveTextContent('combat');
+    expect(screen.getByTestId('witch-phase')).toHaveTextContent('combat');
     expect(
       screen.getByRole('button', { name: 'Resolve Combat' }),
     ).toBeInTheDocument();
@@ -2618,7 +2618,7 @@ describe('Milestone 6 UI', () => {
     render(<HealingSpellHarness initialState={state} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Use Healing Spell' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rogue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Select healing tile 1,0' }));
 
     expect(screen.getByTestId('healing-target-hp')).toHaveTextContent('5');
@@ -2701,7 +2701,7 @@ describe('Milestone 6 UI', () => {
     expect(screen.getByTestId('room-monster')).toHaveTextContent('giant_rat');
   });
 
-  it('shows the human oracle room choice, blocks end turn, and resolves the selected option', async () => {
+  it('shows the human seeress room choice, blocks end turn, and resolves the selected option', async () => {
     const state = createUiState({
       phase: 'resolve_room_token',
       board: [
@@ -2720,7 +2720,7 @@ describe('Milestone 6 UI', () => {
         index === 0
           ? {
               ...player,
-              heroId: 'hero_oracle',
+              heroId: 'hero_seeress',
               kind: 'human',
               position: { boardX: 0, boardY: -1 },
             }
@@ -2745,11 +2745,11 @@ describe('Milestone 6 UI', () => {
 
     await waitFor(() => {
       expect(useSetupStore.getState().gameState?.phase).toBe(
-        'resolve_room_token_oracle_choice',
+        'resolve_room_token_seeress_choice',
       );
     });
 
-    expect(screen.getByText('Oracle Choice')).toBeInTheDocument();
+    expect(screen.getByText('Seeress Choice')).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Choose option 1: Giant Rat' }),
     ).toBeInTheDocument();
@@ -2771,7 +2771,7 @@ describe('Milestone 6 UI', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Found Treasure Chest at 0,-1 · Oracle drew Giant Rat / Treasure Chest · Oracle chose option 2',
+        'Found Treasure Chest at 0,-1 · Seeress drew Giant Rat / Treasure Chest · Seeress chose option 2',
       ),
     ).toBeInTheDocument();
   });
@@ -2908,7 +2908,7 @@ describe('Milestone 6 UI', () => {
     render(<HealingSpellHarness initialState={state} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Use Healing Spell' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Thief' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rogue' }));
     fireEvent.click(screen.getByRole('button', { name: 'Select healing tile 0,0' }));
 
     expect(screen.queryByRole('button', { name: 'Select healing tile 0,0' })).toBeNull();
@@ -3336,8 +3336,8 @@ describe('Milestone 6 UI', () => {
           index === 0
             ? 'hero_mage'
             : index === 1
-              ? 'hero_thief'
-              : 'hero_warrior',
+              ? 'hero_rogue'
+              : 'hero_valkyrie',
         treasurePoints:
           index === 0
             ? 1.5
@@ -3352,7 +3352,7 @@ describe('Milestone 6 UI', () => {
     expect(screen.getByText('Game Over')).toBeInTheDocument();
     expect(screen.getByText('Shared Victory')).toBeInTheDocument();
     expect(
-      screen.getByText('Thief (AI 1) and Warrior (AI 2)'),
+      screen.getByText('Rogue (AI 1) and Valkyrie (AI 2)'),
     ).toBeInTheDocument();
     expect(screen.getByText('Dragon Slayer')).toBeInTheDocument();
     expect(screen.getAllByText('Mage (Human)')).toHaveLength(2);
@@ -3366,9 +3366,9 @@ describe('Milestone 6 UI', () => {
       screen.getByTestId('end-screen-rank-player_human'),
     ];
 
-    expect(within(rankingRows[0]).getByText('Thief (AI 1)')).toBeInTheDocument();
+    expect(within(rankingRows[0]).getByText('Rogue (AI 1)')).toBeInTheDocument();
     expect(within(rankingRows[0]).getByText('3.5 pts')).toBeInTheDocument();
-    expect(within(rankingRows[1]).getByText('Warrior (AI 2)')).toBeInTheDocument();
+    expect(within(rankingRows[1]).getByText('Valkyrie (AI 2)')).toBeInTheDocument();
     expect(within(rankingRows[1]).getByText('3.5 pts')).toBeInTheDocument();
     expect(within(rankingRows[2]).getByText('Mage (Human)')).toBeInTheDocument();
     expect(within(rankingRows[2]).getByText('1.5 pts')).toBeInTheDocument();
@@ -3438,7 +3438,7 @@ describe('Milestone 6 UI', () => {
     );
 
     fireEvent.contextMenu(
-      screen.getByRole('button', { name: 'Thief portrait actions' }),
+      screen.getByRole('button', { name: 'Rogue portrait actions' }),
     );
 
     expectCenteredOnBoard(getBoardCell('1,0'), board);
@@ -3535,7 +3535,7 @@ describe('Milestone 6 UI', () => {
             }
           : {
               ...player,
-              heroId: 'hero_thief',
+              heroId: 'hero_rogue',
               isCursed: true,
               skipNextTurn: true,
             },
@@ -3550,7 +3550,7 @@ describe('Milestone 6 UI', () => {
 
     expect(grid).toHaveClass('sm:grid-cols-2');
     expect(screen.getByText('Mage')).toBeInTheDocument();
-    expect(screen.getByText('Thief')).toBeInTheDocument();
+    expect(screen.getByText('Rogue')).toBeInTheDocument();
     expect(screen.getByText('ATK +2')).toHaveAttribute(
       'title',
       'Current weapon bonus: +2',
@@ -3584,19 +3584,19 @@ describe('Milestone 6 UI', () => {
     expect(screen.queryByText('Draw = Win')).toBeNull();
 
     fireEvent.click(
-      screen.getByRole('button', { name: 'Thief portrait actions' }),
+      screen.getByRole('button', { name: 'Rogue portrait actions' }),
     );
 
     expect(screen.getByTestId('hero-info-player_ai_1')).toHaveTextContent(
-      'Combat draws count as wins. The Thief may ignore monsters while moving.',
+      'Combat draws count as wins. The Rogue may ignore monsters while moving.',
     );
   });
 
   it('spans the last player card across both columns for three players', () => {
     const state = createUiStateWithPlayerCount(3, [
       'hero_mage',
-      'hero_warrior',
-      'hero_oracle',
+      'hero_valkyrie',
+      'hero_seeress',
     ]);
 
     render(<PlayerPanel state={state} />);
@@ -3607,13 +3607,13 @@ describe('Milestone 6 UI', () => {
     );
   });
 
-  it('renders a two-by-two compact player grid for four players and shows the oracle bonus only when active', () => {
+  it('renders a two-by-two compact player grid for four players and shows the seeress bonus only when active', () => {
     const state = {
       ...createUiStateWithPlayerCount(4, [
         'hero_mage',
-        'hero_warrior',
-        'hero_warlock',
-        'hero_oracle',
+        'hero_valkyrie',
+        'hero_witch',
+        'hero_seeress',
       ]),
       activePlayerIndex: 3,
       remainingSteps: 3,
@@ -3628,7 +3628,7 @@ describe('Milestone 6 UI', () => {
     expect(screen.queryByText('Reroll')).toBeNull();
 
     fireEvent.click(
-      screen.getByRole('button', { name: 'Oracle portrait actions' }),
+      screen.getByRole('button', { name: 'Seeress portrait actions' }),
     );
 
     expect(screen.getByTestId('hero-info-player_ai_3')).toHaveTextContent(
@@ -3933,16 +3933,16 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
         onExplore={vi.fn()}
         onLeaveLoot={vi.fn()}
         onMove={vi.fn()}
-        onChooseOracleRoomToken={vi.fn()}
+        onChooseSeeressRoomToken={vi.fn()}
         onOpenChest={vi.fn()}
         onStartOptionalCombat={vi.fn()}
         onResolveCombat={vi.fn()}
         onSelectCurseTarget={vi.fn()}
-        onUseSwordswomanReroll={vi.fn()}
-        onUseWarriorReroll={vi.fn()}
-        onDeclineWarriorReroll={vi.fn()}
-        onUseWarlockSacrifice={vi.fn()}
-        onDeclineWarlockSacrifice={vi.fn()}
+        onUseBladeReroll={vi.fn()}
+        onUseValkyrieReroll={vi.fn()}
+        onDeclineValkyrieReroll={vi.fn()}
+        onUseWitchSacrifice={vi.fn()}
+        onDeclineWitchSacrifice={vi.fn()}
         onResolveCombatWithoutFlameSpells={vi.fn()}
         onResolveCombatWithFlameSpells={vi.fn()}
         onSelectHealingSpellTarget={(targetPlayerId) =>
@@ -3951,10 +3951,10 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
         onStartHealingSpellSelection={() =>
           setHealingSpellSelection({ mode: 'select_target' })
         }
-        warlockSwapSelection={{ mode: 'idle' }}
-        onCancelWarlockSwapSelection={vi.fn()}
-        onSelectWarlockSwapTarget={vi.fn()}
-        onStartWarlockSwapSelection={vi.fn()}
+        witchSwapSelection={{ mode: 'idle' }}
+        onCancelWitchSwapSelection={vi.fn()}
+        onSelectWitchSwapTarget={vi.fn()}
+        onStartWitchSwapSelection={vi.fn()}
         onSwapLoot={vi.fn()}
         onTakeLoot={vi.fn()}
       />
@@ -3994,9 +3994,9 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
   );
 }
 
-function WarlockSwapHarness({ initialState }: { initialState: GameState }) {
+function WitchSwapHarness({ initialState }: { initialState: GameState }) {
   const [state, setState] = useState(initialState);
-  const [warlockSwapSelection, setWarlockSwapSelection] = useState<
+  const [witchSwapSelection, setWitchSwapSelection] = useState<
     { mode: 'idle' } | { mode: 'select_target' }
   >({ mode: 'idle' });
   const activePlayer = state.players[state.activePlayerIndex];
@@ -4010,22 +4010,22 @@ function WarlockSwapHarness({ initialState }: { initialState: GameState }) {
         state={state}
         {...noopActions}
         healingSpellSelection={{ mode: 'idle' }}
-        warlockSwapSelection={warlockSwapSelection}
-        onCancelWarlockSwapSelection={() =>
-          setWarlockSwapSelection({ mode: 'idle' })
+        witchSwapSelection={witchSwapSelection}
+        onCancelWitchSwapSelection={() =>
+          setWitchSwapSelection({ mode: 'idle' })
         }
-        onSelectWarlockSwapTarget={(targetPlayerId) => {
+        onSelectWitchSwapTarget={(targetPlayerId) => {
           const targetPlayer = state.players.find(
             (player) => player.id === targetPlayerId,
           );
 
           flushSync(() => {
-            setWarlockSwapSelection({ mode: 'idle' });
+            setWitchSwapSelection({ mode: 'idle' });
           });
 
           setState((current) => {
             const nextState = applyGameAction(current, {
-              type: 'swapWarlockPosition',
+              type: 'swapWitchPosition',
               targetPlayerId,
             });
 
@@ -4038,23 +4038,23 @@ function WarlockSwapHarness({ initialState }: { initialState: GameState }) {
                   type: 'ui_action',
                   message: targetPlayer
                     ? `Swapped with ${heroName(targetPlayer.heroId)} to ${targetPlayer.position.boardX},${targetPlayer.position.boardY}`
-                    : 'Swapped warlock position',
+                    : 'Swapped witch position',
                 },
               ],
             };
           });
         }}
-        onStartWarlockSwapSelection={() =>
-          setWarlockSwapSelection({ mode: 'select_target' })
+        onStartWitchSwapSelection={() =>
+          setWitchSwapSelection({ mode: 'select_target' })
         }
       />
       <EventLog state={state} />
-      <div data-testid="warlock-phase">{state.phase}</div>
-      <div data-testid="warlock-position">
+      <div data-testid="witch-phase">{state.phase}</div>
+      <div data-testid="witch-position">
         {activePlayer.position.boardX},{activePlayer.position.boardY}
       </div>
       {otherPlayers.map((player) => (
-        <div key={player.id} data-testid={`warlock-target-position-${player.id}`}>
+        <div key={player.id} data-testid={`witch-target-position-${player.id}`}>
           {player.position.boardX},{player.position.boardY}
         </div>
       ))}

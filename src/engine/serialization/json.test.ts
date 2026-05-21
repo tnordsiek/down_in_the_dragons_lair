@@ -6,7 +6,7 @@ import { deserializeGameState, serializeGameState } from './json';
 describe('game state serialization foundation', () => {
   it('round-trips the serializable game state shape', () => {
     const state: GameState = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       phase: 'setup',
       players: [],
       board: [],
@@ -35,8 +35,8 @@ describe('game state serialization foundation', () => {
                   },
                   {
                     playerId: 'player_ai_1',
-                    playerHeroId: 'hero_thief',
-                    playerLabel: 'Thief (AI 1)',
+                    playerHeroId: 'hero_rogue',
+                    playerLabel: 'Rogue (AI 1)',
                     roll: 4,
                   },
                 ],
@@ -55,5 +55,56 @@ describe('game state serialization foundation', () => {
     expect(() =>
       deserializeGameState(JSON.stringify({ schemaVersion: 999 })),
     ).toThrow(/Unsupported game state schema/);
+  });
+
+  it('rejects saved states with renamed-away hero ids', () => {
+    expect(() =>
+      deserializeGameState(
+        JSON.stringify({
+          schemaVersion: 2,
+          phase: 'turn_start',
+          players: [
+            {
+              id: 'player_human',
+              kind: 'human',
+              heroId: 'hero_swordsman',
+            },
+          ],
+          board: [],
+          tileStack: [],
+          tokenBag: [],
+          activePlayerIndex: 0,
+          remainingSteps: 4,
+          eventLog: [],
+          rng: { seed: 'legacy', state: 1 },
+        }),
+      ),
+    ).toThrow(/Unsupported heroId in saved game/);
+  });
+
+  it('rejects saved states with renamed-away action or phase strings', () => {
+    expect(() =>
+      deserializeGameState(
+        JSON.stringify({
+          schemaVersion: 2,
+          phase: 'combat_swordsman_reroll',
+          players: [],
+          board: [],
+          tileStack: [],
+          tokenBag: [],
+          activePlayerIndex: 0,
+          remainingSteps: 0,
+          eventLog: [
+            {
+              id: 'event-0',
+              type: 'ui_action',
+              message: 'legacy',
+              action: { actionType: 'swapWarlockPosition' },
+            },
+          ],
+          rng: { seed: 'legacy', state: 1 },
+        }),
+      ),
+    ).toThrow(/Unsupported game phase/);
   });
 });

@@ -33,7 +33,7 @@ describe('heuristic AI', () => {
   it('plays reproducibly with the same seed', () => {
     const first = playActions(
       createNewGame({
-        humanHeroId: 'hero_thief',
+        humanHeroId: 'hero_rogue',
         aiCount: 3,
         seed: 'ai-reproducible',
       }),
@@ -41,7 +41,7 @@ describe('heuristic AI', () => {
     );
     const second = playActions(
       createNewGame({
-        humanHeroId: 'hero_thief',
+        humanHeroId: 'hero_rogue',
         aiCount: 3,
         seed: 'ai-reproducible',
       }),
@@ -182,7 +182,7 @@ describe('heuristic AI', () => {
         index === 0
           ? {
               ...player,
-              heroId: 'hero_warrior',
+              heroId: 'hero_valkyrie',
               inventory: {
                 ...player.inventory,
                 weapons: [
@@ -228,18 +228,18 @@ describe('heuristic AI', () => {
     });
   });
 
-  it('always takes the warrior reroll during the warrior reroll step', () => {
+  it('always takes the valkyrie reroll during the valkyrie reroll step', () => {
     const base = createNewGame({
       humanHeroId: 'hero_mage',
       aiCount: 1,
-      seed: 'ai-warrior-reroll-choice',
+      seed: 'ai-valkyrie-reroll-choice',
     });
     const state: GameState = {
       ...base,
-      phase: 'combat_warrior_reroll',
+      phase: 'combat_valkyrie_reroll',
       activePlayerIndex: 0,
       players: base.players.map((player, index) =>
-        index === 0 ? { ...player, heroId: 'hero_warrior' } : player,
+        index === 0 ? { ...player, heroId: 'hero_valkyrie' } : player,
       ),
       combat: {
         playerId: base.players[0].id,
@@ -252,22 +252,22 @@ describe('heuristic AI', () => {
     };
 
     expect(chooseHeuristicAiAction(state)).toEqual({
-      type: 'useWarriorReroll',
+      type: 'useValkyrieReroll',
     });
   });
 
-  it('always takes the swordswoman reroll during the swordswoman reroll step', () => {
+  it('always takes the blade reroll during the blade reroll step', () => {
     const base = createNewGame({
       humanHeroId: 'hero_mage',
       aiCount: 1,
-      seed: 'ai-swordswoman-reroll-choice',
+      seed: 'ai-blade-reroll-choice',
     });
     const state: GameState = {
       ...base,
-      phase: 'combat_swordsman_reroll',
+      phase: 'combat_blade_reroll',
       activePlayerIndex: 0,
       players: base.players.map((player, index) =>
-        index === 0 ? { ...player, heroId: 'hero_swordsman' } : player,
+        index === 0 ? { ...player, heroId: 'hero_blade' } : player,
       ),
       combat: {
         playerId: base.players[0].id,
@@ -276,20 +276,20 @@ describe('heuristic AI', () => {
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [1, 4],
         rolledDice: [1, 4],
-        swordsmanRerollCount: 0,
+        bladeRerollCount: 0,
       },
     };
 
     expect(chooseHeuristicAiAction(state)).toEqual({
-      type: 'useSwordswomanReroll',
+      type: 'useBladeReroll',
     });
   });
 
-  it('starts optional thief combat only when the fight is worthwhile', () => {
+  it('starts optional rogue combat only when the fight is worthwhile', () => {
     const base = createNewGame({
       humanHeroId: 'hero_mage',
       aiCount: 1,
-      seed: 'ai-optional-thief-combat',
+      seed: 'ai-optional-rogue-combat',
     });
     const strongState: GameState = {
       ...base,
@@ -300,7 +300,7 @@ describe('heuristic AI', () => {
         index === 0
           ? {
               ...player,
-              heroId: 'hero_thief',
+              heroId: 'hero_rogue',
               inventory: {
                 ...player.inventory,
                 weapons: [
@@ -359,18 +359,18 @@ describe('heuristic AI', () => {
     });
   });
 
-  it('uses warlock sacrifice for a direct win and declines it otherwise', () => {
+  it('uses witch sacrifice for a direct win and declines it otherwise', () => {
     const base = createNewGame({
       humanHeroId: 'hero_mage',
       aiCount: 1,
-      seed: 'ai-warlock-sacrifice-choice',
+      seed: 'ai-witch-sacrifice-choice',
     });
     const winningState: GameState = {
       ...base,
-      phase: 'combat_warlock_sacrifice',
+      phase: 'combat_witch_sacrifice',
       activePlayerIndex: 0,
       players: base.players.map((player, index) =>
-        index === 0 ? { ...player, heroId: 'hero_warlock' } : player,
+        index === 0 ? { ...player, heroId: 'hero_witch' } : player,
       ),
       combat: {
         playerId: base.players[0].id,
@@ -383,7 +383,7 @@ describe('heuristic AI', () => {
     };
 
     expect(chooseHeuristicAiAction(winningState)).toEqual({
-      type: 'useWarlockSacrifice',
+      type: 'useWitchSacrifice',
     });
 
     const decliningState: GameState = {
@@ -396,25 +396,25 @@ describe('heuristic AI', () => {
     };
 
     expect(chooseHeuristicAiAction(decliningState)).toEqual({
-      type: 'declineWarlockSacrifice',
+      type: 'declineWitchSacrifice',
     });
   });
 
-  it('uses warlock sacrifice for a draw when a flame spell can convert it into a win', () => {
+  it('uses witch sacrifice for a draw when a flame spell can convert it into a win', () => {
     const base = createNewGame({
       humanHeroId: 'hero_mage',
       aiCount: 1,
-      seed: 'ai-warlock-sacrifice-flame',
+      seed: 'ai-witch-sacrifice-flame',
     });
     const state: GameState = {
       ...base,
-      phase: 'combat_warlock_sacrifice',
+      phase: 'combat_witch_sacrifice',
       activePlayerIndex: 0,
       players: base.players.map((player, index) =>
         index === 0
           ? {
               ...player,
-              heroId: 'hero_warlock',
+              heroId: 'hero_witch',
               inventory: {
                 ...player.inventory,
                 spells: [{ type: 'spell', spellKind: 'flame' }],
@@ -433,7 +433,7 @@ describe('heuristic AI', () => {
     };
 
     expect(chooseHeuristicAiAction(state)).toEqual({
-      type: 'useWarlockSacrifice',
+      type: 'useWitchSacrifice',
     });
   });
 
@@ -468,18 +468,18 @@ describe('heuristic AI', () => {
     });
   });
 
-  it('uses legal follow-up actions during a continued swordsman turn with zero steps', () => {
+  it('uses legal follow-up actions during a continued blade turn with zero steps', () => {
     const base = createNewGame({
-      humanHeroId: 'hero_swordsman',
+      humanHeroId: 'hero_blade',
       aiCount: 1,
-      seed: 'ai-swordsman-follow-up',
+      seed: 'ai-blade-follow-up',
     });
     const state: GameState = {
       ...base,
       phase: 'await_move',
       activePlayerIndex: 0,
       remainingSteps: 0,
-      turnContinuationReason: 'swordsman_on_six',
+      turnContinuationReason: 'blade_on_six',
       board: [
         {
           ...base.board[0],
@@ -494,7 +494,7 @@ describe('heuristic AI', () => {
 
 function createDragonEndgameState(): GameState {
   const base = createNewGame({
-    humanHeroId: 'hero_thief',
+    humanHeroId: 'hero_rogue',
     aiCount: 1,
     seed: 'ai-dragon-endgame',
   });
@@ -518,7 +518,7 @@ function createDragonEndgameState(): GameState {
       index === 0
         ? {
             ...player,
-            heroId: 'hero_thief',
+            heroId: 'hero_rogue',
             position: { boardX: 0, boardY: -1 },
             inventory: {
               keyCount: 0,

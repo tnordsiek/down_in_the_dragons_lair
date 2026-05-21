@@ -100,11 +100,11 @@ describe('game action transitions', () => {
     ).toThrow('Confirm the pending tile rotation before ending the turn');
   });
 
-  it('can choose between two drawn oracle room tokens through the action interface', () => {
+  it('can choose between two drawn seeress room tokens through the action interface', () => {
     const state = createNewGame({
-      humanHeroId: 'hero_oracle',
+      humanHeroId: 'hero_seeress',
       aiCount: 1,
-      seed: 'action-oracle-room-seed',
+      seed: 'action-seeress-room-seed',
     });
 
     const pending = applyGameAction(
@@ -138,11 +138,11 @@ describe('game action transitions', () => {
       { type: 'resolveRoomToken' },
     );
     const chosen = applyGameAction(pending, {
-      type: 'chooseOracleRoomToken',
+      type: 'chooseSeeressRoomToken',
       choiceIndex: 1,
     });
 
-    expect(pending.phase).toBe('resolve_room_token_oracle_choice');
+    expect(pending.phase).toBe('resolve_room_token_seeress_choice');
     expect(chosen.phase).toBe('await_move');
     expect(
       chosen.board.find((tile) => tile.boardX === 0 && tile.boardY === -1)

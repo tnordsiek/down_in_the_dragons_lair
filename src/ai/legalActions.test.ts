@@ -112,18 +112,18 @@ describe('AI legal actions', () => {
     ).toEqual([{ type: 'resolveRoomToken' }]);
   });
 
-  it('offers only the two oracle room token choices while an oracle choice is pending', () => {
+  it('offers only the two seeress room token choices while an seeress choice is pending', () => {
     const state = createNewGame({
-      humanHeroId: 'hero_oracle',
+      humanHeroId: 'hero_seeress',
       aiCount: 1,
-      seed: 'oracle-room-choice-actions-seed',
+      seed: 'seeress-room-choice-actions-seed',
     });
 
     expect(
       getLegalAiActions({
         ...state,
-        phase: 'resolve_room_token_oracle_choice',
-        pendingOracleRoomChoice: {
+        phase: 'resolve_room_token_seeress_choice',
+        pendingSeeressRoomChoice: {
           drawnTokens: [
             { id: 'giant_rat', kind: 'monster' },
             { id: 'treasure_chest', kind: 'chest' },
@@ -132,14 +132,14 @@ describe('AI legal actions', () => {
         },
       }),
     ).toEqual([
-      { type: 'chooseOracleRoomToken', choiceIndex: 0 },
-      { type: 'chooseOracleRoomToken', choiceIndex: 1 },
+      { type: 'chooseSeeressRoomToken', choiceIndex: 0 },
+      { type: 'chooseSeeressRoomToken', choiceIndex: 1 },
     ]);
   });
 
-  it('offers optional thief combat alongside free actions on a monster tile', () => {
+  it('offers optional rogue combat alongside free actions on a monster tile', () => {
     const base = createNewGame({
-      humanHeroId: 'hero_thief',
+      humanHeroId: 'hero_rogue',
       aiCount: 1,
       seed: 'optional-monster-actions-seed',
     });
@@ -228,7 +228,7 @@ describe('AI legal actions', () => {
           index === 0
             ? {
                 ...player,
-                heroId: 'hero_warrior',
+                heroId: 'hero_valkyrie',
                 inventory: {
                   ...player.inventory,
                   spells: [{ type: 'spell', spellKind: 'flame' }],
@@ -253,20 +253,20 @@ describe('AI legal actions', () => {
     );
   });
 
-  it('offers only warrior reroll choices during the warrior reroll step', () => {
+  it('offers only valkyrie reroll choices during the valkyrie reroll step', () => {
     const state = createNewGame({
       humanHeroId: 'hero_mage',
       aiCount: 1,
-      seed: 'warrior-reroll-actions-seed',
+      seed: 'valkyrie-reroll-actions-seed',
     });
 
     expect(
       getLegalAiActions({
         ...state,
-        phase: 'combat_warrior_reroll',
+        phase: 'combat_valkyrie_reroll',
         activePlayerIndex: 0,
         players: state.players.map((player, index) =>
-          index === 0 ? { ...player, heroId: 'hero_warrior' } : player,
+          index === 0 ? { ...player, heroId: 'hero_valkyrie' } : player,
         ),
         combat: {
           playerId: state.players[0].id,
@@ -278,25 +278,25 @@ describe('AI legal actions', () => {
         },
       }),
     ).toEqual([
-      { type: 'useWarriorReroll' },
-      { type: 'declineWarriorReroll' },
+      { type: 'useValkyrieReroll' },
+      { type: 'declineValkyrieReroll' },
     ]);
   });
 
-  it('offers only the swordswoman reroll action during the swordswoman reroll step', () => {
+  it('offers only the blade reroll action during the blade reroll step', () => {
     const state = createNewGame({
       humanHeroId: 'hero_mage',
       aiCount: 1,
-      seed: 'swordswoman-reroll-actions-seed',
+      seed: 'blade-reroll-actions-seed',
     });
 
     expect(
       getLegalAiActions({
         ...state,
-        phase: 'combat_swordsman_reroll',
+        phase: 'combat_blade_reroll',
         activePlayerIndex: 0,
         players: state.players.map((player, index) =>
-          index === 0 ? { ...player, heroId: 'hero_swordsman' } : player,
+          index === 0 ? { ...player, heroId: 'hero_blade' } : player,
         ),
         combat: {
           playerId: state.players[0].id,
@@ -305,26 +305,26 @@ describe('AI legal actions', () => {
           enteredFrom: { boardX: 0, boardY: -1 },
           initialRolledDice: [1, 4],
           rolledDice: [1, 4],
-          swordsmanRerollCount: 0,
+          bladeRerollCount: 0,
         },
       }),
-    ).toEqual([{ type: 'useSwordswomanReroll' }]);
+    ).toEqual([{ type: 'useBladeReroll' }]);
   });
 
-  it('offers only warlock sacrifice choices during the warlock sacrifice step', () => {
+  it('offers only witch sacrifice choices during the witch sacrifice step', () => {
     const state = createNewGame({
       humanHeroId: 'hero_mage',
       aiCount: 1,
-      seed: 'warlock-sacrifice-actions-seed',
+      seed: 'witch-sacrifice-actions-seed',
     });
 
     expect(
       getLegalAiActions({
         ...state,
-        phase: 'combat_warlock_sacrifice',
+        phase: 'combat_witch_sacrifice',
         activePlayerIndex: 0,
         players: state.players.map((player, index) =>
-          index === 0 ? { ...player, heroId: 'hero_warlock' } : player,
+          index === 0 ? { ...player, heroId: 'hero_witch' } : player,
         ),
         combat: {
           playerId: state.players[0].id,
@@ -336,8 +336,8 @@ describe('AI legal actions', () => {
         },
       }),
     ).toEqual([
-      { type: 'useWarlockSacrifice' },
-      { type: 'declineWarlockSacrifice' },
+      { type: 'useWitchSacrifice' },
+      { type: 'declineWitchSacrifice' },
     ]);
   });
 
@@ -406,18 +406,18 @@ describe('AI legal actions', () => {
     );
   });
 
-  it('keeps only non-movement follow-up actions legal during continued swordsman turns at zero steps', () => {
+  it('keeps only non-movement follow-up actions legal during continued blade turns at zero steps', () => {
     const base = createNewGame({
-      humanHeroId: 'hero_swordsman',
+      humanHeroId: 'hero_blade',
       aiCount: 1,
-      seed: 'swordsman-follow-up-actions-seed',
+      seed: 'blade-follow-up-actions-seed',
     });
     const state: GameState = {
       ...base,
       phase: 'await_move',
       activePlayerIndex: 0,
       remainingSteps: 0,
-      turnContinuationReason: 'swordsman_on_six',
+      turnContinuationReason: 'blade_on_six',
       players: base.players.map((player, index) =>
         index === 0
           ? {

@@ -113,7 +113,7 @@ describe('movement rules', () => {
 
   it('keeps move and exploration options available during optional monster combat', () => {
     const state = createNewGame({
-      humanHeroId: 'hero_thief',
+      humanHeroId: 'hero_rogue',
       aiCount: 1,
       seed: 'optional-monster-move-seed',
     });

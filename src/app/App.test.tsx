@@ -230,6 +230,40 @@ describe('App', () => {
     ).toBeInTheDocument();
   });
 
+  it('rejects renamed-away hero ids from saved games without crashing the app', () => {
+    window.localStorage.setItem(
+      persistedGameStateKey,
+      JSON.stringify({
+        schemaVersion: 2,
+        phase: 'turn_start',
+        players: [
+          {
+            id: 'player_human',
+            kind: 'human',
+            heroId: 'hero_swordsman',
+          },
+        ],
+        board: [],
+        tileStack: [],
+        tokenBag: [],
+        activePlayerIndex: 0,
+        remainingSteps: 4,
+        eventLog: [],
+        rng: { seed: 'legacy', state: 1 },
+      }),
+    );
+
+    act(() => {
+      useSetupStore.getState().resumeSavedGame();
+    });
+    render(<App />);
+
+    expect(
+      screen.getByText('Unsupported heroId in saved game: hero_swordsman'),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText('Dungeon board')).toBeNull();
+  });
+
   it('keeps audio toggle state consistent between start and game screens', () => {
     render(<App />);
 

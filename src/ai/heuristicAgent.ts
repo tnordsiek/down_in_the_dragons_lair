@@ -77,9 +77,9 @@ export function chooseHeuristicAiAction(
     state.phase === 'combat' ||
     state.phase === 'optional_post_combat' ||
     state.phase === 'combat_curse_target' ||
-    state.phase === 'combat_swordsman_reroll' ||
-    state.phase === 'combat_warrior_reroll' ||
-    state.phase === 'combat_warlock_sacrifice' ||
+    state.phase === 'combat_blade_reroll' ||
+    state.phase === 'combat_valkyrie_reroll' ||
+    state.phase === 'combat_witch_sacrifice' ||
     state.phase === 'combat_flame_spells'
   ) {
     return chooseCombatAction(state, legalActions, config);
@@ -93,12 +93,12 @@ export function chooseHeuristicAiAction(
     return requireAction(legalActions, 'resolveRoomToken');
   }
 
-  if (state.phase === 'resolve_room_token_oracle_choice') {
+  if (state.phase === 'resolve_room_token_seeress_choice') {
     return (
       legalActions.find(
         (action) =>
-          action.type === 'chooseOracleRoomToken' && action.choiceIndex === 0,
-      ) ?? requireAction(legalActions, 'chooseOracleRoomToken')
+          action.type === 'chooseSeeressRoomToken' && action.choiceIndex === 0,
+      ) ?? requireAction(legalActions, 'chooseSeeressRoomToken')
     );
   }
 
@@ -158,16 +158,16 @@ function chooseCombatAction(
   legalActions: GameAction[],
   config: AiHeuristicConfig,
 ): GameAction {
-  if (state.phase === 'combat_warrior_reroll') {
-    return requireAction(legalActions, 'useWarriorReroll');
+  if (state.phase === 'combat_valkyrie_reroll') {
+    return requireAction(legalActions, 'useValkyrieReroll');
   }
 
-  if (state.phase === 'combat_swordsman_reroll') {
-    return requireAction(legalActions, 'useSwordswomanReroll');
+  if (state.phase === 'combat_blade_reroll') {
+    return requireAction(legalActions, 'useBladeReroll');
   }
 
-  if (state.phase === 'combat_warlock_sacrifice') {
-    return chooseWarlockSacrificeAction(state, legalActions);
+  if (state.phase === 'combat_witch_sacrifice') {
+    return chooseWitchSacrificeAction(state, legalActions);
   }
 
   if (state.phase === 'combat_flame_spells') {
@@ -257,12 +257,12 @@ function chooseCombatAction(
   return combatAction;
 }
 
-function chooseWarlockSacrificeAction(
+function chooseWitchSacrificeAction(
   state: GameState,
   legalActions: GameAction[],
 ): GameAction {
   if (!state.combat?.initialRolledDice) {
-    return requireAction(legalActions, 'declineWarlockSacrifice');
+    return requireAction(legalActions, 'declineWitchSacrifice');
   }
 
   const activePlayer = state.players[state.activePlayerIndex];
@@ -270,7 +270,7 @@ function chooseWarlockSacrificeAction(
   const sacrificeTotal = calculateCombatTotal(
     activePlayer,
     state.combat.initialRolledDice,
-    1 + (state.combat.pendingOracleBonus ?? 0),
+    1 + (state.combat.pendingSeeressBonus ?? 0),
   );
   const sacrificeOutcome = getCombatOutcomeForPlayer(
     activePlayer,
@@ -279,7 +279,7 @@ function chooseWarlockSacrificeAction(
   );
 
   if (sacrificeOutcome === 'victory') {
-    return requireAction(legalActions, 'useWarlockSacrifice');
+    return requireAction(legalActions, 'useWitchSacrifice');
   }
 
   if (
@@ -297,7 +297,7 @@ function chooseWarlockSacrificeAction(
       const total = calculateCombatTotal(
         activePlayer,
         state.combat!.initialRolledDice!,
-        flameSpellCount + 1 + (state.combat?.pendingOracleBonus ?? 0),
+        flameSpellCount + 1 + (state.combat?.pendingSeeressBonus ?? 0),
       );
 
       return (
@@ -307,11 +307,11 @@ function chooseWarlockSacrificeAction(
     });
 
     if (winningWithFlame) {
-      return requireAction(legalActions, 'useWarlockSacrifice');
+      return requireAction(legalActions, 'useWitchSacrifice');
     }
   }
 
-  return requireAction(legalActions, 'declineWarlockSacrifice');
+  return requireAction(legalActions, 'declineWitchSacrifice');
 }
 
 function chooseCombatFlameSpellAction(
@@ -345,8 +345,8 @@ function chooseCombatFlameSpellAction(
       activePlayer,
       state.combat.rolledDice,
       flameSpellCount +
-        (state.combat.pendingWarlockSacrificeBonus ?? 0) +
-        (state.combat.pendingOracleBonus ?? 0),
+        (state.combat.pendingWitchSacrificeBonus ?? 0) +
+        (state.combat.pendingSeeressBonus ?? 0),
     );
 
     return (
@@ -448,7 +448,7 @@ function chooseMovementAction(
     (action) =>
       action.type === 'movePlayer' ||
       action.type === 'declareExplorationDirection' ||
-      action.type === 'swapWarlockPosition',
+      action.type === 'swapWitchPosition',
   );
 
   if (movementActions.length === 0) {
@@ -589,7 +589,7 @@ function scoreMovementAction(
   const activePlayer = state.players[state.activePlayerIndex];
   const targetPosition = getActionTargetPosition(state, action);
 
-  if (action.type === 'swapWarlockPosition') {
+  if (action.type === 'swapWitchPosition') {
     return config.exploreTileBonus - 1;
   }
 
@@ -753,7 +753,7 @@ function isObjectiveTile(
     return false;
   }
 
-  if (hasActiveHeroAbility(player, 'hero_thief')) {
+  if (hasActiveHeroAbility(player, 'hero_rogue')) {
     return false;
   }
 
@@ -878,7 +878,7 @@ function actionOrder(action: GameAction): number {
     'placePendingTile',
     'movePlayer',
     'declareExplorationDirection',
-    'swapWarlockPosition',
+    'swapWitchPosition',
     'endTurn',
     'startGame',
   ];

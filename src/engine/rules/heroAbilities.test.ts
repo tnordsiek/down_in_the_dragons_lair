@@ -11,13 +11,13 @@ import type {
 import { applyGameAction } from '../core/actions';
 import {
   startOptionalCombat,
-  declineWarlockSacrifice,
-  declineWarriorReroll,
+  declineWitchSacrifice,
+  declineValkyrieReroll,
   resolveCombat,
   resolveCombatWithFlameSpells,
-  useSwordswomanReroll,
-  useWarlockSacrifice,
-  useWarriorReroll,
+  useBladeReroll,
+  useWitchSacrifice,
+  useValkyrieReroll,
 } from '../combat/combat';
 import {
   getLegalExplorationDirections,
@@ -26,8 +26,8 @@ import {
 import { moveActivePlayer } from '../movement/performMove';
 import { createNewGame } from '../setup/createGame';
 import { endTurn } from '../turns/turns';
-import { chooseOracleRoomToken, resolveRoomToken } from './rooms';
-import { swapWarlockPosition } from './warlock';
+import { chooseSeeressRoomToken, resolveRoomToken } from './rooms';
+import { swapWitchPosition } from './witch';
 
 describe('hero_mage abilities', () => {
   it('does not consume flame spells and moves through walls only on discovered tiles', () => {
@@ -104,13 +104,13 @@ describe('hero_mage abilities', () => {
   });
 });
 
-describe('hero_warrior abilities', () => {
+describe('hero_valkyrie abilities', () => {
   it('offers a reroll after a failed combat without taking loss from the first roll', () => {
-    const state = createCombatState('hero_warrior', 'giant_rat');
+    const state = createCombatState('hero_valkyrie', 'giant_rat');
     const pending = resolveCombat(state, {
       dice: [1, 1],
     });
-    const resolved = useWarriorReroll(pending, {
+    const resolved = useValkyrieReroll(pending, {
       dice: [6, 6],
     });
     const activePlayer = resolved.players[resolved.activePlayerIndex];
@@ -123,9 +123,9 @@ describe('hero_warrior abilities', () => {
     ).toBeUndefined();
   });
 
-  it('offers the reroll after a draw and lets the warrior keep the original result', () => {
+  it('offers the reroll after a draw and lets the valkyrie keep the original result', () => {
     const state = withActivePlayer(
-      createCombatState('hero_warrior', 'giant_rat'),
+      createCombatState('hero_valkyrie', 'giant_rat'),
       (player) => ({
         ...player,
         inventory: {
@@ -136,7 +136,7 @@ describe('hero_warrior abilities', () => {
     );
     const pending = resolveCombat(state, { dice: [2, 3] });
 
-    expect(pending.phase).toBe('combat_warrior_reroll');
+    expect(pending.phase).toBe('combat_valkyrie_reroll');
     expect(pending.combat).toEqual(
       expect.objectContaining({
         initialRolledDice: [2, 3],
@@ -144,7 +144,7 @@ describe('hero_warrior abilities', () => {
       }),
     );
 
-    const declined = declineWarriorReroll(pending);
+    const declined = declineValkyrieReroll(pending);
 
     expect(declined.phase).toBe('combat_flame_spells');
     expect(declined.combat).toEqual(
@@ -157,14 +157,14 @@ describe('hero_warrior abilities', () => {
 
   it('moves to a healing tile instead of becoming unconscious on last HP loss', () => {
     const state = withActivePlayer(
-      createCombatState('hero_warrior', 'giant_rat'),
+      createCombatState('hero_valkyrie', 'giant_rat'),
       (player) => ({
         ...player,
         hp: 1,
       }),
     );
     const pending = resolveCombat(state, { dice: [1, 1] });
-    const resolved = declineWarriorReroll(pending);
+    const resolved = declineValkyrieReroll(pending);
     const activePlayer = resolved.players[resolved.activePlayerIndex];
 
     expect(activePlayer).toEqual(
@@ -178,7 +178,7 @@ describe('hero_warrior abilities', () => {
 
   it('uses standard unconscious handling while cursed', () => {
     const state = withActivePlayer(
-      createCombatState('hero_warrior', 'giant_rat'),
+      createCombatState('hero_valkyrie', 'giant_rat'),
       (player) => ({
         ...player,
         hp: 1,
@@ -198,13 +198,13 @@ describe('hero_warrior abilities', () => {
   });
 });
 
-describe('hero_warlock abilities', () => {
+describe('hero_witch abilities', () => {
   it('offers sacrificing 1 HP for +1 after a non-winning roll', () => {
-    const state = createCombatState('hero_warlock', 'giant_rat');
+    const state = createCombatState('hero_witch', 'giant_rat');
     const pending = resolveCombat(state, {
       dice: [2, 3],
     });
-    const resolved = useWarlockSacrifice(pending);
+    const resolved = useWitchSacrifice(pending);
     const activePlayer = resolved.players[resolved.activePlayerIndex];
 
     expect(activePlayer.hp).toBe(4);
@@ -213,9 +213,9 @@ describe('hero_warlock abilities', () => {
     ).toBeUndefined();
   });
 
-  it('lets the warlock keep the original draw before flame spells', () => {
+  it('lets the witch keep the original draw before flame spells', () => {
     const state = withActivePlayer(
-      createCombatState('hero_warlock', 'giant_rat'),
+      createCombatState('hero_witch', 'giant_rat'),
       (player) => ({
         ...player,
         inventory: {
@@ -226,23 +226,23 @@ describe('hero_warlock abilities', () => {
     );
     const pending = resolveCombat(state, { dice: [2, 3] });
 
-    expect(pending.phase).toBe('combat_warlock_sacrifice');
+    expect(pending.phase).toBe('combat_witch_sacrifice');
 
-    const declined = declineWarlockSacrifice(pending);
+    const declined = declineWitchSacrifice(pending);
 
     expect(declined.phase).toBe('combat_flame_spells');
     expect(declined.combat).toEqual(
       expect.objectContaining({
         rolledDice: [2, 3],
         pendingBaseOutcome: 'draw',
-        pendingWarlockSacrificeBonus: 0,
+        pendingWitchSacrificeBonus: 0,
       }),
     );
   });
 
   it('offers sacrifice when only sacrifice plus a flame spell can turn the roll into a victory', () => {
     const state = withActivePlayer(
-      createCombatState('hero_warlock', 'giant_rat'),
+      createCombatState('hero_witch', 'giant_rat'),
       (player) => ({
         ...player,
         inventory: {
@@ -253,9 +253,9 @@ describe('hero_warlock abilities', () => {
     );
     const pending = resolveCombat(state, { dice: [1, 3] });
 
-    expect(pending.phase).toBe('combat_warlock_sacrifice');
+    expect(pending.phase).toBe('combat_witch_sacrifice');
 
-    const sacrificed = useWarlockSacrifice(pending);
+    const sacrificed = useWitchSacrifice(pending);
 
     expect(sacrificed.phase).toBe('combat_flame_spells');
     expect(sacrificed.players[sacrificed.activePlayerIndex].hp).toBe(4);
@@ -263,7 +263,7 @@ describe('hero_warlock abilities', () => {
       expect.objectContaining({
         rolledDice: [1, 3],
         pendingBaseOutcome: 'draw',
-        pendingWarlockSacrificeBonus: 1,
+        pendingWitchSacrificeBonus: 1,
       }),
     );
   });
@@ -273,7 +273,7 @@ describe('hero_warlock abilities', () => {
     const target = state.players.find(
       (player) => player.id !== 'player_human',
     )!;
-    const resolved = swapWarlockPosition(state, target.id);
+    const resolved = swapWitchPosition(state, target.id);
 
     expect(resolved.players[resolved.activePlayerIndex].position).toEqual(
       target.position,
@@ -281,7 +281,7 @@ describe('hero_warlock abilities', () => {
     expect(resolved.remainingSteps).toBe(0);
     expect(resolved.phase).toBe('turn_end');
     expect(() =>
-      swapWarlockPosition({ ...state, phase: 'await_move' }, target.id),
+      swapWitchPosition({ ...state, phase: 'await_move' }, target.id),
     ).toThrow(/turn start/);
   });
 
@@ -326,9 +326,9 @@ describe('hero_warlock abilities', () => {
       (player) => player.id !== 'player_human',
     )!;
 
-    const swappedToLoot = swapWarlockPosition(lootState, lootTarget.id);
+    const swappedToLoot = swapWitchPosition(lootState, lootTarget.id);
     const afterLoot = applyGameAction(swappedToLoot, { type: 'beginLoot' });
-    const swappedToChest = swapWarlockPosition(chestState, chestTarget.id);
+    const swappedToChest = swapWitchPosition(chestState, chestTarget.id);
 
     expect(swappedToLoot.phase).toBe('await_move');
     expect(afterLoot.players[afterLoot.activePlayerIndex].inventory.weapons).toContainEqual({
@@ -362,13 +362,13 @@ describe('hero_warlock abilities', () => {
       ],
     } satisfies GameState;
     const target = state.players.find((player) => player.id !== 'player_human')!;
-    const swapped = swapWarlockPosition(state, target.id);
+    const swapped = swapWitchPosition(state, target.id);
     const resolved = resolveCombat(swapped, { dice: [2, 3] });
 
     expect(swapped.phase).toBe('combat');
     expect(swapped.combat).toEqual(
       expect.objectContaining({
-        source: 'warlock_swap',
+        source: 'witch_swap',
         position: { boardX: 2, boardY: 0 },
         monsterId: 'dragon',
       }),
@@ -391,12 +391,12 @@ describe('hero_warlock abilities', () => {
       (player) => player.id !== 'player_human',
     )!;
 
-    expect(() => swapWarlockPosition(cursedSwapState, target.id)).toThrow(
-      /warlock/,
+    expect(() => swapWitchPosition(cursedSwapState, target.id)).toThrow(
+      /witch/,
     );
 
     const cursedCombatState = withActivePlayer(
-      createCombatState('hero_warlock', 'giant_rat'),
+      createCombatState('hero_witch', 'giant_rat'),
       (player) => ({
         ...player,
         isCursed: true,
@@ -413,16 +413,16 @@ describe('hero_warlock abilities', () => {
   });
 });
 
-describe('hero_thief abilities', () => {
+describe('hero_rogue abilities', () => {
   it('wins combat draws and gets optional combat on monster tiles while uncursed', () => {
-    const drawState = createCombatState('hero_thief', 'giant_rat');
+    const drawState = createCombatState('hero_rogue', 'giant_rat');
     const resolvedDraw = resolveCombat(drawState, { dice: [2, 3] });
 
     expect(
       resolvedDraw.board.find((tile) => tile.roomToken?.id === 'giant_rat'),
     ).toBeUndefined();
 
-    const moveState = createKnownMovementState('hero_thief', {
+    const moveState = createKnownMovementState('hero_rogue', {
       targetHasMonster: true,
       targetConnects: true,
     });
@@ -435,7 +435,7 @@ describe('hero_thief abilities', () => {
   });
 
   it('may start or skip combat after discovering a monster', () => {
-    const roomState = createRoomState('hero_thief', [
+    const roomState = createRoomState('hero_rogue', [
       { id: 'giant_rat', kind: 'monster' },
     ]);
     const resolvedRoom = resolveRoomToken(roomState);
@@ -447,7 +447,7 @@ describe('hero_thief abilities', () => {
 
   it('keeps optional combat available when starting the turn on a monster tile', () => {
     const moved = moveActivePlayer(
-      createKnownMovementState('hero_thief', {
+      createKnownMovementState('hero_rogue', {
         targetHasMonster: true,
         targetConnects: true,
       }),
@@ -471,7 +471,7 @@ describe('hero_thief abilities', () => {
 
   it('loses monster-ignore and draw-win abilities while cursed', () => {
     const cursedDrawState = withActivePlayer(
-      createCombatState('hero_thief', 'giant_rat'),
+      createCombatState('hero_rogue', 'giant_rat'),
       (player) => ({
         ...player,
         isCursed: true,
@@ -485,7 +485,7 @@ describe('hero_thief abilities', () => {
     ).toBeDefined();
 
     const cursedMoveState = withActivePlayer(
-      createKnownMovementState('hero_thief', {
+      createKnownMovementState('hero_rogue', {
         targetHasMonster: true,
         targetConnects: true,
       }),
@@ -502,7 +502,7 @@ describe('hero_thief abilities', () => {
   it('must still fight at turn start while cursed on a monster tile', () => {
     const moved = moveActivePlayer(
       withActivePlayer(
-        createKnownMovementState('hero_thief', {
+        createKnownMovementState('hero_rogue', {
           targetHasMonster: true,
           targetConnects: true,
         }),
@@ -529,29 +529,29 @@ describe('hero_thief abilities', () => {
   });
 });
 
-describe('hero_swordsman abilities', () => {
+describe('hero_blade abilities', () => {
   it('rerolls ones and continues after a won combat with a six', () => {
-    const state = createCombatState('hero_swordsman', 'giant_rat');
+    const state = createCombatState('hero_blade', 'giant_rat');
     const pending = resolveCombat(state, {
       dice: [1, 1],
     });
-    const resolved = useSwordswomanReroll(pending, {
+    const resolved = useBladeReroll(pending, {
       dice: [6, 2],
     });
 
-    expect(pending.phase).toBe('combat_swordsman_reroll');
+    expect(pending.phase).toBe('combat_blade_reroll');
     expect(resolved.phase).toBe('loot_resolution');
     expect(resolved.pendingLoot?.item).toEqual({ type: 'weapon', bonus: 1 });
     expect(
       resolved.board.find((tile) => tile.roomToken?.id === 'giant_rat'),
     ).toBeUndefined();
-    expect(resolved.turnContinuationReason).toBe('swordsman_on_six');
+    expect(resolved.turnContinuationReason).toBe('blade_on_six');
   });
 
   it('can keep the turn open at zero steps when a six leaves follow-up actions available', () => {
     const state = withActivePlayer(
       {
-        ...createCombatState('hero_swordsman', 'fallen'),
+        ...createCombatState('hero_blade', 'fallen'),
         remainingSteps: 0,
       },
       (player) => ({
@@ -573,7 +573,7 @@ describe('hero_swordsman abilities', () => {
   });
 
   it('retreats like other heroes after draw or defeat', () => {
-    const state = createCombatState('hero_swordsman', 'giant_rat');
+    const state = createCombatState('hero_blade', 'giant_rat');
     const resolved = resolveCombat(state, { dice: [2, 3] });
 
     expect(resolved.phase).toBe('turn_end');
@@ -593,11 +593,11 @@ describe('hero_swordsman abilities', () => {
   });
 
   it('keeps moving after a draw with a six once she has retreated', () => {
-    const state = createCombatState('hero_swordsman', 'skeleton_turnkey');
+    const state = createCombatState('hero_blade', 'skeleton_turnkey');
     const pending = resolveCombat(state, { dice: [6, 1] });
-    const resolved = useSwordswomanReroll(pending, { dice: [2, 2] });
+    const resolved = useBladeReroll(pending, { dice: [2, 2] });
 
-    expect(pending.phase).toBe('combat_swordsman_reroll');
+    expect(pending.phase).toBe('combat_blade_reroll');
     expect(resolved.phase).toBe('await_move');
     expect(resolved.players[resolved.activePlayerIndex]).toEqual(
       expect.objectContaining({
@@ -605,13 +605,13 @@ describe('hero_swordsman abilities', () => {
         position: { boardX: 1, boardY: 0 },
       }),
     );
-    expect(resolved.turnContinuationReason).toBe('swordsman_on_six');
+    expect(resolved.turnContinuationReason).toBe('blade_on_six');
   });
 
   it('keeps moving after a defeat with a six while she still has HP left', () => {
-    const state = createCombatState('hero_swordsman', 'dragon');
+    const state = createCombatState('hero_blade', 'dragon');
     const pending = resolveCombat(state, { dice: [6, 1] });
-    const resolved = useSwordswomanReroll(pending, { dice: [2, 2] });
+    const resolved = useBladeReroll(pending, { dice: [2, 2] });
 
     expect(resolved.phase).toBe('await_move');
     expect(resolved.players[resolved.activePlayerIndex]).toEqual(
@@ -621,19 +621,19 @@ describe('hero_swordsman abilities', () => {
         position: { boardX: 1, boardY: 0 },
       }),
     );
-    expect(resolved.turnContinuationReason).toBe('swordsman_on_six');
+    expect(resolved.turnContinuationReason).toBe('blade_on_six');
   });
 
   it('ends the turn after a defeat with a six if she falls to 0 HP', () => {
     const state = withActivePlayer(
-      createCombatState('hero_swordsman', 'dragon'),
+      createCombatState('hero_blade', 'dragon'),
       (player) => ({
         ...player,
         hp: 1,
       }),
     );
     const pending = resolveCombat(state, { dice: [6, 1] });
-    const resolved = useSwordswomanReroll(pending, { dice: [2, 2] });
+    const resolved = useBladeReroll(pending, { dice: [2, 2] });
 
     expect(resolved.phase).toBe('turn_end');
     expect(resolved.players[resolved.activePlayerIndex]).toEqual(
@@ -647,8 +647,8 @@ describe('hero_swordsman abilities', () => {
   });
 
   it('must re-enter the monster tile to fight again after a draw', () => {
-    const state = createCombatState('hero_swordsman', 'skeleton_turnkey');
-    const retriedState = useSwordswomanReroll(
+    const state = createCombatState('hero_blade', 'skeleton_turnkey');
+    const retriedState = useBladeReroll(
       resolveCombat(state, { dice: [6, 1] }),
       { dice: [2, 2] },
     );
@@ -666,7 +666,7 @@ describe('hero_swordsman abilities', () => {
 
   it('uses standard dice and post-combat flow while cursed', () => {
     const state = withActivePlayer(
-      createCombatState('hero_swordsman', 'giant_rat'),
+      createCombatState('hero_blade', 'giant_rat'),
       (player) => ({
         ...player,
         isCursed: true,
@@ -681,10 +681,10 @@ describe('hero_swordsman abilities', () => {
   });
 });
 
-describe('hero_oracle abilities', () => {
+describe('hero_seeress abilities', () => {
   it('gets +1 only when combat happens after the first step', () => {
     const state = {
-      ...createCombatState('hero_oracle', 'giant_rat'),
+      ...createCombatState('hero_seeress', 'giant_rat'),
       remainingSteps: 3,
     };
     const resolved = resolveCombat(state, { dice: [2, 3] });
@@ -694,7 +694,7 @@ describe('hero_oracle abilities', () => {
     ).toBeUndefined();
 
     const noBonusState = {
-      ...createCombatState('hero_oracle', 'giant_rat'),
+      ...createCombatState('hero_seeress', 'giant_rat'),
       remainingSteps: 2,
     };
     const noBonusResolved = resolveCombat(noBonusState, { dice: [2, 3] });
@@ -706,24 +706,24 @@ describe('hero_oracle abilities', () => {
   });
 
   it('draws two room tokens, resolves one and returns the other to the finite bag', () => {
-    const state = createRoomState('hero_oracle', [
+    const state = createRoomState('hero_seeress', [
       { id: 'dragon', kind: 'monster' },
       { id: 'treasure_chest', kind: 'chest' },
     ]);
     const pending = resolveRoomToken(state);
-    const resolved = chooseOracleRoomToken(pending, 1);
+    const resolved = chooseSeeressRoomToken(pending, 1);
     const room = resolved.board.find(
       (tile) => tile.boardX === 0 && tile.boardY === -1,
     );
 
-    expect(pending.phase).toBe('resolve_room_token_oracle_choice');
+    expect(pending.phase).toBe('resolve_room_token_seeress_choice');
     expect(room?.roomToken).toEqual({ id: 'treasure_chest', kind: 'chest' });
     expect(resolved.tokenBag).toEqual([{ id: 'dragon', kind: 'monster' }]);
   });
 
   it('uses the normal single-token draw while cursed', () => {
     const state = withActivePlayer(
-      createRoomState('hero_oracle', [
+      createRoomState('hero_seeress', [
         { id: 'dragon', kind: 'monster' },
         { id: 'treasure_chest', kind: 'chest' },
       ]),
@@ -732,7 +732,7 @@ describe('hero_oracle abilities', () => {
         isCursed: true,
       }),
     );
-    const resolved = resolveRoomToken(state, { oracleChoiceIndex: 1 });
+    const resolved = resolveRoomToken(state, { seeressChoiceIndex: 1 });
     const room = resolved.board.find(
       (tile) => tile.boardX === 0 && tile.boardY === -1,
     );
@@ -824,9 +824,9 @@ function createKnownMovementState(
 
 function createSwapState(cursed: boolean): GameState {
   const base = createNewGame({
-    humanHeroId: 'hero_warlock',
+    humanHeroId: 'hero_witch',
     aiCount: 1,
-    seed: 'warlock-swap',
+    seed: 'witch-swap',
   });
   const targetTile: PlacedTile = {
     tileInstanceId: 'tile-target',

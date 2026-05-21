@@ -11,42 +11,42 @@ export const heroDefinitions = {
     ],
     activeRules: [],
   },
-  hero_warrior: {
-    id: 'hero_warrior',
-    displayName: heroDisplayNames.hero_warrior,
+  hero_valkyrie: {
+    id: 'hero_valkyrie',
+    displayName: heroDisplayNames.hero_valkyrie,
     passiveRules: [
       'may_reroll_one_lost_combat',
       'last_hp_loss_moves_to_healing_tile',
     ],
     activeRules: [],
   },
-  hero_warlock: {
-    id: 'hero_warlock',
-    displayName: heroDisplayNames.hero_warlock,
+  hero_witch: {
+    id: 'hero_witch',
+    displayName: heroDisplayNames.hero_witch,
     passiveRules: [],
     activeRules: [
       'sacrifice_hp_for_combat_bonus_once',
       'swap_position_at_turn_start_for_all_steps',
     ],
   },
-  hero_thief: {
-    id: 'hero_thief',
-    displayName: heroDisplayNames.hero_thief,
+  hero_rogue: {
+    id: 'hero_rogue',
+    displayName: heroDisplayNames.hero_rogue,
     passiveRules: ['combat_draws_are_wins', 'may_ignore_monsters'],
     activeRules: [],
   },
-  hero_swordsman: {
-    id: 'hero_swordsman',
-    displayName: heroDisplayNames.hero_swordsman,
+  hero_blade: {
+    id: 'hero_blade',
+    displayName: heroDisplayNames.hero_blade,
     passiveRules: [
       'reroll_ones_until_not_one',
       'six_allows_post_combat_continuation',
     ],
     activeRules: ['may_attack_same_monster_again_after_draw_or_loss'],
   },
-  hero_oracle: {
-    id: 'hero_oracle',
-    displayName: heroDisplayNames.hero_oracle,
+  hero_seeress: {
+    id: 'hero_seeress',
+    displayName: heroDisplayNames.hero_seeress,
     passiveRules: [
       'combat_bonus_after_first_step',
       'draw_two_room_tokens_choose_one',

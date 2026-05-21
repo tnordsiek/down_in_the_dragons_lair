@@ -15,7 +15,7 @@ import {
 } from './abilities';
 
 export type ResolveRoomTokenOptions = {
-  oracleChoiceIndex?: 0 | 1;
+  seeressChoiceIndex?: 0 | 1;
 };
 
 export function resolveRoomToken(
@@ -36,12 +36,12 @@ export function resolveRoomToken(
     };
   }
 
-  if (shouldPauseForOracleRoomChoice(state)) {
+  if (shouldPauseForSeeressRoomChoice(state)) {
     return {
       ...state,
-      phase: 'resolve_room_token_oracle_choice',
+      phase: 'resolve_room_token_seeress_choice',
       tokenBag: state.tokenBag.slice(2),
-      pendingOracleRoomChoice: {
+      pendingSeeressRoomChoice: {
         drawnTokens: [state.tokenBag[0], state.tokenBag[1]],
         position: activePlayer.position,
       },
@@ -57,20 +57,20 @@ export function resolveRoomToken(
     tile,
     draw.token,
     draw.remainingTokenBag,
-    options.oracleChoiceIndex,
-    draw.oracleDrawnTokenIds,
+    options.seeressChoiceIndex,
+    draw.seeressDrawnTokenIds,
   );
 }
 
-export function chooseOracleRoomToken(
+export function chooseSeeressRoomToken(
   state: GameState,
   choiceIndex: 0 | 1,
 ): GameState {
   if (
-    state.phase !== 'resolve_room_token_oracle_choice' ||
-    !state.pendingOracleRoomChoice
+    state.phase !== 'resolve_room_token_seeress_choice' ||
+    !state.pendingSeeressRoomChoice
   ) {
-    throw new Error('Oracle room choice can only resolve during pending choice');
+    throw new Error('Seeress room choice can only resolve during pending choice');
   }
 
   const activePlayer = state.players[state.activePlayerIndex];
@@ -81,12 +81,12 @@ export function chooseOracleRoomToken(
   }
 
   if (tile.roomToken) {
-    throw new Error('Oracle room choice requires an unresolved room');
+    throw new Error('Seeress room choice requires an unresolved room');
   }
 
-  const drawnTokens = state.pendingOracleRoomChoice.drawnTokens;
+  const drawnTokens = state.pendingSeeressRoomChoice.drawnTokens;
   const returnedIndex = choiceIndex === 0 ? 1 : 0;
-  const reinsertion = reinsertReturnedOracleToken(
+  const reinsertion = reinsertReturnedSeeressToken(
     state,
     state.tokenBag,
     drawnTokens[returnedIndex],
@@ -95,7 +95,7 @@ export function chooseOracleRoomToken(
   return completeRoomTokenResolution(
     {
       ...state,
-      pendingOracleRoomChoice: undefined,
+      pendingSeeressRoomChoice: undefined,
       rng: reinsertion.rng,
     },
     tile,
@@ -111,8 +111,8 @@ function completeRoomTokenResolution(
   tile: PlacedTile,
   token: Token,
   remainingTokenBag: Token[],
-  oracleChoiceIndex?: 0 | 1,
-  oracleDrawnTokenIds?: [Token['id'], Token['id']],
+  seeressChoiceIndex?: 0 | 1,
+  seeressDrawnTokenIds?: [Token['id'], Token['id']],
 ): GameState {
   const activePlayer = state.players[state.activePlayerIndex];
   const board = state.board.map((boardTile) =>
@@ -131,8 +131,8 @@ function completeRoomTokenResolution(
       tokenId: token.id,
       tokenKind: token.kind,
       position: activePlayer.position,
-      oracleChoiceIndex,
-      oracleDrawnTokenIds,
+      seeressChoiceIndex,
+      seeressDrawnTokenIds,
     },
   } as const;
 
@@ -142,11 +142,11 @@ function completeRoomTokenResolution(
       phase: state.remainingSteps > 0 ? 'await_move' : 'turn_end',
       board,
       tokenBag: remainingTokenBag,
-      pendingOracleRoomChoice: undefined,
+      pendingSeeressRoomChoice: undefined,
     }, roomEvent);
   }
 
-  const thiefMayIgnoreMonster = hasActiveHeroAbility(activePlayer, 'hero_thief');
+  const thiefMayIgnoreMonster = hasActiveHeroAbility(activePlayer, 'hero_rogue');
   const combat = createCombatContext(state, tile, token);
 
   return appendGameEvent({
@@ -154,7 +154,7 @@ function completeRoomTokenResolution(
     phase: thiefMayIgnoreMonster ? 'optional_monster_combat' : 'combat',
     board,
     tokenBag: remainingTokenBag,
-    pendingOracleRoomChoice: undefined,
+    pendingSeeressRoomChoice: undefined,
     combat:
       thiefMayIgnoreMonster
         ? getActiveTileMonsterCombat({
@@ -172,17 +172,17 @@ function drawRoomToken(
 ): {
   token: Token;
   remainingTokenBag: Token[];
-  oracleDrawnTokenIds?: [Token['id'], Token['id']];
+  seeressDrawnTokenIds?: [Token['id'], Token['id']];
   rng: GameState['rng'];
 } {
   if (
-    hasActiveHeroAbility(getActivePlayer(state), 'hero_oracle') &&
+    hasActiveHeroAbility(getActivePlayer(state), 'hero_seeress') &&
     state.tokenBag.length > 1
   ) {
     const drawnTokens = state.tokenBag.slice(0, 2);
-    const choiceIndex = options.oracleChoiceIndex ?? 0;
+    const choiceIndex = options.seeressChoiceIndex ?? 0;
     const returnedIndex = choiceIndex === 0 ? 1 : 0;
-    const reinsertion = reinsertReturnedOracleToken(
+    const reinsertion = reinsertReturnedSeeressToken(
       state,
       state.tokenBag.slice(2),
       drawnTokens[returnedIndex],
@@ -191,7 +191,7 @@ function drawRoomToken(
     return {
       token: drawnTokens[choiceIndex],
       remainingTokenBag: reinsertion.tokenBag,
-      oracleDrawnTokenIds: [drawnTokens[0].id, drawnTokens[1].id],
+      seeressDrawnTokenIds: [drawnTokens[0].id, drawnTokens[1].id],
       rng: reinsertion.rng,
     };
   }
@@ -201,17 +201,17 @@ function drawRoomToken(
   return { token, remainingTokenBag, rng: state.rng };
 }
 
-function shouldPauseForOracleRoomChoice(state: GameState): boolean {
+function shouldPauseForSeeressRoomChoice(state: GameState): boolean {
   const activePlayer = getActivePlayer(state);
 
   return (
     activePlayer.kind === 'human' &&
-    hasActiveHeroAbility(activePlayer, 'hero_oracle') &&
+    hasActiveHeroAbility(activePlayer, 'hero_seeress') &&
     state.tokenBag.length > 1
   );
 }
 
-function reinsertReturnedOracleToken(
+function reinsertReturnedSeeressToken(
   state: GameState,
   tokenBag: Token[],
   returnedToken: Token,

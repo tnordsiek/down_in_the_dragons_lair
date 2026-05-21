@@ -1,10 +1,10 @@
 export type HeroId =
   | 'hero_mage'
-  | 'hero_warrior'
-  | 'hero_warlock'
-  | 'hero_thief'
-  | 'hero_swordsman'
-  | 'hero_oracle';
+  | 'hero_valkyrie'
+  | 'hero_witch'
+  | 'hero_rogue'
+  | 'hero_blade'
+  | 'hero_seeress';
 
 export type MonsterId =
   | 'giant_rat'
@@ -150,12 +150,12 @@ export type GamePhase =
   | 'choose_pending_tile_rotation'
   | 'place_pending_tile'
   | 'resolve_room_token'
-  | 'resolve_room_token_oracle_choice'
+  | 'resolve_room_token_seeress_choice'
   | 'optional_monster_combat'
   | 'combat'
-  | 'combat_swordsman_reroll'
-  | 'combat_warrior_reroll'
-  | 'combat_warlock_sacrifice'
+  | 'combat_blade_reroll'
+  | 'combat_valkyrie_reroll'
+  | 'combat_witch_sacrifice'
   | 'combat_flame_spells'
   | 'combat_curse_target'
   | 'loot_resolution'
@@ -178,14 +178,14 @@ export interface CombatContext {
   monsterId: MonsterId;
   position: BoardPosition;
   enteredFrom: BoardPosition;
-  source?: 'movement' | 'warlock_swap';
+  source?: 'movement' | 'witch_swap';
   initialRolledDice?: [number, number];
-  swordsmanRerollCount?: number;
+  bladeRerollCount?: number;
   initialBaseOutcome?: 'draw' | 'defeat';
   rolledDice?: [number, number];
   pendingBaseOutcome?: 'draw' | 'defeat';
-  pendingWarlockSacrificeBonus?: number;
-  pendingOracleBonus?: number;
+  pendingWitchSacrificeBonus?: number;
+  pendingSeeressBonus?: number;
   pendingResolutionPhase?: GamePhase;
   pendingCombatEvent?: GameEventCombatDetails;
 }
@@ -196,7 +196,7 @@ export interface PendingLoot {
   item: Item;
 }
 
-export interface PendingOracleRoomChoice {
+export interface PendingSeeressRoomChoice {
   drawnTokens: [Token, Token];
   position: BoardPosition;
 }
@@ -209,8 +209,8 @@ export interface GameEventRoomDetails {
   tokenId: TokenId;
   tokenKind: Token['kind'];
   position: BoardPosition;
-  oracleChoiceIndex?: 0 | 1;
-  oracleDrawnTokenIds?: [TokenId, TokenId];
+  seeressChoiceIndex?: 0 | 1;
+  seeressDrawnTokenIds?: [TokenId, TokenId];
 }
 
 export interface GameEventExplorationDetails {
@@ -274,7 +274,7 @@ export interface VictoryState {
   winnerPlayerIds: string[];
 }
 
-export type TurnContinuationReason = 'swordsman_on_six';
+export type TurnContinuationReason = 'blade_on_six';
 
 export interface SerializedRngState {
   seed: string;
@@ -282,7 +282,7 @@ export interface SerializedRngState {
 }
 
 export interface GameState {
-  schemaVersion: 1;
+  schemaVersion: 2;
   phase: GamePhase;
   players: Player[];
   board: PlacedTile[];
@@ -294,7 +294,7 @@ export interface GameState {
   lastMoveFrom?: BoardPosition;
   combat?: CombatContext;
   pendingLoot?: PendingLoot;
-  pendingOracleRoomChoice?: PendingOracleRoomChoice;
+  pendingSeeressRoomChoice?: PendingSeeressRoomChoice;
   turnContinuationReason?: TurnContinuationReason;
   eventLog: GameEvent[];
   victory?: VictoryState;
@@ -332,8 +332,8 @@ export type ResolveRoomTokenAction = {
   type: 'resolveRoomToken';
 };
 
-export type ChooseOracleRoomTokenAction = {
-  type: 'chooseOracleRoomToken';
+export type ChooseSeeressRoomTokenAction = {
+  type: 'chooseSeeressRoomToken';
   choiceIndex: 0 | 1;
 };
 
@@ -351,26 +351,26 @@ export type SelectCurseTargetAction = {
   targetPlayerId: string;
 };
 
-export type UseSwordswomanRerollAction = {
-  type: 'useSwordswomanReroll';
+export type UseBladeRerollAction = {
+  type: 'useBladeReroll';
   dice?: [number, number];
 };
 
-export type UseWarriorRerollAction = {
-  type: 'useWarriorReroll';
+export type UseValkyrieRerollAction = {
+  type: 'useValkyrieReroll';
   dice?: [number, number];
 };
 
-export type DeclineWarriorRerollAction = {
-  type: 'declineWarriorReroll';
+export type DeclineValkyrieRerollAction = {
+  type: 'declineValkyrieReroll';
 };
 
-export type UseWarlockSacrificeAction = {
-  type: 'useWarlockSacrifice';
+export type UseWitchSacrificeAction = {
+  type: 'useWitchSacrifice';
 };
 
-export type DeclineWarlockSacrificeAction = {
-  type: 'declineWarlockSacrifice';
+export type DeclineWitchSacrificeAction = {
+  type: 'declineWitchSacrifice';
 };
 
 export type ResolveCombatWithoutFlameSpellsAction = {
@@ -411,8 +411,8 @@ export type UseHealingSpellAction = {
   healingPosition: BoardPosition;
 };
 
-export type SwapWarlockPositionAction = {
-  type: 'swapWarlockPosition';
+export type SwapWitchPositionAction = {
+  type: 'swapWitchPosition';
   targetPlayerId: string;
 };
 
@@ -427,15 +427,15 @@ export type GameAction =
   | RotatePendingTilePreviewAction
   | PlacePendingTileAction
   | ResolveRoomTokenAction
-  | ChooseOracleRoomTokenAction
+  | ChooseSeeressRoomTokenAction
   | StartOptionalCombatAction
   | ResolveCombatAction
   | SelectCurseTargetAction
-  | UseSwordswomanRerollAction
-  | UseWarriorRerollAction
-  | DeclineWarriorRerollAction
-  | UseWarlockSacrificeAction
-  | DeclineWarlockSacrificeAction
+  | UseBladeRerollAction
+  | UseValkyrieRerollAction
+  | DeclineValkyrieRerollAction
+  | UseWitchSacrificeAction
+  | DeclineWitchSacrificeAction
   | ResolveCombatWithoutFlameSpellsAction
   | ResolveCombatWithFlameSpellsAction
   | OpenChestAction
@@ -444,5 +444,5 @@ export type GameAction =
   | LeaveLootAction
   | SwapLootAction
   | UseHealingSpellAction
-  | SwapWarlockPositionAction
+  | SwapWitchPositionAction
   | EndTurnAction;

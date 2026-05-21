@@ -1,15 +1,15 @@
 import type { GameAction, GameState } from './types';
 import {
   startOptionalCombat,
-  declineWarlockSacrifice,
-  declineWarriorReroll,
+  declineWitchSacrifice,
+  declineValkyrieReroll,
   resolveCombat,
   resolveCombatWithFlameSpells,
   resolveCombatWithoutFlameSpells,
   selectCurseTarget,
-  useSwordswomanReroll,
-  useWarlockSacrifice,
-  useWarriorReroll,
+  useBladeReroll,
+  useWitchSacrifice,
+  useValkyrieReroll,
 } from '../combat/combat';
 import {
   drawPendingTileForExploration,
@@ -24,9 +24,9 @@ import {
   swapPendingLoot,
   takePendingLoot,
 } from '../rules/inventory';
-import { chooseOracleRoomToken, resolveRoomToken } from '../rules/rooms';
+import { chooseSeeressRoomToken, resolveRoomToken } from '../rules/rooms';
 import { castHealingSpell } from '../rules/spells';
-import { swapWarlockPosition } from '../rules/warlock';
+import { swapWitchPosition } from '../rules/witch';
 import { createNewGame } from '../setup/createGame';
 import { endTurn } from '../turns/turns';
 
@@ -57,8 +57,8 @@ export function applyGameAction(
       return placePendingTile(state, action.rotation);
     case 'resolveRoomToken':
       return resolveRoomToken(state);
-    case 'chooseOracleRoomToken':
-      return chooseOracleRoomToken(state, action.choiceIndex);
+    case 'chooseSeeressRoomToken':
+      return chooseSeeressRoomToken(state, action.choiceIndex);
     case 'startOptionalCombat':
       return startOptionalCombat(state);
     case 'resolveCombat':
@@ -67,20 +67,20 @@ export function applyGameAction(
       });
     case 'selectCurseTarget':
       return selectCurseTarget(state, action.targetPlayerId);
-    case 'useSwordswomanReroll':
-      return useSwordswomanReroll(state, {
+    case 'useBladeReroll':
+      return useBladeReroll(state, {
         dice: action.dice,
       });
-    case 'useWarriorReroll':
-      return useWarriorReroll(state, {
+    case 'useValkyrieReroll':
+      return useValkyrieReroll(state, {
         dice: action.dice,
       });
-    case 'declineWarriorReroll':
-      return declineWarriorReroll(state);
-    case 'useWarlockSacrifice':
-      return useWarlockSacrifice(state);
-    case 'declineWarlockSacrifice':
-      return declineWarlockSacrifice(state);
+    case 'declineValkyrieReroll':
+      return declineValkyrieReroll(state);
+    case 'useWitchSacrifice':
+      return useWitchSacrifice(state);
+    case 'declineWitchSacrifice':
+      return declineWitchSacrifice(state);
     case 'resolveCombatWithoutFlameSpells':
       return resolveCombatWithoutFlameSpells(state);
     case 'resolveCombatWithFlameSpells':
@@ -100,8 +100,8 @@ export function applyGameAction(
         targetPlayerId: action.targetPlayerId,
         healingPosition: action.healingPosition,
       });
-    case 'swapWarlockPosition':
-      return swapWarlockPosition(state, action.targetPlayerId);
+    case 'swapWitchPosition':
+      return swapWitchPosition(state, action.targetPlayerId);
     case 'endTurn':
       return endTurn(state);
   }

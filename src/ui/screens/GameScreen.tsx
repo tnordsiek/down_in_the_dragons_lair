@@ -24,7 +24,7 @@ type HealingSpellSelectionState =
   | { mode: 'idle' }
   | { mode: 'select_target' }
   | { mode: 'select_tile'; targetPlayerId: string };
-type WarlockSwapSelectionState =
+type WitchSwapSelectionState =
   | { mode: 'idle' }
   | { mode: 'select_target' };
 
@@ -53,8 +53,8 @@ export function GameScreen() {
   });
   const [healingSpellSelection, setHealingSpellSelection] =
     useState<HealingSpellSelectionState>({ mode: 'idle' });
-  const [warlockSwapSelection, setWarlockSwapSelection] =
-    useState<WarlockSwapSelectionState>({ mode: 'idle' });
+  const [witchSwapSelection, setWitchSwapSelection] =
+    useState<WitchSwapSelectionState>({ mode: 'idle' });
   const [dismissedStartOverlayEventId, setDismissedStartOverlayEventId] =
     useState<string | null>(null);
   const latestEvent = state?.eventLog[state.eventLog.length - 1];
@@ -108,8 +108,8 @@ export function GameScreen() {
       if (healingSpellSelection.mode !== 'idle') {
         setHealingSpellSelection({ mode: 'idle' });
       }
-      if (warlockSwapSelection.mode !== 'idle') {
-        setWarlockSwapSelection({ mode: 'idle' });
+      if (witchSwapSelection.mode !== 'idle') {
+        setWitchSwapSelection({ mode: 'idle' });
       }
 
       return;
@@ -137,18 +137,18 @@ export function GameScreen() {
     ) {
       setHealingSpellSelection({ mode: 'idle' });
     }
-    const canUseWarlockSwap =
+    const canUseWitchSwap =
       activePlayer.kind === 'human' &&
       state.phase === 'turn_start' &&
       state.remainingSteps === 4 &&
-      activePlayer.heroId === 'hero_warlock' &&
+      activePlayer.heroId === 'hero_witch' &&
       !activePlayer.isCursed &&
       state.players.some((player) => player.id !== activePlayer.id);
 
-    if (!canUseWarlockSwap && warlockSwapSelection.mode !== 'idle') {
-      setWarlockSwapSelection({ mode: 'idle' });
+    if (!canUseWitchSwap && witchSwapSelection.mode !== 'idle') {
+      setWitchSwapSelection({ mode: 'idle' });
     }
-  }, [healingSpellSelection, state, warlockSwapSelection]);
+  }, [healingSpellSelection, state, witchSwapSelection]);
 
   useEffect(() => {
     if (!state) {
@@ -191,8 +191,8 @@ export function GameScreen() {
       rotation: state.pendingTile.previewRotation,
     });
   };
-  const handleChooseOracleRoomToken = (choiceIndex: 0 | 1) => {
-    dispatch({ type: 'chooseOracleRoomToken', choiceIndex });
+  const handleChooseSeeressRoomToken = (choiceIndex: 0 | 1) => {
+    dispatch({ type: 'chooseSeeressRoomToken', choiceIndex });
   };
   const handleResolveCombat = () => {
     dispatch({ type: 'resolveCombat' });
@@ -200,23 +200,23 @@ export function GameScreen() {
   const handleSelectCurseTarget = (targetPlayerId: string) => {
     dispatch({ type: 'selectCurseTarget', targetPlayerId });
   };
-  const handleUseSwordswomanReroll = () => {
-    dispatch({ type: 'useSwordswomanReroll' });
+  const handleUseBladeReroll = () => {
+    dispatch({ type: 'useBladeReroll' });
   };
   const handleStartOptionalCombat = () => {
     dispatch({ type: 'startOptionalCombat' });
   };
-  const handleUseWarriorReroll = () => {
-    dispatch({ type: 'useWarriorReroll' });
+  const handleUseValkyrieReroll = () => {
+    dispatch({ type: 'useValkyrieReroll' });
   };
-  const handleDeclineWarriorReroll = () => {
-    dispatch({ type: 'declineWarriorReroll' });
+  const handleDeclineValkyrieReroll = () => {
+    dispatch({ type: 'declineValkyrieReroll' });
   };
-  const handleUseWarlockSacrifice = () => {
-    dispatch({ type: 'useWarlockSacrifice' });
+  const handleUseWitchSacrifice = () => {
+    dispatch({ type: 'useWitchSacrifice' });
   };
-  const handleDeclineWarlockSacrifice = () => {
-    dispatch({ type: 'declineWarlockSacrifice' });
+  const handleDeclineWitchSacrifice = () => {
+    dispatch({ type: 'declineWitchSacrifice' });
   };
   const handleResolveCombatWithoutFlameSpells = () => {
     dispatch({ type: 'resolveCombatWithoutFlameSpells' });
@@ -273,19 +273,19 @@ export function GameScreen() {
       healingPosition,
     });
   };
-  const handleStartWarlockSwapSelection = () => {
-    setWarlockSwapSelection({ mode: 'select_target' });
+  const handleStartWitchSwapSelection = () => {
+    setWitchSwapSelection({ mode: 'select_target' });
   };
-  const handleCancelWarlockSwapSelection = () => {
-    setWarlockSwapSelection({ mode: 'idle' });
+  const handleCancelWitchSwapSelection = () => {
+    setWitchSwapSelection({ mode: 'idle' });
   };
-  const handleSelectWarlockSwapTarget = (targetPlayerId: string) => {
+  const handleSelectWitchSwapTarget = (targetPlayerId: string) => {
     flushSync(() => {
-      setWarlockSwapSelection({ mode: 'idle' });
+      setWitchSwapSelection({ mode: 'idle' });
     });
 
     dispatch({
-      type: 'swapWarlockPosition',
+      type: 'swapWitchPosition',
       targetPlayerId,
     });
   };
@@ -380,15 +380,15 @@ export function GameScreen() {
             onLeaveLoot={handleLeaveLoot}
             onMove={handleMove}
             onExplore={handleExplore}
-            onChooseOracleRoomToken={handleChooseOracleRoomToken}
+            onChooseSeeressRoomToken={handleChooseSeeressRoomToken}
             onStartOptionalCombat={handleStartOptionalCombat}
             onResolveCombat={handleResolveCombat}
             onSelectCurseTarget={handleSelectCurseTarget}
-            onUseSwordswomanReroll={handleUseSwordswomanReroll}
-            onUseWarriorReroll={handleUseWarriorReroll}
-            onDeclineWarriorReroll={handleDeclineWarriorReroll}
-            onUseWarlockSacrifice={handleUseWarlockSacrifice}
-            onDeclineWarlockSacrifice={handleDeclineWarlockSacrifice}
+            onUseBladeReroll={handleUseBladeReroll}
+            onUseValkyrieReroll={handleUseValkyrieReroll}
+            onDeclineValkyrieReroll={handleDeclineValkyrieReroll}
+            onUseWitchSacrifice={handleUseWitchSacrifice}
+            onDeclineWitchSacrifice={handleDeclineWitchSacrifice}
             onResolveCombatWithoutFlameSpells={
               handleResolveCombatWithoutFlameSpells
             }
@@ -399,10 +399,10 @@ export function GameScreen() {
             onTakeLoot={handleTakeLoot}
             onOpenChest={handleOpenChest}
             onEndTurn={handleEndTurn}
-            warlockSwapSelection={warlockSwapSelection}
-            onStartWarlockSwapSelection={handleStartWarlockSwapSelection}
-            onCancelWarlockSwapSelection={handleCancelWarlockSwapSelection}
-            onSelectWarlockSwapTarget={handleSelectWarlockSwapTarget}
+            witchSwapSelection={witchSwapSelection}
+            onStartWitchSwapSelection={handleStartWitchSwapSelection}
+            onCancelWitchSwapSelection={handleCancelWitchSwapSelection}
+            onSelectWitchSwapTarget={handleSelectWitchSwapTarget}
           />
           <PlayerPanel
             state={state}
@@ -540,7 +540,7 @@ function getLatestCombatDice(
   }
 
   if (
-    state.phase === 'combat_swordsman_reroll' &&
+    state.phase === 'combat_blade_reroll' &&
     state.combat?.rolledDice
   ) {
     return state.combat.rolledDice;
@@ -561,14 +561,14 @@ function getLatestCombatDice(
   }
 
   if (
-    state.phase === 'combat_warrior_reroll' &&
+    state.phase === 'combat_valkyrie_reroll' &&
     state.combat?.initialRolledDice
   ) {
     return state.combat.initialRolledDice;
   }
 
   if (
-    state.phase === 'combat_warlock_sacrifice' &&
+    state.phase === 'combat_witch_sacrifice' &&
     state.combat?.initialRolledDice
   ) {
     return state.combat.initialRolledDice;

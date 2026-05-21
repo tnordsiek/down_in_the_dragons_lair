@@ -27,18 +27,18 @@ export type ResolveCombatOptions = {
   dice?: [number, number];
 };
 
-export type UseWarriorRerollOptions = {
+export type UseValkyrieRerollOptions = {
   dice?: [number, number];
 };
 
-export type UseSwordswomanRerollOptions = {
+export type UseBladeRerollOptions = {
   dice?: [number, number];
 };
 
 export function startOptionalCombat(state: GameState): GameState {
   if (state.phase !== 'optional_monster_combat' || !state.combat) {
     throw new Error(
-      'Optional combat can only start during pending thief monster combat',
+      'Optional combat can only start during pending rogue monster combat',
     );
   }
 
@@ -66,20 +66,20 @@ export function resolveCombat(
   const activePlayer = state.players[state.activePlayerIndex];
   const rng = restoreSeededRng(state.rng);
   const initialDice = options.dice ?? [rng.rollDie(6), rng.rollDie(6)];
-  const pendingSwordswomanReroll = shouldPauseForSwordswomanReroll(
+  const pendingBladeReroll = shouldPauseForBladeReroll(
     activePlayer,
     initialDice,
   );
 
-  if (pendingSwordswomanReroll) {
+  if (pendingBladeReroll) {
     return {
       ...state,
-      phase: 'combat_swordsman_reroll',
+      phase: 'combat_blade_reroll',
       combat: {
         ...state.combat,
         initialRolledDice: initialDice,
         rolledDice: initialDice,
-        swordsmanRerollCount: 0,
+        bladeRerollCount: 0,
       },
       rng: rng.snapshot(),
     };
@@ -88,7 +88,7 @@ export function resolveCombat(
   const dice = initialDice;
   const warlockSacrificeBonus = 0;
   const flameSpellCount = getAutomaticFlameSpellCount(activePlayer);
-  const oracleBonus = getOracleCombatBonus(state);
+  const oracleBonus = getSeeressCombatBonus(state);
   const total = calculateCombatTotal(
     activePlayer,
     dice,
@@ -101,23 +101,23 @@ export function resolveCombat(
   );
   const stateWithAppliedCosts = spendFlameSpells(state, flameSpellCount);
 
-  if (shouldPauseForWarriorReroll(activePlayer, outcome)) {
+  if (shouldPauseForValkyrieReroll(activePlayer, outcome)) {
     return {
       ...stateWithAppliedCosts,
-      phase: 'combat_warrior_reroll',
+      phase: 'combat_valkyrie_reroll',
       combat: {
         ...state.combat,
         initialRolledDice: dice,
         initialBaseOutcome: toPendingCombatOutcome(outcome),
-        pendingWarlockSacrificeBonus: warlockSacrificeBonus,
-        pendingOracleBonus: oracleBonus,
+        pendingWitchSacrificeBonus: warlockSacrificeBonus,
+        pendingSeeressBonus: oracleBonus,
       },
       rng: rng.snapshot(),
     };
   }
 
   if (
-    shouldPauseForWarlockSacrifice(
+    shouldPauseForWitchSacrifice(
       activePlayer,
       monster.strength,
       dice,
@@ -127,13 +127,13 @@ export function resolveCombat(
   ) {
     return {
       ...stateWithAppliedCosts,
-      phase: 'combat_warlock_sacrifice',
+      phase: 'combat_witch_sacrifice',
       combat: {
         ...state.combat,
         initialRolledDice: dice,
         initialBaseOutcome: toPendingCombatOutcome(outcome),
-        pendingWarlockSacrificeBonus: 0,
-        pendingOracleBonus: oracleBonus,
+        pendingWitchSacrificeBonus: 0,
+        pendingSeeressBonus: oracleBonus,
       },
       rng: rng.snapshot(),
     };
@@ -155,8 +155,8 @@ export function resolveCombat(
         ...state.combat,
         rolledDice: dice,
         pendingBaseOutcome: toPendingCombatOutcome(outcome),
-        pendingWarlockSacrificeBonus: warlockSacrificeBonus,
-        pendingOracleBonus: oracleBonus,
+        pendingWitchSacrificeBonus: warlockSacrificeBonus,
+        pendingSeeressBonus: oracleBonus,
       },
       rng: rng.snapshot(),
     };
@@ -171,26 +171,26 @@ export function resolveCombat(
   );
 }
 
-export function useSwordswomanReroll(
+export function useBladeReroll(
   state: GameState,
-  options: UseSwordswomanRerollOptions = {},
+  options: UseBladeRerollOptions = {},
 ): GameState {
-  if (state.phase !== 'combat_swordsman_reroll' || !state.combat?.rolledDice) {
+  if (state.phase !== 'combat_blade_reroll' || !state.combat?.rolledDice) {
     throw new Error(
-      'Swordswoman reroll can only resolve during pending swordswoman combat reroll',
+      'Blade reroll can only resolve during pending blade combat reroll',
     );
   }
 
   const activePlayer = state.players[state.activePlayerIndex];
 
-  if (!hasActiveHeroAbility(activePlayer, 'hero_swordsman')) {
-    throw new Error('Only the active uncursed swordswoman may use this reroll');
+  if (!hasActiveHeroAbility(activePlayer, 'hero_blade')) {
+    throw new Error('Only the active uncursed blade may use this reroll');
   }
 
   const currentDice = state.combat.rolledDice;
 
   if (!currentDice.includes(1)) {
-    throw new Error('Swordswoman reroll requires at least one die showing 1');
+    throw new Error('Blade reroll requires at least one die showing 1');
   }
 
   const rng = restoreSeededRng(state.rng);
@@ -211,14 +211,14 @@ export function useSwordswomanReroll(
     combat: {
       ...state.combat,
       rolledDice: resolvedDice,
-      swordsmanRerollCount: (state.combat.swordsmanRerollCount ?? 0) + 1,
+      bladeRerollCount: (state.combat.bladeRerollCount ?? 0) + 1,
     },
   };
 
   if (resolvedDice.includes(1)) {
     return {
       ...updatedState,
-      phase: 'combat_swordsman_reroll',
+      phase: 'combat_blade_reroll',
     };
   }
 
@@ -228,16 +228,16 @@ export function useSwordswomanReroll(
   );
 }
 
-export function useWarriorReroll(
+export function useValkyrieReroll(
   state: GameState,
-  options: UseWarriorRerollOptions = {},
+  options: UseValkyrieRerollOptions = {},
 ): GameState {
   if (
-    state.phase !== 'combat_warrior_reroll' ||
+    state.phase !== 'combat_valkyrie_reroll' ||
     !state.combat?.initialRolledDice
   ) {
     throw new Error(
-      'Warrior reroll can only resolve during pending warrior combat reroll',
+      'Valkyrie reroll can only resolve during pending valkyrie combat reroll',
     );
   }
 
@@ -251,22 +251,22 @@ export function useWarriorReroll(
   );
 }
 
-export function declineWarriorReroll(state: GameState): GameState {
+export function declineValkyrieReroll(state: GameState): GameState {
   if (
-    state.phase !== 'combat_warrior_reroll' ||
+    state.phase !== 'combat_valkyrie_reroll' ||
     !state.combat?.initialRolledDice ||
     !state.combat.initialBaseOutcome
   ) {
     throw new Error(
-      'Declining warrior reroll can only resolve during pending warrior combat reroll',
+      'Declining valkyrie reroll can only resolve during pending valkyrie combat reroll',
     );
   }
 
   const activePlayer = state.players[state.activePlayerIndex];
   const monster = monsterDefinitions[state.combat.monsterId];
   const flameSpellCount = getAutomaticFlameSpellCount(activePlayer);
-  const warlockSacrificeBonus = state.combat.pendingWarlockSacrificeBonus ?? 0;
-  const oracleBonus = state.combat.pendingOracleBonus ?? 0;
+  const warlockSacrificeBonus = state.combat.pendingWitchSacrificeBonus ?? 0;
+  const oracleBonus = state.combat.pendingSeeressBonus ?? 0;
 
   if (
     shouldPauseForFlameSpells(
@@ -297,23 +297,23 @@ export function declineWarriorReroll(state: GameState): GameState {
   );
 }
 
-export function useWarlockSacrifice(state: GameState): GameState {
+export function useWitchSacrifice(state: GameState): GameState {
   if (
-    state.phase !== 'combat_warlock_sacrifice' ||
+    state.phase !== 'combat_witch_sacrifice' ||
     !state.combat?.initialRolledDice
   ) {
     throw new Error(
-      'Warlock sacrifice can only resolve during pending warlock combat sacrifice',
+      'Witch sacrifice can only resolve during pending witch combat sacrifice',
     );
   }
 
-  const stateWithSacrifice = applyWarlockSacrifice(state);
+  const stateWithSacrifice = applyWitchSacrifice(state);
   const activePlayer =
     stateWithSacrifice.players[stateWithSacrifice.activePlayerIndex];
   const monster = monsterDefinitions[state.combat.monsterId];
   const flameSpellCount = getAutomaticFlameSpellCount(activePlayer);
   const warlockSacrificeBonus = 1;
-  const oracleBonus = state.combat.pendingOracleBonus ?? 0;
+  const oracleBonus = state.combat.pendingSeeressBonus ?? 0;
   const total = calculateCombatTotal(
     activePlayer,
     state.combat.initialRolledDice,
@@ -341,7 +341,7 @@ export function useWarlockSacrifice(state: GameState): GameState {
         ...state.combat,
         rolledDice: state.combat.initialRolledDice,
         pendingBaseOutcome: toPendingCombatOutcome(outcome),
-        pendingWarlockSacrificeBonus: warlockSacrificeBonus,
+        pendingWitchSacrificeBonus: warlockSacrificeBonus,
       },
     };
   }
@@ -355,14 +355,14 @@ export function useWarlockSacrifice(state: GameState): GameState {
   );
 }
 
-export function declineWarlockSacrifice(state: GameState): GameState {
+export function declineWitchSacrifice(state: GameState): GameState {
   if (
-    state.phase !== 'combat_warlock_sacrifice' ||
+    state.phase !== 'combat_witch_sacrifice' ||
     !state.combat?.initialRolledDice ||
     !state.combat.initialBaseOutcome
   ) {
     throw new Error(
-      'Declining warlock sacrifice can only resolve during pending warlock combat sacrifice',
+      'Declining witch sacrifice can only resolve during pending witch combat sacrifice',
     );
   }
 
@@ -370,7 +370,7 @@ export function declineWarlockSacrifice(state: GameState): GameState {
   const monster = monsterDefinitions[state.combat.monsterId];
   const flameSpellCount = getAutomaticFlameSpellCount(activePlayer);
   const warlockSacrificeBonus = 0;
-  const oracleBonus = state.combat.pendingOracleBonus ?? 0;
+  const oracleBonus = state.combat.pendingSeeressBonus ?? 0;
 
   if (
     shouldPauseForFlameSpells(
@@ -388,7 +388,7 @@ export function declineWarlockSacrifice(state: GameState): GameState {
         ...state.combat,
         rolledDice: state.combat.initialRolledDice,
         pendingBaseOutcome: state.combat.initialBaseOutcome,
-        pendingWarlockSacrificeBonus: warlockSacrificeBonus,
+        pendingWitchSacrificeBonus: warlockSacrificeBonus,
       },
     };
   }
@@ -470,8 +470,8 @@ export function getCombatFlameSpellChoices(state: GameState): number[] {
     activePlayer,
     monster.strength,
     state.combat.rolledDice,
-    state.combat.pendingWarlockSacrificeBonus ?? 0,
-    state.combat.pendingOracleBonus ?? 0,
+    state.combat.pendingWitchSacrificeBonus ?? 0,
+    state.combat.pendingSeeressBonus ?? 0,
     availableFlameSpells,
   );
 }
@@ -504,7 +504,7 @@ export function getCombatOutcomeForPlayer(
   total: number,
   monsterStrength: number,
 ): CombatOutcome {
-  if (total === monsterStrength && hasActiveHeroAbility(player, 'hero_thief')) {
+  if (total === monsterStrength && hasActiveHeroAbility(player, 'hero_rogue')) {
     return 'victory';
   }
 
@@ -543,12 +543,12 @@ function resolveVictory(
   const boardAfterVictory = state.board.map((tile) =>
     samePosition(tile, combatTile) ? { ...tile, roomToken: undefined } : tile,
   );
-  const turnContinuationReason = canSwordswomanContinueAfterCombat(
+  const turnContinuationReason = canBladeContinueAfterCombat(
     activePlayer,
     activePlayer,
     dice,
   )
-    ? 'swordsman_on_six'
+    ? 'blade_on_six'
     : undefined;
 
   const phase: GameState['phase'] = monster.isAncientDragon
@@ -658,8 +658,8 @@ function resolveRetreat(
   const activePlayer = state.players[state.activePlayerIndex];
 
   const warlockFallback =
-    combat.source === 'warlock_swap'
-      ? getWarlockSwapFallback(state, combat.position)
+    combat.source === 'witch_swap'
+      ? getWitchSwapFallback(state, combat.position)
       : undefined;
   const players = state.players.map((player, index) => {
     if (index !== state.activePlayerIndex) {
@@ -671,7 +671,7 @@ function resolveRetreat(
     const warriorReincarnates =
       outcome === 'defeat' &&
       hpAfterLoss === 0 &&
-      hasActiveHeroAbility(player, 'hero_warrior');
+      hasActiveHeroAbility(player, 'hero_valkyrie');
     const retreatedPlayer = {
       ...player,
       hp: warriorReincarnates ? player.maxHp : hpAfterLoss,
@@ -693,12 +693,12 @@ function resolveRetreat(
   });
 
   const resolvedActivePlayer = players[state.activePlayerIndex];
-  const continuationReason = canSwordswomanContinueAfterCombat(
+  const continuationReason = canBladeContinueAfterCombat(
     activePlayer,
     resolvedActivePlayer,
     combatEvent.dice,
   )
-    ? 'swordsman_on_six'
+    ? 'blade_on_six'
     : undefined;
   const stateAfterRetreat: GameState = {
     ...state,
@@ -790,8 +790,8 @@ function resolvePendingCombat(
     state,
     state.combat.rolledDice,
     flameSpellCount,
-    state.combat.pendingWarlockSacrificeBonus ?? 0,
-    state.combat.pendingOracleBonus ?? 0,
+    state.combat.pendingWitchSacrificeBonus ?? 0,
+    state.combat.pendingSeeressBonus ?? 0,
   );
 }
 
@@ -837,7 +837,7 @@ function shouldPauseForFlameSpells(
   );
 }
 
-function applyWarlockSacrifice(state: GameState): GameState {
+function applyWitchSacrifice(state: GameState): GameState {
   return {
     ...state,
     players: state.players.map((player, index) =>
@@ -852,10 +852,10 @@ function applyWarlockSacrifice(state: GameState): GameState {
   };
 }
 
-function getOracleCombatBonus(state: GameState): number {
+function getSeeressCombatBonus(state: GameState): number {
   const activePlayer = state.players[state.activePlayerIndex];
 
-  return hasActiveHeroAbility(activePlayer, 'hero_oracle') &&
+  return hasActiveHeroAbility(activePlayer, 'hero_seeress') &&
     state.remainingSteps === 3
     ? 1
     : 0;
@@ -925,28 +925,28 @@ function createCombatEventDetails(
   };
 }
 
-function shouldPauseForWarriorReroll(
+function shouldPauseForValkyrieReroll(
   player: Player,
   outcome: CombatOutcome,
 ): boolean {
-  return hasActiveHeroAbility(player, 'hero_warrior') && outcome !== 'victory';
+  return hasActiveHeroAbility(player, 'hero_valkyrie') && outcome !== 'victory';
 }
 
-function shouldPauseForSwordswomanReroll(
+function shouldPauseForBladeReroll(
   player: Player,
   dice: [number, number],
 ): boolean {
-  return hasActiveHeroAbility(player, 'hero_swordsman') && dice.includes(1);
+  return hasActiveHeroAbility(player, 'hero_blade') && dice.includes(1);
 }
 
-function shouldPauseForWarlockSacrifice(
+function shouldPauseForWitchSacrifice(
   player: Player,
   monsterStrength: number,
   dice: [number, number],
   outcome: CombatOutcome,
   oracleBonus: number,
 ): boolean {
-  if (!hasActiveHeroAbility(player, 'hero_warlock') || outcome === 'victory') {
+  if (!hasActiveHeroAbility(player, 'hero_witch') || outcome === 'victory') {
     return false;
   }
 
@@ -985,18 +985,18 @@ function getPostVictoryPhase(
   state: GameState,
   dice: [number, number],
 ): GameState['phase'] {
-  return canSwordswomanContinueAfterCombat(player, player, dice)
+  return canBladeContinueAfterCombat(player, player, dice)
     ? getContinuationPhaseAfterAction(state)
     : 'turn_end';
 }
 
-function canSwordswomanContinueAfterCombat(
+function canBladeContinueAfterCombat(
   heroBeforeCombat: Player,
   playerAfterCombat: Player,
   dice: [number, number],
 ): boolean {
   return (
-    hasActiveHeroAbility(heroBeforeCombat, 'hero_swordsman') &&
+    hasActiveHeroAbility(heroBeforeCombat, 'hero_blade') &&
     dice.includes(6) &&
     playerAfterCombat.hp > 0 &&
     !playerAfterCombat.skipNextTurn
@@ -1014,8 +1014,8 @@ function continueResolvedCombat(
   const activePlayer = state.players[state.activePlayerIndex];
   const monster = monsterDefinitions[state.combat.monsterId];
   const flameSpellCount = getAutomaticFlameSpellCount(activePlayer);
-  const warlockSacrificeBonus = state.combat.pendingWarlockSacrificeBonus ?? 0;
-  const oracleBonus = state.combat.pendingOracleBonus ?? 0;
+  const warlockSacrificeBonus = state.combat.pendingWitchSacrificeBonus ?? 0;
+  const oracleBonus = state.combat.pendingSeeressBonus ?? 0;
   const total = calculateCombatTotal(
     activePlayer,
     dice,
@@ -1056,7 +1056,7 @@ function continueResolvedCombat(
   );
 }
 
-function getWarlockSwapFallback(
+function getWitchSwapFallback(
   state: GameState,
   combatPosition: BoardPosition,
 ): { position: BoardPosition; rng: SerializedRngState } | undefined {

@@ -241,17 +241,17 @@ function actionMessage(
     case 'placePendingTile':
       return `Placed tile at ${action.rotation} degrees`;
     case 'resolveRoomToken':
-    case 'chooseOracleRoomToken':
+    case 'chooseSeeressRoomToken':
       return undefined;
     case 'startOptionalCombat':
       return 'Started combat';
     case 'resolveCombat':
     case 'selectCurseTarget':
-    case 'useSwordswomanReroll':
-    case 'useWarriorReroll':
-    case 'declineWarriorReroll':
-    case 'useWarlockSacrifice':
-    case 'declineWarlockSacrifice':
+    case 'useBladeReroll':
+    case 'useValkyrieReroll':
+    case 'declineValkyrieReroll':
+    case 'useWitchSacrifice':
+    case 'declineWitchSacrifice':
     case 'resolveCombatWithoutFlameSpells':
     case 'resolveCombatWithFlameSpells':
       return undefined;
@@ -270,14 +270,14 @@ function actionMessage(
       return 'Swapped loot';
     case 'useHealingSpell':
       return 'Used healing spell';
-    case 'swapWarlockPosition': {
+    case 'swapWitchPosition': {
       const targetPlayer = previousState?.players.find(
         (player) => player.id === action.targetPlayerId,
       );
 
       return targetPlayer
         ? `Swapped with ${heroDisplayNames[targetPlayer.heroId]} to ${targetPlayer.position.boardX},${targetPlayer.position.boardY}`
-        : 'Swapped warlock position';
+        : 'Swapped witch position';
     }
     case 'endTurn':
       return 'Ended turn';
@@ -292,10 +292,10 @@ export function getUiLegalActions(state: GameState) {
   return {
     knownMoves: getLegalKnownMoves(state),
     explorationDirections: getLegalExplorationDirections(state),
-    warlockSwapTargets:
+    witchSwapTargets:
       state.phase === 'turn_start' &&
       state.remainingSteps === 4 &&
-      hasActiveHeroAbility(activePlayer, 'hero_warlock')
+      hasActiveHeroAbility(activePlayer, 'hero_witch')
         ? state.players.filter((player) => player.id !== activePlayer.id)
         : [],
   };
@@ -327,8 +327,8 @@ function collectPendingAudioCues(
       assetIds.add('sfx_tile_place');
       break;
     case 'resolveCombat':
-    case 'useSwordswomanReroll':
-    case 'useWarriorReroll':
+    case 'useBladeReroll':
+    case 'useValkyrieReroll':
     case 'resolveCombatWithoutFlameSpells':
     case 'resolveCombatWithFlameSpells':
       assetIds.add('sfx_combat_roll');

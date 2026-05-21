@@ -23,7 +23,7 @@ type HealingSpellSelectionState =
   | { mode: 'idle' }
   | { mode: 'select_target' }
   | { mode: 'select_tile'; targetPlayerId: string };
-type WarlockSwapSelectionState =
+type WitchSwapSelectionState =
   | { mode: 'idle' }
   | { mode: 'select_target' };
 
@@ -41,15 +41,15 @@ type ActionPanelProps = {
   onBeginLoot: () => void;
   onLeaveLoot: () => void;
   onExplore: (direction: TileSide) => void;
-  onChooseOracleRoomToken: (choiceIndex: 0 | 1) => void;
+  onChooseSeeressRoomToken: (choiceIndex: 0 | 1) => void;
   onStartOptionalCombat: () => void;
   onResolveCombat: () => void;
   onSelectCurseTarget: (targetPlayerId: string) => void;
-  onUseSwordswomanReroll: () => void;
-  onUseWarriorReroll: () => void;
-  onDeclineWarriorReroll: () => void;
-  onUseWarlockSacrifice: () => void;
-  onDeclineWarlockSacrifice: () => void;
+  onUseBladeReroll: () => void;
+  onUseValkyrieReroll: () => void;
+  onDeclineValkyrieReroll: () => void;
+  onUseWitchSacrifice: () => void;
+  onDeclineWitchSacrifice: () => void;
   onResolveCombatWithoutFlameSpells: () => void;
   onResolveCombatWithFlameSpells: (flameSpellCount: number) => void;
   onSwapLoot: (inventorySlot: { kind: 'weapon' | 'spell'; index: number }) => void;
@@ -60,10 +60,10 @@ type ActionPanelProps = {
   onStartHealingSpellSelection: () => void;
   onCancelHealingSpellSelection: () => void;
   onSelectHealingSpellTarget: (targetPlayerId: string) => void;
-  warlockSwapSelection: WarlockSwapSelectionState;
-  onStartWarlockSwapSelection: () => void;
-  onCancelWarlockSwapSelection: () => void;
-  onSelectWarlockSwapTarget: (targetPlayerId: string) => void;
+  witchSwapSelection: WitchSwapSelectionState;
+  onStartWitchSwapSelection: () => void;
+  onCancelWitchSwapSelection: () => void;
+  onSelectWitchSwapTarget: (targetPlayerId: string) => void;
 };
 
 export function ActionPanel({
@@ -72,15 +72,15 @@ export function ActionPanel({
   onBeginLoot,
   onLeaveLoot,
   onExplore,
-  onChooseOracleRoomToken,
+  onChooseSeeressRoomToken,
   onStartOptionalCombat,
   onResolveCombat,
   onSelectCurseTarget,
-  onUseSwordswomanReroll,
-  onUseWarriorReroll,
-  onDeclineWarriorReroll,
-  onUseWarlockSacrifice,
-  onDeclineWarlockSacrifice,
+  onUseBladeReroll,
+  onUseValkyrieReroll,
+  onDeclineValkyrieReroll,
+  onUseWitchSacrifice,
+  onDeclineWitchSacrifice,
   onResolveCombatWithoutFlameSpells,
   onResolveCombatWithFlameSpells,
   onSwapLoot,
@@ -91,10 +91,10 @@ export function ActionPanel({
   onStartHealingSpellSelection,
   onCancelHealingSpellSelection,
   onSelectHealingSpellTarget,
-  warlockSwapSelection,
-  onStartWarlockSwapSelection,
-  onCancelWarlockSwapSelection,
-  onSelectWarlockSwapTarget,
+  witchSwapSelection,
+  onStartWitchSwapSelection,
+  onCancelWitchSwapSelection,
+  onSelectWitchSwapTarget,
 }: ActionPanelProps) {
   const legalActions = getUiLegalActions(state);
   const activePlayer = state.players[state.activePlayerIndex];
@@ -130,26 +130,26 @@ export function ActionPanel({
   const initialCombatOutcome = state.combat?.initialBaseOutcome;
   const pendingCombatDice = state.combat?.rolledDice;
   const pendingCombatOutcome = state.combat?.pendingBaseOutcome;
-  const pendingWarlockSacrificeBonus =
-    state.combat?.pendingWarlockSacrificeBonus ?? 0;
+  const pendingWitchSacrificeBonus =
+    state.combat?.pendingWitchSacrificeBonus ?? 0;
   const pendingCombatTotal =
     pendingCombatDice !== undefined
       ? pendingCombatDice[0] +
         pendingCombatDice[1] +
         weaponBonus +
-        pendingWarlockSacrificeBonus
+        pendingWitchSacrificeBonus
       : undefined;
-  const pendingSwordswomanTotal =
-    state.phase === 'combat_swordsman_reroll' &&
+  const pendingBladeTotal =
+    state.phase === 'combat_blade_reroll' &&
     combatMonster &&
     pendingCombatDice
       ? calculateCombatTotal(activePlayer, pendingCombatDice)
       : undefined;
-  const pendingSwordswomanOutcome =
-    pendingSwordswomanTotal !== undefined && combatMonster
+  const pendingBladeOutcome =
+    pendingBladeTotal !== undefined && combatMonster
       ? getCombatOutcomeForPlayer(
           activePlayer,
-          pendingSwordswomanTotal,
+          pendingBladeTotal,
           combatMonster.strength,
         )
       : undefined;
@@ -163,12 +163,12 @@ export function ActionPanel({
           (player) => player.id === healingSpellSelection.targetPlayerId,
         )
       : undefined;
-  const pendingOracleRoomChoice = state.pendingOracleRoomChoice;
-  const hasActiveOracleCombatBonus =
+  const pendingSeeressRoomChoice = state.pendingSeeressRoomChoice;
+  const hasActiveSeeressCombatBonus =
     state.phase === 'combat' &&
-    hasActiveHeroAbility(activePlayer, 'hero_oracle') &&
+    hasActiveHeroAbility(activePlayer, 'hero_seeress') &&
     state.remainingSteps === 3;
-  const canUseWarlockSwap = legalActions.warlockSwapTargets.length > 0;
+  const canUseWitchSwap = legalActions.witchSwapTargets.length > 0;
 
   return (
     <section
@@ -219,25 +219,25 @@ export function ActionPanel({
         </div>
       ) : null}
 
-      {state.phase === 'resolve_room_token_oracle_choice' &&
-      pendingOracleRoomChoice ? (
+      {state.phase === 'resolve_room_token_seeress_choice' &&
+      pendingSeeressRoomChoice ? (
         <div className="mt-4 grid gap-2">
           <h3 className="text-xs uppercase tracking-wide text-stone-400">
-            Oracle Choice
+            Seeress Choice
           </h3>
           <p className="text-sm text-stone-200">
-            Drawn room tokens at {pendingOracleRoomChoice.position.boardX},
-            {pendingOracleRoomChoice.position.boardY}
+            Drawn room tokens at {pendingSeeressRoomChoice.position.boardX},
+            {pendingSeeressRoomChoice.position.boardY}
           </p>
           <p className="text-sm text-stone-300">
             Choose one token to resolve. The other returns to the bag.
           </p>
           <div className="flex flex-wrap gap-2">
-            {pendingOracleRoomChoice.drawnTokens.map((token, index) => (
+            {pendingSeeressRoomChoice.drawnTokens.map((token, index) => (
               <button
                 key={`${token.id}-${index}`}
                 className="border border-amber-500 px-3 py-2 text-sm text-amber-100"
-                onClick={() => onChooseOracleRoomToken(index as 0 | 1)}
+                onClick={() => onChooseSeeressRoomToken(index as 0 | 1)}
               >
                 Choose option {index + 1}: {tokenChoiceLabel(token)}
               </button>
@@ -255,7 +255,7 @@ export function ActionPanel({
             {monsterName(combatMonster.id)} strength {combatMonster.strength}
           </p>
           <p className="text-sm text-stone-300">
-            The Thief may ignore this monster, move on, stay here, or start combat.
+            The Rogue may ignore this monster, move on, stay here, or start combat.
           </p>
           <button
             className="w-fit bg-red-700 px-3 py-2 text-sm font-semibold text-white"
@@ -277,7 +277,7 @@ export function ActionPanel({
           </p>
           <p className="font-mono text-xs text-stone-300">
             2d6 + weapons +{weaponBonus}
-            {hasActiveOracleCombatBonus ? ' + Oracle Sight +1' : ''}
+            {hasActiveSeeressCombatBonus ? ' + Seeress Sight +1' : ''}
             {' + flame spells ('}
             {availableFlameSpells} available) must beat {combatMonster.strength}
           </p>
@@ -317,13 +317,13 @@ export function ActionPanel({
         </div>
       ) : null}
 
-      {state.phase === 'combat_warrior_reroll' &&
+      {state.phase === 'combat_valkyrie_reroll' &&
       combatMonster &&
       initialCombatDice &&
       initialCombatOutcome ? (
         <div className="mt-4 grid gap-2">
           <h3 className="text-xs uppercase tracking-wide text-stone-400">
-            Warrior Reroll
+            Valkyrie Reroll
           </h3>
           <p className="text-sm text-stone-200">
             {monsterName(combatMonster.id)} strength {combatMonster.strength}
@@ -336,13 +336,13 @@ export function ActionPanel({
           <div className="flex flex-wrap gap-2">
             <button
               className="bg-red-700 px-3 py-2 text-sm font-semibold text-white"
-              onClick={onUseWarriorReroll}
+              onClick={onUseValkyrieReroll}
             >
               Reroll both dice
             </button>
             <button
               className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
-              onClick={onDeclineWarriorReroll}
+              onClick={onDeclineValkyrieReroll}
             >
               Keep this result
             </button>
@@ -350,12 +350,12 @@ export function ActionPanel({
         </div>
       ) : null}
 
-      {state.phase === 'combat_swordsman_reroll' &&
+      {state.phase === 'combat_blade_reroll' &&
       combatMonster &&
       pendingCombatDice ? (
         <div className="mt-4 grid gap-2">
           <h3 className="text-xs uppercase tracking-wide text-stone-400">
-            Swordswoman Reroll
+            Blade Reroll
           </h3>
           <p className="text-sm text-stone-200">
             {monsterName(combatMonster.id)} strength {combatMonster.strength}
@@ -366,30 +366,30 @@ export function ActionPanel({
               ? ' · reroll every die showing 1'
               : ''}
           </p>
-          {pendingSwordswomanTotal !== undefined &&
-          pendingSwordswomanOutcome ? (
+          {pendingBladeTotal !== undefined &&
+          pendingBladeOutcome ? (
             <p className="font-mono text-xs text-stone-300">
               Current result {pendingCombatDice[0]} + {pendingCombatDice[1]} +
-              weapons {weaponBonus} = {pendingSwordswomanTotal}
-              {` and currently faces ${pendingSwordswomanOutcome}`}
+              weapons {weaponBonus} = {pendingBladeTotal}
+              {` and currently faces ${pendingBladeOutcome}`}
             </p>
           ) : null}
           <button
             className="bg-red-700 px-3 py-2 text-sm font-semibold text-white"
-            onClick={onUseSwordswomanReroll}
+            onClick={onUseBladeReroll}
           >
             Reroll 1s
           </button>
         </div>
       ) : null}
 
-      {state.phase === 'combat_warlock_sacrifice' &&
+      {state.phase === 'combat_witch_sacrifice' &&
       combatMonster &&
       initialCombatDice &&
       initialCombatOutcome ? (
         <div className="mt-4 grid gap-2">
           <h3 className="text-xs uppercase tracking-wide text-stone-400">
-            Warlock Sacrifice
+            Witch Sacrifice
           </h3>
           <p className="text-sm text-stone-200">
             {monsterName(combatMonster.id)} strength {combatMonster.strength}
@@ -402,13 +402,13 @@ export function ActionPanel({
           <div className="flex flex-wrap gap-2">
             <button
               className="bg-red-700 px-3 py-2 text-sm font-semibold text-white"
-              onClick={onUseWarlockSacrifice}
+              onClick={onUseWitchSacrifice}
             >
               Sacrifice 1 HP for +1
             </button>
             <button
               className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
-              onClick={onDeclineWarlockSacrifice}
+              onClick={onDeclineWitchSacrifice}
             >
               Keep this result
             </button>
@@ -427,8 +427,8 @@ export function ActionPanel({
           <p className="font-mono text-xs text-stone-300">
             Rolled {pendingCombatDice[0]} + {pendingCombatDice[1]} + weapons{' '}
             {weaponBonus}
-            {pendingWarlockSacrificeBonus > 0
-              ? ` + sacrifice ${pendingWarlockSacrificeBonus}`
+            {pendingWitchSacrificeBonus > 0
+              ? ` + sacrifice ${pendingWitchSacrificeBonus}`
               : ''}
             {' = '}
             {pendingCombatTotal}
@@ -454,37 +454,37 @@ export function ActionPanel({
         </div>
       ) : null}
 
-      {canUseWarlockSwap ? (
+      {canUseWitchSwap ? (
         <div className="mt-4 grid gap-2">
           <h3 className="text-xs uppercase tracking-wide text-stone-400">
-            Warlock Swap
+            Witch Swap
           </h3>
-          {warlockSwapSelection.mode === 'idle' ? (
+          {witchSwapSelection.mode === 'idle' ? (
             <button
               className="w-fit border border-violet-500 px-3 py-2 text-sm text-violet-100"
-              onClick={onStartWarlockSwapSelection}
+              onClick={onStartWitchSwapSelection}
             >
               Swap Position
             </button>
           ) : null}
-          {warlockSwapSelection.mode === 'select_target' ? (
+          {witchSwapSelection.mode === 'select_target' ? (
             <>
               <p className="text-sm text-stone-300">
                 Choose another hero to swap positions with.
               </p>
               <div className="flex flex-wrap gap-2">
-                {legalActions.warlockSwapTargets.map((player) => (
+                {legalActions.witchSwapTargets.map((player) => (
                   <button
-                    key={`warlock-swap-target-${player.id}`}
+                    key={`witch-swap-target-${player.id}`}
                     className="border border-violet-500 px-3 py-2 text-sm text-violet-100"
-                    onClick={() => onSelectWarlockSwapTarget(player.id)}
+                    onClick={() => onSelectWitchSwapTarget(player.id)}
                   >
                     {heroName(player.heroId)}
                   </button>
                 ))}
                 <button
                   className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
-                  onClick={onCancelWarlockSwapSelection}
+                  onClick={onCancelWitchSwapSelection}
                 >
                   Cancel
                 </button>

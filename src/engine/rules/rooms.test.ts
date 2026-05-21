@@ -4,7 +4,7 @@ import { createSeededRng } from '../../utils/rng';
 import type { GameState, PlacedTile } from '../core/types';
 import { createNewGame } from '../setup/createGame';
 import { openChest } from './chests';
-import { chooseOracleRoomToken, resolveRoomToken } from './rooms';
+import { chooseSeeressRoomToken, resolveRoomToken } from './rooms';
 
 describe('room and chest rules', () => {
   it('places a chest token from the bag, consumes it, and allows moving when steps remain', () => {
@@ -75,13 +75,13 @@ describe('room and chest rules', () => {
     );
   });
 
-  it('gives an uncursed thief optional combat when a monster token is drawn', () => {
+  it('gives an uncursed rogue optional combat when a monster token is drawn', () => {
     const state = createRoomState(
       {
         id: 'giant_rat',
         kind: 'monster',
       },
-      { heroId: 'hero_thief' },
+      { heroId: 'hero_rogue' },
     );
     const resolved = resolveRoomToken(state);
 
@@ -91,11 +91,11 @@ describe('room and chest rules', () => {
     );
   });
 
-  it('pauses for a human oracle choice when two or more tokens are available', () => {
+  it('pauses for a human seeress choice when two or more tokens are available', () => {
     const state = createRoomState(
       { id: 'giant_rat', kind: 'monster' },
       {
-        heroId: 'hero_oracle',
+        heroId: 'hero_seeress',
         tokenBag: [
           { id: 'giant_rat', kind: 'monster' },
           { id: 'treasure_chest', kind: 'chest' },
@@ -105,8 +105,8 @@ describe('room and chest rules', () => {
     );
     const pending = resolveRoomToken(state);
 
-    expect(pending.phase).toBe('resolve_room_token_oracle_choice');
-    expect(pending.pendingOracleRoomChoice).toEqual({
+    expect(pending.phase).toBe('resolve_room_token_seeress_choice');
+    expect(pending.pendingSeeressRoomChoice).toEqual({
       drawnTokens: [
         { id: 'giant_rat', kind: 'monster' },
         { id: 'treasure_chest', kind: 'chest' },
@@ -116,11 +116,11 @@ describe('room and chest rules', () => {
     expect(pending.tokenBag).toEqual([{ id: 'dragon', kind: 'monster' }]);
   });
 
-  it('resolves the chosen oracle token and returns the other token to the bag', () => {
+  it('resolves the chosen seeress token and returns the other token to the bag', () => {
     const state = createRoomState(
       { id: 'giant_rat', kind: 'monster' },
       {
-        heroId: 'hero_oracle',
+        heroId: 'hero_seeress',
         tokenBag: [
           { id: 'giant_rat', kind: 'monster' },
           { id: 'treasure_chest', kind: 'chest' },
@@ -129,7 +129,7 @@ describe('room and chest rules', () => {
       },
     );
     const pending = resolveRoomToken(state);
-    const resolved = chooseOracleRoomToken(pending, 1);
+    const resolved = chooseSeeressRoomToken(pending, 1);
 
     expect(resolved.phase).toBe('await_move');
     expect(
@@ -145,19 +145,19 @@ describe('room and chest rules', () => {
         type: 'room_resolved',
         room: expect.objectContaining({
           tokenId: 'treasure_chest',
-          oracleChoiceIndex: 1,
-          oracleDrawnTokenIds: ['giant_rat', 'treasure_chest'],
+          seeressChoiceIndex: 1,
+          seeressDrawnTokenIds: ['giant_rat', 'treasure_chest'],
         }),
       }),
     );
   });
 
-  it('reinserts the returned oracle token uniformly instead of forcing it to the top in direct resolution', () => {
+  it('reinserts the returned seeress token uniformly instead of forcing it to the top in direct resolution', () => {
     const state = createRoomState(
       { id: 'giant_rat', kind: 'monster' },
       {
-        heroId: 'hero_oracle',
-        seed: 'oracle-reinsert-5',
+        heroId: 'hero_seeress',
+        seed: 'seeress-reinsert-5',
         tokenBag: [
           { id: 'giant_rat', kind: 'monster' },
           { id: 'treasure_chest', kind: 'chest' },
@@ -166,32 +166,32 @@ describe('room and chest rules', () => {
         ],
       },
     );
-    const aiOracleState = {
+    const aiSeeressState = {
       ...state,
-      rng: createSeededRng('oracle-reinsert-5').snapshot(),
+      rng: createSeededRng('seeress-reinsert-5').snapshot(),
       players: state.players.map((player, index) =>
         index === 0 ? { ...player, kind: 'ai' as const } : player,
       ),
     };
-    const resolved = resolveRoomToken(aiOracleState, { oracleChoiceIndex: 1 });
+    const resolved = resolveRoomToken(aiSeeressState, { seeressChoiceIndex: 1 });
 
     expect(resolved.tokenBag).toEqual([
-      { id: 'dragon', kind: 'monster' },
       { id: 'giant_rat', kind: 'monster' },
+      { id: 'dragon', kind: 'monster' },
       { id: 'mummy', kind: 'monster' },
     ]);
     expect(
       resolved.tokenBag.filter((token) => token.id === 'giant_rat'),
     ).toHaveLength(1);
-    expect(resolved.rng).not.toEqual(aiOracleState.rng);
+    expect(resolved.rng).not.toEqual(aiSeeressState.rng);
   });
 
-  it('reinserts the returned oracle token uniformly after a human oracle choice', () => {
+  it('reinserts the returned seeress token uniformly after a human seeress choice', () => {
     const state = createRoomState(
       { id: 'giant_rat', kind: 'monster' },
       {
-        heroId: 'hero_oracle',
-        seed: 'oracle-reinsert-5',
+        heroId: 'hero_seeress',
+        seed: 'seeress-reinsert-5',
         tokenBag: [
           { id: 'giant_rat', kind: 'monster' },
           { id: 'treasure_chest', kind: 'chest' },
@@ -201,17 +201,17 @@ describe('room and chest rules', () => {
       },
     );
     const pending = resolveRoomToken(state);
-    const resolved = chooseOracleRoomToken(
+    const resolved = chooseSeeressRoomToken(
       {
         ...pending,
-        rng: createSeededRng('oracle-reinsert-5').snapshot(),
+        rng: createSeededRng('seeress-reinsert-5').snapshot(),
       },
       1,
     );
 
     expect(resolved.tokenBag).toEqual([
-      { id: 'dragon', kind: 'monster' },
       { id: 'giant_rat', kind: 'monster' },
+      { id: 'dragon', kind: 'monster' },
       { id: 'mummy', kind: 'monster' },
     ]);
     expect(
@@ -254,7 +254,7 @@ describe('room and chest rules', () => {
 function createRoomState(
   token: GameState['tokenBag'][number],
   overrides: Partial<Pick<GameState, 'remainingSteps'>> & {
-    heroId?: 'hero_mage' | 'hero_thief' | 'hero_oracle';
+    heroId?: 'hero_mage' | 'hero_rogue' | 'hero_seeress';
     tokenBag?: GameState['tokenBag'];
     seed?: string;
   } = {},

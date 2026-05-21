@@ -46,7 +46,7 @@ export function createNewGame(options: CreateGameOptions): GameState {
   ];
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     phase: 'turn_start',
     players,
     board,

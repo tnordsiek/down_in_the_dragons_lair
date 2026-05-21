@@ -57,7 +57,7 @@ export function getLegalAiActions(state: GameState): GameAction[] {
   actions.push(...getLegalHealingSpellActions(state, activePlayer));
 
   if (state.phase === 'turn_start') {
-    actions.push(...getLegalWarlockSwapActions(state, activePlayer));
+    actions.push(...getLegalWitchSwapActions(state, activePlayer));
   }
 
   if (canOpenChest(state, activePlayer)) {
@@ -79,10 +79,10 @@ export function getLegalAiActions(state: GameState): GameAction[] {
     return actions;
   }
 
-  if (state.phase === 'resolve_room_token_oracle_choice') {
-    if (state.pendingOracleRoomChoice) {
-      actions.push({ type: 'chooseOracleRoomToken', choiceIndex: 0 });
-      actions.push({ type: 'chooseOracleRoomToken', choiceIndex: 1 });
+  if (state.phase === 'resolve_room_token_seeress_choice') {
+    if (state.pendingSeeressRoomChoice) {
+      actions.push({ type: 'chooseSeeressRoomToken', choiceIndex: 0 });
+      actions.push({ type: 'chooseSeeressRoomToken', choiceIndex: 1 });
     }
 
     return actions;
@@ -114,20 +114,20 @@ export function getLegalAiActions(state: GameState): GameAction[] {
     return actions;
   }
 
-  if (state.phase === 'combat_swordsman_reroll') {
-    actions.push({ type: 'useSwordswomanReroll' });
+  if (state.phase === 'combat_blade_reroll') {
+    actions.push({ type: 'useBladeReroll' });
     return actions;
   }
 
-  if (state.phase === 'combat_warrior_reroll') {
-    actions.push({ type: 'useWarriorReroll' });
-    actions.push({ type: 'declineWarriorReroll' });
+  if (state.phase === 'combat_valkyrie_reroll') {
+    actions.push({ type: 'useValkyrieReroll' });
+    actions.push({ type: 'declineValkyrieReroll' });
     return actions;
   }
 
-  if (state.phase === 'combat_warlock_sacrifice') {
-    actions.push({ type: 'useWarlockSacrifice' });
-    actions.push({ type: 'declineWarlockSacrifice' });
+  if (state.phase === 'combat_witch_sacrifice') {
+    actions.push({ type: 'useWitchSacrifice' });
+    actions.push({ type: 'declineWitchSacrifice' });
     return actions;
   }
 
@@ -198,18 +198,18 @@ function getLegalHealingSpellActions(
   );
 }
 
-function getLegalWarlockSwapActions(
+function getLegalWitchSwapActions(
   state: GameState,
   activePlayer: Player,
 ): GameAction[] {
-  if (!hasActiveHeroAbility(activePlayer, 'hero_warlock')) {
+  if (!hasActiveHeroAbility(activePlayer, 'hero_witch')) {
     return [];
   }
 
   return state.players
     .filter((player) => player.id !== activePlayer.id)
     .map((player) => ({
-      type: 'swapWarlockPosition' as const,
+      type: 'swapWitchPosition' as const,
       targetPlayerId: player.id,
     }));
 }

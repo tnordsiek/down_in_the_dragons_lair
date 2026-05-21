@@ -11,11 +11,11 @@ export function isEndTurnBlockedPhase(phase: GameState['phase']): boolean {
     phase === 'choose_pending_tile_rotation' ||
     phase === 'loot_resolution' ||
     phase === 'resolve_room_token' ||
-    phase === 'resolve_room_token_oracle_choice' ||
+    phase === 'resolve_room_token_seeress_choice' ||
     phase === 'combat' ||
-    phase === 'combat_swordsman_reroll' ||
-    phase === 'combat_warrior_reroll' ||
-    phase === 'combat_warlock_sacrifice' ||
+    phase === 'combat_blade_reroll' ||
+    phase === 'combat_valkyrie_reroll' ||
+    phase === 'combat_witch_sacrifice' ||
     phase === 'combat_flame_spells' ||
     phase === 'combat_curse_target' ||
     phase === 'optional_post_combat'
@@ -38,8 +38,8 @@ export function endTurn(state: GameState): GameState {
       throw new Error('Resolve the room token before ending the turn');
     }
 
-    if (state.phase === 'resolve_room_token_oracle_choice') {
-      throw new Error('Choose an oracle room token before ending the turn');
+    if (state.phase === 'resolve_room_token_seeress_choice') {
+      throw new Error('Choose an seeress room token before ending the turn');
     }
 
     throw new Error('Resolve the pending combat before ending the turn');
@@ -68,7 +68,7 @@ export function endTurn(state: GameState): GameState {
   const nextPhase = nextActivePlayer.skipNextTurn
     ? 'turn_skip'
     : nextPlayerMonster
-      ? hasActiveHeroAbility(nextActivePlayer, 'hero_thief')
+      ? hasActiveHeroAbility(nextActivePlayer, 'hero_rogue')
         ? 'optional_monster_combat'
         : 'combat'
       : 'turn_start';

@@ -7,11 +7,11 @@ import type {
 
 export const heroDisplayNames = {
   hero_mage: 'Mage',
-  hero_warrior: 'Warrior',
-  hero_warlock: 'Warlock',
-  hero_thief: 'Thief',
-  hero_swordsman: 'Swordsman',
-  hero_oracle: 'Oracle',
+  hero_valkyrie: 'Valkyrie',
+  hero_witch: 'Witch',
+  hero_rogue: 'Rogue',
+  hero_blade: 'Blade',
+  hero_seeress: 'Seeress',
 } as const satisfies Record<HeroId, string>;
 
 export const monsterDisplayNames = {
@@ -19,7 +19,7 @@ export const monsterDisplayNames = {
   giant_spider: 'Giant Spider',
   mummy: 'Mummy',
   skeleton_turnkey: 'Skeleton Turnkey',
-  skeleton_warrior: 'Skeleton Warrior',
+  skeleton_warrior: 'Skeleton Valkyrie',
   skeleton_king: 'Skeleton King',
   fallen: 'Fallen',
   dragon: 'Dragon',

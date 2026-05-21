@@ -3,7 +3,7 @@ import type { GameState, MonsterId } from '../core/types';
 import { getZeroStepFollowUpPhase } from '../turns/continuation';
 import { hasActiveHeroAbility } from './abilities';
 
-export function swapWarlockPosition(
+export function swapWitchPosition(
   state: GameState,
   targetPlayerId: string,
 ): GameState {
@@ -12,16 +12,16 @@ export function swapWarlockPosition(
     (player) => player.id === targetPlayerId,
   );
 
-  if (!hasActiveHeroAbility(activePlayer, 'hero_warlock')) {
-    throw new Error('Only an uncursed warlock can swap positions');
+  if (!hasActiveHeroAbility(activePlayer, 'hero_witch')) {
+    throw new Error('Only an uncursed witch can swap positions');
   }
 
   if (state.phase !== 'turn_start') {
-    throw new Error('Warlock position swap is only allowed at turn start');
+    throw new Error('Witch position swap is only allowed at turn start');
   }
 
   if (!targetPlayer || targetPlayer.id === activePlayer.id) {
-    throw new Error('Warlock position swap requires another hero target');
+    throw new Error('Witch position swap requires another hero target');
   }
 
   const activeOriginalPosition = activePlayer.position;
@@ -58,7 +58,7 @@ export function swapWarlockPosition(
           monsterId: targetMonster.id as MonsterId,
           position: targetOriginalPosition,
           enteredFrom: activeOriginalPosition,
-          source: 'warlock_swap',
+          source: 'witch_swap',
         }
       : undefined,
   };

@@ -35,7 +35,7 @@ export function moveActivePlayer(
     targetTile.roomToken?.kind === 'monster' ? targetTile.roomToken : undefined;
   const canIgnoreMonster =
     targetMonster !== undefined &&
-    hasActiveHeroAbility(activePlayer, 'hero_thief');
+    hasActiveHeroAbility(activePlayer, 'hero_rogue');
   const players = state.players.map((player, index) =>
     index === state.activePlayerIndex
       ? { ...player, position: targetPosition }

@@ -13,7 +13,7 @@ test('resumes a saved dragon fight and shows final ranking', async ({
           {
             id: 'player_human',
             kind: 'human',
-            heroId: 'hero_thief',
+            heroId: 'hero_rogue',
             hp: 5,
             maxHp: 5,
             inventory: {
@@ -98,7 +98,7 @@ test('resumes a saved dragon fight and shows final ranking', async ({
 
   await expect(endScreen.getByText('Winner')).toBeVisible();
   await expect(endScreen.getByText('Dragon Slayer')).toBeVisible();
-  await expect(endScreen.getByText('Thief (Human)').first()).toBeVisible();
+  await expect(endScreen.getByText('Rogue (Human)').first()).toBeVisible();
   await expect(
     endScreen.getByText(
       'Dragon treasure worth 1.5 points is included in the final score.',

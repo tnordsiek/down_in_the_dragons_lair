@@ -120,14 +120,14 @@ function renderRoomDetails(event: GameState['eventLog'][number]): string {
     room.tokenKind === 'chest'
       ? 'Treasure Chest'
       : monsterName(room.tokenId as Parameters<typeof monsterName>[0]);
-  const oracleDrawnSuffix = room.oracleDrawnTokenIds
-    ? ` · Oracle drew ${room.oracleDrawnTokenIds
+  const oracleDrawnSuffix = room.seeressDrawnTokenIds
+    ? ` · Seeress drew ${room.seeressDrawnTokenIds
         .map((tokenId) => tokenDisplayLabel(tokenId))
         .join(' / ')}`
     : '';
   const oracleChoiceSuffix =
-    room.oracleChoiceIndex !== undefined
-      ? ` · Oracle chose option ${room.oracleChoiceIndex + 1}`
+    room.seeressChoiceIndex !== undefined
+      ? ` · Seeress chose option ${room.seeressChoiceIndex + 1}`
       : '';
 
   return `Found ${foundLabel} at ${room.position.boardX},${room.position.boardY}${oracleDrawnSuffix}${oracleChoiceSuffix}`;
@@ -141,11 +141,11 @@ function renderCombatBreakdown(event: GameState['eventLog'][number]): string {
   ];
 
   if (combat.oracleBonus > 0) {
-    parts.push(`oracle +${combat.oracleBonus}`);
+    parts.push(`seeress +${combat.oracleBonus}`);
   }
 
   if (combat.warlockSacrificeBonus > 0) {
-    parts.push(`warlock sacrifice +${combat.warlockSacrificeBonus}`);
+    parts.push(`witch sacrifice +${combat.warlockSacrificeBonus}`);
   }
 
   if (combat.curseTargetPlayerLabel) {
