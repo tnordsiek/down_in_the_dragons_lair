@@ -1,7 +1,7 @@
 {
   "version": 1,
   "notes": [
-    "Dieses Manifest ist die maschinenlesbare Ergaenzung zu ASSET_SPEC.md.",
+    "Dieses Manifest ist die maschinenlesbare Referenz fuer stabile Asset-IDs und Austauschbarkeit.",
     "Alle Eintraege verwenden stabile assetId-Werte statt harter Dateinamen.",
     "Platzhalter sind in V1 zulaessig, solange die IDs stabil bleiben."
   ],
