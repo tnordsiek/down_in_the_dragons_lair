@@ -1,8 +1,8 @@
 import { heroIds } from '../../data/heroes';
+import { playerHeroLabel } from '../../data/playerLabels';
 import { tilePoolCounts } from '../../data/tiles';
 import { createTokenBag } from '../../data/tokens';
 import { createSeededRng, type SeededRng } from '../../utils/rng';
-import { heroDisplayNames } from '../../data/displayNames';
 import type {
   GameEvent,
   GameEventStartPlayerDetails,
@@ -114,7 +114,10 @@ function rollStartPlayer(
       rolls: rolls.map((entry) => ({
         playerId: players[entry.playerIndex].id,
         playerHeroId: players[entry.playerIndex].heroId,
-        playerLabel: `${heroDisplayNames[players[entry.playerIndex].heroId]} (${players[entry.playerIndex].id})`,
+        playerLabel: playerHeroLabel(
+          players[entry.playerIndex],
+          entry.playerIndex,
+        ),
         roll: entry.roll,
       })),
     });
@@ -167,10 +170,10 @@ function createInitialEventLog(
     {
       id: 'event-0',
       type: 'game_started',
-      message: `Game started. ${heroDisplayNames[activePlayer.heroId]} (${activePlayer.id}) takes the first turn.`,
+      message: `Game started. ${playerHeroLabel(activePlayer, activePlayerIndex)} takes the first turn.`,
       playerId: activePlayer.id,
       playerHeroId: activePlayer.heroId,
-      playerLabel: `${heroDisplayNames[activePlayer.heroId]} (${activePlayer.id})`,
+      playerLabel: playerHeroLabel(activePlayer, activePlayerIndex),
       startPlayer,
     },
   ];

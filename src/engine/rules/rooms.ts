@@ -126,7 +126,7 @@ function completeRoomTokenResolution(
       token.kind === 'chest'
         ? 'Resolved room and found a treasure chest'
         : `Resolved room and found ${monsterDefinitions[token.id as keyof typeof monsterDefinitions].displayName}`,
-    ...createPlayerEventFields(activePlayer),
+    ...createPlayerEventFields(activePlayer, state.players),
     room: {
       tokenId: token.id,
       tokenKind: token.kind,

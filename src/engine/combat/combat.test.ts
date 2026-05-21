@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { playerHeroLabelById } from '../../data/playerLabels';
 import { applyGameAction } from '../core/actions';
 import type { GameState, MonsterId, PlacedTile } from '../core/types';
 import { createNewGame } from '../setup/createGame';
@@ -719,7 +720,10 @@ describe('combat resolution', () => {
     expect(resolved.eventLog.at(-1)?.combat).toEqual(
       expect.objectContaining({
         curseTargetPlayerId: target.id,
-        curseTargetPlayerLabel: expect.stringContaining(target.id),
+        curseTargetPlayerLabel: playerHeroLabelById(
+          resolved.players,
+          target.id,
+        ),
       }),
     );
   });

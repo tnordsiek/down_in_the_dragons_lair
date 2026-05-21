@@ -432,7 +432,10 @@ export function selectCurseTarget(
     {
       ...pendingCombatEvent,
       curseTargetPlayerId: target.id,
-      curseTargetPlayerLabel: createPlayerEventFields(target).playerLabel,
+      curseTargetPlayerLabel: createPlayerEventFields(
+        target,
+        state.players,
+      ).playerLabel,
     },
   );
 }
@@ -715,7 +718,7 @@ function resolveRetreat(
   }, {
     type: 'combat_resolved',
     message: `Resolved combat against ${monsterDefinitions[combat.monsterId].displayName}`,
-    ...createPlayerEventFields(activePlayer),
+    ...createPlayerEventFields(activePlayer, state.players),
     combat: {
       ...combatEvent,
       retreatPosition:
@@ -1132,7 +1135,7 @@ function finalizeVictoryState(
     {
       type: 'combat_resolved',
       message: `Resolved combat and defeated ${monster.displayName}`,
-      ...createPlayerEventFields(activePlayer),
+      ...createPlayerEventFields(activePlayer, state.players),
       combat: combatEvent,
     },
   );

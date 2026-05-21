@@ -30,6 +30,11 @@ export function EventLog({ state, lastError }: EventLogProps) {
               {event.playerLabel ?? event.playerId ?? 'System'}
             </p>
             <p className="text-stone-200">{renderPrimaryText(event)}</p>
+            {event.exploration ? (
+              <p className="text-xs text-stone-400">
+                {renderExplorationDetails(event)}
+              </p>
+            ) : null}
             {event.room ? (
               <p className="text-xs text-stone-400">{renderRoomDetails(event)}</p>
             ) : null}
@@ -41,9 +46,11 @@ export function EventLog({ state, lastError }: EventLogProps) {
                       ? 'Start rolls'
                       : `Tiebreak ${index}`}
                     {': '}
-                    {round.rolls
-                      .map((entry) => `${heroName(entry.playerHeroId)} ${entry.roll}`)
-                      .join(' · ')}
+                    {joinParts(
+                      round.rolls.map(
+                        (entry) => `${entry.playerLabel} ${entry.roll}`,
+                      ),
+                    )}
                   </p>
                 ))}
               </div>
@@ -68,6 +75,14 @@ export function EventLog({ state, lastError }: EventLogProps) {
 }
 
 function renderPrimaryText(event: GameState['eventLog'][number]): string {
+  if (event.type === 'tile_drawn' && event.exploration) {
+    return `Drew ${event.exploration.blueprintId} for exploration`;
+  }
+
+  if (event.type === 'tile_placed' && event.exploration) {
+    return `Placed ${event.exploration.blueprintId}`;
+  }
+
   if (event.type === 'room_resolved' && event.room) {
     return event.room.tokenKind === 'chest'
       ? 'Resolved room: found Treasure Chest'
@@ -83,6 +98,20 @@ function renderPrimaryText(event: GameState['eventLog'][number]): string {
   }
 
   return event.message;
+}
+
+function renderExplorationDetails(event: GameState['eventLog'][number]): string {
+  const exploration = event.exploration!;
+  const skippedSuffix =
+    exploration.skippedBlueprintIds && exploration.skippedBlueprintIds.length > 0
+      ? ` · skipped ${exploration.skippedBlueprintIds.join(', ')}`
+      : '';
+
+  if (event.type === 'tile_drawn') {
+    return `From ${exploration.origin.boardX},${exploration.origin.boardY} to ${exploration.target.boardX},${exploration.target.boardY} via ${exploration.direction} · legal rotations ${exploration.legalRotations?.join(', ') ?? '-'}${skippedSuffix}`;
+  }
+
+  return `Placed at ${exploration.target.boardX},${exploration.target.boardY} with rotation ${exploration.placedRotation ?? '-'}${skippedSuffix}`;
 }
 
 function renderRoomDetails(event: GameState['eventLog'][number]): string {
@@ -131,7 +160,7 @@ function renderCombatBreakdown(event: GameState['eventLog'][number]): string {
     );
   }
 
-  return parts.join(' · ');
+  return joinParts(parts);
 }
 
 function tokenDisplayLabel(tokenId: TokenId): string {
@@ -140,4 +169,8 @@ function tokenDisplayLabel(tokenId: TokenId): string {
 
 function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function joinParts(parts: string[]): string {
+  return parts.join(' · ');
 }

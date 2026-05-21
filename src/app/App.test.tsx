@@ -60,9 +60,10 @@ describe('App', () => {
       screen.getByText('Concept and AI Direction by fnord GAMES (2026)'),
     ).toBeInTheDocument();
     expect(
-      screen.getAllByRole('img', {
-        name: 'Wortmarke oder kompaktes Logo fuer den Startscreen',
-      }).length,
+      screen.getByRole('heading', { name: "Down in the Dragon's Lair" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('img', { name: "Down in the Dragon's Lair" }).length,
     ).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Music on' })).toBeInTheDocument();
     expect(

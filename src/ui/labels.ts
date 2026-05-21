@@ -1,4 +1,5 @@
 import { heroDisplayNames, monsterDisplayNames } from '../data/displayNames';
+import { playerHeroLabel as sharedPlayerHeroLabel, playerName as sharedPlayerName } from '../data/playerLabels';
 import type {
   HeroId,
   MonsterId,
@@ -21,16 +22,12 @@ export function monsterName(monsterId: MonsterId): string {
   return monsterDisplayNames[monsterId];
 }
 
-export function playerName(player: Player, playerIndex: number): string {
-  if (playerIndex === 0) {
-    return 'Human';
-  }
-
-  return `AI ${playerIndex}`;
+export function playerName(_player: Player, playerIndex: number): string {
+  return sharedPlayerName(playerIndex);
 }
 
 export function playerHeroLabel(player: Player, playerIndex: number): string {
-  return `${heroName(player.heroId)} (${playerName(player, playerIndex)})`;
+  return sharedPlayerHeroLabel(player, playerIndex);
 }
 
 export function formatTreasurePoints(points: number): string {

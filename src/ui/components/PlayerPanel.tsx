@@ -178,7 +178,10 @@ function PlayerCard({
             }
           />
         </div>
-        <div className="grid gap-1 text-[10px] text-stone-300">
+        <div
+          className="grid gap-1 text-[10px] text-stone-300"
+          data-asset-id="ui_icon_inventory"
+        >
           <InventoryRow
             emptyLabel="-"
             icons={

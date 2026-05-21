@@ -34,7 +34,7 @@ export function StartScreen() {
               <img
                 className="h-full w-full object-contain"
                 src={logoUrl}
-                alt={logo.purpose}
+                alt="Down in the Dragon's Lair"
               />
             ) : null}
           </div>
@@ -46,12 +46,13 @@ export function StartScreen() {
 
         <div className="grid flex-1 gap-8 py-12 md:grid-cols-[1.2fr_0.8fr] md:items-center">
           <div className="flex min-h-[22rem] flex-col items-center justify-center text-center">
+            <h1 className="sr-only">Down in the Dragon&apos;s Lair</h1>
             {logoUrl ? (
               <img
                 className="max-h-[18rem] w-full max-w-2xl object-contain"
                 data-asset-id={logo.assetId}
                 src={logoUrl}
-                alt={logo.purpose}
+                alt="Down in the Dragon's Lair"
               />
             ) : (
               <h1 className="max-w-3xl font-display text-5xl leading-tight text-amber-100 sm:text-6xl">
@@ -63,80 +64,88 @@ export function StartScreen() {
             </p>
           </div>
 
-          <div className="border border-stone-700 bg-stone-900/80 p-5">
-            <h2 className="text-base font-semibold text-amber-100">
-              Game Setup
-            </h2>
-            {hasSavedGame ? (
-              <div className="mt-4 border border-amber-400 bg-stone-950 p-3">
-                <p className="text-sm text-stone-200">Saved game available</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    className="bg-amber-300 px-3 py-2 text-sm font-semibold text-stone-950"
-                    onClick={resumeSavedGame}
-                  >
-                    Resume Game
-                  </button>
-                  <button
-                    className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
-                    onClick={clearSavedGame}
-                  >
-                    Discard Save
-                  </button>
+          <div data-asset-id="bg_panel_texture">
+            <div
+              className="border border-stone-700 bg-stone-900/80 p-5"
+              data-asset-id="ui_modal_frame"
+            >
+              <h2 className="text-base font-semibold text-amber-100">
+                Game Setup
+              </h2>
+              {hasSavedGame ? (
+                <div className="mt-4 border border-amber-400 bg-stone-950 p-3">
+                  <p className="text-sm text-stone-200">Saved game available</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      className="bg-amber-300 px-3 py-2 text-sm font-semibold text-stone-950"
+                      data-asset-id="ui_button_primary"
+                      onClick={resumeSavedGame}
+                    >
+                      Resume Game
+                    </button>
+                    <button
+                      className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
+                      data-asset-id="ui_button_secondary"
+                      onClick={clearSavedGame}
+                    >
+                      Discard Save
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ) : null}
-            {lastError || persistenceError ? (
-              <p className="mt-4 bg-red-950 p-2 text-sm text-red-100">
-                {lastError ?? persistenceError}
-              </p>
-            ) : null}
-            <div className="mt-4 grid gap-4">
-              <label className="grid gap-2 text-sm text-stone-300">
-                Hero
-                <select
-                  className="border border-stone-600 bg-stone-950 px-3 py-2 text-stone-100"
-                  value={heroId}
-                  onChange={(event) =>
-                    setSelectedHeroId(event.target.value as HeroId)
-                  }
+              ) : null}
+              {lastError || persistenceError ? (
+                <p className="mt-4 bg-red-950 p-2 text-sm text-red-100">
+                  {lastError ?? persistenceError}
+                </p>
+              ) : null}
+              <div className="mt-4 grid gap-4">
+                <label className="grid gap-2 text-sm text-stone-300">
+                  Hero
+                  <select
+                    className="border border-stone-600 bg-stone-950 px-3 py-2 text-stone-100"
+                    value={heroId}
+                    onChange={(event) =>
+                      setSelectedHeroId(event.target.value as HeroId)
+                    }
+                  >
+                    {heroIds.map((id) => (
+                      <option key={id} value={id}>
+                        {heroDefinitions[id].displayName}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="grid gap-2 text-sm text-stone-300">
+                  AI Opponents
+                  <input
+                    className="accent-amber-300"
+                    max={4}
+                    min={1}
+                    type="range"
+                    value={aiCount}
+                    onChange={(event) => setAiCount(Number(event.target.value))}
+                  />
+                  <span className="font-mono text-stone-100">{aiCount}</span>
+                </label>
+
+                <label className="grid gap-2 text-sm text-stone-300">
+                  Seed
+                  <input
+                    className="border border-stone-600 bg-stone-950 px-3 py-2 font-mono text-stone-100"
+                    value={seed}
+                    onChange={(event) => setSeed(event.target.value)}
+                  />
+                </label>
+
+                <button
+                  className="bg-amber-300 px-4 py-3 font-semibold text-stone-950"
+                  data-asset-id="ui_button_primary"
+                  onClick={startGame}
                 >
-                  {heroIds.map((id) => (
-                    <option key={id} value={id}>
-                      {heroDefinitions[id].displayName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="grid gap-2 text-sm text-stone-300">
-                AI Opponents
-                <input
-                  className="accent-amber-300"
-                  max={4}
-                  min={1}
-                  type="range"
-                  value={aiCount}
-                  onChange={(event) => setAiCount(Number(event.target.value))}
-                />
-                <span className="font-mono text-stone-100">{aiCount}</span>
-              </label>
-
-              <label className="grid gap-2 text-sm text-stone-300">
-                Seed
-                <input
-                  className="border border-stone-600 bg-stone-950 px-3 py-2 font-mono text-stone-100"
-                  value={seed}
-                  onChange={(event) => setSeed(event.target.value)}
-                />
-              </label>
-
-              <button
-                className="bg-amber-300 px-4 py-3 font-semibold text-stone-950"
-                onClick={startGame}
-              >
-                {hasSavedGame ? 'Start New Game' : 'Start Game'}
-              </button>
+                  {hasSavedGame ? 'Start New Game' : 'Start Game'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

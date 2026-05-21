@@ -18,10 +18,10 @@ describe('game state serialization foundation', () => {
         {
           id: 'event-0',
           type: 'game_started',
-          message: 'Game started. Mage (player_human) takes the first turn.',
+          message: 'Game started. Mage (Human) takes the first turn.',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
-          playerLabel: 'Mage (player_human)',
+          playerLabel: 'Mage (Human)',
           startPlayer: {
             rounds: [
               {
@@ -30,13 +30,13 @@ describe('game state serialization foundation', () => {
                   {
                     playerId: 'player_human',
                     playerHeroId: 'hero_mage',
-                    playerLabel: 'Mage (player_human)',
+                    playerLabel: 'Mage (Human)',
                     roll: 6,
                   },
                   {
                     playerId: 'player_ai_1',
                     playerHeroId: 'hero_thief',
-                    playerLabel: 'Thief (player_ai_1)',
+                    playerLabel: 'Thief (AI 1)',
                     roll: 4,
                   },
                 ],

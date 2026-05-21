@@ -1,6 +1,7 @@
 import { tileBlueprints } from '../../data/tiles';
 import { restoreSeededRng } from '../../utils/rng';
 import { getTileAt } from '../core/board';
+import { appendGameEvent, createPlayerEventFields } from '../core/events';
 import type {
   GameState,
   PendingTileDraw,
@@ -40,7 +41,7 @@ export function drawPendingTileForExploration(
     );
 
     if (legalRotations.length > 0) {
-      return {
+      return appendGameEvent({
         ...state,
         phase: 'choose_pending_tile_rotation',
         tileStack: remainingStack,
@@ -53,7 +54,19 @@ export function drawPendingTileForExploration(
           legalRotations,
           skippedBlueprintIds,
         },
-      };
+      }, {
+        type: 'tile_drawn',
+        message: `Drew ${blueprintId} for exploration ${direction}`,
+        ...createPlayerEventFields(activePlayer, state.players),
+        exploration: {
+          origin,
+          target,
+          direction,
+          blueprintId,
+          skippedBlueprintIds,
+          legalRotations,
+        },
+      });
     }
 
     skippedBlueprintIds.push(blueprintId);
@@ -114,7 +127,7 @@ export function placePendingTile(
   const blueprint = tileBlueprints[pendingTile.blueprintId];
   const remainingSteps = state.remainingSteps - 1;
 
-  return {
+  return appendGameEvent({
     ...state,
     phase:
       blueprint.category === 'room'
@@ -129,7 +142,23 @@ export function placePendingTile(
     lastMoveFrom: pendingTile.origin,
     remainingSteps,
     rng: rng.snapshot(),
-  };
+  }, {
+    type: 'tile_placed',
+    message: `Placed ${pendingTile.blueprintId} at ${pendingTile.target.boardX},${pendingTile.target.boardY}`,
+    ...createPlayerEventFields(
+      state.players[state.activePlayerIndex],
+      state.players,
+    ),
+    exploration: {
+      origin: pendingTile.origin,
+      target: pendingTile.target,
+      direction: pendingTile.direction,
+      blueprintId: pendingTile.blueprintId,
+      skippedBlueprintIds: pendingTile.skippedBlueprintIds,
+      legalRotations: pendingTile.legalRotations,
+      placedRotation: rotation,
+    },
+  });
 }
 
 export function hasPendingTileAtTarget(state: GameState): boolean {

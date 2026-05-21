@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { playerHeroLabel } from '../../data/playerLabels';
 import { createNewGame } from '../setup/createGame';
 import {
   drawPendingTileForExploration,
@@ -20,6 +21,10 @@ describe('exploration flow', () => {
     };
 
     const pendingState = drawPendingTileForExploration(state, 'A');
+    const expectedPlayerLabel = playerHeroLabel(
+      state.players[state.activePlayerIndex],
+      state.activePlayerIndex,
+    );
 
     expect(pendingState.pendingTile).toEqual(
       expect.objectContaining({
@@ -29,6 +34,18 @@ describe('exploration flow', () => {
       }),
     );
     expect(hasPendingTileAtTarget(pendingState)).toBe(true);
+    expect(pendingState.eventLog.at(-1)).toEqual(
+      expect.objectContaining({
+        type: 'tile_drawn',
+        message: 'Drew tunnel_straight for exploration A',
+        playerLabel: expectedPlayerLabel,
+        exploration: expect.objectContaining({
+          blueprintId: 'tunnel_straight',
+          direction: 'A',
+          legalRotations: [0, 180],
+        }),
+      }),
+    );
   });
 
   it('rotates the preview tile and skips invalid orientations', () => {
@@ -63,6 +80,10 @@ describe('exploration flow', () => {
     };
     const pendingState = drawPendingTileForExploration(state, 'A');
     const placedState = placePendingTile(pendingState, 0);
+    const expectedPlayerLabel = playerHeroLabel(
+      state.players[state.activePlayerIndex],
+      state.activePlayerIndex,
+    );
 
     expect(placedState.pendingTile).toBeUndefined();
     expect(placedState.board).toHaveLength(2);
@@ -73,6 +94,18 @@ describe('exploration flow', () => {
       },
     );
     expect(placedState.remainingSteps).toBe(3);
+    expect(placedState.eventLog.at(-1)).toEqual(
+      expect.objectContaining({
+        type: 'tile_placed',
+        message: 'Placed tunnel_straight at 0,-1',
+        playerLabel: expectedPlayerLabel,
+        exploration: expect.objectContaining({
+          blueprintId: 'tunnel_straight',
+          placedRotation: 0,
+          target: { boardX: 0, boardY: -1 },
+        }),
+      }),
+    );
   });
 
   it('rejects illegal pending tile rotations', () => {

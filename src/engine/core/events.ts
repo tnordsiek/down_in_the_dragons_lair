@@ -1,4 +1,4 @@
-import { heroDisplayNames } from '../../data/displayNames';
+import { playerHeroLabel } from '../../data/playerLabels';
 import type { GameEvent, GameState, Player } from './types';
 
 type EventDetails = Omit<GameEvent, 'id'>;
@@ -19,10 +19,13 @@ export function appendGameEvent(
   };
 }
 
-export function createPlayerEventFields(player: Player) {
+export function createPlayerEventFields(player: Player, players: Player[]) {
+  const playerIndex = players.findIndex((entry) => entry.id === player.id);
+
   return {
     playerId: player.id,
     playerHeroId: player.heroId,
-    playerLabel: `${heroDisplayNames[player.heroId]} (${player.id})`,
+    playerLabel:
+      playerIndex >= 0 ? playerHeroLabel(player, playerIndex) : undefined,
   } as const;
 }

@@ -213,6 +213,16 @@ export interface GameEventRoomDetails {
   oracleDrawnTokenIds?: [TokenId, TokenId];
 }
 
+export interface GameEventExplorationDetails {
+  origin: BoardPosition;
+  target: BoardPosition;
+  direction: TileSide;
+  blueprintId: TileBlueprintId;
+  skippedBlueprintIds?: TileBlueprintId[];
+  legalRotations?: Rotation[];
+  placedRotation?: Rotation;
+}
+
 export interface GameEventCombatDetails {
   monsterId: MonsterId;
   monsterStrength: number;
@@ -252,6 +262,7 @@ export interface GameEvent {
   playerId?: string;
   playerHeroId?: HeroId;
   playerLabel?: string;
+  exploration?: GameEventExplorationDetails;
   room?: GameEventRoomDetails;
   combat?: GameEventCombatDetails;
   startPlayer?: GameEventStartPlayerDetails;

@@ -24,6 +24,8 @@ export type PendingAudioCue = {
   assetId: string;
 };
 
+let nextPendingAudioCueId = 0;
+
 type SetupState = {
   selectedHeroId: HeroId;
   aiCount: number;
@@ -77,7 +79,10 @@ export const useSetupStore = create<SetupState>((set) => ({
         sfxEnabled: state.sfxEnabled,
       });
 
-      return { musicEnabled };
+      return {
+        musicEnabled,
+        pendingAudioCues: [createPendingAudioCue('sfx_button_click')],
+      };
     }),
   toggleSfxEnabled: () =>
     set((state) => {
@@ -88,7 +93,10 @@ export const useSetupStore = create<SetupState>((set) => ({
         sfxEnabled,
       });
 
-      return { sfxEnabled };
+      return {
+        sfxEnabled,
+        pendingAudioCues: [createPendingAudioCue('sfx_button_click')],
+      };
     }),
   clearPendingAudioCues: () => set({ pendingAudioCues: [] }),
   startGame: () =>
@@ -106,7 +114,7 @@ export const useSetupStore = create<SetupState>((set) => ({
         hasSavedGame: true,
         lastError: undefined,
         persistenceError: undefined,
-        pendingAudioCues: [],
+        pendingAudioCues: [createPendingAudioCue('sfx_button_click')],
       };
     }),
   resumeSavedGame: () =>
@@ -136,7 +144,7 @@ export const useSetupStore = create<SetupState>((set) => ({
         hasSavedGame: true,
         lastError: undefined,
         persistenceError: undefined,
-        pendingAudioCues: [],
+        pendingAudioCues: [createPendingAudioCue('sfx_button_click')],
       };
     }),
   dispatch: (action) =>
@@ -177,7 +185,7 @@ export const useSetupStore = create<SetupState>((set) => ({
       gameState: undefined,
       hasSavedGame: loadPersistedGameState()?.ok === true,
       lastError: undefined,
-      pendingAudioCues: [],
+      pendingAudioCues: [createPendingAudioCue('sfx_button_click')],
     })),
   clearSavedGame: () =>
     set(() => {
@@ -188,7 +196,7 @@ export const useSetupStore = create<SetupState>((set) => ({
         hasSavedGame: false,
         lastError: undefined,
         persistenceError: undefined,
-        pendingAudioCues: [],
+        pendingAudioCues: [createPendingAudioCue('sfx_button_click')],
       };
     }),
 }));
@@ -211,7 +219,7 @@ function appendUiEvent(
         id: `event-${state.eventLog.length}`,
         type: 'ui_action',
         message,
-        ...createPlayerEventFields(actingPlayer),
+        ...createPlayerEventFields(actingPlayer, state.players),
         action: action ? { actionType: action.type } : undefined,
       },
     ],
@@ -293,8 +301,6 @@ export function getUiLegalActions(state: GameState) {
   };
 }
 
-let nextPendingAudioCueId = 0;
-
 function collectPendingAudioCues(
   action: GameAction,
   previousState: GameState | undefined,
@@ -332,6 +338,9 @@ function collectPendingAudioCues(
       break;
     case 'useHealingSpell':
       assetIds.add('sfx_heal');
+      break;
+    case 'selectCurseTarget':
+      assetIds.add('sfx_curse_apply');
       break;
     default:
       break;
@@ -379,7 +388,13 @@ function collectPendingAudioCues(
   }
 
   return Array.from(assetIds, (assetId) => ({
+    ...createPendingAudioCue(assetId),
+  }));
+}
+
+function createPendingAudioCue(assetId: string): PendingAudioCue {
+  return {
     id: nextPendingAudioCueId++,
     assetId,
-  }));
+  };
 }

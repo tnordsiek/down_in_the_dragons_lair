@@ -307,7 +307,7 @@ describe('Milestone 6 UI', () => {
           message: 'Resolved combat and defeated Giant Rat',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
-          playerLabel: 'Mage (player_human)',
+          playerLabel: 'Mage (Human)',
           combat: {
             monsterId: 'giant_rat',
             monsterStrength: 5,
@@ -348,7 +348,7 @@ describe('Milestone 6 UI', () => {
       screen.getByRole('button', { name: 'Resolve Combat' }),
     ).toBeInTheDocument();
     expect(screen.getByText('7 pts')).toBeInTheDocument();
-    expect(screen.getByText('Mage (player_human)')).toBeInTheDocument();
+    expect(screen.getByText('Mage (Human)')).toBeInTheDocument();
     expect(
       screen.getByText('Resolved combat: Victory'),
     ).toBeInTheDocument();
@@ -495,7 +495,7 @@ describe('Milestone 6 UI', () => {
           message: 'Resolved combat and defeated Mummy',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
-          playerLabel: 'Mage (player_human)',
+          playerLabel: 'Mage (Human)',
           combat: {
             monsterId: 'mummy',
             monsterStrength: 7,
@@ -507,7 +507,7 @@ describe('Milestone 6 UI', () => {
             warlockSacrificeBonus: 0,
             oracleBonus: 0,
             curseTargetPlayerId: 'player_ai_1',
-            curseTargetPlayerLabel: 'Thief (player_ai_1)',
+            curseTargetPlayerLabel: 'Thief (AI 1)',
           },
         },
       ],
@@ -516,7 +516,7 @@ describe('Milestone 6 UI', () => {
     render(<EventLog state={state} />);
 
     expect(
-      screen.getByText(/curse -> Thief \(player_ai_1\)/),
+      screen.getByText(/curse -> Thief \(AI 1\)/),
     ).toBeInTheDocument();
   });
 
@@ -526,10 +526,10 @@ describe('Milestone 6 UI', () => {
         {
           id: 'event-start',
           type: 'game_started',
-          message: 'Game started. Mage (player_human) takes the first turn.',
+          message: 'Game started. Mage (Human) takes the first turn.',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
-          playerLabel: 'Mage (player_human)',
+          playerLabel: 'Mage (Human)',
           startPlayer: {
             rounds: [
               {
@@ -538,19 +538,19 @@ describe('Milestone 6 UI', () => {
                   {
                     playerId: 'player_human',
                     playerHeroId: 'hero_mage',
-                    playerLabel: 'Mage (player_human)',
+                    playerLabel: 'Mage (Human)',
                     roll: 6,
                   },
                   {
                     playerId: 'player_ai_1',
                     playerHeroId: 'hero_thief',
-                    playerLabel: 'Thief (player_ai_1)',
+                    playerLabel: 'Thief (AI 1)',
                     roll: 6,
                   },
                   {
                     playerId: 'player_ai_2',
                     playerHeroId: 'hero_warrior',
-                    playerLabel: 'Warrior (player_ai_2)',
+                    playerLabel: 'Warrior (AI 2)',
                     roll: 2,
                   },
                 ],
@@ -561,13 +561,13 @@ describe('Milestone 6 UI', () => {
                   {
                     playerId: 'player_human',
                     playerHeroId: 'hero_mage',
-                    playerLabel: 'Mage (player_human)',
+                    playerLabel: 'Mage (Human)',
                     roll: 5,
                   },
                   {
                     playerId: 'player_ai_1',
                     playerHeroId: 'hero_thief',
-                    playerLabel: 'Thief (player_ai_1)',
+                    playerLabel: 'Thief (AI 1)',
                     roll: 3,
                   },
                 ],
@@ -583,10 +583,12 @@ describe('Milestone 6 UI', () => {
     expect(entries).toHaveLength(1);
     expect(screen.getByText('Mage takes the first turn')).toBeInTheDocument();
     expect(
-      screen.getByText('Start rolls: Mage 6 · Thief 6 · Warrior 2'),
+      screen.getByText(
+        'Start rolls: Mage (Human) 6 · Thief (AI 1) 6 · Warrior (AI 2) 2',
+      ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText('Tiebreak 1: Mage 5 · Thief 3'),
+      screen.getByText('Tiebreak 1: Mage (Human) 5 · Thief (AI 1) 3'),
     ).toBeInTheDocument();
   });
 
@@ -603,10 +605,10 @@ describe('Milestone 6 UI', () => {
         {
           id: 'event-start',
           type: 'game_started',
-          message: 'Game started. Thief (player_ai_1) takes the first turn.',
+          message: 'Game started. Thief (AI 1) takes the first turn.',
           playerId: 'player_ai_1',
           playerHeroId: 'hero_thief',
-          playerLabel: 'Thief (player_ai_1)',
+          playerLabel: 'Thief (AI 1)',
           startPlayer: {
             rounds: [
               {
@@ -615,19 +617,19 @@ describe('Milestone 6 UI', () => {
                   {
                     playerId: 'player_human',
                     playerHeroId: 'hero_mage',
-                    playerLabel: 'Mage (player_human)',
+                    playerLabel: 'Mage (Human)',
                     roll: 4,
                   },
                   {
                     playerId: 'player_ai_1',
                     playerHeroId: 'hero_thief',
-                    playerLabel: 'Thief (player_ai_1)',
+                    playerLabel: 'Thief (AI 1)',
                     roll: 6,
                   },
                   {
                     playerId: 'player_ai_2',
                     playerHeroId: 'hero_warrior',
-                    playerLabel: 'Warrior (player_ai_2)',
+                    playerLabel: 'Warrior (AI 2)',
                     roll: 6,
                   },
                 ],
@@ -638,13 +640,13 @@ describe('Milestone 6 UI', () => {
                   {
                     playerId: 'player_ai_1',
                     playerHeroId: 'hero_thief',
-                    playerLabel: 'Thief (player_ai_1)',
+                    playerLabel: 'Thief (AI 1)',
                     roll: 5,
                   },
                   {
                     playerId: 'player_ai_2',
                     playerHeroId: 'hero_warrior',
-                    playerLabel: 'Warrior (player_ai_2)',
+                    playerLabel: 'Warrior (AI 2)',
                     roll: 2,
                   },
                 ],
@@ -751,7 +753,7 @@ describe('Milestone 6 UI', () => {
           message: 'Resolved combat against Giant Rat',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
-          playerLabel: 'Mage (player_human)',
+          playerLabel: 'Mage (Human)',
           combat: {
             monsterId: 'giant_rat',
             monsterStrength: 5,
@@ -770,7 +772,7 @@ describe('Milestone 6 UI', () => {
           message: 'Resolved combat against Giant Spider',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
-          playerLabel: 'Mage (player_human)',
+          playerLabel: 'Mage (Human)',
           combat: {
             monsterId: 'giant_spider',
             monsterStrength: 7,
@@ -839,7 +841,7 @@ describe('Milestone 6 UI', () => {
           message: 'Resolved combat against Giant Rat',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
-          playerLabel: 'Mage (player_human)',
+          playerLabel: 'Mage (Human)',
           combat: {
             monsterId: 'giant_rat',
             monsterStrength: 5,
@@ -897,7 +899,7 @@ describe('Milestone 6 UI', () => {
           message: 'Resolved combat against Giant Rat',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
-          playerLabel: 'Mage (player_human)',
+          playerLabel: 'Mage (Human)',
           combat: {
             monsterId: 'giant_rat',
             monsterStrength: 5,
@@ -954,7 +956,7 @@ describe('Milestone 6 UI', () => {
           message: 'Resolved combat against Giant Rat',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
-          playerLabel: 'Mage (player_human)',
+          playerLabel: 'Mage (Human)',
           combat: {
             monsterId: 'giant_rat',
             monsterStrength: 5,
@@ -1011,7 +1013,7 @@ describe('Milestone 6 UI', () => {
           message: 'Resolved combat against Giant Rat',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
-          playerLabel: 'Mage (player_human)',
+          playerLabel: 'Mage (Human)',
           combat: {
             monsterId: 'giant_rat',
             monsterStrength: 5,
@@ -1068,7 +1070,7 @@ describe('Milestone 6 UI', () => {
           message: 'Resolved combat against Giant Rat',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
-          playerLabel: 'Mage (player_human)',
+          playerLabel: 'Mage (Human)',
           combat: {
             monsterId: 'giant_rat',
             monsterStrength: 5,
