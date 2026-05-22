@@ -130,7 +130,7 @@ describe('game action transitions', () => {
             : player,
         ),
         tokenBag: [
-          { id: 'giant_rat', kind: 'monster' },
+          { id: 'kitchen_rat', kind: 'monster' },
           { id: 'treasure_chest', kind: 'chest' },
         ],
         lastMoveFrom: { boardX: 0, boardY: 0 },

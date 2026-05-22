@@ -7,7 +7,7 @@ test('resumes a saved dragon fight and shows final ranking', async ({
     window.localStorage.setItem(
       'down-in-the-dragons-lair.gameState.v1',
       JSON.stringify({
-        schemaVersion: 1,
+        schemaVersion: 2,
         phase: 'combat',
         players: [
           {

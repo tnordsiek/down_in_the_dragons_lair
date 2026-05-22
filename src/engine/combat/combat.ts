@@ -407,21 +407,21 @@ export function selectCurseTarget(
   targetPlayerId: string,
 ): GameState {
   if (state.phase !== 'combat_curse_target' || !state.combat) {
-    throw new Error('Curse target selection is only available after defeating a mummy');
+    throw new Error('Curse target selection is only available after defeating a mummified_priest');
   }
 
   const activePlayer = state.players[state.activePlayerIndex];
   const target = getCurseTarget(state.players, activePlayer.id, targetPlayerId);
 
   if (!target) {
-    throw new Error('Mummy curse requires another hero target');
+    throw new Error('Mummified Priest curse requires another hero target');
   }
 
   const pendingCombatEvent = state.combat.pendingCombatEvent;
   const pendingResolutionPhase = state.combat.pendingResolutionPhase;
 
   if (!pendingCombatEvent || !pendingResolutionPhase) {
-    throw new Error('Missing pending mummy curse resolution state');
+    throw new Error('Missing pending mummified_priest curse resolution state');
   }
 
   return finalizeVictoryState(

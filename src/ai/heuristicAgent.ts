@@ -367,7 +367,7 @@ function chooseCurseTargetPlayerId(
   state: GameState,
   activePlayer: Player,
 ): string | undefined {
-  if (state.combat?.monsterId !== 'mummy') {
+  if (state.combat?.monsterId !== 'mummified_priest') {
     return undefined;
   }
 

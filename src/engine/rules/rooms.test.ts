@@ -55,20 +55,20 @@ describe('room and chest rules', () => {
 
   it('starts combat when a monster token is drawn', () => {
     const state = createRoomState({
-      id: 'giant_rat',
+      id: 'kitchen_rat',
       kind: 'monster',
     });
     const resolved = resolveRoomToken(state);
 
     expect(resolved.phase).toBe('combat');
     expect(resolved.combat).toEqual(
-      expect.objectContaining({ monsterId: 'giant_rat' }),
+      expect.objectContaining({ monsterId: 'kitchen_rat' }),
     );
     expect(resolved.eventLog.at(-1)).toEqual(
       expect.objectContaining({
         type: 'room_resolved',
         room: expect.objectContaining({
-          tokenId: 'giant_rat',
+          tokenId: 'kitchen_rat',
           tokenKind: 'monster',
         }),
       }),
@@ -78,7 +78,7 @@ describe('room and chest rules', () => {
   it('gives an uncursed rogue optional combat when a monster token is drawn', () => {
     const state = createRoomState(
       {
-        id: 'giant_rat',
+        id: 'kitchen_rat',
         kind: 'monster',
       },
       { heroId: 'hero_rogue' },
@@ -87,17 +87,17 @@ describe('room and chest rules', () => {
 
     expect(resolved.phase).toBe('optional_monster_combat');
     expect(resolved.combat).toEqual(
-      expect.objectContaining({ monsterId: 'giant_rat' }),
+      expect.objectContaining({ monsterId: 'kitchen_rat' }),
     );
   });
 
   it('pauses for a human seeress choice when two or more tokens are available', () => {
     const state = createRoomState(
-      { id: 'giant_rat', kind: 'monster' },
+      { id: 'kitchen_rat', kind: 'monster' },
       {
         heroId: 'hero_seeress',
         tokenBag: [
-          { id: 'giant_rat', kind: 'monster' },
+          { id: 'kitchen_rat', kind: 'monster' },
           { id: 'treasure_chest', kind: 'chest' },
           { id: 'dragon', kind: 'monster' },
         ],
@@ -108,7 +108,7 @@ describe('room and chest rules', () => {
     expect(pending.phase).toBe('resolve_room_token_seeress_choice');
     expect(pending.pendingSeeressRoomChoice).toEqual({
       drawnTokens: [
-        { id: 'giant_rat', kind: 'monster' },
+        { id: 'kitchen_rat', kind: 'monster' },
         { id: 'treasure_chest', kind: 'chest' },
       ],
       position: { boardX: 0, boardY: -1 },
@@ -118,11 +118,11 @@ describe('room and chest rules', () => {
 
   it('resolves the chosen seeress token and returns the other token to the bag', () => {
     const state = createRoomState(
-      { id: 'giant_rat', kind: 'monster' },
+      { id: 'kitchen_rat', kind: 'monster' },
       {
         heroId: 'hero_seeress',
         tokenBag: [
-          { id: 'giant_rat', kind: 'monster' },
+          { id: 'kitchen_rat', kind: 'monster' },
           { id: 'treasure_chest', kind: 'chest' },
           { id: 'dragon', kind: 'monster' },
         ],
@@ -137,8 +137,8 @@ describe('room and chest rules', () => {
         ?.roomToken,
     ).toEqual({ id: 'treasure_chest', kind: 'chest' });
     expect(resolved.tokenBag).toEqual([
-      { id: 'giant_rat', kind: 'monster' },
       { id: 'dragon', kind: 'monster' },
+      { id: 'kitchen_rat', kind: 'monster' },
     ]);
     expect(resolved.eventLog.at(-1)).toEqual(
       expect.objectContaining({
@@ -146,7 +146,7 @@ describe('room and chest rules', () => {
         room: expect.objectContaining({
           tokenId: 'treasure_chest',
           seeressChoiceIndex: 1,
-          seeressDrawnTokenIds: ['giant_rat', 'treasure_chest'],
+          seeressDrawnTokenIds: ['kitchen_rat', 'treasure_chest'],
         }),
       }),
     );
@@ -154,15 +154,15 @@ describe('room and chest rules', () => {
 
   it('reinserts the returned seeress token uniformly instead of forcing it to the top in direct resolution', () => {
     const state = createRoomState(
-      { id: 'giant_rat', kind: 'monster' },
+      { id: 'kitchen_rat', kind: 'monster' },
       {
         heroId: 'hero_seeress',
         seed: 'seeress-reinsert-5',
         tokenBag: [
-          { id: 'giant_rat', kind: 'monster' },
+          { id: 'kitchen_rat', kind: 'monster' },
           { id: 'treasure_chest', kind: 'chest' },
           { id: 'dragon', kind: 'monster' },
-          { id: 'mummy', kind: 'monster' },
+          { id: 'mummified_priest', kind: 'monster' },
         ],
       },
     );
@@ -176,27 +176,27 @@ describe('room and chest rules', () => {
     const resolved = resolveRoomToken(aiSeeressState, { seeressChoiceIndex: 1 });
 
     expect(resolved.tokenBag).toEqual([
-      { id: 'giant_rat', kind: 'monster' },
+      { id: 'kitchen_rat', kind: 'monster' },
       { id: 'dragon', kind: 'monster' },
-      { id: 'mummy', kind: 'monster' },
+      { id: 'mummified_priest', kind: 'monster' },
     ]);
     expect(
-      resolved.tokenBag.filter((token) => token.id === 'giant_rat'),
+      resolved.tokenBag.filter((token) => token.id === 'kitchen_rat'),
     ).toHaveLength(1);
     expect(resolved.rng).not.toEqual(aiSeeressState.rng);
   });
 
   it('reinserts the returned seeress token uniformly after a human seeress choice', () => {
     const state = createRoomState(
-      { id: 'giant_rat', kind: 'monster' },
+      { id: 'kitchen_rat', kind: 'monster' },
       {
         heroId: 'hero_seeress',
         seed: 'seeress-reinsert-5',
         tokenBag: [
-          { id: 'giant_rat', kind: 'monster' },
+          { id: 'kitchen_rat', kind: 'monster' },
           { id: 'treasure_chest', kind: 'chest' },
           { id: 'dragon', kind: 'monster' },
-          { id: 'mummy', kind: 'monster' },
+          { id: 'mummified_priest', kind: 'monster' },
         ],
       },
     );
@@ -210,12 +210,12 @@ describe('room and chest rules', () => {
     );
 
     expect(resolved.tokenBag).toEqual([
-      { id: 'giant_rat', kind: 'monster' },
+      { id: 'kitchen_rat', kind: 'monster' },
       { id: 'dragon', kind: 'monster' },
-      { id: 'mummy', kind: 'monster' },
+      { id: 'mummified_priest', kind: 'monster' },
     ]);
     expect(
-      resolved.tokenBag.filter((token) => token.id === 'giant_rat'),
+      resolved.tokenBag.filter((token) => token.id === 'kitchen_rat'),
     ).toHaveLength(1);
     expect(resolved.rng).not.toEqual(state.rng);
   });

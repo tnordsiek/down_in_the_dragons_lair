@@ -32,7 +32,7 @@ import { swapWitchPosition } from './witch';
 describe('hero_mage abilities', () => {
   it('does not consume flame spells and moves through walls only on discovered tiles', () => {
     const combatState = withActivePlayer(
-      createCombatState('hero_mage', 'giant_rat'),
+      createCombatState('hero_mage', 'kitchen_rat'),
       (player) => ({
         ...player,
         inventory: {
@@ -70,7 +70,7 @@ describe('hero_mage abilities', () => {
 
   it('disables mage benefits while cursed', () => {
     const combatState = withActivePlayer(
-      createCombatState('hero_mage', 'giant_rat'),
+      createCombatState('hero_mage', 'kitchen_rat'),
       (player) => ({
         ...player,
         isCursed: true,
@@ -106,7 +106,7 @@ describe('hero_mage abilities', () => {
 
 describe('hero_valkyrie abilities', () => {
   it('offers a reroll after a failed combat without taking loss from the first roll', () => {
-    const state = createCombatState('hero_valkyrie', 'giant_rat');
+    const state = createCombatState('hero_valkyrie', 'kitchen_rat');
     const pending = resolveCombat(state, {
       dice: [1, 1],
     });
@@ -119,13 +119,13 @@ describe('hero_valkyrie abilities', () => {
     expect(resolved.phase).toBe('loot_resolution');
     expect(resolved.pendingLoot?.item).toEqual({ type: 'weapon', bonus: 1 });
     expect(
-      resolved.board.find((tile) => tile.roomToken?.id === 'giant_rat'),
+      resolved.board.find((tile) => tile.roomToken?.id === 'kitchen_rat'),
     ).toBeUndefined();
   });
 
   it('offers the reroll after a draw and lets the valkyrie keep the original result', () => {
     const state = withActivePlayer(
-      createCombatState('hero_valkyrie', 'giant_rat'),
+      createCombatState('hero_valkyrie', 'kitchen_rat'),
       (player) => ({
         ...player,
         inventory: {
@@ -157,7 +157,7 @@ describe('hero_valkyrie abilities', () => {
 
   it('moves to a healing tile instead of becoming unconscious on last HP loss', () => {
     const state = withActivePlayer(
-      createCombatState('hero_valkyrie', 'giant_rat'),
+      createCombatState('hero_valkyrie', 'kitchen_rat'),
       (player) => ({
         ...player,
         hp: 1,
@@ -178,7 +178,7 @@ describe('hero_valkyrie abilities', () => {
 
   it('uses standard unconscious handling while cursed', () => {
     const state = withActivePlayer(
-      createCombatState('hero_valkyrie', 'giant_rat'),
+      createCombatState('hero_valkyrie', 'kitchen_rat'),
       (player) => ({
         ...player,
         hp: 1,
@@ -200,7 +200,7 @@ describe('hero_valkyrie abilities', () => {
 
 describe('hero_witch abilities', () => {
   it('offers sacrificing 1 HP for +1 after a non-winning roll', () => {
-    const state = createCombatState('hero_witch', 'giant_rat');
+    const state = createCombatState('hero_witch', 'kitchen_rat');
     const pending = resolveCombat(state, {
       dice: [2, 3],
     });
@@ -209,13 +209,13 @@ describe('hero_witch abilities', () => {
 
     expect(activePlayer.hp).toBe(4);
     expect(
-      resolved.board.find((tile) => tile.roomToken?.id === 'giant_rat'),
+      resolved.board.find((tile) => tile.roomToken?.id === 'kitchen_rat'),
     ).toBeUndefined();
   });
 
   it('lets the witch keep the original draw before flame spells', () => {
     const state = withActivePlayer(
-      createCombatState('hero_witch', 'giant_rat'),
+      createCombatState('hero_witch', 'kitchen_rat'),
       (player) => ({
         ...player,
         inventory: {
@@ -242,7 +242,7 @@ describe('hero_witch abilities', () => {
 
   it('offers sacrifice when only sacrifice plus a flame spell can turn the roll into a victory', () => {
     const state = withActivePlayer(
-      createCombatState('hero_witch', 'giant_rat'),
+      createCombatState('hero_witch', 'kitchen_rat'),
       (player) => ({
         ...player,
         inventory: {
@@ -396,7 +396,7 @@ describe('hero_witch abilities', () => {
     );
 
     const cursedCombatState = withActivePlayer(
-      createCombatState('hero_witch', 'giant_rat'),
+      createCombatState('hero_witch', 'kitchen_rat'),
       (player) => ({
         ...player,
         isCursed: true,
@@ -408,18 +408,18 @@ describe('hero_witch abilities', () => {
 
     expect(resolved.players[resolved.activePlayerIndex].hp).toBe(5);
     expect(
-      resolved.board.find((tile) => tile.roomToken?.id === 'giant_rat'),
+      resolved.board.find((tile) => tile.roomToken?.id === 'kitchen_rat'),
     ).toBeDefined();
   });
 });
 
 describe('hero_rogue abilities', () => {
   it('wins combat draws and gets optional combat on monster tiles while uncursed', () => {
-    const drawState = createCombatState('hero_rogue', 'giant_rat');
+    const drawState = createCombatState('hero_rogue', 'kitchen_rat');
     const resolvedDraw = resolveCombat(drawState, { dice: [2, 3] });
 
     expect(
-      resolvedDraw.board.find((tile) => tile.roomToken?.id === 'giant_rat'),
+      resolvedDraw.board.find((tile) => tile.roomToken?.id === 'kitchen_rat'),
     ).toBeUndefined();
 
     const moveState = createKnownMovementState('hero_rogue', {
@@ -430,13 +430,13 @@ describe('hero_rogue abilities', () => {
 
     expect(moved.phase).toBe('optional_monster_combat');
     expect(moved.combat).toEqual(
-      expect.objectContaining({ monsterId: 'giant_rat' }),
+      expect.objectContaining({ monsterId: 'kitchen_rat' }),
     );
   });
 
   it('may start or skip combat after discovering a monster', () => {
     const roomState = createRoomState('hero_rogue', [
-      { id: 'giant_rat', kind: 'monster' },
+      { id: 'kitchen_rat', kind: 'monster' },
     ]);
     const resolvedRoom = resolveRoomToken(roomState);
 
@@ -465,13 +465,13 @@ describe('hero_rogue abilities', () => {
 
     expect(thiefTurn.phase).toBe('optional_monster_combat');
     expect(thiefTurn.combat).toEqual(
-      expect.objectContaining({ monsterId: 'giant_rat' }),
+      expect.objectContaining({ monsterId: 'kitchen_rat' }),
     );
   });
 
   it('loses monster-ignore and draw-win abilities while cursed', () => {
     const cursedDrawState = withActivePlayer(
-      createCombatState('hero_rogue', 'giant_rat'),
+      createCombatState('hero_rogue', 'kitchen_rat'),
       (player) => ({
         ...player,
         isCursed: true,
@@ -481,7 +481,7 @@ describe('hero_rogue abilities', () => {
 
     expect(resolvedDraw.phase).toBe('turn_end');
     expect(
-      resolvedDraw.board.find((tile) => tile.roomToken?.id === 'giant_rat'),
+      resolvedDraw.board.find((tile) => tile.roomToken?.id === 'kitchen_rat'),
     ).toBeDefined();
 
     const cursedMoveState = withActivePlayer(
@@ -524,14 +524,14 @@ describe('hero_rogue abilities', () => {
 
     expect(thiefTurn.phase).toBe('combat');
     expect(thiefTurn.combat).toEqual(
-      expect.objectContaining({ monsterId: 'giant_rat' }),
+      expect.objectContaining({ monsterId: 'kitchen_rat' }),
     );
   });
 });
 
 describe('hero_blade abilities', () => {
   it('rerolls ones and continues after a won combat with a six', () => {
-    const state = createCombatState('hero_blade', 'giant_rat');
+    const state = createCombatState('hero_blade', 'kitchen_rat');
     const pending = resolveCombat(state, {
       dice: [1, 1],
     });
@@ -543,7 +543,7 @@ describe('hero_blade abilities', () => {
     expect(resolved.phase).toBe('loot_resolution');
     expect(resolved.pendingLoot?.item).toEqual({ type: 'weapon', bonus: 1 });
     expect(
-      resolved.board.find((tile) => tile.roomToken?.id === 'giant_rat'),
+      resolved.board.find((tile) => tile.roomToken?.id === 'kitchen_rat'),
     ).toBeUndefined();
     expect(resolved.turnContinuationReason).toBe('blade_on_six');
   });
@@ -551,7 +551,7 @@ describe('hero_blade abilities', () => {
   it('can keep the turn open at zero steps when a six leaves follow-up actions available', () => {
     const state = withActivePlayer(
       {
-        ...createCombatState('hero_blade', 'fallen'),
+        ...createCombatState('hero_blade', 'soulburner'),
         remainingSteps: 0,
       },
       (player) => ({
@@ -573,7 +573,7 @@ describe('hero_blade abilities', () => {
   });
 
   it('retreats like other heroes after draw or defeat', () => {
-    const state = createCombatState('hero_blade', 'giant_rat');
+    const state = createCombatState('hero_blade', 'kitchen_rat');
     const resolved = resolveCombat(state, { dice: [2, 3] });
 
     expect(resolved.phase).toBe('turn_end');
@@ -593,7 +593,7 @@ describe('hero_blade abilities', () => {
   });
 
   it('keeps moving after a draw with a six once she has retreated', () => {
-    const state = createCombatState('hero_blade', 'skeleton_turnkey');
+    const state = createCombatState('hero_blade', 'skeleton_key_guardian');
     const pending = resolveCombat(state, { dice: [6, 1] });
     const resolved = useBladeReroll(pending, { dice: [2, 2] });
 
@@ -647,7 +647,7 @@ describe('hero_blade abilities', () => {
   });
 
   it('must re-enter the monster tile to fight again after a draw', () => {
-    const state = createCombatState('hero_blade', 'skeleton_turnkey');
+    const state = createCombatState('hero_blade', 'skeleton_key_guardian');
     const retriedState = useBladeReroll(
       resolveCombat(state, { dice: [6, 1] }),
       { dice: [2, 2] },
@@ -658,7 +658,7 @@ describe('hero_blade abilities', () => {
     expect(movedBack.phase).toBe('combat');
     expect(movedBack.combat).toEqual(
       expect.objectContaining({
-        monsterId: 'skeleton_turnkey',
+        monsterId: 'skeleton_key_guardian',
         enteredFrom: { boardX: 1, boardY: 0 },
       }),
     );
@@ -666,7 +666,7 @@ describe('hero_blade abilities', () => {
 
   it('uses standard dice and post-combat flow while cursed', () => {
     const state = withActivePlayer(
-      createCombatState('hero_blade', 'giant_rat'),
+      createCombatState('hero_blade', 'kitchen_rat'),
       (player) => ({
         ...player,
         isCursed: true,
@@ -684,24 +684,24 @@ describe('hero_blade abilities', () => {
 describe('hero_seeress abilities', () => {
   it('gets +1 only when combat happens after the first step', () => {
     const state = {
-      ...createCombatState('hero_seeress', 'giant_rat'),
+      ...createCombatState('hero_seeress', 'kitchen_rat'),
       remainingSteps: 3,
     };
     const resolved = resolveCombat(state, { dice: [2, 3] });
 
     expect(
-      resolved.board.find((tile) => tile.roomToken?.id === 'giant_rat'),
+      resolved.board.find((tile) => tile.roomToken?.id === 'kitchen_rat'),
     ).toBeUndefined();
 
     const noBonusState = {
-      ...createCombatState('hero_seeress', 'giant_rat'),
+      ...createCombatState('hero_seeress', 'kitchen_rat'),
       remainingSteps: 2,
     };
     const noBonusResolved = resolveCombat(noBonusState, { dice: [2, 3] });
 
     expect(noBonusResolved.phase).toBe('turn_end');
     expect(
-      noBonusResolved.board.find((tile) => tile.roomToken?.id === 'giant_rat'),
+      noBonusResolved.board.find((tile) => tile.roomToken?.id === 'kitchen_rat'),
     ).toBeDefined();
   });
 
@@ -809,7 +809,7 @@ function createKnownMovementState(
     discovered: true,
     looseItems: [],
     roomToken: options.targetHasMonster
-      ? { id: 'giant_rat', kind: 'monster' }
+      ? { id: 'kitchen_rat', kind: 'monster' }
       : undefined,
   };
 

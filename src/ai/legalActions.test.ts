@@ -125,7 +125,7 @@ describe('AI legal actions', () => {
         phase: 'resolve_room_token_seeress_choice',
         pendingSeeressRoomChoice: {
           drawnTokens: [
-            { id: 'giant_rat', kind: 'monster' },
+            { id: 'kitchen_rat', kind: 'monster' },
             { id: 'treasure_chest', kind: 'chest' },
           ],
           position: { boardX: 0, boardY: -1 },
@@ -151,12 +151,12 @@ describe('AI legal actions', () => {
       board: [
         {
           ...base.board[0],
-          roomToken: { id: 'giant_rat', kind: 'monster' },
+          roomToken: { id: 'kitchen_rat', kind: 'monster' },
         },
       ],
       combat: {
         playerId: base.players[0].id,
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: 0 },
       },
@@ -184,7 +184,7 @@ describe('AI legal actions', () => {
         phase: 'combat',
         combat: {
           playerId: state.players[state.activePlayerIndex].id,
-          monsterId: 'giant_rat',
+          monsterId: 'kitchen_rat',
           position: { boardX: 0, boardY: 0 },
           enteredFrom: { boardX: 0, boardY: -1 },
         },
@@ -238,7 +238,7 @@ describe('AI legal actions', () => {
         ),
         combat: {
           playerId: state.players[0].id,
-          monsterId: 'giant_rat',
+          monsterId: 'kitchen_rat',
           position: { boardX: 0, boardY: 0 },
           enteredFrom: { boardX: 0, boardY: -1 },
           rolledDice: [2, 3],
@@ -270,7 +270,7 @@ describe('AI legal actions', () => {
         ),
         combat: {
           playerId: state.players[0].id,
-          monsterId: 'giant_rat',
+          monsterId: 'kitchen_rat',
           position: { boardX: 0, boardY: 0 },
           enteredFrom: { boardX: 0, boardY: -1 },
           initialRolledDice: [2, 3],
@@ -300,7 +300,7 @@ describe('AI legal actions', () => {
         ),
         combat: {
           playerId: state.players[0].id,
-          monsterId: 'giant_rat',
+          monsterId: 'kitchen_rat',
           position: { boardX: 0, boardY: 0 },
           enteredFrom: { boardX: 0, boardY: -1 },
           initialRolledDice: [1, 4],
@@ -328,7 +328,7 @@ describe('AI legal actions', () => {
         ),
         combat: {
           playerId: state.players[0].id,
-          monsterId: 'giant_rat',
+          monsterId: 'kitchen_rat',
           position: { boardX: 0, boardY: 0 },
           enteredFrom: { boardX: 0, boardY: -1 },
           initialRolledDice: [2, 3],
@@ -354,7 +354,7 @@ describe('AI legal actions', () => {
         phase: 'optional_post_combat',
         combat: {
           playerId: state.players[0].id,
-          monsterId: 'giant_rat',
+          monsterId: 'kitchen_rat',
           position: { boardX: 0, boardY: 0 },
           enteredFrom: { boardX: 0, boardY: -1 },
         },
@@ -362,11 +362,11 @@ describe('AI legal actions', () => {
     ).toEqual([{ type: 'resolveCombat' }]);
   });
 
-  it('offers only other heroes as mummy curse targets during the curse selection step', () => {
+  it('offers only other heroes as mummified_priest curse targets during the curse selection step', () => {
     const state = createNewGame({
       humanHeroId: 'hero_mage',
       aiCount: 2,
-      seed: 'mummy-curse-actions-seed',
+      seed: 'mummified_priest-curse-actions-seed',
     });
 
     expect(
@@ -376,7 +376,7 @@ describe('AI legal actions', () => {
         activePlayerIndex: 0,
         combat: {
           playerId: state.players[0].id,
-          monsterId: 'mummy',
+          monsterId: 'mummified_priest',
           position: { boardX: 0, boardY: 0 },
           enteredFrom: { boardX: 0, boardY: -1 },
         },

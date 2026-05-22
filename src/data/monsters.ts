@@ -3,54 +3,54 @@ import { monsterDisplayNames } from './displayNames';
 import { monsterRewards } from './rewards';
 
 export const monsterDefinitions = {
-  giant_rat: {
-    id: 'giant_rat',
-    displayName: monsterDisplayNames.giant_rat,
+  kitchen_rat: {
+    id: 'kitchen_rat',
+    displayName: monsterDisplayNames.kitchen_rat,
     strength: 5,
-    reward: monsterRewards.giant_rat,
+    reward: monsterRewards.kitchen_rat,
     blocksMovement: true,
   },
-  giant_spider: {
-    id: 'giant_spider',
-    displayName: monsterDisplayNames.giant_spider,
+  creepy_spider: {
+    id: 'creepy_spider',
+    displayName: monsterDisplayNames.creepy_spider,
     strength: 6,
-    reward: monsterRewards.giant_spider,
+    reward: monsterRewards.creepy_spider,
     blocksMovement: true,
   },
-  mummy: {
-    id: 'mummy',
-    displayName: monsterDisplayNames.mummy,
+  mummified_priest: {
+    id: 'mummified_priest',
+    displayName: monsterDisplayNames.mummified_priest,
     strength: 7,
-    reward: monsterRewards.mummy,
+    reward: monsterRewards.mummified_priest,
     onDefeatEffect: 'curse_other_player',
     blocksMovement: true,
   },
-  skeleton_turnkey: {
-    id: 'skeleton_turnkey',
-    displayName: monsterDisplayNames.skeleton_turnkey,
+  skeleton_key_guardian: {
+    id: 'skeleton_key_guardian',
+    displayName: monsterDisplayNames.skeleton_key_guardian,
     strength: 8,
-    reward: monsterRewards.skeleton_turnkey,
+    reward: monsterRewards.skeleton_key_guardian,
     blocksMovement: true,
   },
-  skeleton_warrior: {
-    id: 'skeleton_warrior',
-    displayName: monsterDisplayNames.skeleton_warrior,
+  skeleton_soldier: {
+    id: 'skeleton_soldier',
+    displayName: monsterDisplayNames.skeleton_soldier,
     strength: 9,
-    reward: monsterRewards.skeleton_warrior,
+    reward: monsterRewards.skeleton_soldier,
     blocksMovement: true,
   },
-  skeleton_king: {
-    id: 'skeleton_king',
-    displayName: monsterDisplayNames.skeleton_king,
+  skeleton_lord: {
+    id: 'skeleton_lord',
+    displayName: monsterDisplayNames.skeleton_lord,
     strength: 10,
-    reward: monsterRewards.skeleton_king,
+    reward: monsterRewards.skeleton_lord,
     blocksMovement: true,
   },
-  fallen: {
-    id: 'fallen',
-    displayName: monsterDisplayNames.fallen,
+  soulburner: {
+    id: 'soulburner',
+    displayName: monsterDisplayNames.soulburner,
     strength: 12,
-    reward: monsterRewards.fallen,
+    reward: monsterRewards.soulburner,
     blocksMovement: true,
   },
   dragon: {

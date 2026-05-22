@@ -2,13 +2,13 @@ import type { Token, TokenId } from '../engine/core/types';
 
 export const bagTokenCounts = {
   dragon: 1,
-  fallen: 2,
-  skeleton_turnkey: 12,
-  skeleton_king: 3,
-  skeleton_warrior: 5,
-  giant_rat: 8,
-  giant_spider: 4,
-  mummy: 8,
+  soulburner: 2,
+  skeleton_key_guardian: 12,
+  skeleton_lord: 3,
+  skeleton_soldier: 5,
+  kitchen_rat: 8,
+  creepy_spider: 4,
+  mummified_priest: 8,
   treasure_chest: 10,
 } as const satisfies Record<TokenId, number>;
 

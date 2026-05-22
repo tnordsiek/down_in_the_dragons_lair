@@ -125,12 +125,12 @@ describe('movement rules', () => {
       board: [
         {
           ...state.board[0],
-          roomToken: { id: 'giant_rat', kind: 'monster' },
+          roomToken: { id: 'kitchen_rat', kind: 'monster' },
         },
       ],
       combat: {
         playerId: state.players[0].id,
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: 0 },
       },

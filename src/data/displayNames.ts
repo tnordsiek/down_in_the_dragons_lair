@@ -15,13 +15,13 @@ export const heroDisplayNames = {
 } as const satisfies Record<HeroId, string>;
 
 export const monsterDisplayNames = {
-  giant_rat: 'Giant Rat',
-  giant_spider: 'Giant Spider',
-  mummy: 'Mummy',
-  skeleton_turnkey: 'Skeleton Turnkey',
-  skeleton_warrior: 'Skeleton Valkyrie',
-  skeleton_king: 'Skeleton King',
-  fallen: 'Fallen',
+  kitchen_rat: 'Kitchen Rat',
+  creepy_spider: 'Creepy Spider',
+  mummified_priest: 'Mummified Priest',
+  skeleton_key_guardian: 'Skeleton Key Guardian',
+  skeleton_soldier: 'Skeleton Soldier',
+  skeleton_lord: 'Skeleton Lord',
+  soulburner: 'Soulburner',
   dragon: 'Dragon',
 } as const satisfies Record<MonsterId, string>;
 

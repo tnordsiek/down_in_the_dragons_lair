@@ -296,7 +296,7 @@ export function ActionPanel({
       state.players.some((player) => player.id !== activePlayer.id) ? (
         <div className="mt-4 grid gap-2">
           <h3 className="text-xs uppercase tracking-wide text-stone-400">
-            Mummy Curse
+            Mummified Priest Curse
           </h3>
           <p className="text-sm text-stone-200">
             {monsterName(combatMonster.id)} defeated. Choose another hero to receive the curse.

@@ -200,7 +200,7 @@ describe('heuristic AI', () => {
       ),
       combat: {
         playerId: base.players[0].id,
-        monsterId: 'skeleton_king',
+        monsterId: 'skeleton_lord',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         rolledDice: [2, 2],
@@ -217,7 +217,7 @@ describe('heuristic AI', () => {
       ...highStrengthState,
       combat: {
         ...highStrengthState.combat!,
-        monsterId: 'skeleton_warrior',
+        monsterId: 'skeleton_soldier',
         rolledDice: [1, 2],
         pendingBaseOutcome: 'draw',
       },
@@ -243,7 +243,7 @@ describe('heuristic AI', () => {
       ),
       combat: {
         playerId: base.players[0].id,
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [2, 3],
@@ -271,7 +271,7 @@ describe('heuristic AI', () => {
       ),
       combat: {
         playerId: base.players[0].id,
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [1, 4],
@@ -314,12 +314,12 @@ describe('heuristic AI', () => {
       board: [
         {
           ...base.board[0],
-          roomToken: { id: 'giant_rat', kind: 'monster' },
+          roomToken: { id: 'kitchen_rat', kind: 'monster' },
         },
       ],
       combat: {
         playerId: base.players[0].id,
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: 0 },
       },
@@ -374,7 +374,7 @@ describe('heuristic AI', () => {
       ),
       combat: {
         playerId: base.players[0].id,
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [2, 3],
@@ -424,7 +424,7 @@ describe('heuristic AI', () => {
       ),
       combat: {
         playerId: base.players[0].id,
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [1, 3],
@@ -437,11 +437,11 @@ describe('heuristic AI', () => {
     });
   });
 
-  it('chooses the deterministic mummy curse target during the curse selection step', () => {
+  it('chooses the deterministic mummified_priest curse target during the curse selection step', () => {
     const base = createNewGame({
       humanHeroId: 'hero_mage',
       aiCount: 2,
-      seed: 'ai-mummy-curse-choice',
+      seed: 'ai-mummified_priest-curse-choice',
     });
     const state: GameState = {
       ...base,
@@ -456,7 +456,7 @@ describe('heuristic AI', () => {
       ),
       combat: {
         playerId: base.players[0].id,
-        monsterId: 'mummy',
+        monsterId: 'mummified_priest',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
       },

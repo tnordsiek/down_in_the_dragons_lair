@@ -296,7 +296,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
       },
@@ -304,12 +304,12 @@ describe('Milestone 6 UI', () => {
         {
           id: 'event-combat',
           type: 'combat_resolved',
-          message: 'Resolved combat and defeated Giant Rat',
+          message: 'Resolved combat and defeated Kitchen Rat',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
           playerLabel: 'Mage (Human)',
           combat: {
-            monsterId: 'giant_rat',
+            monsterId: 'kitchen_rat',
             monsterStrength: 5,
             dice: [6, 4],
             total: 14,
@@ -342,7 +342,7 @@ describe('Milestone 6 UI', () => {
     render(<PlayerPanel state={state} />);
     render(<EventLog state={state} />);
 
-    expect(screen.getByText('Giant Rat strength 5')).toBeInTheDocument();
+    expect(screen.getByText('Kitchen Rat strength 5')).toBeInTheDocument();
     expect(screen.getByText(/2d6 \+ weapons \+2/)).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Resolve Combat' }),
@@ -353,7 +353,7 @@ describe('Milestone 6 UI', () => {
       screen.getByText('Resolved combat: Victory'),
     ).toBeInTheDocument();
     expect(
-      screen.getByText('Giant Rat strength 5 · dice 6 + 4 · total 14'),
+      screen.getByText('Kitchen Rat strength 5 · dice 6 + 4 · total 14'),
     ).toBeInTheDocument();
     expect(
       screen.getByText('weapons +2 · flame +1 · seeress +1'),
@@ -386,7 +386,7 @@ describe('Milestone 6 UI', () => {
       remainingSteps: 3,
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
       },
@@ -410,7 +410,7 @@ describe('Milestone 6 UI', () => {
       remainingSteps: 2,
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
       },
@@ -433,7 +433,7 @@ describe('Milestone 6 UI', () => {
       remainingSteps: 3,
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
       },
@@ -452,12 +452,12 @@ describe('Milestone 6 UI', () => {
     expect(screen.queryByText(/Seeress Sight \+1/)).toBeNull();
   });
 
-  it('shows mummy curse target choices for another hero and excludes the active player', () => {
+  it('shows mummified_priest curse target choices for another hero and excludes the active player', () => {
     const state = createUiState({
       phase: 'combat_curse_target',
       combat: {
         playerId: 'player_human',
-        monsterId: 'mummy',
+        monsterId: 'mummified_priest',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
       },
@@ -472,10 +472,10 @@ describe('Milestone 6 UI', () => {
       />,
     );
 
-    expect(screen.getByText('Mummy Curse')).toBeInTheDocument();
+    expect(screen.getByText('Mummified Priest Curse')).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Mummy defeated. Choose another hero to receive the curse.',
+        'Mummified Priest defeated. Choose another hero to receive the curse.',
       ),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Rogue' })).toBeInTheDocument();
@@ -486,18 +486,18 @@ describe('Milestone 6 UI', () => {
     expect(onSelectCurseTarget).toHaveBeenCalledWith('player_ai_1');
   });
 
-  it('renders the chosen mummy curse target in the event log with a player label', () => {
+  it('renders the chosen mummified_priest curse target in the event log with a player label', () => {
     const state = createUiState({
       eventLog: [
         {
           id: 'event-curse',
           type: 'combat_resolved',
-          message: 'Resolved combat and defeated Mummy',
+          message: 'Resolved combat and defeated Mummified Priest',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
           playerLabel: 'Mage (Human)',
           combat: {
-            monsterId: 'mummy',
+            monsterId: 'mummified_priest',
             monsterStrength: 7,
             dice: [6, 4],
             total: 10,
@@ -750,12 +750,12 @@ describe('Milestone 6 UI', () => {
         {
           id: 'event-combat-old',
           type: 'combat_resolved',
-          message: 'Resolved combat against Giant Rat',
+          message: 'Resolved combat against Kitchen Rat',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
           playerLabel: 'Mage (Human)',
           combat: {
-            monsterId: 'giant_rat',
+            monsterId: 'kitchen_rat',
             monsterStrength: 5,
             dice: [1, 2],
             total: 6,
@@ -769,12 +769,12 @@ describe('Milestone 6 UI', () => {
         {
           id: 'event-combat-new',
           type: 'combat_resolved',
-          message: 'Resolved combat against Giant Spider',
+          message: 'Resolved combat against Creepy Spider',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
           playerLabel: 'Mage (Human)',
           combat: {
-            monsterId: 'giant_spider',
+            monsterId: 'creepy_spider',
             monsterStrength: 7,
             dice: [6, 4],
             total: 10,
@@ -819,7 +819,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat_blade_reroll',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [1, 4],
@@ -838,12 +838,12 @@ describe('Milestone 6 UI', () => {
         {
           id: 'event-combat-old',
           type: 'combat_resolved',
-          message: 'Resolved combat against Giant Rat',
+          message: 'Resolved combat against Kitchen Rat',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
           playerLabel: 'Mage (Human)',
           combat: {
-            monsterId: 'giant_rat',
+            monsterId: 'kitchen_rat',
             monsterStrength: 5,
             dice: [6, 6],
             total: 12,
@@ -877,7 +877,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat_blade_reroll',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [1, 1],
@@ -896,12 +896,12 @@ describe('Milestone 6 UI', () => {
         {
           id: 'event-combat-old',
           type: 'combat_resolved',
-          message: 'Resolved combat against Giant Rat',
+          message: 'Resolved combat against Kitchen Rat',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
           playerLabel: 'Mage (Human)',
           combat: {
-            monsterId: 'giant_rat',
+            monsterId: 'kitchen_rat',
             monsterStrength: 5,
             dice: [2, 3],
             total: 5,
@@ -935,7 +935,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat_valkyrie_reroll',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [2, 3],
@@ -953,12 +953,12 @@ describe('Milestone 6 UI', () => {
         {
           id: 'event-combat-old',
           type: 'combat_resolved',
-          message: 'Resolved combat against Giant Rat',
+          message: 'Resolved combat against Kitchen Rat',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
           playerLabel: 'Mage (Human)',
           combat: {
-            monsterId: 'giant_rat',
+            monsterId: 'kitchen_rat',
             monsterStrength: 5,
             dice: [6, 6],
             total: 12,
@@ -992,7 +992,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat_witch_sacrifice',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [2, 3],
@@ -1010,12 +1010,12 @@ describe('Milestone 6 UI', () => {
         {
           id: 'event-combat-old',
           type: 'combat_resolved',
-          message: 'Resolved combat against Giant Rat',
+          message: 'Resolved combat against Kitchen Rat',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
           playerLabel: 'Mage (Human)',
           combat: {
-            monsterId: 'giant_rat',
+            monsterId: 'kitchen_rat',
             monsterStrength: 5,
             dice: [6, 6],
             total: 12,
@@ -1049,7 +1049,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat_flame_spells',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         rolledDice: [2, 3],
@@ -1067,12 +1067,12 @@ describe('Milestone 6 UI', () => {
         {
           id: 'event-combat-old',
           type: 'combat_resolved',
-          message: 'Resolved combat against Giant Rat',
+          message: 'Resolved combat against Kitchen Rat',
           playerId: 'player_human',
           playerHeroId: 'hero_mage',
           playerLabel: 'Mage (Human)',
           combat: {
-            monsterId: 'giant_rat',
+            monsterId: 'kitchen_rat',
             monsterStrength: 5,
             dice: [6, 6],
             total: 12,
@@ -1106,7 +1106,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
       },
@@ -1115,7 +1115,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat_blade_reroll',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [1, 4],
@@ -1130,7 +1130,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat_valkyrie_reroll',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [2, 3],
@@ -1144,7 +1144,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat_witch_sacrifice',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [2, 3],
@@ -1158,7 +1158,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat_flame_spells',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         rolledDice: [2, 3],
@@ -1181,14 +1181,14 @@ describe('Milestone 6 UI', () => {
       phase: 'optional_monster_combat',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
       },
       board: [
         {
           ...createUiState().board[0],
-          roomToken: { id: 'giant_rat', kind: 'monster' },
+          roomToken: { id: 'kitchen_rat', kind: 'monster' },
         },
       ],
       players: createUiState().players.map((player, index) =>
@@ -1220,7 +1220,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat_flame_spells',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         rolledDice: [2, 2],
@@ -1255,7 +1255,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
       },
@@ -1297,7 +1297,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
       },
@@ -1345,7 +1345,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
       },
@@ -1389,7 +1389,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
       },
@@ -1433,7 +1433,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
       },
@@ -1483,7 +1483,7 @@ describe('Milestone 6 UI', () => {
         {
           ...baseBoard()[0],
           rotation: 90,
-          roomToken: { id: 'giant_rat', kind: 'monster' },
+          roomToken: { id: 'kitchen_rat', kind: 'monster' },
         },
       ],
     });
@@ -1500,15 +1500,15 @@ describe('Milestone 6 UI', () => {
       'src',
       '/assets/heroes/token_hero_mage.png',
     );
-    expect(screen.getByRole('img', { name: 'Giant Rat' })).toHaveAttribute(
+    expect(screen.getByRole('img', { name: 'Kitchen Rat' })).toHaveAttribute(
       'src',
-      '/assets/monsters/token_giant_rat.png',
+      '/assets/monsters/token_kitchen_rat.png',
     );
     expect(
       screen
-        .getByRole('img', { name: 'Giant Rat' })
-        .closest('[data-asset-id="token_giant_rat"]'),
-    ).toHaveAttribute('title', 'Giant Rat: Strength 5');
+        .getByRole('img', { name: 'Kitchen Rat' })
+        .closest('[data-asset-id="token_kitchen_rat"]'),
+    ).toHaveAttribute('title', 'Kitchen Rat: Strength 5');
   });
 
   it('stacks multiple hero tokens from the top of the tile and keeps the active player in front', () => {
@@ -1903,7 +1903,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat_flame_spells',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         rolledDice: [2, 3],
@@ -1953,7 +1953,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat_valkyrie_reroll',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [2, 3],
@@ -2008,7 +2008,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat_blade_reroll',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [1, 4],
@@ -2053,7 +2053,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat_blade_reroll',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [1, 1],
@@ -2089,7 +2089,7 @@ describe('Milestone 6 UI', () => {
       phase: 'combat_witch_sacrifice',
       combat: {
         playerId: 'player_human',
-        monsterId: 'giant_rat',
+        monsterId: 'kitchen_rat',
         position: { boardX: 0, boardY: 0 },
         enteredFrom: { boardX: 0, boardY: -1 },
         initialRolledDice: [2, 3],
@@ -2502,7 +2502,7 @@ describe('Milestone 6 UI', () => {
           boardY: 0,
           discovered: true,
           looseItems: [],
-          roomToken: { id: 'giant_rat', kind: 'monster' },
+          roomToken: { id: 'kitchen_rat', kind: 'monster' },
         },
       ],
       players: createUiState().players.map((player, index) =>
@@ -2686,7 +2686,7 @@ describe('Milestone 6 UI', () => {
           ? { ...player, position: { boardX: 0, boardY: -1 } }
           : player,
       ),
-      tokenBag: [{ id: 'giant_rat', kind: 'monster' }],
+      tokenBag: [{ id: 'kitchen_rat', kind: 'monster' }],
       remainingSteps: 3,
       lastMoveFrom: { boardX: 0, boardY: 0 },
     });
@@ -2698,7 +2698,7 @@ describe('Milestone 6 UI', () => {
     });
 
     expect(screen.getByText('Combat')).toBeInTheDocument();
-    expect(screen.getByTestId('room-monster')).toHaveTextContent('giant_rat');
+    expect(screen.getByTestId('room-monster')).toHaveTextContent('kitchen_rat');
   });
 
   it('shows the human seeress room choice, blocks end turn, and resolves the selected option', async () => {
@@ -2727,7 +2727,7 @@ describe('Milestone 6 UI', () => {
           : player,
       ),
       tokenBag: [
-        { id: 'giant_rat', kind: 'monster' },
+        { id: 'kitchen_rat', kind: 'monster' },
         { id: 'treasure_chest', kind: 'chest' },
         { id: 'dragon', kind: 'monster' },
       ],
@@ -2751,7 +2751,7 @@ describe('Milestone 6 UI', () => {
 
     expect(screen.getByText('Seeress Choice')).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Choose option 1: Giant Rat' }),
+      screen.getByRole('button', { name: 'Choose option 1: Kitchen Rat' }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Choose option 2: Treasure Chest' }),
@@ -2771,7 +2771,7 @@ describe('Milestone 6 UI', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Found Treasure Chest at 0,-1 · Seeress drew Giant Rat / Treasure Chest · Seeress chose option 2',
+        'Found Treasure Chest at 0,-1 · Seeress drew Kitchen Rat / Treasure Chest · Seeress chose option 2',
       ),
     ).toBeInTheDocument();
   });

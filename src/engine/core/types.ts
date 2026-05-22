@@ -7,13 +7,13 @@ export type HeroId =
   | 'hero_seeress';
 
 export type MonsterId =
-  | 'giant_rat'
-  | 'giant_spider'
-  | 'mummy'
-  | 'skeleton_turnkey'
-  | 'skeleton_warrior'
-  | 'skeleton_king'
-  | 'fallen'
+  | 'kitchen_rat'
+  | 'creepy_spider'
+  | 'mummified_priest'
+  | 'skeleton_key_guardian'
+  | 'skeleton_soldier'
+  | 'skeleton_lord'
+  | 'soulburner'
   | 'dragon';
 
 export type TokenId = MonsterId | 'treasure_chest';

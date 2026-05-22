@@ -32,7 +32,7 @@ describe('setup store audio cues', () => {
     ]);
   });
 
-  it('queues a curse cue when selecting a mummy curse target', () => {
+  it('queues a curse cue when selecting a mummified_priest curse target', () => {
     const state = createNewGame({
       humanHeroId: 'hero_mage',
       aiCount: 1,
@@ -46,12 +46,12 @@ describe('setup store audio cues', () => {
           phase: 'combat_curse_target',
           combat: {
             playerId: 'player_human',
-            monsterId: 'mummy',
+            monsterId: 'mummified_priest',
             position: { boardX: 0, boardY: 0 },
             enteredFrom: { boardX: 0, boardY: -1 },
             pendingResolutionPhase: 'await_move',
             pendingCombatEvent: {
-              monsterId: 'mummy',
+              monsterId: 'mummified_priest',
               monsterStrength: 7,
               dice: [6, 4],
               total: 10,

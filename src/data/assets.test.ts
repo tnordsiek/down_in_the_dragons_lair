@@ -16,13 +16,13 @@ describe('asset manifest runtime mapping', () => {
     'tile_healing_corner',
     'tile_teleport_straight',
     'token_treasure_chest',
-    'token_giant_rat',
-    'token_giant_spider',
-    'token_mummy',
-    'token_skeleton_turnkey',
-    'token_skeleton_warrior',
-    'token_skeleton_king',
-    'token_fallen',
+    'token_kitchen_rat',
+    'token_creepy_spider',
+    'token_mummified_priest',
+    'token_skeleton_key_guardian',
+    'token_skeleton_soldier',
+    'token_skeleton_lord',
+    'token_soulburner',
     'token_dragon',
     'item_weapon_1',
     'item_weapon_2',
@@ -84,8 +84,8 @@ describe('asset manifest runtime mapping', () => {
     expect(getAssetUrl('hero_mage_token')).toBe(
       '/assets/heroes/token_hero_mage.png',
     );
-    expect(getAssetUrl('token_skeleton_turnkey')).toBe(
-      '/assets/monsters/token_skeleton_keyguardian.png',
+    expect(getAssetUrl('token_skeleton_key_guardian')).toBe(
+      '/assets/monsters/token_skeleton_key_guardian.png',
     );
     expect(getAssetUrl('token_treasure_chest')).toBe(
       '/assets/monsters/token_treasure_chest.png',
