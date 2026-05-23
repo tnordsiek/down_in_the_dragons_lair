@@ -1,8 +1,8 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { useSetupStore } from '../state/setupStore';
 import { persistedGameStateKey } from '../state/persistence';
+import { useSetupStore } from '../state/setupStore';
 import { App } from './App';
 
 describe('App', () => {
@@ -71,6 +71,9 @@ describe('App', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('v1.2')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Imprint' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Privacy Policy' }),
+    ).toBeInTheDocument();
   });
 
   it('starts a game and shows board actions', () => {
@@ -88,6 +91,9 @@ describe('App', () => {
     expect(screen.getByText('v1.2 fnord GAMES 2026')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Imprint' })).toBeInTheDocument();
     expect(
+      screen.getByRole('button', { name: 'Privacy Policy' }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole('button', { name: 'Center Map' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Music on' })).toBeInTheDocument();
@@ -99,24 +105,78 @@ describe('App', () => {
     ).toBeInTheDocument();
   });
 
-  it('opens and closes the imprint layer from the footer', () => {
+  it('lazy-loads and closes the imprint layer from the footer', async () => {
     render(<App />);
 
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Imprint' }));
     });
 
-    expect(screen.getByText('Torsten Nordsiek')).toBeInTheDocument();
+    expect(screen.getByText('Loading legal notice...')).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'Information pursuant to § 5 DDG (German Digital Services Act)',
+      ),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('Torsten Nordsiek')).toBeInTheDocument();
     expect(screen.getByText('Taigaweg 4')).toBeInTheDocument();
     expect(screen.getByText('33739 Bielefeld')).toBeInTheDocument();
-    expect(screen.getByText('Kontakt +49 (0)521 1648447')).toBeInTheDocument();
-    expect(screen.getByText('E-Mail: tnordsiek@web.de')).toBeInTheDocument();
+    expect(screen.getByText('Phone: +49 (0)521 1648447')).toBeInTheDocument();
+    expect(
+      screen.getByText('E-mail: tnordsiek [at] web [dot] de'),
+    ).toBeInTheDocument();
 
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Close imprint' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Close Imprint' }));
     });
 
     expect(screen.queryByText('Torsten Nordsiek')).toBeNull();
+  });
+
+  it('switches between lazy-loaded legal panels from the footer', async () => {
+    render(<App />);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Imprint' }));
+    });
+
+    expect(await screen.findByText('Torsten Nordsiek')).toBeInTheDocument();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Privacy Policy' }));
+    });
+
+    expect(screen.queryByText('Torsten Nordsiek')).toBeNull();
+    expect(
+      await screen.findByText(
+        'This Privacy Policy informs you about the processing of personal data when you play this browser game.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('E-mail: tnordsiek [at] web [dot] de'),
+    ).toBeInTheDocument();
+  });
+
+  it('uses a viewport-safe legal panel for footer overlays', async () => {
+    render(<App />);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Privacy Policy' }));
+    });
+
+    await screen.findByText(
+      'This Privacy Policy informs you about the processing of personal data when you play this browser game.',
+    );
+
+    const panelHeading = screen.getAllByText('Privacy Policy')[0];
+    const panel = panelHeading.parentElement;
+
+    expect(panel).toHaveClass(
+      'w-[min(92vw,36rem)]',
+      'max-w-[36rem]',
+      'max-h-[min(75vh,36rem)]',
+      'overflow-y-auto',
+    );
   });
 
   it('uses a full-width game layout with a fixed right sidebar', () => {
@@ -162,16 +222,12 @@ describe('App', () => {
     expect(centerHeaderCell).toContainElement(
       screen.getByRole('img', { name: "Down in the Dragon's Lair" }),
     );
-    expect(screen.getByRole('img', { name: "Down in the Dragon's Lair" })).toHaveClass(
-      'max-h-[108px]',
-      'w-auto',
-      'object-contain',
-    );
+    expect(
+      screen.getByRole('img', { name: "Down in the Dragon's Lair" }),
+    ).toHaveClass('max-h-[108px]', 'w-auto', 'object-contain');
     expect(rightHeaderCell).toHaveClass('flex', 'items-center', 'justify-end');
     expect(header?.querySelector('.text-sm.text-stone-400')).toBeNull();
-    expect(
-      screen.queryByRole('img', { name: /Combat die \d:/ }),
-    ).toBeNull();
+    expect(screen.queryByRole('img', { name: /Combat die \d:/ })).toBeNull();
   });
 
   it('stretches the board area to fill the available game viewport height', () => {

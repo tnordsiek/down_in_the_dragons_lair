@@ -1,16 +1,76 @@
 import { useState } from 'react';
 
+import type { LegalContent } from '../../legal/types';
+
 type FooterMetaProps = {
   align?: 'left' | 'right';
   versionLabel?: string;
+};
+
+type LegalSectionId = 'imprint' | 'privacy';
+
+const legalSectionLabels: Record<LegalSectionId, string> = {
+  imprint: 'Imprint',
+  privacy: 'Privacy Policy',
+};
+
+const legalContentLoaders: Record<LegalSectionId, () => Promise<LegalContent>> = {
+  imprint: async () =>
+    (await import('../../legal/imprintContent')).imprintContent,
+  privacy: async () =>
+    (await import('../../legal/privacyPolicyContent')).privacyPolicyContent,
 };
 
 export function FooterMeta({
   align = 'right',
   versionLabel = 'v1.2',
 }: FooterMetaProps) {
-  const [isImprintOpen, setIsImprintOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<LegalSectionId | null>(null);
+  const [loadedContent, setLoadedContent] = useState<
+    Partial<Record<LegalSectionId, LegalContent>>
+  >({});
+  const [loadingSection, setLoadingSection] = useState<LegalSectionId | null>(null);
+  const [loadErrorSection, setLoadErrorSection] =
+    useState<LegalSectionId | null>(null);
   const isLeftAligned = align === 'left';
+
+  const handleToggleSection = async (section: LegalSectionId) => {
+    if (activeSection === section) {
+      setActiveSection(null);
+      setLoadingSection(null);
+      setLoadErrorSection(null);
+      return;
+    }
+
+    setActiveSection(section);
+    setLoadErrorSection(null);
+
+    if (loadedContent[section] || loadingSection === section) {
+      return;
+    }
+
+    setLoadingSection(section);
+
+    try {
+      const content = await legalContentLoaders[section]();
+      setLoadedContent((current) => ({ ...current, [section]: content }));
+    } catch {
+      setLoadErrorSection(section);
+    } finally {
+      setLoadingSection((current) => (current === section ? null : current));
+    }
+  };
+
+  const closePanel = () => {
+    setActiveSection(null);
+    setLoadingSection(null);
+    setLoadErrorSection(null);
+  };
+
+  const activeContent = activeSection ? loadedContent[activeSection] : undefined;
+  const showLoading = activeSection !== null && loadingSection === activeSection;
+  const showLoadError =
+    activeSection !== null && loadErrorSection === activeSection;
 
   return (
     <div
@@ -18,38 +78,90 @@ export function FooterMeta({
         isLeftAligned ? 'left-6 sm:left-8' : 'right-4'
       }`}
     >
-      {isImprintOpen ? (
+      {activeSection ? (
         <button
-          aria-label="Close imprint"
+          aria-label={`Close ${legalSectionLabels[activeSection]}`}
           className="fixed inset-0 cursor-default bg-transparent"
-          onClick={() => setIsImprintOpen(false)}
+          onClick={closePanel}
           type="button"
         />
       ) : null}
       <div className="relative">
-        {isImprintOpen ? (
+        {activeSection ? (
           <div
-            className={`absolute bottom-8 w-[16rem] border border-stone-700 bg-stone-950/95 p-3 text-left leading-5 text-stone-200 shadow-xl ${
+            className={`absolute bottom-8 max-h-[min(75vh,36rem)] w-[min(92vw,36rem)] max-w-[36rem] overflow-y-auto border border-stone-700 bg-stone-950/95 p-3 text-left leading-5 text-stone-200 shadow-xl ${
               isLeftAligned ? 'left-0' : 'right-0'
             }`}
             onClick={(event) => event.stopPropagation()}
           >
-            <p>Torsten Nordsiek</p>
-            <p>Taigaweg 4</p>
-            <p>33739 Bielefeld</p>
-            <p>Kontakt +49 (0)521 1648447</p>
-            <p>E-Mail: tnordsiek@web.de</p>
+            <p className="mb-2 text-sm font-semibold text-amber-100">
+              {legalSectionLabels[activeSection]}
+            </p>
+            {showLoading ? <p>Loading legal notice...</p> : null}
+            {showLoadError ? (
+              <p>Unable to load this legal notice right now.</p>
+            ) : null}
+            {activeContent ? <LegalContentPanel content={activeContent} /> : null}
           </div>
         ) : null}
-        <button
-          className="relative z-10 text-stone-400 transition-colors hover:text-stone-200"
-          onClick={() => setIsImprintOpen((current) => !current)}
-          type="button"
-        >
-          Imprint
-        </button>
+        <div className="relative z-10 flex items-center gap-3">
+          {(
+            Object.keys(legalSectionLabels) as LegalSectionId[]
+          ).map((section) => (
+            <button
+              key={section}
+              className="text-stone-400 transition-colors hover:text-stone-200"
+              onClick={() => {
+                void handleToggleSection(section);
+              }}
+              type="button"
+            >
+              {legalSectionLabels[section]}
+            </button>
+          ))}
+        </div>
       </div>
       <span>{versionLabel}</span>
+    </div>
+  );
+}
+
+function LegalContentPanel({ content }: { content: LegalContent }) {
+  return (
+    <div className="grid gap-3">
+      {content.sections.map((section, sectionIndex) => (
+        <section key={section.heading ?? `section-${sectionIndex}`}>
+          {section.heading ? (
+            <p className="text-xs font-semibold uppercase tracking-wide text-stone-300">
+              {section.heading}
+            </p>
+          ) : null}
+          <div className={section.heading ? 'mt-1 grid gap-2' : 'grid gap-2'}>
+            {section.blocks.map((block, blockIndex) => {
+              if (block.type === 'list') {
+                return (
+                  <ul
+                    key={`list-${sectionIndex}-${blockIndex}`}
+                    className="list-disc space-y-1 pl-4"
+                  >
+                    {block.items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                );
+              }
+
+              return (
+                <div key={`paragraph-${sectionIndex}-${blockIndex}`}>
+                  {block.lines.map((line) => (
+                    <p key={line}>{line}</p>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
