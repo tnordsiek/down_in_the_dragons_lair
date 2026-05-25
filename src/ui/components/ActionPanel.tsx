@@ -38,6 +38,7 @@ function canUseHealingSpellNow(state: GameState): boolean {
 type ActionPanelProps = {
   state: GameState;
   onMove: (target: BoardPosition) => void;
+  onFocusPortalTarget?: (target: BoardPosition) => void;
   onBeginLoot: () => void;
   onLeaveLoot: () => void;
   onExplore: (direction: TileSide) => void;
@@ -69,6 +70,7 @@ type ActionPanelProps = {
 export function ActionPanel({
   state,
   onMove,
+  onFocusPortalTarget,
   onBeginLoot,
   onLeaveLoot,
   onExplore,
@@ -659,6 +661,11 @@ export function ActionPanel({
                     key={`portal-${move.target.boardX},${move.target.boardY}`}
                     className="border border-sky-500 px-3 py-2 text-sm text-sky-100"
                     onClick={() => onMove(move.target)}
+                    onContextMenu={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onFocusPortalTarget?.(move.target);
+                    }}
                   >
                     {move.target.boardX},{move.target.boardY}
                   </button>

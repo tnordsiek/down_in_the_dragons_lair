@@ -32,6 +32,7 @@ const noopActions = {
   onBeginLoot: vi.fn(),
   onCancelWitchSwapSelection: vi.fn(),
   onLeaveLoot: vi.fn(),
+  onFocusPortalTarget: vi.fn(),
   onMove: vi.fn(),
   onExplore: vi.fn(),
   onChooseSeeressRoomToken: vi.fn(),
@@ -1753,6 +1754,50 @@ describe('Milestone 6 UI', () => {
     expect(onMove).toHaveBeenNthCalledWith(2, { boardX: 2, boardY: 0 });
   });
 
+  it('focuses a portal target on right-click without moving there', () => {
+    const state = createUiState({
+      board: [
+        {
+          tileInstanceId: 'tile-portal-origin',
+          blueprintId: 'teleport_straight',
+          rotation: 90,
+          boardX: 0,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-portal-target',
+          blueprintId: 'teleport_straight',
+          rotation: 90,
+          boardX: 2,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+    const onMove = vi.fn();
+    const onFocusPortalTarget = vi.fn();
+
+    render(
+      <ActionPanel
+        state={state}
+        {...noopActions}
+        onFocusPortalTarget={onFocusPortalTarget}
+        onMove={onMove}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '2,0' }));
+    fireEvent.contextMenu(screen.getByRole('button', { name: '2,0' }));
+
+    expect(onMove).toHaveBeenCalledOnce();
+    expect(onMove).toHaveBeenCalledWith({ boardX: 2, boardY: 0 });
+    expect(onFocusPortalTarget).toHaveBeenCalledOnce();
+    expect(onFocusPortalTarget).toHaveBeenCalledWith({ boardX: 2, boardY: 0 });
+  });
+
   it('shows ground loot and loot-resolution actions in the panel', () => {
     const state = createUiState({
       phase: 'await_move',
@@ -3446,6 +3491,62 @@ describe('Milestone 6 UI', () => {
       'style',
       expect.stringContaining('scale(1)'),
     );
+  });
+
+  it('resets zoom and centers the board when a portal action is right-clicked', () => {
+    const state = createUiState({
+      board: [
+        {
+          tileInstanceId: 'tile-portal-origin',
+          blueprintId: 'teleport_straight',
+          rotation: 90,
+          boardX: 0,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-portal-target',
+          blueprintId: 'teleport_straight',
+          rotation: 90,
+          boardX: 2,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+
+    useSetupStore.setState({
+      gameState: state,
+      hasSavedGame: false,
+      lastError: undefined,
+    });
+
+    render(<GameScreen />);
+
+    const board = screen.getByLabelText('Dungeon board');
+    const transformLayer = screen.getByTestId('board-transform-layer');
+    setupBoardGeometry(board, transformLayer);
+    fireEvent(window, new Event('resize'));
+
+    fireEvent.wheel(board, { deltaY: -100 });
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('scale(1.1)'),
+    );
+
+    fireEvent.contextMenu(screen.getByRole('button', { name: '2,0' }));
+
+    expectCenteredOnBoard(getBoardCell('2,0'), board);
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('scale(1)'),
+    );
+    expect(useSetupStore.getState().gameState?.players[0].position).toEqual({
+      boardX: 0,
+      boardY: 0,
+    });
   });
 
   it('keeps center map and portrait focus correct when an AI player starts first', () => {

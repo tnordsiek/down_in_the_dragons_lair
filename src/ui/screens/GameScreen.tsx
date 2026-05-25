@@ -377,6 +377,7 @@ export function GameScreen() {
             onCancelHealingSpellSelection={handleCancelHealingSpellSelection}
             state={state}
             onBeginLoot={handleBeginLoot}
+            onFocusPortalTarget={(position) => focusMap(position, true)}
             onLeaveLoot={handleLeaveLoot}
             onMove={handleMove}
             onExplore={handleExplore}
