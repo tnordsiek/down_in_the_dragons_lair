@@ -1512,6 +1512,32 @@ describe('Milestone 6 UI', () => {
     ).toHaveAttribute('title', 'Kitchen Rat: Strength 5');
   });
 
+  it('renders the dungeon grid with 1px gray separators and no tile padding', () => {
+    const state = createUiState({
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-east',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+
+    render(<BoardView state={state} />);
+
+    const grid = screen.getByTestId('board-grid');
+    const occupiedCell = getBoardCell('0,0');
+
+    expect(grid).toHaveClass('grid', 'gap-px', 'bg-stone-500');
+    expect(occupiedCell).toHaveClass('aspect-square', 'min-h-16', 'bg-stone-800');
+    expect(occupiedCell).not.toHaveClass('border', 'p-1');
+  });
+
   it('stacks multiple hero tokens from the top of the tile and keeps the active player in front', () => {
     const baseState = createUiStateWithPlayerCount(3, [
       'hero_mage',
@@ -3879,7 +3905,7 @@ function setupBoardGeometry(board: HTMLElement, transformLayer: HTMLElement) {
   const viewportWidth = 800;
   const viewportHeight = 600;
   const cellSizePx = 72;
-  const cellGapPx = 4;
+  const cellGapPx = 1;
   const cells = Array.from(
     transformLayer.querySelectorAll<HTMLElement>('[data-board-position]'),
   );

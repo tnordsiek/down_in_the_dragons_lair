@@ -57,7 +57,7 @@ export function BoardView({
   selectableHealingPositions = [],
 }: BoardViewProps) {
   const cellSizePx = 72;
-  const cellGapPx = 4;
+  const cellGapPx = 1;
   const cellStridePx = cellSizePx + cellGapPx;
   const gameTable = useAsset('bg_game_table');
   const boardViewportRef = useRef<HTMLDivElement | null>(null);
@@ -191,10 +191,10 @@ export function BoardView({
     return (
       <div
         key={`${cell.boardX},${cell.boardY}`}
-        className={`aspect-square min-h-16 border p-1 text-[0.65rem] ${
+        className={`aspect-square min-h-16 text-[0.65rem] ${
           cell.tile || cell.pendingTile
-            ? 'border-stone-500 bg-stone-800'
-            : 'border-stone-800 bg-stone-900'
+            ? 'bg-stone-800'
+            : 'bg-stone-900'
         }`}
         data-board-position={cellKey}
       >
@@ -590,7 +590,8 @@ export function BoardView({
           }}
         >
           <div
-            className="grid gap-1"
+            className="grid gap-px bg-stone-500"
+            data-testid="board-grid"
             style={{
               gridTemplateColumns: `repeat(${columns}, minmax(4.5rem, 4.5rem))`,
             }}
