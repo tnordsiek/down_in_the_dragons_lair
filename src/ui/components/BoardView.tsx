@@ -200,7 +200,7 @@ export function BoardView({
       >
         {cell.tile || cell.pendingTile ? (
           <div
-            className="relative h-full overflow-hidden"
+            className="relative h-full overflow-visible"
             data-asset-id={
               cell.tile
                 ? `tile_${cell.tile.blueprintId}`
@@ -623,17 +623,17 @@ function PendingTileControls({
   onRotate?: (direction: RotationDirection) => void;
   zoom: number;
 }) {
-  const arrowSize = Number((24 / zoom).toFixed(3));
-  const confirmSize = Number((24 / zoom).toFixed(3));
-  const edgeOffset = Number((0 / zoom).toFixed(3));
-  const controlFontSize = Number((12 / zoom).toFixed(3));
-  const confirmFontSize = Number((9 / zoom).toFixed(3));
+  const buttonSize = Number((30 / zoom).toFixed(3));
+  const arrowFontSize = Number((18 / zoom).toFixed(3));
+  const confirmFontSize = Number((12 / zoom).toFixed(3));
+  const externalOffset = Number((-buttonSize).toFixed(3));
 
   return (
     <div className="pointer-events-none absolute inset-0 z-20">
       <div
         className="absolute top-1/2 -translate-y-1/2"
-        style={{ left: `${edgeOffset}px` }}
+        data-testid="pending-rotate-left-anchor"
+        style={{ left: `${externalOffset}px` }}
       >
         <button
           aria-label="Rotate tile counterclockwise"
@@ -642,9 +642,9 @@ function PendingTileControls({
           onMouseDown={preventButtonFocus}
           onPointerDown={(event) => event.stopPropagation()}
           style={{
-            fontSize: `${controlFontSize}px`,
-            height: `${arrowSize}px`,
-            width: `${arrowSize}px`,
+            fontSize: `${arrowFontSize}px`,
+            height: `${buttonSize}px`,
+            width: `${buttonSize}px`,
           }}
           type="button"
         >
@@ -653,7 +653,8 @@ function PendingTileControls({
       </div>
       <div
         className="absolute top-1/2 -translate-y-1/2"
-        style={{ right: `${edgeOffset}px` }}
+        data-testid="pending-rotate-right-anchor"
+        style={{ right: `${externalOffset}px` }}
       >
         <button
           aria-label="Rotate tile clockwise"
@@ -662,16 +663,20 @@ function PendingTileControls({
           onMouseDown={preventButtonFocus}
           onPointerDown={(event) => event.stopPropagation()}
           style={{
-            fontSize: `${controlFontSize}px`,
-            height: `${arrowSize}px`,
-            width: `${arrowSize}px`,
+            fontSize: `${arrowFontSize}px`,
+            height: `${buttonSize}px`,
+            width: `${buttonSize}px`,
           }}
           type="button"
         >
           {'>'}
         </button>
       </div>
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+      <div
+        className="absolute left-1/2 -translate-x-1/2"
+        data-testid="pending-confirm-anchor"
+        style={{ top: `${externalOffset}px` }}
+      >
         <button
           aria-label="Confirm tile rotation"
           className="pointer-events-auto flex items-center justify-center rounded-full border border-amber-300 bg-amber-300/90 font-semibold uppercase tracking-wide text-stone-950 disabled:cursor-not-allowed disabled:border-stone-600 disabled:bg-stone-800 disabled:text-stone-400"
@@ -681,8 +686,8 @@ function PendingTileControls({
           onPointerDown={(event) => event.stopPropagation()}
           style={{
             fontSize: `${confirmFontSize}px`,
-            height: `${confirmSize}px`,
-            width: `${confirmSize}px`,
+            height: `${buttonSize}px`,
+            width: `${buttonSize}px`,
           }}
           type="button"
         >

@@ -279,10 +279,10 @@ describe('Milestone 6 UI', () => {
 
     expect(
       screen.getByRole('button', { name: 'Rotate tile clockwise' }),
-    ).toHaveAttribute('style', expect.stringContaining('width: 6px'));
+    ).toHaveAttribute('style', expect.stringContaining('width: 7.5px'));
     expect(
       screen.getByRole('button', { name: 'Confirm tile rotation' }),
-    ).toHaveAttribute('style', expect.stringContaining('width: 6px'));
+    ).toHaveAttribute('style', expect.stringContaining('width: 7.5px'));
 
     fireEvent.click(
       screen.getByRole('button', { name: 'Rotate tile clockwise' }),
@@ -290,6 +290,42 @@ describe('Milestone 6 UI', () => {
 
     expect(onRotatePendingTile).toHaveBeenCalledOnce();
     expect(onRotatePendingTile).toHaveBeenCalledWith('clockwise');
+  });
+
+  it('positions pending tile rotation controls directly outside the tile edges', () => {
+    const state = createUiState({
+      phase: 'choose_pending_tile_rotation',
+      pendingTile: {
+        origin: { boardX: 0, boardY: 0 },
+        target: { boardX: 1, boardY: 0 },
+        direction: 'B',
+        blueprintId: 'room_corner',
+        previewRotation: 0,
+        legalRotations: [0, 90],
+        skippedBlueprintIds: [],
+      },
+    });
+
+    render(<BoardView state={state} />);
+
+    expect(screen.getByTestId('pending-rotate-left-anchor')).toHaveAttribute(
+      'style',
+      expect.stringContaining('left: -30px'),
+    );
+    expect(screen.getByTestId('pending-rotate-right-anchor')).toHaveAttribute(
+      'style',
+      expect.stringContaining('right: -30px'),
+    );
+    expect(screen.getByTestId('pending-confirm-anchor')).toHaveAttribute(
+      'style',
+      expect.stringContaining('top: -30px'),
+    );
+    expect(
+      screen.getByRole('button', { name: 'Rotate tile clockwise' }),
+    ).toHaveAttribute('style', expect.stringContaining('width: 30px'));
+    expect(
+      screen.getByRole('button', { name: 'Confirm tile rotation' }),
+    ).toHaveAttribute('style', expect.stringContaining('width: 30px'));
   });
 
   it('shows combat math and loot state', () => {
