@@ -26,12 +26,12 @@ export const monsterDisplayNames = {
 } as const satisfies Record<MonsterId, string>;
 
 export const spellDisplayNames = {
-  flame: 'Flame',
+  flame: 'Fireball',
   healing: 'Healing',
 } as const satisfies Record<SpellKind, string>;
 
 export const weaponDisplayNames = {
-  1: 'Weapon +1',
-  2: 'Weapon +2',
-  3: 'Weapon +3',
+  1: 'Knife +1',
+  2: 'Sword +2',
+  3: 'Battleaxe +3',
 } as const satisfies Record<WeaponBonus, string>;

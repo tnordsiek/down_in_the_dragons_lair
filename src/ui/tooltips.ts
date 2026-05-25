@@ -19,7 +19,7 @@ export function getItemTileTooltip(item: Item): string {
 
   if (item.type === 'spell') {
     if (item.spellKind === 'flame') {
-      return 'Flame Spell: Adds +1 combat strength';
+      return 'Fireball Spell: Adds +1 combat strength';
     }
 
     return 'Healing Spell: Teleports a hero to a discovered healing tile';

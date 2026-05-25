@@ -18,6 +18,7 @@ import { isEndTurnBlockedPhase } from '../../engine/turns/turns';
 import { getUiLegalActions } from '../../state/setupStore';
 import { heroName, monsterName, sideLabels } from '../labels';
 import { itemLabel } from '../items';
+import { weaponDisplayNames } from '../../data/displayNames';
 
 type HealingSpellSelectionState =
   | { mode: 'idle' }
@@ -280,7 +281,7 @@ export function ActionPanel({
           <p className="font-mono text-xs text-stone-300">
             2d6 + weapons +{weaponBonus}
             {hasActiveSeeressCombatBonus ? ' + Seeress Sight +1' : ''}
-            {' + flame spells ('}
+            {' + fireball spells ('}
             {availableFlameSpells} available) must beat {combatMonster.strength}
           </p>
           <button
@@ -421,7 +422,7 @@ export function ActionPanel({
       {state.phase === 'combat_flame_spells' && combatMonster && pendingCombatDice ? (
         <div className="mt-4 grid gap-2">
           <h3 className="text-xs uppercase tracking-wide text-stone-400">
-            Flame Spells
+            Fireball Spells
           </h3>
           <p className="text-sm text-stone-200">
             {monsterName(combatMonster.id)} strength {combatMonster.strength}
@@ -441,7 +442,7 @@ export function ActionPanel({
               className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
               onClick={onResolveCombatWithoutFlameSpells}
             >
-              Do not use flame spells
+              Do not use fireball spells
             </button>
             {flameSpellChoices.map((flameSpellCount) => (
               <button
@@ -449,7 +450,7 @@ export function ActionPanel({
                 className="border border-amber-500 px-3 py-2 text-sm text-amber-100"
                 onClick={() => onResolveCombatWithFlameSpells(flameSpellCount)}
               >
-                Use {flameSpellCount} Flame Spell{flameSpellCount === 1 ? '' : 's'}
+                Use {flameSpellCount} Fireball Spell{flameSpellCount === 1 ? '' : 's'}
               </button>
             ))}
           </div>
@@ -538,7 +539,7 @@ export function ActionPanel({
                       onSwapLoot({ kind: 'weapon', index })
                     }
                   >
-                    Swap Weapon +{weapon.bonus}
+                    Swap {weaponDisplayNames[weapon.bonus]}
                   </button>
                 ))
               : null}

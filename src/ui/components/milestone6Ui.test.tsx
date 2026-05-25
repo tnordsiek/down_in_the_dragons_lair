@@ -363,11 +363,11 @@ describe('Milestone 6 UI', () => {
       'src',
       '/assets/items/item_key.png',
     );
-    expect(screen.getByRole('img', { name: 'Weapon +2' })).toHaveAttribute(
+    expect(screen.getByRole('img', { name: 'Sword +2' })).toHaveAttribute(
       'src',
-      '/assets/items/item_weapon_2.png',
+      '/assets/items/item_sword_2.png',
     );
-    expect(screen.getByRole('img', { name: 'Flame spell' })).toHaveAttribute(
+    expect(screen.getByRole('img', { name: 'Fireball spell' })).toHaveAttribute(
       'src',
       '/assets/items/item_spell_flame.png',
     );
@@ -400,7 +400,7 @@ describe('Milestone 6 UI', () => {
 
     expect(
       screen.getByText(
-        '2d6 + weapons +0 + Seeress Sight +1 + flame spells (0 available) must beat 5',
+        '2d6 + weapons +0 + Seeress Sight +1 + fireball spells (0 available) must beat 5',
       ),
     ).toBeInTheDocument();
   });
@@ -423,7 +423,7 @@ describe('Milestone 6 UI', () => {
     render(<ActionPanel state={state} {...noopActions} />);
 
     expect(
-      screen.getByText('2d6 + weapons +0 + flame spells (0 available) must beat 5'),
+      screen.getByText('2d6 + weapons +0 + fireball spells (0 available) must beat 5'),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Seeress Sight \+1/)).toBeNull();
   });
@@ -448,7 +448,7 @@ describe('Milestone 6 UI', () => {
     render(<ActionPanel state={state} {...noopActions} />);
 
     expect(
-      screen.getByText('2d6 + weapons +0 + flame spells (0 available) must beat 5'),
+      screen.getByText('2d6 + weapons +0 + fireball spells (0 available) must beat 5'),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Seeress Sight \+1/)).toBeNull();
   });
@@ -1466,7 +1466,7 @@ describe('Milestone 6 UI', () => {
     });
 
     expect(
-      screen.getByRole('button', { name: 'Do not use flame spells' }),
+      screen.getByRole('button', { name: 'Do not use fireball spells' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Combat die 1: 2' })).toHaveAttribute(
       'src',
@@ -1602,15 +1602,15 @@ describe('Milestone 6 UI', () => {
 
     render(<BoardView state={state} />);
 
-    expect(screen.getByRole('img', { name: 'Weapon +2' })).toHaveAttribute(
+    expect(screen.getByRole('img', { name: 'Sword +2' })).toHaveAttribute(
       'src',
-      '/assets/items/item_weapon_2.png',
+      '/assets/items/item_sword_2.png',
     );
     expect(
       screen
-        .getByRole('img', { name: 'Weapon +2' })
+        .getByRole('img', { name: 'Sword +2' })
         .closest('[data-asset-id="item_weapon_2"]'),
-    ).toHaveAttribute('title', 'Weapon +2: Combat bonus +2');
+    ).toHaveAttribute('title', 'Sword +2: Combat bonus +2');
   });
 
   it('highlights legal move targets on the board and moves by tile click', () => {
@@ -1865,12 +1865,12 @@ describe('Milestone 6 UI', () => {
     );
 
     expect(
-      screen.getByRole('button', { name: 'Take Weapon +1' }),
+      screen.getByRole('button', { name: 'Take Knife +1' }),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Take' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Leave' })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Take Weapon +1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Take Knife +1' }));
 
     expect(onBeginLoot).toHaveBeenCalledOnce();
   });
@@ -1904,10 +1904,10 @@ describe('Milestone 6 UI', () => {
     expect(screen.queryByRole('button', { name: 'Take' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Leave' })).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Swap Weapon +2' }),
+      screen.getByRole('button', { name: 'Swap Sword +2' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Swap Weapon +3' }),
+      screen.getByRole('button', { name: 'Swap Battleaxe +3' }),
     ).toBeInTheDocument();
   });
 
@@ -1980,13 +1980,13 @@ describe('Milestone 6 UI', () => {
     );
 
     expect(
-      screen.getByRole('button', { name: 'Do not use flame spells' }),
+      screen.getByRole('button', { name: 'Do not use fireball spells' }),
     ).toBeInTheDocument();
     expect(
       screen.getByText('Rolled 2 + 3 + weapons 0 = 5 and currently face draw'),
     ).toBeInTheDocument();
     fireEvent.click(
-      screen.getByRole('button', { name: 'Use 1 Flame Spell' }),
+      screen.getByRole('button', { name: 'Use 1 Fireball Spell' }),
     );
     expect(onResolveCombatWithFlameSpells).toHaveBeenCalledWith(1);
   });
@@ -2037,7 +2037,7 @@ describe('Milestone 6 UI', () => {
       screen.getByRole('button', { name: 'Keep this result' }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: 'Do not use flame spells' }),
+      screen.queryByRole('button', { name: 'Do not use fireball spells' }),
     ).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Reroll both dice' }));
@@ -2173,7 +2173,7 @@ describe('Milestone 6 UI', () => {
       screen.getByRole('button', { name: 'Keep this result' }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: 'Do not use flame spells' }),
+      screen.queryByRole('button', { name: 'Do not use fireball spells' }),
     ).toBeNull();
 
     fireEvent.click(
@@ -2529,7 +2529,7 @@ describe('Milestone 6 UI', () => {
 
     expect(screen.getByTestId('witch-phase')).toHaveTextContent('await_move');
     expect(
-      screen.getByRole('button', { name: 'Take Weapon +1' }),
+      screen.getByRole('button', { name: 'Take Knife +1' }),
     ).toBeInTheDocument();
   });
 
@@ -3656,9 +3656,9 @@ describe('Milestone 6 UI', () => {
       'title',
       'Current weapon bonus: +2',
     );
-    expect(screen.getByText('Flame∞')).toHaveAttribute(
+    expect(screen.getByText('Fireball ∞')).toHaveAttribute(
       'title',
-      'Mage: flame spells are not consumed',
+      'Mage: fireball spells are not consumed',
     );
     expect(screen.getByRole('button', { name: 'Mage portrait actions' })).toHaveAttribute(
       'title',
@@ -3666,9 +3666,9 @@ describe('Milestone 6 UI', () => {
     );
     expect(within(mageCard).getByText('0 pts')).toBeInTheDocument();
     expect(within(thiefCard).getByText('0 pts')).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Weapon +2' })).toHaveAttribute(
+    expect(screen.getByRole('img', { name: 'Sword +2' })).toHaveAttribute(
       'title',
-      'Weapon +2',
+      'Sword +2',
     );
     expect(screen.getByRole('img', { name: 'Key' })).toHaveAttribute(
       'title',

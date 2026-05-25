@@ -170,11 +170,15 @@ function PlayerCard({
             title={`Current weapon bonus: +${weaponBonus}`}
           />
           <BonusBadge
-            label={hasMageFlameBonus ? 'Flame∞' : `Flame ${flameSpellCount}`}
+            label={
+              hasMageFlameBonus
+                ? 'Fireball ∞'
+                : `Fireball ${flameSpellCount}`
+            }
             title={
               hasMageFlameBonus
-                ? 'Mage: flame spells are not consumed'
-                : `Available flame spells: ${flameSpellCount}`
+                ? 'Mage: fireball spells are not consumed'
+                : `Available fireball spells: ${flameSpellCount}`
             }
           />
         </div>
@@ -238,7 +242,7 @@ function PlayerCard({
 function getHeroAbilityInfo(heroId: HeroId): string {
   switch (heroId) {
     case 'hero_mage':
-      return 'Flame spells are not consumed. The Mage may move through walls on discovered tiles.';
+      return 'Fireball spells are not consumed. The Mage may move through walls on discovered tiles.';
     case 'hero_valkyrie':
       return 'May reroll both combat dice once after a draw or defeat. Losing the last HP sends the Valkyrie to a healing tile.';
     case 'hero_witch':
