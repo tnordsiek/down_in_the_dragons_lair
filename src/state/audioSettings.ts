@@ -4,11 +4,13 @@ export const persistedAudioSettingsKey =
 export type AudioSettings = {
   musicEnabled: boolean;
   sfxEnabled: boolean;
+  movementPointsEnabled: boolean;
 };
 
 const defaultAudioSettings: AudioSettings = {
   musicEnabled: true,
   sfxEnabled: true,
+  movementPointsEnabled: true,
 };
 
 export function getDefaultAudioSettings(): AudioSettings {
@@ -60,6 +62,11 @@ function parseAudioSettings(value: unknown): AudioSettings {
   return {
     musicEnabled: (value as Record<string, boolean>).musicEnabled,
     sfxEnabled: (value as Record<string, boolean>).sfxEnabled,
+    movementPointsEnabled:
+      typeof (value as Record<string, unknown>).movementPointsEnabled ===
+      'boolean'
+        ? (value as Record<string, boolean>).movementPointsEnabled
+        : defaultAudioSettings.movementPointsEnabled,
   };
 }
 

@@ -64,6 +64,7 @@ describe('Milestone 6 UI', () => {
       gameState: undefined,
       hasSavedGame: false,
       lastError: undefined,
+      movementPointsEnabled: true,
     });
   });
 
@@ -1716,6 +1717,7 @@ describe('Milestone 6 UI', () => {
     });
 
     expect(moveTarget).toHaveAttribute('data-testid', 'move-target-0--1');
+    expect(screen.getByTestId('move-cost-0--1')).toHaveTextContent('1');
     expect(
       screen.queryByRole('button', { name: 'Move to tile 1,0' }),
     ).toBeNull();
@@ -1761,6 +1763,8 @@ describe('Milestone 6 UI', () => {
 
     expect(farMoveTarget).toBeInTheDocument();
     expect(farMoveTarget).toHaveClass('border-amber-100/60');
+    expect(screen.getByTestId('move-cost-1-0')).toHaveTextContent('1');
+    expect(screen.getByTestId('move-cost-2-0')).toHaveTextContent('2');
 
     fireEvent.click(farMoveTarget);
 
@@ -1769,6 +1773,166 @@ describe('Milestone 6 UI', () => {
       { boardX: 1, boardY: 0 },
       { boardX: 2, boardY: 0 },
     ]);
+  });
+
+  it('shows portal and follow-up movement costs from reachable move paths', () => {
+    const state = createUiState({
+      board: [
+        {
+          tileInstanceId: 'tile-portal-origin',
+          blueprintId: 'teleport_straight',
+          rotation: 90,
+          boardX: 0,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-portal-target',
+          blueprintId: 'teleport_straight',
+          rotation: 90,
+          boardX: 2,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-east-of-portal',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 3,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+      remainingSteps: 2,
+    });
+
+    render(<BoardView state={state} />);
+
+    expect(screen.getByTestId('move-cost-2-0')).toHaveTextContent('1');
+    expect(screen.getByTestId('move-cost-3-0')).toHaveTextContent('2');
+  });
+
+  it('shows mage wall-move costs from the existing reachable path logic', () => {
+    const state = createUiState({
+      board: [
+        {
+          ...baseBoard()[0],
+          blueprintId: 'tunnel_straight',
+          rotation: 0,
+        },
+        {
+          tileInstanceId: 'tile-north-blocked',
+          blueprintId: 'tunnel_straight',
+          rotation: 0,
+          boardX: 0,
+          boardY: -1,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? { ...player, heroId: 'hero_mage', position: { boardX: 0, boardY: 0 } }
+          : player,
+      ),
+    });
+
+    render(<BoardView state={state} />);
+
+    expect(
+      screen.getByRole('button', { name: 'Move to tile 0,-1' }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('move-cost-0--1')).toHaveTextContent('1');
+  });
+
+  it('shows rogue move targets beyond an ignored monster tile and emits the full path', () => {
+    const state = createUiState({
+      board: [
+        {
+          ...baseBoard()[0],
+          blueprintId: 'tunnel_straight',
+          rotation: 0,
+        },
+        {
+          tileInstanceId: 'tile-monster',
+          blueprintId: 'tunnel_straight',
+          rotation: 0,
+          boardX: 0,
+          boardY: -1,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'kitchen_rat', kind: 'monster' },
+        },
+        {
+          tileInstanceId: 'tile-beyond-monster',
+          blueprintId: 'tunnel_straight',
+          rotation: 0,
+          boardX: 0,
+          boardY: -2,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+      remainingSteps: 2,
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? { ...player, heroId: 'hero_rogue', position: { boardX: 0, boardY: 0 } }
+          : player,
+      ),
+    });
+    const onMovePath = vi.fn();
+
+    render(<BoardView state={state} onMovePath={onMovePath} />);
+
+    expect(screen.getByTestId('move-cost-0--1')).toHaveTextContent('1');
+    const farMoveTarget = screen.getByRole('button', {
+      name: 'Move to tile 0,-2',
+    });
+    expect(screen.getByTestId('move-cost-0--2')).toHaveTextContent('2');
+
+    fireEvent.click(farMoveTarget);
+
+    expect(onMovePath).toHaveBeenCalledOnce();
+    expect(onMovePath).toHaveBeenCalledWith([
+      { boardX: 0, boardY: -1 },
+      { boardX: 0, boardY: -2 },
+    ]);
+  });
+
+  it('hides movement-point labels when the setting is disabled but keeps move targets clickable', () => {
+    const state = createUiState({
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-north',
+          blueprintId: 'tunnel_straight',
+          rotation: 0,
+          boardX: 0,
+          boardY: -1,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+    const onMove = vi.fn();
+
+    useSetupStore.setState({ movementPointsEnabled: false });
+
+    render(<BoardView state={state} onMove={onMove} />);
+
+    const moveTarget = screen.getByRole('button', {
+      name: 'Move to tile 0,-1',
+    });
+
+    expect(screen.queryByTestId('move-cost-0--1')).toBeNull();
+
+    fireEvent.click(moveTarget);
+
+    expect(onMove).toHaveBeenCalledOnce();
+    expect(onMove).toHaveBeenCalledWith({ boardX: 0, boardY: -1 });
   });
 
   it('shows portal actions disabled without another discovered portal target', () => {

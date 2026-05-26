@@ -14,6 +14,7 @@ describe('setup store audio cues', () => {
         seed: 'v1-local-seed',
         musicEnabled: true,
         sfxEnabled: true,
+        movementPointsEnabled: true,
         pendingAudioCues: [],
         lastError: undefined,
         persistenceError: undefined,

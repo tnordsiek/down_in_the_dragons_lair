@@ -2,8 +2,8 @@ import { getAssetUrl, useAsset } from '../../data/assets';
 import { heroDefinitions, heroIds } from '../../data/heroes';
 import type { HeroId } from '../../engine/core/types';
 import { useSetupStore } from '../../state/setupStore';
-import { AudioToggleGroup } from '../components/AudioToggleGroup';
 import { FooterMeta } from '../components/FooterMeta';
+import { SettingsMenu } from '../components/SettingsMenu';
 
 export function StartScreen() {
   const heroId = useSetupStore((state) => state.selectedHeroId);
@@ -29,17 +29,19 @@ export function StartScreen() {
     >
       <section className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-between px-6 py-8 sm:px-8">
         <header className="flex items-center justify-between gap-4">
-          <div className="h-10 w-10" data-asset-id={logo.assetId}>
-            {logoUrl ? (
-              <img
-                className="h-full w-full object-contain"
-                src={logoUrl}
-                alt="Down in the Dragon's Lair"
-              />
-            ) : null}
+          <div className="flex items-center gap-4">
+            <SettingsMenu />
+            <div className="h-10 w-10" data-asset-id={logo.assetId}>
+              {logoUrl ? (
+                <img
+                  className="h-full w-full object-contain"
+                  src={logoUrl}
+                  alt="Down in the Dragon's Lair"
+                />
+              ) : null}
+            </div>
           </div>
           <div className="flex items-center gap-4">
-            <AudioToggleGroup />
             <p className="text-sm text-stone-300">Local browser game</p>
           </div>
         </header>

@@ -19,6 +19,7 @@ import {
 } from '../../engine/movement/movement';
 import { getReachableKnownMovePaths } from '../../engine/movement/reachable';
 import { adjacentPosition } from '../../engine/movement/topology';
+import { useSetupStore } from '../../state/setupStore';
 import { itemAssetId, itemLabel } from '../items';
 import { heroName, monsterName } from '../labels';
 import {
@@ -60,6 +61,9 @@ export function BoardView({
   const cellGapPx = 1;
   const cellStridePx = cellSizePx + cellGapPx;
   const gameTable = useAsset('bg_game_table');
+  const movementPointsEnabled = useSetupStore(
+    (store) => store.movementPointsEnabled,
+  );
   const boardViewportRef = useRef<HTMLDivElement | null>(null);
   const transformLayerRef = useRef<HTMLDivElement | null>(null);
   const appliedCameraNonceRef = useRef<number | null>(null);
@@ -178,6 +182,7 @@ export function BoardView({
     const movePath = reachableMoveTargets.get(cellKey);
     const moveTarget = legalMoveTargets.get(cellKey);
     const explorationDirection = legalExplorationTargets.get(cellKey);
+    const moveCost = movePath?.length;
     const isSelectableHealingTarget =
       cell.tile !== undefined && healingSelectionTargets.has(cellKey);
     const isClickableMoveTarget =
@@ -289,6 +294,15 @@ export function BoardView({
                 onPointerDown={(event) => event.stopPropagation()}
                 type="button"
               >
+                {movementPointsEnabled ? (
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-1 top-1 rounded-sm bg-stone-950/70 px-1 py-px text-[0.6rem] font-semibold leading-none text-stone-300"
+                    data-testid={`move-cost-${cell.boardX}-${cell.boardY}`}
+                  >
+                    {moveCost}
+                  </span>
+                ) : null}
                 <span className="sr-only">
                   Move to {cell.boardX},{cell.boardY}
                 </span>

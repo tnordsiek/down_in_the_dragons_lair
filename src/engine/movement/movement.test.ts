@@ -111,6 +111,119 @@ describe('movement rules', () => {
     ]);
   });
 
+  it('continues rogue reachability beyond a monster tile in optional combat', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_rogue',
+      aiCount: 1,
+      seed: 'rogue-monster-pass-seed',
+    });
+    const reachableState: GameState = {
+      ...state,
+      phase: 'await_move',
+      remainingSteps: 2,
+      activePlayerIndex: 0,
+      players: state.players.map((player, index) =>
+        index === 0
+          ? { ...player, heroId: 'hero_rogue', position: { boardX: 0, boardY: 0 } }
+          : player,
+      ),
+      board: [
+        {
+          ...state.board[0],
+          blueprintId: 'tunnel_straight',
+          rotation: 0,
+        },
+        {
+          tileInstanceId: 'tile-monster',
+          blueprintId: 'tunnel_straight',
+          rotation: 0,
+          boardX: 0,
+          boardY: -1,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'kitchen_rat', kind: 'monster' },
+        },
+        {
+          tileInstanceId: 'tile-beyond-monster',
+          blueprintId: 'tunnel_straight',
+          rotation: 0,
+          boardX: 0,
+          boardY: -2,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    };
+
+    const reachableMoves = getReachableKnownMovePaths(reachableState);
+    const farTarget = reachableMoves.find(
+      (move) => move.position.boardX === 0 && move.position.boardY === -2,
+    );
+
+    expect(farTarget?.path.map((step) => step.target)).toEqual([
+      { boardX: 0, boardY: -1 },
+      { boardX: 0, boardY: -2 },
+    ]);
+  });
+
+  it('does not continue cursed rogue reachability beyond a monster tile', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_rogue',
+      aiCount: 1,
+      seed: 'rogue-cursed-monster-stop-seed',
+    });
+    const reachableState: GameState = {
+      ...state,
+      phase: 'await_move',
+      remainingSteps: 2,
+      activePlayerIndex: 0,
+      players: state.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_rogue',
+              isCursed: true,
+              position: { boardX: 0, boardY: 0 },
+            }
+          : player,
+      ),
+      board: [
+        {
+          ...state.board[0],
+          blueprintId: 'tunnel_straight',
+          rotation: 0,
+        },
+        {
+          tileInstanceId: 'tile-monster',
+          blueprintId: 'tunnel_straight',
+          rotation: 0,
+          boardX: 0,
+          boardY: -1,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'kitchen_rat', kind: 'monster' },
+        },
+        {
+          tileInstanceId: 'tile-beyond-monster',
+          blueprintId: 'tunnel_straight',
+          rotation: 0,
+          boardX: 0,
+          boardY: -2,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    };
+
+    const reachableMoves = getReachableKnownMovePaths(reachableState);
+
+    expect(
+      reachableMoves.some(
+        (move) => move.position.boardX === 0 && move.position.boardY === -2,
+      ),
+    ).toBe(false);
+  });
+
   it('keeps move and exploration options available during optional monster combat', () => {
     const state = createNewGame({
       humanHeroId: 'hero_rogue',

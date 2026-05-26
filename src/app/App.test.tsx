@@ -34,6 +34,7 @@ describe('App', () => {
       useSetupStore.setState({
         musicEnabled: true,
         sfxEnabled: true,
+        movementPointsEnabled: true,
         pendingAudioCues: [],
       });
     });
@@ -65,10 +66,18 @@ describe('App', () => {
     expect(
       screen.getAllByRole('img', { name: "Down in the Dragon's Lair" }).length,
     ).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: 'Music on' })).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Audio Effects on' }),
+      screen.getByRole('button', { name: 'Open settings menu' }),
     ).toBeInTheDocument();
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open settings menu' }));
+    });
+    expect(screen.getByRole('button', { name: 'Music on' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sound on' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Movement Points on' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'New Game' })).toBeNull();
     expect(screen.getByText('v1.2')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Imprint' })).toBeInTheDocument();
     expect(
@@ -96,12 +105,22 @@ describe('App', () => {
     expect(
       screen.getByRole('button', { name: 'Center Map' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Music on' })).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Audio Effects on' }),
+      screen.getByRole('button', { name: 'Open settings menu' }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('img', { name: "Down in the Dragon's Lair" }),
+    ).toBeInTheDocument();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open settings menu' }));
+    });
+
+    expect(screen.getByRole('button', { name: 'New Game' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Music on' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sound on' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Movement Points on' }),
     ).toBeInTheDocument();
   });
 
@@ -194,9 +213,9 @@ describe('App', () => {
       .getByRole('img', { name: "Down in the Dragon's Lair" })
       .closest('header');
     const centerMapButton = screen.getByRole('button', { name: 'Center Map' });
-    const newGameButton = screen.getByRole('button', { name: 'New Game' });
-    const musicButton = screen.getByRole('button', { name: 'Music on' });
-    const sfxButton = screen.getByRole('button', { name: 'Audio Effects on' });
+    const settingsButton = screen.getByRole('button', {
+      name: 'Open settings menu',
+    });
     const leftHeaderCell = header?.firstElementChild;
     const centerHeaderCell = header?.children[1];
     const rightHeaderCell = header?.children[2];
@@ -215,10 +234,9 @@ describe('App', () => {
       'lg:overflow-y-auto',
     );
     expect(header).toHaveClass('h-[120px]', 'pb-2');
-    expect(leftHeaderCell).toContainElement(musicButton);
-    expect(leftHeaderCell).toContainElement(sfxButton);
+    expect(leftHeaderCell).toContainElement(settingsButton);
     expect(leftHeaderCell).toContainElement(centerMapButton);
-    expect(leftHeaderCell).toContainElement(newGameButton);
+    expect(screen.queryByRole('button', { name: 'New Game' })).toBeNull();
     expect(centerHeaderCell).toContainElement(
       screen.getByRole('img', { name: "Down in the Dragon's Lair" }),
     );
@@ -256,6 +274,9 @@ describe('App', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
     });
     act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open settings menu' }));
+    });
+    act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'New Game' }));
     });
 
@@ -268,6 +289,18 @@ describe('App', () => {
     });
 
     expect(screen.getByLabelText('Dungeon board')).toBeInTheDocument();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open settings menu' }));
+    });
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'New Game' }));
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'Resume Game' }),
+    ).toBeInTheDocument();
   });
 
   it('controls unsupported saved versions in the setup flow', () => {
@@ -320,26 +353,41 @@ describe('App', () => {
     expect(screen.queryByLabelText('Dungeon board')).toBeNull();
   });
 
-  it('keeps audio toggle state consistent between start and game screens', () => {
+  it('keeps menu toggle state consistent between start and game screens', () => {
     render(<App />);
 
     act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open settings menu' }));
+    });
+    act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Music on' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Audio Effects on' }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Sound on' }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Movement Points on' }));
     });
 
     expect(screen.getByRole('button', { name: 'Music off' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sound off' })).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Audio Effects off' }),
+      screen.getByRole('button', { name: 'Movement Points off' }),
     ).toBeInTheDocument();
 
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
     });
 
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open settings menu' }));
+    });
+
+    expect(screen.getByRole('button', { name: 'New Game' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Music off' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sound off' })).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Audio Effects off' }),
+      screen.getByRole('button', { name: 'Movement Points off' }),
     ).toBeInTheDocument();
   });
 });

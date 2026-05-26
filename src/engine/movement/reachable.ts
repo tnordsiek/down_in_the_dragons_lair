@@ -38,7 +38,8 @@ export function getReachableKnownMovePaths(
       }
 
       if (
-        nextState.phase === 'await_move' &&
+        (nextState.phase === 'await_move' ||
+          nextState.phase === 'optional_monster_combat') &&
         nextState.remainingSteps > 0 &&
         !visited.has(key)
       ) {

@@ -32,6 +32,7 @@ type SetupState = {
   seed: string;
   musicEnabled: boolean;
   sfxEnabled: boolean;
+  movementPointsEnabled: boolean;
   gameState?: GameState;
   hasSavedGame: boolean;
   lastError?: string;
@@ -42,6 +43,7 @@ type SetupState = {
   setSeed: (seed: string) => void;
   toggleMusicEnabled: () => void;
   toggleSfxEnabled: () => void;
+  toggleMovementPointsEnabled: () => void;
   clearPendingAudioCues: () => void;
   startGame: () => void;
   resumeSavedGame: () => void;
@@ -63,6 +65,7 @@ export const useSetupStore = create<SetupState>((set) => ({
   seed: 'v1-local-seed',
   musicEnabled: initialAudioSettings.musicEnabled,
   sfxEnabled: initialAudioSettings.sfxEnabled,
+  movementPointsEnabled: initialAudioSettings.movementPointsEnabled,
   gameState: initialGameState,
   hasSavedGame: initialGameState !== undefined,
   persistenceError: initialPersistenceError,
@@ -77,6 +80,7 @@ export const useSetupStore = create<SetupState>((set) => ({
       saveAudioSettings({
         musicEnabled,
         sfxEnabled: state.sfxEnabled,
+        movementPointsEnabled: state.movementPointsEnabled,
       });
 
       return {
@@ -91,10 +95,26 @@ export const useSetupStore = create<SetupState>((set) => ({
       saveAudioSettings({
         musicEnabled: state.musicEnabled,
         sfxEnabled,
+        movementPointsEnabled: state.movementPointsEnabled,
       });
 
       return {
         sfxEnabled,
+        pendingAudioCues: [createPendingAudioCue('sfx_button_click')],
+      };
+    }),
+  toggleMovementPointsEnabled: () =>
+    set((state) => {
+      const movementPointsEnabled = !state.movementPointsEnabled;
+
+      saveAudioSettings({
+        musicEnabled: state.musicEnabled,
+        sfxEnabled: state.sfxEnabled,
+        movementPointsEnabled,
+      });
+
+      return {
+        movementPointsEnabled,
         pendingAudioCues: [createPendingAudioCue('sfx_button_click')],
       };
     }),
