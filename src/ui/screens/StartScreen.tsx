@@ -8,12 +8,24 @@ import { SettingsMenu } from '../components/SettingsMenu';
 export function StartScreen() {
   const heroId = useSetupStore((state) => state.selectedHeroId);
   const aiCount = useSetupStore((state) => state.aiCount);
+  const opponentSelectionMode = useSetupStore(
+    (state) => state.opponentSelectionMode,
+  );
+  const selectedOpponentHeroIds = useSetupStore(
+    (state) => state.selectedOpponentHeroIds,
+  );
   const seed = useSetupStore((state) => state.seed);
   const hasSavedGame = useSetupStore((state) => state.hasSavedGame);
   const lastError = useSetupStore((state) => state.lastError);
   const persistenceError = useSetupStore((state) => state.persistenceError);
   const setSelectedHeroId = useSetupStore((state) => state.setSelectedHeroId);
   const setAiCount = useSetupStore((state) => state.setAiCount);
+  const setOpponentSelectionMode = useSetupStore(
+    (state) => state.setOpponentSelectionMode,
+  );
+  const toggleSelectedOpponentHeroId = useSetupStore(
+    (state) => state.toggleSelectedOpponentHeroId,
+  );
   const setSeed = useSetupStore((state) => state.setSeed);
   const startGame = useSetupStore((state) => state.startGame);
   const resumeSavedGame = useSetupStore((state) => state.resumeSavedGame);
@@ -21,6 +33,8 @@ export function StartScreen() {
   const background = useAsset('bg_start_screen');
   const logo = useAsset('ui_logo_wordmark');
   const logoUrl = getAssetUrl(logo.assetId);
+  const availableOpponentHeroIds = heroIds.filter((id) => id !== heroId);
+  const selectionLimitReached = selectedOpponentHeroIds.length >= aiCount;
 
   return (
     <main
@@ -28,22 +42,8 @@ export function StartScreen() {
       data-asset-id={background.assetId}
     >
       <section className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-between px-6 py-8 sm:px-8">
-        <header className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <SettingsMenu />
-            <div className="h-10 w-10" data-asset-id={logo.assetId}>
-              {logoUrl ? (
-                <img
-                  className="h-full w-full object-contain"
-                  src={logoUrl}
-                  alt="Down in the Dragon's Lair"
-                />
-              ) : null}
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <p className="text-sm text-stone-300">Local browser game</p>
-          </div>
+        <header className="flex items-center">
+          <SettingsMenu />
         </header>
 
         <div className="grid flex-1 gap-8 py-12 md:grid-cols-[1.2fr_0.8fr] md:items-center">
@@ -130,6 +130,70 @@ export function StartScreen() {
                   />
                   <span className="font-mono text-stone-100">{aiCount}</span>
                 </label>
+
+                <fieldset className="grid gap-3 text-sm text-stone-300">
+                  <legend>Opponent Selection</legend>
+                  <label className="flex items-center gap-2">
+                    <input
+                      checked={opponentSelectionMode === 'random'}
+                      className="accent-amber-300"
+                      name="opponent-selection-mode"
+                      type="radio"
+                      onChange={() => setOpponentSelectionMode('random')}
+                    />
+                    <span>Random Opponents</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      checked={opponentSelectionMode === 'manual'}
+                      className="accent-amber-300"
+                      name="opponent-selection-mode"
+                      type="radio"
+                      onChange={() => setOpponentSelectionMode('manual')}
+                    />
+                    <span>Choose Opponents</span>
+                  </label>
+                </fieldset>
+
+                {opponentSelectionMode === 'manual' ? (
+                  <fieldset className="grid gap-2 text-sm text-stone-300">
+                    <legend>
+                      Opponents ({selectedOpponentHeroIds.length}/{aiCount})
+                    </legend>
+                    <div className="grid gap-2">
+                      {availableOpponentHeroIds.map((id) => {
+                        const checked = selectedOpponentHeroIds.includes(id);
+                        const disabled = !checked && selectionLimitReached;
+
+                        return (
+                          <label
+                            key={id}
+                            className={`flex items-center justify-between gap-3 border px-3 py-2 ${
+                              disabled
+                                ? 'border-stone-800 bg-stone-950/60 text-stone-500'
+                                : 'border-stone-700 bg-stone-950 text-stone-200'
+                            }`}
+                          >
+                            <span>{heroDefinitions[id].displayName}</span>
+                            <input
+                              aria-label={heroDefinitions[id].displayName}
+                              checked={checked}
+                              className="accent-amber-300"
+                              data-testid={`opponent-checkbox-${id}`}
+                              disabled={disabled}
+                              type="checkbox"
+                              onChange={() => toggleSelectedOpponentHeroId(id)}
+                            />
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-stone-400">
+                      Any unselected opponents will be filled at random from the
+                      remaining heroes.
+                    </p>
+                  </fieldset>
+                ) : null}
 
                 <label className="grid gap-2 text-sm text-stone-300">
                   Seed

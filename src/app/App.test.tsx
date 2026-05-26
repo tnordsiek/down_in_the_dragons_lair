@@ -32,6 +32,11 @@ describe('App', () => {
     act(() => {
       useSetupStore.getState().clearSavedGame();
       useSetupStore.setState({
+        selectedHeroId: 'hero_mage',
+        aiCount: 1,
+        opponentSelectionMode: 'random',
+        selectedOpponentHeroIds: [],
+        seed: 'v1-local-seed',
         musicEnabled: true,
         sfxEnabled: true,
         movementPointsEnabled: true,
@@ -49,6 +54,13 @@ describe('App', () => {
     ).toBeInTheDocument();
     expect(screen.getByLabelText('Hero')).toBeInTheDocument();
     expect(
+      screen.getByRole('radio', { name: 'Random Opponents' }),
+    ).toBeChecked();
+    expect(
+      screen.getByRole('radio', { name: 'Choose Opponents' }),
+    ).not.toBeChecked();
+    expect(screen.queryByText(/Opponents \(0\/1\)/)).toBeNull();
+    expect(
       screen.getByText(
         'Choose a hero, set the opposition, and enter the dungeon.',
       ),
@@ -64,8 +76,8 @@ describe('App', () => {
       screen.getByRole('heading', { name: "Down in the Dragon's Lair" }),
     ).toBeInTheDocument();
     expect(
-      screen.getAllByRole('img', { name: "Down in the Dragon's Lair" }).length,
-    ).toBeGreaterThan(0);
+      screen.getByRole('img', { name: "Down in the Dragon's Lair" }),
+    ).toHaveClass('max-h-[18rem]', 'w-full', 'max-w-2xl', 'object-contain');
     expect(
       screen.getByRole('button', { name: 'Open settings menu' }),
     ).toBeInTheDocument();
@@ -122,6 +134,62 @@ describe('App', () => {
     expect(
       screen.getByRole('button', { name: 'Movement Points on' }),
     ).toBeInTheDocument();
+  });
+
+  it('shows manual opponent checkboxes without the human hero and disables remaining picks at the limit', () => {
+    render(<App />);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('radio', { name: 'Choose Opponents' }));
+    });
+
+    expect(screen.getByText('Opponents (0/1)')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('opponent-checkbox-hero_mage'),
+    ).toBeNull();
+
+    const rogueCheckbox = screen.getByTestId(
+      'opponent-checkbox-hero_rogue',
+    ) as HTMLInputElement;
+    const bladeCheckbox = screen.getByTestId(
+      'opponent-checkbox-hero_blade',
+    ) as HTMLInputElement;
+
+    expect(rogueCheckbox.disabled).toBe(false);
+    expect(bladeCheckbox.disabled).toBe(false);
+
+    act(() => {
+      fireEvent.click(rogueCheckbox);
+    });
+
+    expect(screen.getByText('Opponents (1/1)')).toBeInTheDocument();
+    expect(rogueCheckbox.checked).toBe(true);
+    expect(bladeCheckbox.disabled).toBe(true);
+    expect(bladeCheckbox.closest('label')).toHaveClass('text-stone-500');
+  });
+
+  it('fills unselected manual opponents randomly from remaining heroes on start', () => {
+    render(<App />);
+
+    act(() => {
+      fireEvent.change(screen.getByRole('slider'), {
+        target: { value: '2' },
+      });
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('radio', { name: 'Choose Opponents' }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByTestId('opponent-checkbox-hero_rogue'));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
+    });
+
+    expect(screen.getByLabelText('Dungeon board')).toBeInTheDocument();
+    expect(
+      useSetupStore.getState().gameState?.players.map((player) => player.heroId),
+    ).toEqual(['hero_mage', 'hero_rogue', expect.any(String)]);
   });
 
   it('lazy-loads and closes the imprint layer from the footer', async () => {

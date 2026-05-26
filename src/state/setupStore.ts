@@ -24,11 +24,15 @@ export type PendingAudioCue = {
   assetId: string;
 };
 
+export type OpponentSelectionMode = 'random' | 'manual';
+
 let nextPendingAudioCueId = 0;
 
 type SetupState = {
   selectedHeroId: HeroId;
   aiCount: number;
+  opponentSelectionMode: OpponentSelectionMode;
+  selectedOpponentHeroIds: HeroId[];
   seed: string;
   musicEnabled: boolean;
   sfxEnabled: boolean;
@@ -40,6 +44,8 @@ type SetupState = {
   pendingAudioCues: PendingAudioCue[];
   setSelectedHeroId: (heroId: HeroId) => void;
   setAiCount: (aiCount: number) => void;
+  setOpponentSelectionMode: (mode: OpponentSelectionMode) => void;
+  toggleSelectedOpponentHeroId: (heroId: HeroId) => void;
   setSeed: (seed: string) => void;
   toggleMusicEnabled: () => void;
   toggleSfxEnabled: () => void;
@@ -62,6 +68,8 @@ const initialAudioSettings = loadAudioSettings();
 export const useSetupStore = create<SetupState>((set) => ({
   selectedHeroId: 'hero_mage',
   aiCount: 1,
+  opponentSelectionMode: 'random',
+  selectedOpponentHeroIds: [],
   seed: 'v1-local-seed',
   musicEnabled: initialAudioSettings.musicEnabled,
   sfxEnabled: initialAudioSettings.sfxEnabled,
@@ -70,8 +78,49 @@ export const useSetupStore = create<SetupState>((set) => ({
   hasSavedGame: initialGameState !== undefined,
   persistenceError: initialPersistenceError,
   pendingAudioCues: [],
-  setSelectedHeroId: (selectedHeroId) => set({ selectedHeroId }),
-  setAiCount: (aiCount) => set({ aiCount }),
+  setSelectedHeroId: (selectedHeroId) =>
+    set((state) => ({
+      selectedHeroId,
+      selectedOpponentHeroIds: sanitizeSelectedOpponentHeroIds(
+        state.selectedOpponentHeroIds,
+        selectedHeroId,
+        state.aiCount,
+      ),
+    })),
+  setAiCount: (aiCount) =>
+    set((state) => ({
+      aiCount,
+      selectedOpponentHeroIds: sanitizeSelectedOpponentHeroIds(
+        state.selectedOpponentHeroIds,
+        state.selectedHeroId,
+        aiCount,
+      ),
+    })),
+  setOpponentSelectionMode: (opponentSelectionMode) =>
+    set({ opponentSelectionMode }),
+  toggleSelectedOpponentHeroId: (heroId) =>
+    set((state) => {
+      if (heroId === state.selectedHeroId) {
+        return {};
+      }
+
+      const isSelected = state.selectedOpponentHeroIds.includes(heroId);
+      if (isSelected) {
+        return {
+          selectedOpponentHeroIds: state.selectedOpponentHeroIds.filter(
+            (selectedHeroId) => selectedHeroId !== heroId,
+          ),
+        };
+      }
+
+      if (state.selectedOpponentHeroIds.length >= state.aiCount) {
+        return {};
+      }
+
+      return {
+        selectedOpponentHeroIds: [...state.selectedOpponentHeroIds, heroId],
+      };
+    }),
   setSeed: (seed) => set({ seed }),
   toggleMusicEnabled: () =>
     set((state) => {
@@ -126,6 +175,10 @@ export const useSetupStore = create<SetupState>((set) => ({
         humanHeroId: state.selectedHeroId,
         aiCount: state.aiCount,
         seed: state.seed,
+        selectedAiHeroIds:
+          state.opponentSelectionMode === 'manual'
+            ? state.selectedOpponentHeroIds
+            : undefined,
       });
       savePersistedGameState(gameState);
 
@@ -417,4 +470,14 @@ function createPendingAudioCue(assetId: string): PendingAudioCue {
     id: nextPendingAudioCueId++,
     assetId,
   };
+}
+
+function sanitizeSelectedOpponentHeroIds(
+  selectedOpponentHeroIds: HeroId[],
+  selectedHeroId: HeroId,
+  aiCount: number,
+): HeroId[] {
+  return selectedOpponentHeroIds
+    .filter((heroId) => heroId !== selectedHeroId)
+    .slice(0, aiCount);
 }

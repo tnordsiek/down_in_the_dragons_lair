@@ -11,6 +11,8 @@ describe('setup store audio cues', () => {
       useSetupStore.setState({
         selectedHeroId: 'hero_mage',
         aiCount: 1,
+        opponentSelectionMode: 'random',
+        selectedOpponentHeroIds: [],
         seed: 'v1-local-seed',
         musicEnabled: true,
         sfxEnabled: true,
@@ -30,6 +32,52 @@ describe('setup store audio cues', () => {
 
     expect(useSetupStore.getState().pendingAudioCues).toEqual([
       expect.objectContaining({ assetId: 'sfx_button_click' }),
+    ]);
+  });
+
+  it('passes manual opponent picks into the started game', () => {
+    act(() => {
+      useSetupStore.setState({
+        selectedHeroId: 'hero_mage',
+        aiCount: 2,
+        opponentSelectionMode: 'manual',
+        selectedOpponentHeroIds: ['hero_rogue'],
+      });
+      useSetupStore.getState().startGame();
+    });
+
+    expect(
+      useSetupStore.getState().gameState?.players.map((player) => player.heroId),
+    ).toEqual(['hero_mage', 'hero_rogue', expect.any(String)]);
+  });
+
+  it('trims selected opponents when the AI count is reduced', () => {
+    act(() => {
+      useSetupStore.setState({
+        aiCount: 3,
+        selectedOpponentHeroIds: ['hero_rogue', 'hero_blade', 'hero_witch'],
+      });
+      useSetupStore.getState().setAiCount(2);
+    });
+
+    expect(useSetupStore.getState().selectedOpponentHeroIds).toEqual([
+      'hero_rogue',
+      'hero_blade',
+    ]);
+  });
+
+  it('removes the human hero from manual opponent picks when the hero changes', () => {
+    act(() => {
+      useSetupStore.setState({
+        selectedHeroId: 'hero_mage',
+        aiCount: 2,
+        selectedOpponentHeroIds: ['hero_rogue', 'hero_blade'],
+      });
+      useSetupStore.getState().setSelectedHeroId('hero_rogue');
+    });
+
+    expect(useSetupStore.getState().selectedOpponentHeroIds).toEqual([
+      'hero_blade',
     ]);
   });
 

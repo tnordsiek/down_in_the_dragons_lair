@@ -16,6 +16,23 @@ describe('game action transitions', () => {
     expect(state.phase).toBe('turn_start');
   });
 
+  it('passes manual AI hero selections through the action interface', () => {
+    const state = applyGameAction(undefined, {
+      type: 'startGame',
+      humanHeroId: 'hero_mage',
+      aiCount: 2,
+      seed: 'action-manual-ai-seed',
+      selectedAiHeroIds: ['hero_rogue'],
+    });
+
+    expect(state.players.map((player) => player.heroId)).toEqual([
+      'hero_mage',
+      'hero_rogue',
+      expect.any(String),
+    ]);
+    expect(new Set(state.players.map((player) => player.heroId)).size).toBe(3);
+  });
+
   it('can declare and place exploration through actions', () => {
     const state = applyGameAction(undefined, {
       type: 'startGame',

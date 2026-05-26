@@ -76,4 +76,72 @@ describe('createNewGame', () => {
       createNewGame({ humanHeroId: 'hero_mage', aiCount: 5, seed: 'seed' }),
     ).toThrow(/aiCount/);
   });
+
+  it('keeps manually selected AI heroes and fills remaining slots from the seed', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 3,
+      seed: 'manual-fill-seed',
+      selectedAiHeroIds: ['hero_rogue'],
+    });
+
+    expect(state.players[0]?.heroId).toBe('hero_mage');
+    expect(state.players[1]?.heroId).toBe('hero_rogue');
+    expect(state.players).toHaveLength(4);
+    expect(new Set(state.players.map((player) => player.heroId)).size).toBe(4);
+  });
+
+  it('is reproducible with the same seed and manual AI hero selection', () => {
+    const first = createNewGame({
+      humanHeroId: 'hero_witch',
+      aiCount: 3,
+      seed: 'manual-repro-seed',
+      selectedAiHeroIds: ['hero_blade', 'hero_rogue'],
+    });
+    const second = createNewGame({
+      humanHeroId: 'hero_witch',
+      aiCount: 3,
+      seed: 'manual-repro-seed',
+      selectedAiHeroIds: ['hero_blade', 'hero_rogue'],
+    });
+
+    expect(first.players.map((player) => player.heroId)).toEqual(
+      second.players.map((player) => player.heroId),
+    );
+  });
+
+  it('rejects invalid manual AI hero selections', () => {
+    expect(() =>
+      createNewGame({
+        humanHeroId: 'hero_mage',
+        aiCount: 2,
+        seed: 'duplicate-ai',
+        selectedAiHeroIds: ['hero_rogue', 'hero_rogue'],
+      }),
+    ).toThrow(/unique/);
+    expect(() =>
+      createNewGame({
+        humanHeroId: 'hero_mage',
+        aiCount: 1,
+        seed: 'human-as-ai',
+        selectedAiHeroIds: ['hero_mage'],
+      }),
+    ).toThrow(/human hero/);
+    expect(() =>
+      createNewGame({
+        humanHeroId: 'hero_mage',
+        aiCount: 1,
+        seed: 'too-many-ai-picks',
+        selectedAiHeroIds: ['hero_rogue', 'hero_blade'],
+      }),
+    ).toThrow(/exceed aiCount/);
+    expect(() =>
+      createNewGame({
+        humanHeroId: 'hero_mage',
+        aiCount: 1,
+        seed: 'unknown-ai',
+        selectedAiHeroIds: ['hero_archer' as never],
+      }),
+    ).toThrow(/Unknown AI hero/);
+  });
 });

@@ -17,6 +17,7 @@ export type CreateGameOptions = {
   humanHeroId: HeroId;
   aiCount: number;
   seed: string;
+  selectedAiHeroIds?: HeroId[];
 };
 
 export function createNewGame(options: CreateGameOptions): GameState {
@@ -29,6 +30,7 @@ export function createNewGame(options: CreateGameOptions): GameState {
     options.humanHeroId,
     options.aiCount,
     rng,
+    options.selectedAiHeroIds,
   );
   const players = createPlayers(assignedHeroIds);
   const startPlayerRoll = rollStartPlayer(players, rng);
@@ -67,13 +69,43 @@ function assignHeroes(
   humanHeroId: HeroId,
   aiCount: number,
   rng: SeededRng,
+  selectedAiHeroIds?: HeroId[],
 ): HeroId[] {
   if (!heroIds.includes(humanHeroId)) {
     throw new Error(`Unknown human hero: ${humanHeroId}`);
   }
 
+  if (selectedAiHeroIds) {
+    if (selectedAiHeroIds.length > aiCount) {
+      throw new Error('selectedAiHeroIds must not exceed aiCount');
+    }
+
+    const uniqueSelectedAiHeroIds = new Set(selectedAiHeroIds);
+    if (uniqueSelectedAiHeroIds.size !== selectedAiHeroIds.length) {
+      throw new Error('selectedAiHeroIds must be unique');
+    }
+
+    for (const heroId of selectedAiHeroIds) {
+      if (!heroIds.includes(heroId)) {
+        throw new Error(`Unknown AI hero: ${heroId}`);
+      }
+
+      if (heroId === humanHeroId) {
+        throw new Error('selectedAiHeroIds must not include the human hero');
+      }
+    }
+  }
+
   const remainingHeroes = heroIds.filter((heroId) => heroId !== humanHeroId);
-  const aiHeroIds = shuffle(remainingHeroes, rng).slice(0, aiCount);
+  const selectedAiHeroes = selectedAiHeroIds ?? [];
+  const fillableAiHeroes = remainingHeroes.filter(
+    (heroId) => !selectedAiHeroes.includes(heroId),
+  );
+  const randomAiHeroes = shuffle(fillableAiHeroes, rng).slice(
+    0,
+    aiCount - selectedAiHeroes.length,
+  );
+  const aiHeroIds = [...selectedAiHeroes, ...randomAiHeroes];
 
   return [humanHeroId, ...aiHeroIds];
 }
