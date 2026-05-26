@@ -80,13 +80,6 @@ export function BoardView({
     originX: number;
     originY: number;
   } | null>(null);
-  const boardXValues = state.board.map((tile) => tile.boardX);
-  const boardYValues = state.board.map((tile) => tile.boardY);
-
-  if (state.pendingTile) {
-    boardXValues.push(state.pendingTile.target.boardX);
-    boardYValues.push(state.pendingTile.target.boardY);
-  }
 
   const boardLayoutSignature = state.board
     .map(
@@ -104,29 +97,6 @@ export function BoardView({
     )
     .join('|');
 
-  const tileMinX = Math.min(...boardXValues, -2);
-  const tileMaxX = Math.max(...boardXValues, 2);
-  const tileMinY = Math.min(...boardYValues, -2);
-  const tileMaxY = Math.max(...boardYValues, 2);
-  const playerOnMinXEdge = state.players.some(
-    (player) => player.position.boardX === tileMinX,
-  );
-  const playerOnMaxXEdge = state.players.some(
-    (player) => player.position.boardX === tileMaxX,
-  );
-  const playerOnMinYEdge = state.players.some(
-    (player) => player.position.boardY === tileMinY,
-  );
-  const playerOnMaxYEdge = state.players.some(
-    (player) => player.position.boardY === tileMaxY,
-  );
-  const boardMinX = playerOnMinXEdge ? tileMinX - 1 : tileMinX;
-  const boardMaxX = playerOnMaxXEdge ? tileMaxX + 1 : tileMaxX;
-  const boardMinY = playerOnMinYEdge ? tileMinY - 1 : tileMinY;
-  const boardMaxY = playerOnMaxYEdge ? tileMaxY + 1 : tileMaxY;
-  const columns = boardMaxX - boardMinX + 1;
-  const rows = boardMaxY - boardMinY + 1;
-  const gridOriginSignature = `${boardMinX},${boardMinY},${columns},${rows}`;
   const activePlayer = state.players[state.activePlayerIndex];
   const reachableMoveTargets = new Map(
     getReachableKnownMovePaths(state).map((target) => [
@@ -150,9 +120,41 @@ export function BoardView({
   const healingSelectionTargets = new Set(
     selectableHealingPositions.map(positionKey),
   );
-  const cells = Array.from({ length: columns * rows }, (_, index) => {
-    const boardX = boardMinX + (index % columns);
-    const boardY = boardMinY + Math.floor(index / columns);
+  const visiblePositions = new Map<string, BoardPosition>();
+
+  for (const tile of state.board) {
+    visiblePositions.set(positionKey(tile), {
+      boardX: tile.boardX,
+      boardY: tile.boardY,
+    });
+  }
+
+  if (state.pendingTile) {
+    visiblePositions.set(positionKey(state.pendingTile.target), {
+      boardX: state.pendingTile.target.boardX,
+      boardY: state.pendingTile.target.boardY,
+    });
+  }
+
+  for (const move of legalExplorationTargets.keys()) {
+    const [boardX, boardY] = move.split(',').map(Number);
+
+    visiblePositions.set(move, { boardX, boardY });
+  }
+
+  const visibleXValues = Array.from(visiblePositions.values(), (position) => position.boardX);
+  const visibleYValues = Array.from(visiblePositions.values(), (position) => position.boardY);
+  const boardMinX = Math.min(...visibleXValues);
+  const boardMaxX = Math.max(...visibleXValues);
+  const boardMinY = Math.min(...visibleYValues);
+  const boardMaxY = Math.max(...visibleYValues);
+  const columns = boardMaxX - boardMinX + 1;
+  const rows = boardMaxY - boardMinY + 1;
+  const gridOriginSignature = `${boardMinX},${boardMinY},${columns},${rows}`;
+  const boardWidthPx = columns * cellSizePx + Math.max(0, columns - 1) * cellGapPx;
+  const boardHeightPx = rows * cellSizePx + Math.max(0, rows - 1) * cellGapPx;
+
+  const cells = Array.from(visiblePositions.values()).map(({ boardX, boardY }) => {
     const tile = state.board.find(
       (candidate) => candidate.boardX === boardX && candidate.boardY === boardY,
     );
@@ -165,8 +167,10 @@ export function BoardView({
       state.pendingTile.target.boardY === boardY
         ? state.pendingTile
         : undefined;
+    const offsetX = (boardX - boardMinX) * cellStridePx;
+    const offsetY = (boardY - boardMinY) * cellStridePx;
 
-    return { boardX, boardY, tile, players, pendingTile };
+    return { boardX, boardY, tile, players, pendingTile, offsetX, offsetY };
   });
   const renderCell = (cell: (typeof cells)[number]) => {
     const cellPosition = { boardX: cell.boardX, boardY: cell.boardY };
@@ -191,12 +195,18 @@ export function BoardView({
     return (
       <div
         key={`${cell.boardX},${cell.boardY}`}
-        className={`aspect-square min-h-16 text-[0.65rem] ${
+        className={`absolute text-[0.65rem] ${
           cell.tile || cell.pendingTile
-            ? 'bg-stone-800'
-            : 'bg-stone-900'
+            ? 'bg-stone-800 shadow-[inset_0_0_0_1px_rgba(120,113,108,1)]'
+            : 'bg-transparent'
         }`}
         data-board-position={cellKey}
+        style={{
+          height: `${cellSizePx}px`,
+          left: `${cell.offsetX}px`,
+          top: `${cell.offsetY}px`,
+          width: `${cellSizePx}px`,
+        }}
       >
         {cell.tile || cell.pendingTile ? (
           <div
@@ -294,7 +304,7 @@ export function BoardView({
         ) : isClickableExplorationTarget ? (
           <button
             aria-label={`Explore tile ${cell.boardX},${cell.boardY}`}
-            className="relative h-full w-full border border-sky-300/35 bg-sky-200/8 shadow-[inset_0_0_0_1px_rgba(125,211,252,0.3)] transition-colors hover:bg-sky-200/14"
+            className="relative h-full w-full border border-stone-500 bg-stone-900/80 shadow-[inset_0_0_0_1px_rgba(168,162,158,0.35)] transition-colors hover:bg-stone-800/85"
             data-testid={`explore-target-${cell.boardX}-${cell.boardY}`}
             data-asset-id="sfx_tile_place"
             onClick={() => onExplore?.(explorationDirection)}
@@ -590,10 +600,11 @@ export function BoardView({
           }}
         >
           <div
-            className="grid gap-px bg-stone-500"
+            className="relative"
             data-testid="board-grid"
             style={{
-              gridTemplateColumns: `repeat(${columns}, minmax(4.5rem, 4.5rem))`,
+              height: `${boardHeightPx}px`,
+              width: `${boardWidthPx}px`,
             }}
           >
             {cells.map(renderCell)}

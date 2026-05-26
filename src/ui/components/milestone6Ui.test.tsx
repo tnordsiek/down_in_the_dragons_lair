@@ -1548,7 +1548,7 @@ describe('Milestone 6 UI', () => {
     ).toHaveAttribute('title', 'Kitchen Rat: Strength 5');
   });
 
-  it('renders the dungeon grid with 1px gray separators and no tile padding', () => {
+  it('renders the dungeon board as a transparent sparse surface with positioned cells', () => {
     const state = createUiState({
       board: [
         ...baseBoard(),
@@ -1568,10 +1568,27 @@ describe('Milestone 6 UI', () => {
 
     const grid = screen.getByTestId('board-grid');
     const occupiedCell = getBoardCell('0,0');
+    const eastCell = getBoardCell('1,0');
 
-    expect(grid).toHaveClass('grid', 'gap-px', 'bg-stone-500');
-    expect(occupiedCell).toHaveClass('aspect-square', 'min-h-16', 'bg-stone-800');
-    expect(occupiedCell).not.toHaveClass('border', 'p-1');
+    expect(grid).toHaveClass('relative');
+    expect(grid).not.toHaveClass('grid', 'gap-px', 'bg-stone-500');
+    expect(grid).toHaveAttribute(
+      'style',
+      expect.stringContaining('width: 218px;'),
+    );
+    expect(occupiedCell).toHaveClass(
+      'absolute',
+      'bg-stone-800',
+      'shadow-[inset_0_0_0_1px_rgba(120,113,108,1)]',
+    );
+    expect(occupiedCell).toHaveAttribute('style', expect.stringContaining('left: 73px;'));
+    expect(occupiedCell).toHaveAttribute('style', expect.stringContaining('top: 73px;'));
+    expect(occupiedCell).toHaveAttribute('style', expect.stringContaining('width: 72px;'));
+    expect(occupiedCell).toHaveAttribute('style', expect.stringContaining('height: 72px;'));
+    expect(eastCell).toHaveAttribute('style', expect.stringContaining('left: 146px;'));
+    expect(eastCell).toHaveAttribute('style', expect.stringContaining('top: 73px;'));
+    expect(eastCell).toHaveAttribute('style', expect.stringContaining('width: 72px;'));
+    expect(eastCell).toHaveAttribute('style', expect.stringContaining('height: 72px;'));
   });
 
   it('stacks multiple hero tokens from the top of the tile and keeps the active player in front', () => {
@@ -2485,6 +2502,63 @@ describe('Milestone 6 UI', () => {
 
     expect(onExplore).toHaveBeenCalledOnce();
     expect(onExplore).toHaveBeenCalledWith('B');
+  });
+
+  it('renders only relevant full-size exploration cells around the start tile', () => {
+    const state = createUiState();
+
+    render(<BoardView state={state} />);
+
+    const leftExploreTarget = screen.getByTestId('explore-target--1-0');
+    const topExploreTarget = screen.getByTestId('explore-target-0--1');
+
+    expect(document.querySelector('[data-board-position="-1,0"]')).not.toBeNull();
+    expect(document.querySelector('[data-board-position="0,-1"]')).not.toBeNull();
+    expect(document.querySelector('[data-board-position="1,-1"]')).toBeNull();
+    expect(leftExploreTarget).toHaveClass('border', 'border-stone-500');
+    expect(topExploreTarget).toHaveClass('border', 'border-stone-500');
+    expect(leftExploreTarget).not.toHaveClass('bg-sky-200/12');
+    expect(topExploreTarget).not.toHaveClass('bg-sky-200/12');
+  });
+
+  it('does not fill gaps between distant visible cells with gray board background', () => {
+    const state = createUiState({
+      board: [
+        {
+          ...baseBoard()[0],
+          boardX: 0,
+          boardY: 0,
+        },
+        {
+          tileInstanceId: 'tile-far-east',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 2,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? { ...player, position: { boardX: 0, boardY: 0 } }
+          : player,
+      ),
+    });
+
+    render(<BoardView state={state} />);
+
+    const grid = screen.getByTestId('board-grid');
+    const centerExploreTarget = screen.getByTestId('explore-target-1-0');
+    const centerExploreCell = getBoardCell('1,0');
+
+    expect(grid).not.toHaveClass('bg-stone-500');
+    expect(document.querySelector('[data-board-position="3,0"]')).toBeNull();
+    expect(centerExploreTarget).toHaveClass('border', 'border-stone-500');
+    expect(centerExploreCell).toHaveAttribute('style', expect.stringContaining('left: 146px;'));
+    expect(centerExploreCell).toHaveAttribute('style', expect.stringContaining('top: 73px;'));
+    expect(centerExploreCell).toHaveAttribute('style', expect.stringContaining('width: 72px;'));
+    expect(centerExploreCell).toHaveAttribute('style', expect.stringContaining('height: 72px;'));
   });
 
   it('swaps the human witch with the selected hero and writes a readable log entry', () => {
