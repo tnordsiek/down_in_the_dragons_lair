@@ -3402,6 +3402,100 @@ describe('Milestone 6 UI', () => {
     );
   });
 
+  it('shows a left-side zoom slider with the default zoom value', () => {
+    const state = createUiState();
+
+    render(<BoardView state={state} />);
+
+    expect(screen.getByLabelText('Board zoom')).toHaveValue('1');
+    expect(screen.getByTestId('board-zoom-value')).toHaveTextContent('1.0x');
+  });
+
+  it('sizes the zoom slider to roughly half of the visible board height', () => {
+    const state = createUiState();
+
+    render(<BoardView state={state} />);
+
+    const board = screen.getByLabelText('Dungeon board');
+    const transformLayer = screen.getByTestId('board-transform-layer');
+    const control = screen.getByTestId('board-zoom-control');
+    setupBoardGeometry(board, transformLayer);
+    fireEvent(window, new Event('resize'));
+
+    expect(control).toHaveAttribute(
+      'style',
+      expect.stringContaining('height: 300px'),
+    );
+  });
+
+  it('updates board zoom through the slider and keeps the current center stable', () => {
+    const state = createUiState({
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-east',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+
+    render(<BoardView state={state} />);
+
+    const board = screen.getByLabelText('Dungeon board');
+    const slider = screen.getByLabelText('Board zoom');
+    const transformLayer = screen.getByTestId('board-transform-layer');
+    setupBoardGeometry(board, transformLayer);
+    fireEvent(window, new Event('resize'));
+
+    const contentCenterBefore = getViewportCenterContentCoordinate(
+      board,
+      transformLayer,
+    );
+
+    fireEvent.change(slider, { target: { value: '1.5' } });
+
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('scale(1.5)'),
+    );
+    expect(screen.getByTestId('board-zoom-value')).toHaveTextContent('1.5x');
+    expect(getViewportCenterContentCoordinate(board, transformLayer)).toEqual(
+      contentCenterBefore,
+    );
+  });
+
+  it('keeps slider and mouse-wheel zoom in sync', () => {
+    const state = createUiState();
+
+    render(<BoardView state={state} />);
+
+    const board = screen.getByLabelText('Dungeon board');
+    const slider = screen.getByLabelText('Board zoom');
+    const transformLayer = screen.getByTestId('board-transform-layer');
+    setupBoardGeometry(board, transformLayer);
+    fireEvent(window, new Event('resize'));
+
+    fireEvent.change(slider, { target: { value: '1.5' } });
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('scale(1.5)'),
+    );
+
+    fireEvent.wheel(board, { deltaY: 100 });
+
+    expect(slider).toHaveValue('1.364');
+    expect(screen.getByTestId('board-zoom-value')).toHaveTextContent('1.4x');
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('scale(1.364)'),
+    );
+  });
+
   it('keeps wheel zoom after an already-applied camera request', () => {
     const state = createUiState();
 
@@ -3661,6 +3755,52 @@ describe('Milestone 6 UI', () => {
     expect(transformLayer).toHaveAttribute(
       'style',
       expect.stringContaining('translate(40px, 25px)'),
+    );
+  });
+
+  it('supports touch dragging on the board', () => {
+    const state = createUiState({
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-east',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    });
+
+    render(<BoardView state={state} />);
+
+    const board = screen.getByLabelText('Dungeon board');
+    const transformLayer = screen.getByTestId('board-transform-layer');
+
+    fireEvent.pointerDown(board, {
+      clientX: 100,
+      clientY: 100,
+      pointerId: 7,
+      pointerType: 'touch',
+    });
+    fireEvent.pointerMove(board, {
+      clientX: 145,
+      clientY: 135,
+      pointerId: 7,
+      pointerType: 'touch',
+    });
+    fireEvent.pointerUp(board, {
+      clientX: 145,
+      clientY: 135,
+      pointerId: 7,
+      pointerType: 'touch',
+    });
+
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('translate(45px, 35px)'),
     );
   });
 
@@ -4262,6 +4402,21 @@ function expectCenteredOnBoard(target: HTMLElement, board: HTMLElement) {
 
   expect(targetCenter.x).toBeCloseTo(boardCenter.x, 3);
   expect(targetCenter.y).toBeCloseTo(boardCenter.y, 3);
+}
+
+function getViewportCenterContentCoordinate(
+  board: HTMLElement,
+  transformLayer: HTMLElement,
+) {
+  const boardCenter = getElementCenter(board);
+  const { scale, translateX, translateY } = parseTransform(
+    transformLayer.getAttribute('style') ?? '',
+  );
+
+  return {
+    x: Number(((boardCenter.x - translateX) / scale).toFixed(3)),
+    y: Number(((boardCenter.y - translateY) / scale).toFixed(3)),
+  };
 }
 
 function parseBoardPosition(element: HTMLElement): {

@@ -28,6 +28,12 @@ import {
   getMonsterTileTooltip,
 } from '../tooltips';
 
+const minBoardZoom = 0.6;
+const maxBoardZoom = 4;
+const boardZoomStep = 0.1;
+const minZoomSliderHeightPx = 192;
+const maxZoomSliderHeightPx = 480;
+
 type BoardViewProps = {
   cameraRequest?: {
     nonce: number;
@@ -79,6 +85,7 @@ export function BoardView({
   const [isDragging, setIsDragging] = useState(false);
   const dragStateRef = useRef<{
     pointerId: number;
+    pointerType: string;
     startX: number;
     startY: number;
     originX: number;
@@ -444,32 +451,9 @@ export function BoardView({
 
     const handleWheel = (event: WheelEvent) => {
       event.preventDefault();
-      const currentZoom = zoomRef.current;
-      const currentPan = panRef.current;
-      const nextZoom = Math.min(
-        4,
-        Math.max(
-          0.6,
-          Number(
-            (
-              event.deltaY < 0
-                ? currentZoom * 1.1
-                : currentZoom / 1.1
-            ).toFixed(3),
-          ),
-        ),
-      );
-      const viewportCenterX = boardViewport.clientWidth / 2;
-      const viewportCenterY = boardViewport.clientHeight / 2;
-      const contentX = (viewportCenterX - currentPan.x) / currentZoom;
-      const contentY = (viewportCenterY - currentPan.y) / currentZoom;
-      const nextPan = {
-        x: Number((viewportCenterX - contentX * nextZoom).toFixed(3)),
-        y: Number((viewportCenterY - contentY * nextZoom).toFixed(3)),
-      };
-
-      setZoom(nextZoom);
-      setPan(nextPan);
+      const zoomFactor = event.deltaY < 0 ? 1.1 : 1 / 1.1;
+      const nextZoom = clampBoardZoom(zoomRef.current * zoomFactor);
+      applyZoom(nextZoom, boardViewport);
     };
 
     boardViewport.addEventListener('wheel', handleWheel, { passive: false });
@@ -550,6 +534,38 @@ export function BoardView({
     viewportSize,
   ]);
 
+  const applyZoom = (
+    requestedZoom: number,
+    viewport: HTMLDivElement | null = boardViewportRef.current,
+  ) => {
+    if (!viewport) {
+      return;
+    }
+
+    const currentZoom = zoomRef.current;
+    const nextZoom = clampBoardZoom(requestedZoom);
+
+    if (nextZoom === currentZoom) {
+      return;
+    }
+
+    const nextPan = getCenteredZoomPan(
+      viewport.clientWidth,
+      viewport.clientHeight,
+      panRef.current,
+      currentZoom,
+      nextZoom,
+    );
+
+    setZoom(nextZoom);
+    setPan(nextPan);
+  };
+  const zoomSliderHeightPx = clampDimension(
+    viewportSize.height * 0.5,
+    minZoomSliderHeightPx,
+    maxZoomSliderHeightPx,
+  );
+
   return (
     <section
       className="flex min-h-0 min-w-0 flex-1"
@@ -557,16 +573,17 @@ export function BoardView({
     >
       <div
         aria-label="Dungeon board"
-        className="h-full min-h-[24rem] flex-1 select-none overflow-hidden bg-stone-950 p-2"
+        className="relative h-full min-h-[24rem] flex-1 select-none overflow-hidden bg-stone-950 p-2 touch-none"
         ref={boardViewportRef}
         onPointerDown={(event) => {
-          if (event.button !== 0) {
+          if (!canStartBoardDrag(event)) {
             return;
           }
 
           event.preventDefault();
           dragStateRef.current = {
             pointerId: event.pointerId,
+            pointerType: event.pointerType,
             startX: event.clientX,
             startY: event.clientY,
             originX: pan.x,
@@ -582,7 +599,7 @@ export function BoardView({
             return;
           }
 
-          if ((event.buttons & 1) !== 1) {
+          if (!isActiveBoardDragPointer(event, dragState.pointerType)) {
             stopDragging(event.pointerId, event.currentTarget);
             return;
           }
@@ -602,6 +619,40 @@ export function BoardView({
           stopDragging(event.pointerId, event.currentTarget);
         }}
       >
+        <div className="pointer-events-none absolute inset-y-0 left-2 z-20 flex items-center">
+          <div
+            className="pointer-events-auto flex flex-col items-center gap-2"
+            data-testid="board-zoom-control"
+            style={{ height: `${zoomSliderHeightPx}px` }}
+          >
+            <output
+              className="text-center text-xs font-semibold tabular-nums text-amber-100"
+              data-testid="board-zoom-value"
+            >
+              {zoom.toFixed(1)}x
+            </output>
+            <input
+              aria-label="Board zoom"
+              aria-valuemax={maxBoardZoom}
+              aria-valuemin={minBoardZoom}
+              aria-valuenow={zoom}
+              aria-valuetext={`${Math.round(zoom * 100)} percent`}
+              className="w-4 flex-1 accent-amber-300"
+              data-testid="board-zoom-slider"
+              max={maxBoardZoom}
+              min={minBoardZoom}
+              onChange={(event) => {
+                applyZoom(Number(event.target.value));
+              }}
+              onPointerDown={(event) => event.stopPropagation()}
+              orient="vertical"
+              step={boardZoomStep}
+              style={{ writingMode: 'vertical-lr', direction: 'rtl' }}
+              type="range"
+              value={zoom}
+            />
+          </div>
+        </div>
         <div
           className={`origin-top-left transition-transform ${
             isDragging ? 'cursor-grabbing' : 'cursor-grab'
@@ -631,6 +682,51 @@ export function BoardView({
 
 function positionKey(position: BoardPosition): string {
   return `${position.boardX},${position.boardY}`;
+}
+
+function clampBoardZoom(zoom: number) {
+  return Math.min(maxBoardZoom, Math.max(minBoardZoom, Number(zoom.toFixed(3))));
+}
+
+function clampDimension(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+function getCenteredZoomPan(
+  viewportWidth: number,
+  viewportHeight: number,
+  currentPan: { x: number; y: number },
+  currentZoom: number,
+  nextZoom: number,
+) {
+  const viewportCenterX = viewportWidth / 2;
+  const viewportCenterY = viewportHeight / 2;
+  const contentX = (viewportCenterX - currentPan.x) / currentZoom;
+  const contentY = (viewportCenterY - currentPan.y) / currentZoom;
+
+  return {
+    x: Number((viewportCenterX - contentX * nextZoom).toFixed(3)),
+    y: Number((viewportCenterY - contentY * nextZoom).toFixed(3)),
+  };
+}
+
+function canStartBoardDrag(event: React.PointerEvent<HTMLDivElement>) {
+  if (event.pointerType !== 'touch' && event.pointerType !== 'pen') {
+    return event.button === 0;
+  }
+
+  return true;
+}
+
+function isActiveBoardDragPointer(
+  event: React.PointerEvent<HTMLDivElement>,
+  pointerType: string,
+) {
+  if (pointerType !== 'touch' && pointerType !== 'pen') {
+    return (event.buttons & 1) === 1;
+  }
+
+  return true;
 }
 
 function preventButtonFocus(event: ReactMouseEvent<HTMLButtonElement>) {
