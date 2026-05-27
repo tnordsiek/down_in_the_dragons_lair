@@ -93,7 +93,7 @@ describe('App', () => {
       screen.getByRole('button', { name: 'Movement Points on' }),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'New Game' })).toBeNull();
-    expect(screen.getByText('v1.2')).toBeInTheDocument();
+    expect(screen.getByText('v1.3')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Imprint' })).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Privacy Policy' }),
@@ -112,7 +112,7 @@ describe('App', () => {
       screen.getByRole('heading', { name: 'Actions' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Players')).toBeInTheDocument();
-    expect(screen.getByText('v1.2 fnord GAMES 2026')).toBeInTheDocument();
+    expect(screen.getByText('v1.3 fnord GAMES 2026')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Imprint' })).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Privacy Policy' }),
@@ -280,10 +280,12 @@ describe('App', () => {
     const layout = board.closest('main')?.firstElementChild;
     const actionsHeading = screen.getByRole('heading', { name: 'Actions' });
     const sidebar = actionsHeading.closest('aside');
+    const actionPanel = actionsHeading.closest('section');
     const header = screen
       .getByRole('img', { name: "Down in the Dragon's Lair" })
       .closest('header');
     const centerMapButton = screen.getByRole('button', { name: 'Center Map' });
+    const endTurnButton = screen.getByRole('button', { name: 'End Turn' });
     const settingsButton = screen.getByRole('button', {
       name: 'Open settings menu',
     });
@@ -294,27 +296,41 @@ describe('App', () => {
     expect(layout).toHaveClass(
       'grid',
       'w-full',
-      'lg:grid-cols-[minmax(0,1fr)_22rem]',
+      'lg:grid-cols-[minmax(0,1fr)_400px]',
     );
     expect(layout).not.toHaveClass('max-w-7xl');
     expect(sidebar).toHaveClass(
       'min-h-0',
       'lg:h-full',
-      'lg:w-[22rem]',
+      'lg:w-[400px]',
       'lg:justify-self-end',
       'lg:overflow-y-auto',
     );
-    expect(header).toHaveClass('h-[120px]', 'pb-2');
+    expect(header).toHaveClass('min-h-[72px]', 'pb-2', 'lg:h-[120px]');
     expect(leftHeaderCell).toContainElement(settingsButton);
-    expect(leftHeaderCell).toContainElement(centerMapButton);
+    expect(leftHeaderCell).not.toContainElement(centerMapButton);
+    expect(actionPanel).toContainElement(centerMapButton);
+    expect(actionPanel).toContainElement(endTurnButton);
+    expect(centerMapButton.className).toBe(endTurnButton.className);
     expect(screen.queryByRole('button', { name: 'New Game' })).toBeNull();
     expect(centerHeaderCell).toContainElement(
       screen.getByRole('img', { name: "Down in the Dragon's Lair" }),
     );
     expect(
       screen.getByRole('img', { name: "Down in the Dragon's Lair" }),
-    ).toHaveClass('max-h-[108px]', 'w-auto', 'object-contain');
-    expect(rightHeaderCell).toHaveClass('flex', 'items-center', 'justify-end');
+    ).toHaveClass(
+      'max-h-[50px]',
+      'w-auto',
+      'object-contain',
+      'lg:max-h-[108px]',
+    );
+    expect(rightHeaderCell).toHaveClass(
+      'flex',
+      'items-center',
+      'justify-start',
+      'gap-2',
+      'lg:justify-end',
+    );
     expect(header?.querySelector('.text-sm.text-stone-400')).toBeNull();
     expect(screen.queryByRole('img', { name: /Combat die \d:/ })).toBeNull();
   });

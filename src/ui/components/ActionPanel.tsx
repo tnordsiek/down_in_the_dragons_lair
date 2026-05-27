@@ -57,6 +57,7 @@ type ActionPanelProps = {
   onSwapLoot: (inventorySlot: { kind: 'weapon' | 'spell'; index: number }) => void;
   onTakeLoot: () => void;
   onOpenChest: () => void;
+  onCenterMap: () => void;
   onEndTurn: () => void;
   healingSpellSelection: HealingSpellSelectionState;
   onStartHealingSpellSelection: () => void;
@@ -89,6 +90,7 @@ export function ActionPanel({
   onSwapLoot,
   onTakeLoot,
   onOpenChest,
+  onCenterMap,
   onEndTurn,
   healingSpellSelection,
   onStartHealingSpellSelection,
@@ -187,13 +189,21 @@ export function ActionPanel({
             {state.phase} / {state.remainingSteps}
           </p>
         </div>
-        <button
-          className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
-          disabled={isEndTurnBlockedPhase(state.phase)}
-          onClick={onEndTurn}
-        >
-          End Turn
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
+            onClick={onCenterMap}
+          >
+            Center Map
+          </button>
+          <button
+            className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
+            disabled={isEndTurnBlockedPhase(state.phase)}
+            onClick={onEndTurn}
+          >
+            End Turn
+          </button>
+        </div>
       </div>
 
       {state.phase === 'choose_pending_tile_rotation' && state.pendingTile ? (

@@ -170,7 +170,7 @@ function rollStartPlayer(
 }
 
 function expandTileStack(poolScale: number): TileBlueprintId[] {
-  return Object.entries(tilePoolCounts).flatMap(([blueprintId, count]) => {
+  return Object.entries(tilePoolCounts).flatMap(([blueprintId]) => {
     if (blueprintId === 'start_cross_healing') {
       return [];
     }

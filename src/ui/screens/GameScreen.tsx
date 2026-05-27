@@ -299,39 +299,31 @@ export function GameScreen() {
 
   return (
     <main className="relative min-h-screen bg-stone-950 text-stone-100 lg:h-screen">
-      <div className="grid min-h-screen w-full gap-4 px-4 py-4 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="grid min-h-screen w-full gap-4 px-4 py-4 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_400px]">
         <div className="flex min-h-0 min-w-0 flex-col gap-4 lg:h-full">
-          <header className="grid h-[120px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 border-b border-stone-800 pb-2">
-            <div className="flex justify-start">
-              <div className="flex items-center gap-2">
-                <SettingsMenu
-                  onNewGame={resetGame}
-                  newGameTitle="Return to setup. The current saved game remains resumable."
-                />
-                <button
-                  className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
-                  onClick={() => focusMap({ boardX: 0, boardY: 0 }, true)}
-                >
-                  Center Map
-                </button>
-              </div>
+          <header className="flex min-h-[72px] items-center gap-3 border-b border-stone-800 pb-2 lg:grid lg:h-[120px] lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-4">
+            <div className="flex items-center justify-start">
+              <SettingsMenu
+                onNewGame={resetGame}
+                newGameTitle="Return to setup. The current saved game remains resumable."
+              />
             </div>
             <div
-              className="flex justify-center"
+              className="flex items-center justify-start lg:justify-center"
               data-asset-id={headerLogo.assetId}
             >
               {headerLogoUrl ? (
                 <img
-                  className="max-h-[108px] w-auto object-contain"
+                  className="max-h-[50px] w-auto object-contain lg:max-h-[108px]"
                   src={headerLogoUrl}
                   alt="Down in the Dragon's Lair"
                 />
               ) : null}
             </div>
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-start gap-2 lg:justify-end">
               {latestCombatDice ? (
                 <div
-                  className="flex items-center gap-2"
+                  className="flex items-center justify-start gap-2"
                   aria-label="Latest combat dice"
                 >
                   {latestCombatDice.map((die, index) => {
@@ -341,7 +333,7 @@ export function GameScreen() {
                     return dieUrl ? (
                       <img
                         key={`${index}-${die}`}
-                        className="max-h-[108px] w-auto object-contain"
+                        className="max-h-[50px] w-auto object-contain lg:max-h-[108px]"
                         data-asset-id={dieAssetId}
                         src={dieUrl}
                         alt={`Combat die ${index + 1}: ${die}`}
@@ -367,7 +359,7 @@ export function GameScreen() {
             selectableHealingPositions={selectableHealingPositions}
           />
         </div>
-        <aside className="grid min-h-0 content-start gap-4 lg:h-full lg:w-[22rem] lg:justify-self-end lg:overflow-y-auto lg:pr-1">
+        <aside className="grid min-h-0 content-start gap-4 lg:h-full lg:w-[400px] lg:justify-self-end lg:overflow-y-auto lg:pr-1">
           <ActionPanel
             healingSpellSelection={healingSpellSelection}
             onCancelHealingSpellSelection={handleCancelHealingSpellSelection}
@@ -395,6 +387,7 @@ export function GameScreen() {
             onSwapLoot={handleSwapLoot}
             onTakeLoot={handleTakeLoot}
             onOpenChest={handleOpenChest}
+            onCenterMap={() => focusMap({ boardX: 0, boardY: 0 }, true)}
             onEndTurn={handleEndTurn}
             witchSwapSelection={witchSwapSelection}
             onStartWitchSwapSelection={handleStartWitchSwapSelection}
@@ -524,7 +517,7 @@ export function GameScreen() {
           </div>
         </div>
       ) : null}
-      <FooterMeta align="left" versionLabel="v1.2 fnord GAMES 2026" />
+      <FooterMeta align="left" versionLabel="v1.3 fnord GAMES 2026" />
     </main>
   );
 }

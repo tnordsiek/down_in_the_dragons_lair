@@ -53,6 +53,7 @@ const noopActions = {
   onSwapLoot: vi.fn(),
   onTakeLoot: vi.fn(),
   onOpenChest: vi.fn(),
+  onCenterMap: vi.fn(),
   onEndTurn: vi.fn(),
 };
 
@@ -834,14 +835,20 @@ describe('Milestone 6 UI', () => {
 
     render(<GameScreen />);
 
-    expect(screen.getByLabelText('Latest combat dice')).toHaveClass('items-center');
+    expect(screen.getByLabelText('Latest combat dice')).toHaveClass(
+      'items-center',
+      'justify-start',
+      'gap-2',
+    );
     expect(screen.getByRole('img', { name: 'Combat die 1: 6' })).toHaveAttribute(
       'src',
       '/assets/ui/ui_dice_06.png',
     );
     expect(screen.getByRole('img', { name: 'Combat die 1: 6' })).toHaveClass(
-      'max-h-[108px]',
+      'max-h-[50px]',
       'w-auto',
+      'object-contain',
+      'lg:max-h-[108px]',
     );
     expect(screen.getByRole('img', { name: 'Combat die 2: 4' })).toHaveAttribute(
       'src',
@@ -849,7 +856,7 @@ describe('Milestone 6 UI', () => {
     );
     expect(
       screen.getByRole('img', { name: "Down in the Dragon's Lair" }),
-    ).toHaveClass('max-h-[108px]');
+    ).toHaveClass('max-h-[50px]', 'lg:max-h-[108px]');
   });
 
   it('shows the pending blade reroll dice in the header before combat resolves', () => {
@@ -4061,6 +4068,53 @@ describe('Milestone 6 UI', () => {
     );
   });
 
+  it('places Center Map to the left of End Turn with matching button styling', () => {
+    const state = createUiState();
+
+    render(
+      <ActionPanel
+        healingSpellSelection={{ mode: 'idle' }}
+        onBeginLoot={vi.fn()}
+        onCancelHealingSpellSelection={vi.fn()}
+        onChooseSeeressRoomToken={vi.fn()}
+        onCenterMap={vi.fn()}
+        onDeclineValkyrieReroll={vi.fn()}
+        onDeclineWitchSacrifice={vi.fn()}
+        onEndTurn={vi.fn()}
+        onExplore={vi.fn()}
+        onFocusPortalTarget={vi.fn()}
+        onLeaveLoot={vi.fn()}
+        onMove={vi.fn()}
+        onOpenChest={vi.fn()}
+        onResolveCombat={vi.fn()}
+        onResolveCombatWithFlameSpells={vi.fn()}
+        onResolveCombatWithoutFlameSpells={vi.fn()}
+        onSelectCurseTarget={vi.fn()}
+        onSelectHealingSpellTarget={vi.fn()}
+        onSelectWitchSwapTarget={vi.fn()}
+        onStartHealingSpellSelection={vi.fn()}
+        onStartOptionalCombat={vi.fn()}
+        onStartWitchSwapSelection={vi.fn()}
+        onSwapLoot={vi.fn()}
+        onTakeLoot={vi.fn()}
+        onUseBladeReroll={vi.fn()}
+        onUseValkyrieReroll={vi.fn()}
+        onUseWitchSacrifice={vi.fn()}
+        onCancelWitchSwapSelection={vi.fn()}
+        state={state}
+        witchSwapSelection={{ mode: 'idle' }}
+      />,
+    );
+
+    const centerMapButton = screen.getByRole('button', { name: 'Center Map' });
+    const endTurnButton = screen.getByRole('button', { name: 'End Turn' });
+    const buttonGroup = centerMapButton.parentElement;
+
+    expect(buttonGroup).toContainElement(endTurnButton);
+    expect(centerMapButton.nextElementSibling).toBe(endTurnButton);
+    expect(centerMapButton.className).toBe(endTurnButton.className);
+  });
+
   it('renders two compact player cards side by side with permanent bonuses and tooltips', () => {
     const state = createUiState({
       players: createUiState().players.map((player, index) =>
@@ -4485,6 +4539,7 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
         onCancelHealingSpellSelection={() =>
           setHealingSpellSelection({ mode: 'idle' })
         }
+        onCenterMap={vi.fn()}
         onEndTurn={vi.fn()}
         onExplore={vi.fn()}
         onLeaveLoot={vi.fn()}

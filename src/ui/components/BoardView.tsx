@@ -645,7 +645,6 @@ export function BoardView({
                 applyZoom(Number(event.target.value));
               }}
               onPointerDown={(event) => event.stopPropagation()}
-              orient="vertical"
               step={boardZoomStep}
               style={{ writingMode: 'vertical-lr', direction: 'rtl' }}
               type="range"
