@@ -110,3 +110,10 @@ export const totalTileCount = tilePoolEntries.reduce(
 
 export const drawableTileCount =
   totalTileCount - tilePoolCounts.start_cross_healing;
+
+export function getScaledTileCount(
+  blueprintId: TileBlueprintId,
+  poolScale = 1,
+): number {
+  return Math.ceil(tilePoolCounts[blueprintId] * poolScale);
+}

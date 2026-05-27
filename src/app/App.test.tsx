@@ -37,6 +37,7 @@ describe('App', () => {
         opponentSelectionMode: 'random',
         selectedOpponentHeroIds: [],
         seed: 'v1-local-seed',
+        poolScale: 1,
         musicEnabled: true,
         sfxEnabled: true,
         movementPointsEnabled: true,
@@ -59,6 +60,8 @@ describe('App', () => {
     expect(
       screen.getByRole('radio', { name: 'Choose Opponents' }),
     ).not.toBeChecked();
+    expect(screen.getByLabelText('Token and Tile Factor')).toBeInTheDocument();
+    expect(screen.getByText('1.0x')).toBeInTheDocument();
     expect(screen.queryByText(/Opponents \(0\/1\)/)).toBeNull();
     expect(
       screen.getByText(
@@ -172,7 +175,7 @@ describe('App', () => {
     render(<App />);
 
     act(() => {
-      fireEvent.change(screen.getByRole('slider'), {
+      fireEvent.change(screen.getByLabelText('AI Opponents'), {
         target: { value: '2' },
       });
     });
@@ -457,5 +460,22 @@ describe('App', () => {
     expect(
       screen.getByRole('button', { name: 'Movement Points off' }),
     ).toBeInTheDocument();
+  });
+
+  it('starts a game with the scaled tile and token pools selected on the setup screen', () => {
+    render(<App />);
+
+    act(() => {
+      fireEvent.change(screen.getByLabelText('Token and Tile Factor'), {
+        target: { value: '1.5' },
+      });
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
+    });
+
+    expect(screen.getByLabelText('Dungeon board')).toBeInTheDocument();
+    expect(useSetupStore.getState().gameState?.tileStack).toHaveLength(121);
+    expect(useSetupStore.getState().gameState?.tokenBag).toHaveLength(80);
   });
 });

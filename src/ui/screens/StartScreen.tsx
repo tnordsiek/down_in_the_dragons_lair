@@ -15,6 +15,7 @@ export function StartScreen() {
     (state) => state.selectedOpponentHeroIds,
   );
   const seed = useSetupStore((state) => state.seed);
+  const poolScale = useSetupStore((state) => state.poolScale);
   const hasSavedGame = useSetupStore((state) => state.hasSavedGame);
   const lastError = useSetupStore((state) => state.lastError);
   const persistenceError = useSetupStore((state) => state.persistenceError);
@@ -27,6 +28,7 @@ export function StartScreen() {
     (state) => state.toggleSelectedOpponentHeroId,
   );
   const setSeed = useSetupStore((state) => state.setSeed);
+  const setPoolScale = useSetupStore((state) => state.setPoolScale);
   const startGame = useSetupStore((state) => state.startGame);
   const resumeSavedGame = useSetupStore((state) => state.resumeSavedGame);
   const clearSavedGame = useSetupStore((state) => state.clearSavedGame);
@@ -121,6 +123,7 @@ export function StartScreen() {
                 <label className="grid gap-2 text-sm text-stone-300">
                   AI Opponents
                   <input
+                    aria-label="AI Opponents"
                     className="accent-amber-300"
                     max={4}
                     min={1}
@@ -194,6 +197,28 @@ export function StartScreen() {
                     </p>
                   </fieldset>
                 ) : null}
+
+                <label className="grid gap-2 text-sm text-stone-300">
+                  Token and Tile Factor
+                  <input
+                    aria-label="Token and Tile Factor"
+                    className="accent-amber-300"
+                    min={1}
+                    max={5}
+                    step={0.5}
+                    type="range"
+                    value={poolScale}
+                    onChange={(event) =>
+                      setPoolScale(Number(event.target.value))
+                    }
+                  />
+                  <span className="font-mono text-stone-100">
+                    {poolScale.toFixed(1)}x
+                  </span>
+                  <span className="text-xs text-stone-400">
+                    Counts are rounded up. The dragon always remains unique.
+                  </span>
+                </label>
 
                 <label className="grid gap-2 text-sm text-stone-300">
                   Seed

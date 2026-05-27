@@ -34,6 +34,7 @@ type SetupState = {
   opponentSelectionMode: OpponentSelectionMode;
   selectedOpponentHeroIds: HeroId[];
   seed: string;
+  poolScale: number;
   musicEnabled: boolean;
   sfxEnabled: boolean;
   movementPointsEnabled: boolean;
@@ -47,6 +48,7 @@ type SetupState = {
   setOpponentSelectionMode: (mode: OpponentSelectionMode) => void;
   toggleSelectedOpponentHeroId: (heroId: HeroId) => void;
   setSeed: (seed: string) => void;
+  setPoolScale: (poolScale: number) => void;
   toggleMusicEnabled: () => void;
   toggleSfxEnabled: () => void;
   toggleMovementPointsEnabled: () => void;
@@ -71,6 +73,7 @@ export const useSetupStore = create<SetupState>((set) => ({
   opponentSelectionMode: 'random',
   selectedOpponentHeroIds: [],
   seed: 'v1-local-seed',
+  poolScale: 1,
   musicEnabled: initialAudioSettings.musicEnabled,
   sfxEnabled: initialAudioSettings.sfxEnabled,
   movementPointsEnabled: initialAudioSettings.movementPointsEnabled,
@@ -122,6 +125,7 @@ export const useSetupStore = create<SetupState>((set) => ({
       };
     }),
   setSeed: (seed) => set({ seed }),
+  setPoolScale: (poolScale) => set({ poolScale }),
   toggleMusicEnabled: () =>
     set((state) => {
       const musicEnabled = !state.musicEnabled;
@@ -175,6 +179,7 @@ export const useSetupStore = create<SetupState>((set) => ({
         humanHeroId: state.selectedHeroId,
         aiCount: state.aiCount,
         seed: state.seed,
+        poolScale: state.poolScale,
         selectedAiHeroIds:
           state.opponentSelectionMode === 'manual'
             ? state.selectedOpponentHeroIds

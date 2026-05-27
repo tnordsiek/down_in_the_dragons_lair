@@ -14,6 +14,7 @@ describe('setup store audio cues', () => {
         opponentSelectionMode: 'random',
         selectedOpponentHeroIds: [],
         seed: 'v1-local-seed',
+        poolScale: 1,
         musicEnabled: true,
         sfxEnabled: true,
         movementPointsEnabled: true,
@@ -49,6 +50,18 @@ describe('setup store audio cues', () => {
     expect(
       useSetupStore.getState().gameState?.players.map((player) => player.heroId),
     ).toEqual(['hero_mage', 'hero_rogue', expect.any(String)]);
+  });
+
+  it('passes the configured pool scale into the started game', () => {
+    act(() => {
+      useSetupStore.setState({
+        poolScale: 1.5,
+      });
+      useSetupStore.getState().startGame();
+    });
+
+    expect(useSetupStore.getState().gameState?.tileStack).toHaveLength(121);
+    expect(useSetupStore.getState().gameState?.tokenBag).toHaveLength(80);
   });
 
   it('trims selected opponents when the AI count is reduced', () => {

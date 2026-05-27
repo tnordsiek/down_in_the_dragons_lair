@@ -39,6 +39,7 @@ export function applyGameAction(
       humanHeroId: action.humanHeroId,
       aiCount: action.aiCount,
       seed: action.seed,
+      poolScale: action.poolScale,
       selectedAiHeroIds: action.selectedAiHeroIds,
     });
   }

@@ -1,6 +1,6 @@
 import { heroIds } from '../../data/heroes';
 import { playerHeroLabel } from '../../data/playerLabels';
-import { tilePoolCounts } from '../../data/tiles';
+import { getScaledTileCount, tilePoolCounts } from '../../data/tiles';
 import { createTokenBag } from '../../data/tokens';
 import { createSeededRng, type SeededRng } from '../../utils/rng';
 import type {
@@ -17,6 +17,7 @@ export type CreateGameOptions = {
   humanHeroId: HeroId;
   aiCount: number;
   seed: string;
+  poolScale?: number;
   selectedAiHeroIds?: HeroId[];
 };
 
@@ -26,6 +27,7 @@ export function createNewGame(options: CreateGameOptions): GameState {
   }
 
   const rng = createSeededRng(options.seed);
+  const poolScale = options.poolScale ?? 1;
   const assignedHeroIds = assignHeroes(
     options.humanHeroId,
     options.aiCount,
@@ -52,8 +54,8 @@ export function createNewGame(options: CreateGameOptions): GameState {
     phase: 'turn_start',
     players,
     board,
-    tileStack: shuffle(expandTileStack(), rng),
-    tokenBag: shuffle(createTokenBag(), rng),
+    tileStack: shuffle(expandTileStack(poolScale), rng),
+    tokenBag: shuffle(createTokenBag(poolScale), rng),
     activePlayerIndex,
     remainingSteps: 4,
     eventLog: createInitialEventLog(
@@ -167,13 +169,18 @@ function rollStartPlayer(
   };
 }
 
-function expandTileStack(): TileBlueprintId[] {
+function expandTileStack(poolScale: number): TileBlueprintId[] {
   return Object.entries(tilePoolCounts).flatMap(([blueprintId, count]) => {
     if (blueprintId === 'start_cross_healing') {
       return [];
     }
 
-    return Array.from({ length: count }, () => blueprintId as TileBlueprintId);
+    return Array.from(
+      {
+        length: getScaledTileCount(blueprintId as TileBlueprintId, poolScale),
+      },
+      () => blueprintId as TileBlueprintId,
+    );
   });
 }
 

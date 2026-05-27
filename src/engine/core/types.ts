@@ -306,6 +306,7 @@ export type StartGameAction = {
   humanHeroId: HeroId;
   aiCount: number;
   seed: string;
+  poolScale?: number;
   selectedAiHeroIds?: HeroId[];
 };
 

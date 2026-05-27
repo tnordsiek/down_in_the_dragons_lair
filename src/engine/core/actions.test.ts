@@ -10,6 +10,7 @@ describe('game action transitions', () => {
       humanHeroId: 'hero_mage',
       aiCount: 1,
       seed: 'action-seed',
+      poolScale: 1,
     });
 
     expect(state.players).toHaveLength(2);
@@ -22,6 +23,7 @@ describe('game action transitions', () => {
       humanHeroId: 'hero_mage',
       aiCount: 2,
       seed: 'action-manual-ai-seed',
+      poolScale: 1,
       selectedAiHeroIds: ['hero_rogue'],
     });
 
@@ -39,6 +41,7 @@ describe('game action transitions', () => {
       humanHeroId: 'hero_mage',
       aiCount: 1,
       seed: 'action-explore-seed',
+      poolScale: 1,
     });
     const pendingState = applyGameAction(
       { ...state, tileStack: ['tunnel_straight'] },
@@ -59,6 +62,7 @@ describe('game action transitions', () => {
       humanHeroId: 'hero_mage',
       aiCount: 1,
       seed: 'action-rotate-seed',
+      poolScale: 1,
     });
     const pendingState = applyGameAction(
       { ...state, tileStack: ['room_corner'] },
@@ -88,6 +92,19 @@ describe('game action transitions', () => {
         { type: 'endTurn' },
       ),
     ).toThrow('Resolve the room token before ending the turn');
+  });
+
+  it('passes the pool scale through the action interface', () => {
+    const state = applyGameAction(undefined, {
+      type: 'startGame',
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'action-scale-seed',
+      poolScale: 1.5,
+    });
+
+    expect(state.tileStack).toHaveLength(121);
+    expect(state.tokenBag).toHaveLength(80);
   });
 
   it('does not allow ending the turn while a pending tile rotation must be confirmed', () => {

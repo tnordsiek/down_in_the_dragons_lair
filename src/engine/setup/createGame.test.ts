@@ -46,6 +46,39 @@ describe('createNewGame', () => {
     expect(first.tokenBag).toEqual(second.tokenBag);
   });
 
+  it('scales drawable tiles and tokens with per-entry rounding while keeping one dragon', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_rogue',
+      aiCount: 2,
+      seed: 'scaled-pools',
+      poolScale: 1.5,
+    });
+
+    expect(state.tileStack).toHaveLength(121);
+    expect(state.tokenBag).toHaveLength(80);
+    expect(
+      state.tokenBag.filter((token) => token.id === 'dragon'),
+    ).toHaveLength(1);
+  });
+
+  it('is reproducible with the same seed and pool scale', () => {
+    const first = createNewGame({
+      humanHeroId: 'hero_rogue',
+      aiCount: 2,
+      seed: 'scaled-repro',
+      poolScale: 2.5,
+    });
+    const second = createNewGame({
+      humanHeroId: 'hero_rogue',
+      aiCount: 2,
+      seed: 'scaled-repro',
+      poolScale: 2.5,
+    });
+
+    expect(first.tileStack).toEqual(second.tileStack);
+    expect(first.tokenBag).toEqual(second.tokenBag);
+  });
+
   it('records complete start-player rolls in the initial event log', () => {
     const state = createNewGame({
       humanHeroId: 'hero_mage',

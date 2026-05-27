@@ -24,6 +24,14 @@ export const totalTokenCount = tokenBagEntries.reduce(
   0,
 );
 
+export function getScaledTokenCount(tokenId: TokenId, poolScale = 1): number {
+  if (tokenId === 'dragon') {
+    return 1;
+  }
+
+  return Math.ceil(bagTokenCounts[tokenId] * poolScale);
+}
+
 export function createToken(tokenId: TokenId): Token {
   return {
     id: tokenId,
@@ -31,8 +39,11 @@ export function createToken(tokenId: TokenId): Token {
   };
 }
 
-export function createTokenBag(): Token[] {
+export function createTokenBag(poolScale = 1): Token[] {
   return tokenBagEntries.flatMap((entry) =>
-    Array.from({ length: entry.count }, () => createToken(entry.tokenId)),
+    Array.from(
+      { length: getScaledTokenCount(entry.tokenId, poolScale) },
+      () => createToken(entry.tokenId),
+    ),
   );
 }
