@@ -256,6 +256,36 @@ describe('movement rules', () => {
       'D',
     ]);
   });
+
+  it('keeps the turn open for ground loot after the last movement step', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'zero-step-ground-loot-move',
+    });
+    const neighborTile: PlacedTile = {
+      tileInstanceId: 'tile-1',
+      blueprintId: 'tunnel_straight',
+      rotation: 0,
+      boardX: 0,
+      boardY: -1,
+      discovered: true,
+      looseItems: [{ type: 'weapon', bonus: 1 }],
+    };
+    const withKnownNeighbor = {
+      ...state,
+      remainingSteps: 1,
+      board: [...state.board, neighborTile],
+    };
+
+    const movedState = moveActivePlayer(withKnownNeighbor, {
+      boardX: 0,
+      boardY: -1,
+    });
+
+    expect(movedState.remainingSteps).toBe(0);
+    expect(movedState.phase).toBe('await_move');
+  });
 });
 
 function createPortalState(overrides: Partial<GameState> = {}): GameState {

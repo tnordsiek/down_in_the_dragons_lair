@@ -53,6 +53,19 @@ describe('room and chest rules', () => {
     ).toEqual({ id: 'treasure_chest', kind: 'chest' });
   });
 
+  it('keeps the turn open after discovering a chest at zero steps when a loose item is available', () => {
+    const state = createRoomState(
+      {
+        id: 'treasure_chest',
+        kind: 'chest',
+      },
+      { remainingSteps: 0, roomTileLooseItems: [{ type: 'key' as const }] },
+    );
+    const resolved = resolveRoomToken(state);
+
+    expect(resolved.phase).toBe('await_move');
+  });
+
   it('starts combat when a monster token is drawn', () => {
     const state = createRoomState({
       id: 'kitchen_rat',
@@ -257,6 +270,7 @@ function createRoomState(
     heroId?: 'hero_mage' | 'hero_rogue' | 'hero_seeress';
     tokenBag?: GameState['tokenBag'];
     seed?: string;
+    roomTileLooseItems?: PlacedTile['looseItems'];
   } = {},
 ): GameState {
   const base = createNewGame({
@@ -271,7 +285,7 @@ function createRoomState(
     boardX: 0,
     boardY: -1,
     discovered: true,
-    looseItems: [],
+    looseItems: overrides.roomTileLooseItems ?? [],
   };
 
   return {

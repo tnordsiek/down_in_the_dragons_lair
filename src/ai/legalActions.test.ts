@@ -451,6 +451,35 @@ describe('AI legal actions', () => {
     ).toBe(false);
   });
 
+  it('offers ground loot but no movement after the last step on a loose item tile', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'zero-step-loot-actions-seed',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'await_move',
+      activePlayerIndex: 0,
+      remainingSteps: 0,
+      board: [
+        {
+          ...base.board[0],
+          looseItems: [{ type: 'weapon', bonus: 1 }],
+        },
+      ],
+    };
+    const actions = getLegalAiActions(state);
+
+    expect(actions).toEqual(
+      expect.arrayContaining([{ type: 'beginLoot' }, { type: 'endTurn' }]),
+    );
+    expect(actions.some((action) => action.type === 'movePlayer')).toBe(false);
+    expect(
+      actions.some((action) => action.type === 'declareExplorationDirection'),
+    ).toBe(false);
+  });
+
   it('allows only end turn during a skipped unconscious turn', () => {
     const state = createNewGame({
       humanHeroId: 'hero_mage',

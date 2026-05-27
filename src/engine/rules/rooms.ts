@@ -13,6 +13,7 @@ import {
   getActiveTileMonsterCombat,
   hasActiveHeroAbility,
 } from './abilities';
+import { getZeroStepFollowUpPhase } from '../turns/continuation';
 
 export type ResolveRoomTokenOptions = {
   seeressChoiceIndex?: 0 | 1;
@@ -30,9 +31,17 @@ export function resolveRoomToken(
   }
 
   if (tile.roomToken || state.tokenBag.length === 0) {
+    const zeroStepFollowUpState = {
+      ...state,
+      board: state.board,
+    };
+
     return {
       ...state,
-      phase: state.remainingSteps > 0 ? 'await_move' : 'turn_end',
+      phase:
+        state.remainingSteps > 0
+          ? 'await_move'
+          : getZeroStepFollowUpPhase(zeroStepFollowUpState),
     };
   }
 
@@ -137,9 +146,19 @@ function completeRoomTokenResolution(
   } as const;
 
   if (token.kind === 'chest') {
+    const zeroStepFollowUpState = {
+      ...state,
+      board,
+      tokenBag: remainingTokenBag,
+      pendingSeeressRoomChoice: undefined,
+    };
+
     return appendGameEvent({
       ...state,
-      phase: state.remainingSteps > 0 ? 'await_move' : 'turn_end',
+      phase:
+        state.remainingSteps > 0
+          ? 'await_move'
+          : getZeroStepFollowUpPhase(zeroStepFollowUpState),
       board,
       tokenBag: remainingTokenBag,
       pendingSeeressRoomChoice: undefined,

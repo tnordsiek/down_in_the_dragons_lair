@@ -4,6 +4,7 @@ import {
   getActiveTileMonsterCombat,
   hasActiveHeroAbility,
 } from '../rules/abilities';
+import { getZeroStepFollowUpPhase } from '../turns/continuation';
 import { getLegalKnownMoves } from './movement';
 
 export function moveActivePlayer(
@@ -49,6 +50,12 @@ export function moveActivePlayer(
         lastMoveFrom: activePlayer.position,
       })
     : undefined;
+  const zeroStepFollowUpState = {
+    ...state,
+    players,
+    lastMoveFrom: activePlayer.position,
+    remainingSteps,
+  };
 
   return {
     ...state,
@@ -59,7 +66,7 @@ export function moveActivePlayer(
           ? 'optional_monster_combat'
         : remainingSteps > 0
           ? 'await_move'
-          : 'turn_end',
+          : getZeroStepFollowUpPhase(zeroStepFollowUpState),
     players,
     lastMoveFrom: activePlayer.position,
     remainingSteps,

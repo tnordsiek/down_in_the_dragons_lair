@@ -10,6 +10,7 @@ import type {
   TileSide,
 } from '../core/types';
 import { shuffle } from '../setup/createGame';
+import { getZeroStepFollowUpPhase } from '../turns/continuation';
 import { getLegalExplorationDirections } from './movement';
 import {
   adjacentPosition,
@@ -126,6 +127,15 @@ export function placePendingTile(
   );
   const blueprint = tileBlueprints[pendingTile.blueprintId];
   const remainingSteps = state.remainingSteps - 1;
+  const zeroStepFollowUpState = {
+    ...state,
+    players,
+    board: [...state.board, placedTile],
+    pendingTile: undefined,
+    lastMoveFrom: pendingTile.origin,
+    remainingSteps,
+    rng: rng.snapshot(),
+  };
 
   return appendGameEvent({
     ...state,
@@ -134,7 +144,7 @@ export function placePendingTile(
         ? 'resolve_room_token'
         : remainingSteps > 0
           ? 'await_move'
-          : 'turn_end',
+          : getZeroStepFollowUpPhase(zeroStepFollowUpState),
     players,
     board: [...state.board, placedTile],
     tileStack: [...returnedSkippedTiles, ...state.tileStack],

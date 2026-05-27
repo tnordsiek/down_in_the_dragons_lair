@@ -121,4 +121,21 @@ describe('exploration flow', () => {
 
     expect(() => placePendingTile(pendingState, 90)).toThrow(/Illegal/);
   });
+
+  it('ends the turn after placing the last non-room tile when no follow-up action exists', () => {
+    const state = {
+      ...createNewGame({
+        humanHeroId: 'hero_mage',
+        aiCount: 1,
+        seed: 'place-zero-step-loot',
+      }),
+      remainingSteps: 1,
+      tileStack: ['tunnel_straight' as const],
+    };
+    const pendingState = drawPendingTileForExploration(state, 'A');
+    const placedState = placePendingTile(pendingState, 0);
+
+    expect(placedState.remainingSteps).toBe(0);
+    expect(placedState.phase).toBe('turn_end');
+  });
 });
