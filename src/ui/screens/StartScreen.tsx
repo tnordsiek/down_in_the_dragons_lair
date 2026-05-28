@@ -1,3 +1,5 @@
+import { useId, useState } from 'react';
+
 import { getAssetUrl, useAsset } from '../../data/assets';
 import { heroDefinitions, heroIds } from '../../data/heroes';
 import type { HeroId } from '../../engine/core/types';
@@ -6,6 +8,8 @@ import { FooterMeta } from '../components/FooterMeta';
 import { SettingsMenu } from '../components/SettingsMenu';
 
 export function StartScreen() {
+  const [advancedSetupVisible, setAdvancedSetupVisible] = useState(false);
+  const advancedSetupId = useId();
   const heroId = useSetupStore((state) => state.selectedHeroId);
   const aiCount = useSetupStore((state) => state.aiCount);
   const opponentSelectionMode = useSetupStore(
@@ -198,36 +202,54 @@ export function StartScreen() {
                   </fieldset>
                 ) : null}
 
-                <label className="grid gap-2 text-sm text-stone-300">
-                  Token and Tile Factor
-                  <input
-                    aria-label="Token and Tile Factor"
-                    className="accent-amber-300"
-                    min={1}
-                    max={5}
-                    step={0.5}
-                    type="range"
-                    value={poolScale}
-                    onChange={(event) =>
-                      setPoolScale(Number(event.target.value))
-                    }
-                  />
-                  <span className="font-mono text-stone-100">
-                    {poolScale.toFixed(1)}x
-                  </span>
-                  <span className="text-xs text-stone-400">
-                    Counts are rounded up. The dragon always remains unique.
-                  </span>
-                </label>
+                <button
+                  aria-controls={advancedSetupId}
+                  aria-expanded={advancedSetupVisible}
+                  className="border border-stone-600 bg-stone-950 px-3 py-2 text-left text-sm font-semibold text-amber-100"
+                  type="button"
+                  onClick={() =>
+                    setAdvancedSetupVisible((current) => !current)
+                  }
+                >
+                  {advancedSetupVisible
+                    ? 'Hide Advanced Setup'
+                    : 'Show Advanced Setup'}
+                </button>
 
-                <label className="grid gap-2 text-sm text-stone-300">
-                  Seed
-                  <input
-                    className="border border-stone-600 bg-stone-950 px-3 py-2 font-mono text-stone-100"
-                    value={seed}
-                    onChange={(event) => setSeed(event.target.value)}
-                  />
-                </label>
+                {advancedSetupVisible ? (
+                  <div className="grid gap-4" id={advancedSetupId}>
+                    <label className="grid gap-2 text-sm text-stone-300">
+                      Token and Tile Factor
+                      <input
+                        aria-label="Token and Tile Factor"
+                        className="accent-amber-300"
+                        min={1}
+                        max={5}
+                        step={0.5}
+                        type="range"
+                        value={poolScale}
+                        onChange={(event) =>
+                          setPoolScale(Number(event.target.value))
+                        }
+                      />
+                      <span className="font-mono text-stone-100">
+                        {poolScale.toFixed(1)}x
+                      </span>
+                      <span className="text-xs text-stone-400">
+                        Counts are rounded up. The dragon always remains unique.
+                      </span>
+                    </label>
+
+                    <label className="grid gap-2 text-sm text-stone-300">
+                      Seed
+                      <input
+                        className="border border-stone-600 bg-stone-950 px-3 py-2 font-mono text-stone-100"
+                        value={seed}
+                        onChange={(event) => setSeed(event.target.value)}
+                      />
+                    </label>
+                  </div>
+                ) : null}
 
                 <button
                   className="bg-amber-300 px-4 py-3 font-semibold text-stone-950"

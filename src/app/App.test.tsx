@@ -60,8 +60,11 @@ describe('App', () => {
     expect(
       screen.getByRole('radio', { name: 'Choose Opponents' }),
     ).not.toBeChecked();
-    expect(screen.getByLabelText('Token and Tile Factor')).toBeInTheDocument();
-    expect(screen.getByText('1.0x')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Show Advanced Setup' }),
+    ).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByLabelText('Token and Tile Factor')).toBeNull();
+    expect(screen.queryByText('1.0x')).toBeNull();
     expect(screen.queryByText(/Opponents \(0\/1\)/)).toBeNull();
     expect(
       screen.getByText(
@@ -98,6 +101,41 @@ describe('App', () => {
     expect(
       screen.getByRole('button', { name: 'Privacy Policy' }),
     ).toBeInTheDocument();
+  });
+
+  it('toggles advanced setup fields from the game setup panel', () => {
+    render(<App />);
+
+    const toggleButton = screen.getByRole('button', {
+      name: 'Show Advanced Setup',
+    });
+
+    expect(toggleButton).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByLabelText('Token and Tile Factor')).toBeNull();
+    expect(screen.queryByDisplayValue('v1-local-seed')).toBeNull();
+
+    act(() => {
+      fireEvent.click(toggleButton);
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'Hide Advanced Setup' }),
+    ).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByLabelText('Token and Tile Factor')).toBeInTheDocument();
+    expect(screen.getByText('1.0x')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('v1-local-seed')).toBeInTheDocument();
+
+    act(() => {
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Hide Advanced Setup' }),
+      );
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'Show Advanced Setup' }),
+    ).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByLabelText('Token and Tile Factor')).toBeNull();
+    expect(screen.queryByDisplayValue('v1-local-seed')).toBeNull();
   });
 
   it('starts a game and shows board actions', () => {
@@ -481,6 +519,9 @@ describe('App', () => {
   it('starts a game with the scaled tile and token pools selected on the setup screen', () => {
     render(<App />);
 
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Show Advanced Setup' }));
+    });
     act(() => {
       fireEvent.change(screen.getByLabelText('Token and Tile Factor'), {
         target: { value: '1.5' },
