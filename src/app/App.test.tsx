@@ -66,10 +66,22 @@ describe('App', () => {
     expect(screen.queryByLabelText('Token and Tile Factor')).toBeNull();
     expect(screen.queryByText('1.0x')).toBeNull();
     expect(screen.queryByText(/Opponents \(0\/1\)/)).toBeNull();
+    const startHeader = screen
+      .getByRole('button', { name: 'Open settings menu' })
+      .closest('header');
+    const claim = screen.getByText(
+      'Choose a hero, set the opposition, and enter the dungeon...',
+    );
+
+    expect(startHeader).toContainElement(claim);
+    expect(claim).toHaveClass('text-[1.5rem]', 'text-center', 'leading-9');
+    expect(screen.getByText('Chosen Hero')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Mage' })).toBeInTheDocument();
     expect(
-      screen.getByText(
-        'Choose a hero, set the opposition, and enter the dungeon.',
-      ),
+      screen.getByText('Fireball spells are not consumed.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('May move through walls on discovered tiles.'),
     ).toBeInTheDocument();
     expect(screen.getByText('Code powered by Codex')).toBeInTheDocument();
     expect(
@@ -83,10 +95,37 @@ describe('App', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('img', { name: "Down in the Dragon's Lair" }),
-    ).toHaveClass('max-h-[18rem]', 'w-full', 'max-w-2xl', 'object-contain');
-    expect(
+    ).toHaveClass('max-h-[18rem]', 'w-full', 'object-contain', 'lg:max-h-[30rem]');
+    expect(screen.getByRole('img', { name: 'Mage' })).toBeInTheDocument();
+    expect(startHeader).toContainElement(
       screen.getByRole('button', { name: 'Open settings menu' }),
-    ).toBeInTheDocument();
+    );
+    expect(startHeader?.parentElement).toHaveClass('py-2');
+    const startLayout = startHeader?.nextElementSibling;
+    const leftColumn = startLayout?.firstElementChild;
+    const rightColumn = startLayout?.children[1] as Element | undefined;
+    const gameSetupHeading = screen.getByRole('heading', { name: 'Game Setup' });
+    const heroPreviewHeading = screen.getByText('Chosen Hero');
+
+    expect(startLayout).toHaveClass('md:grid-cols-[1fr_0.95fr]');
+    expect(rightColumn).toContainElement(heroPreviewHeading);
+    expect(rightColumn).toContainElement(gameSetupHeading);
+    expect(leftColumn).not.toContainElement(heroPreviewHeading);
+    expect(heroPreviewHeading).toHaveClass('text-lg', 'font-semibold', 'text-amber-100');
+    expect(screen.getByRole('heading', { name: 'Mage' })).toHaveClass('text-lg');
+    const portraitContainer = screen.getByRole('img', { name: 'Mage' }).parentElement;
+    const heroNameHeading = screen.getByRole('heading', { name: 'Mage' });
+    const heroInfoBlock = heroNameHeading.parentElement;
+
+    expect(portraitContainer).toHaveClass(
+      'w-full',
+      'flex-col',
+      'items-center',
+      'justify-center',
+    );
+    expect(portraitContainer).toContainElement(heroPreviewHeading);
+    expect(screen.getByRole('img', { name: 'Mage' })).toHaveClass('max-h-40');
+    expect(heroInfoBlock).not.toContainElement(heroPreviewHeading);
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Open settings menu' }));
     });
@@ -101,6 +140,33 @@ describe('App', () => {
     expect(
       screen.getByRole('button', { name: 'Privacy Policy' }),
     ).toBeInTheDocument();
+
+    const creditsContainer = screen
+      .getByText('Concept and AI Direction by fnord GAMES (2026)')
+      .parentElement;
+
+    expect(creditsContainer).toContainElement(screen.getByText('Code powered by Codex'));
+    expect(creditsContainer?.parentElement).toContainElement(
+      screen.getByRole('button', { name: 'Imprint' }),
+    );
+    expect(creditsContainer?.parentElement).toContainElement(
+      screen.getByRole('button', { name: 'Privacy Policy' }),
+    );
+    expect(creditsContainer?.parentElement).toContainElement(
+      screen.getByText('v1.3'),
+    );
+
+    const footerMetaContainer = screen.getByText('v1.3').parentElement;
+
+    expect(footerMetaContainer).not.toHaveClass(
+      'absolute',
+      'bottom-4',
+      'left-6',
+      'sm:left-8',
+    );
+    expect(startLayout).toHaveClass('pt-6');
+    expect(startLayout).not.toHaveClass('pt-10', 'py-10');
+    expect(creditsContainer?.parentElement).not.toHaveClass('mt-6');
   });
 
   it('toggles advanced setup fields from the game setup panel', () => {
@@ -136,6 +202,50 @@ describe('App', () => {
     ).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByLabelText('Token and Tile Factor')).toBeNull();
     expect(screen.queryByDisplayValue('v1-local-seed')).toBeNull();
+  });
+
+  it('updates the hero preview when a different hero is selected', () => {
+    render(<App />);
+
+    act(() => {
+      fireEvent.change(screen.getByLabelText('Hero'), {
+        target: { value: 'hero_witch' },
+      });
+    });
+
+    expect(screen.getByRole('heading', { name: 'Witch' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Witch' })).toBeInTheDocument();
+    expect(
+      screen.getByText('May sacrifice 1 HP for +1 combat strength in a fight.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('May swap position with another player at turn start.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Mage' })).toBeNull();
+    expect(
+      screen.queryByText('Fireball spells are not consumed.'),
+    ).toBeNull();
+  });
+
+  it('updates the hero preview when seeress is selected', () => {
+    render(<App />);
+
+    act(() => {
+      fireEvent.change(screen.getByLabelText('Hero'), {
+        target: { value: 'hero_seeress' },
+      });
+    });
+
+    expect(screen.getByRole('heading', { name: 'Seeress' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Seeress' })).toBeInTheDocument();
+    expect(
+      screen.getByText('Draws two room tokens and chooses one.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Gains +1 combat strength in a fight after the first step is spent.',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('starts a game and shows board actions', () => {
@@ -233,6 +343,33 @@ describe('App', () => {
     ).toEqual(['hero_mage', 'hero_rogue', expect.any(String)]);
   });
 
+  it('renders saved game actions under the logo instead of inside the game setup panel', () => {
+    act(() => {
+      useSetupStore.setState({ hasSavedGame: true });
+    });
+    render(<App />);
+
+    const startHeader = screen
+      .getByRole('button', { name: 'Open settings menu' })
+      .closest('header');
+    const startLayout = startHeader?.nextElementSibling;
+    const leftColumn = startLayout?.firstElementChild;
+    const gameSetupPanel = screen.getByRole('heading', {
+      name: 'Game Setup',
+    }).parentElement;
+    const resumeButton = screen.getByRole('button', { name: 'Resume Game' });
+    const discardButton = screen.getByRole('button', { name: 'Discard Save' });
+    const savedGamePanel = screen.getByText('Saved game available').parentElement;
+    const savedGameHeading = screen.getByText('Saved game available');
+
+    expect(leftColumn).toContainElement(resumeButton);
+    expect(leftColumn).toContainElement(discardButton);
+    expect(gameSetupPanel).not.toContainElement(resumeButton);
+    expect(gameSetupPanel).not.toContainElement(discardButton);
+    expect(savedGamePanel).toHaveClass('border-stone-700', 'bg-stone-900/80', 'p-4');
+    expect(savedGameHeading).toHaveClass('text-lg', 'font-semibold', 'text-amber-100');
+  });
+
   it('lazy-loads and closes the imprint layer from the footer', async () => {
     render(<App />);
 
@@ -253,6 +390,22 @@ describe('App', () => {
     expect(
       screen.getByText('E-mail: tnordsiek [at] web [dot] de'),
     ).toBeInTheDocument();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Close Imprint' }));
+    });
+
+    expect(screen.queryByText('Torsten Nordsiek')).toBeNull();
+  });
+
+  it('closes the legal panel when clicking outside it', async () => {
+    render(<App />);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Imprint' }));
+    });
+
+    expect(await screen.findByText('Torsten Nordsiek')).toBeInTheDocument();
 
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Close Imprint' }));
@@ -300,6 +453,13 @@ describe('App', () => {
     const panel = panelHeading.parentElement;
 
     expect(panel).toHaveClass(
+      'fixed',
+      'left-1/2',
+      '-translate-x-1/2',
+      'sm:absolute',
+      'sm:right-0',
+      'sm:left-auto',
+      'sm:translate-x-0',
       'w-[min(92vw,36rem)]',
       'max-w-[36rem]',
       'max-h-[min(75vh,36rem)]',

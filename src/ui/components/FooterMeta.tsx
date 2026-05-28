@@ -4,6 +4,7 @@ import type { LegalContent } from '../../legal/types';
 
 type FooterMetaProps = {
   align?: 'left' | 'right';
+  layout?: 'absolute' | 'flow';
   versionLabel?: string;
 };
 
@@ -23,6 +24,7 @@ const legalContentLoaders: Record<LegalSectionId, () => Promise<LegalContent>> =
 
 export function FooterMeta({
   align = 'right',
+  layout = 'absolute',
   versionLabel = 'v1.3',
 }: FooterMetaProps) {
   const [activeSection, setActiveSection] = useState<LegalSectionId | null>(null);
@@ -71,13 +73,20 @@ export function FooterMeta({
   const showLoading = activeSection !== null && loadingSection === activeSection;
   const showLoadError =
     activeSection !== null && loadErrorSection === activeSection;
+  const isFlowLayout = layout === 'flow';
+  const panelClassName = isLeftAligned
+    ? 'fixed bottom-8 left-1/2 -translate-x-1/2 sm:absolute sm:bottom-8 sm:left-0 sm:translate-x-0'
+    : 'fixed bottom-8 left-1/2 -translate-x-1/2 sm:absolute sm:bottom-8 sm:left-auto sm:right-0 sm:translate-x-0';
+  const containerClassName = isFlowLayout
+    ? `relative z-10 flex flex-wrap items-center gap-3 text-xs text-stone-500 ${
+        isLeftAligned ? 'justify-start' : 'justify-end'
+      }`
+    : `absolute bottom-4 z-30 flex items-end gap-3 text-xs text-stone-500 ${
+        isLeftAligned ? 'left-6 sm:left-8' : 'right-4'
+      }`;
 
   return (
-    <div
-      className={`absolute bottom-4 z-30 flex items-end gap-3 text-xs text-stone-500 ${
-        isLeftAligned ? 'left-6 sm:left-8' : 'right-4'
-      }`}
-    >
+    <div className={containerClassName}>
       {activeSection ? (
         <button
           aria-label={`Close ${legalSectionLabels[activeSection]}`}
@@ -89,9 +98,7 @@ export function FooterMeta({
       <div className="relative">
         {activeSection ? (
           <div
-            className={`absolute bottom-8 max-h-[min(75vh,36rem)] w-[min(92vw,36rem)] max-w-[36rem] overflow-y-auto border border-stone-700 bg-stone-950/95 p-3 text-left leading-5 text-stone-200 shadow-xl ${
-              isLeftAligned ? 'left-0' : 'right-0'
-            }`}
+            className={`${panelClassName} max-h-[min(75vh,36rem)] w-[min(92vw,36rem)] max-w-[36rem] overflow-y-auto border border-stone-700 bg-stone-950/95 p-3 text-left leading-5 text-stone-200 shadow-xl`}
             onClick={(event) => event.stopPropagation()}
           >
             <p className="mb-2 text-sm font-semibold text-amber-100">

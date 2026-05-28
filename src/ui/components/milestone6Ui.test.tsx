@@ -4227,7 +4227,7 @@ describe('Milestone 6 UI', () => {
     );
 
     expect(screen.getByTestId('hero-info-player_ai_3')).toHaveTextContent(
-      'Draws two room tokens and chooses one. Gains +1 combat strength before the first step is spent.',
+      'Draws two room tokens and chooses one. Gains +1 combat strength in a fight after the first step is spent.',
     );
   });
 

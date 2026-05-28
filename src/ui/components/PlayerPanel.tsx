@@ -246,13 +246,13 @@ function getHeroAbilityInfo(heroId: HeroId): string {
     case 'hero_valkyrie':
       return 'May reroll both combat dice once after a draw or defeat. Losing the last HP sends the Valkyrie to a healing tile.';
     case 'hero_witch':
-      return 'May sacrifice 1 HP for +1 combat strength after a draw or defeat. May swap position with another player at turn start.';
+      return 'May sacrifice 1 HP for +1 combat strength in a fight. May swap position with another player at turn start.';
     case 'hero_rogue':
       return 'Combat draws count as wins. The Rogue may ignore monsters while moving.';
     case 'hero_blade':
       return 'After a combat roll, rerolls every die showing 1 until none remain. Each combat with a final rolled 6 keeps the turn open for remaining movement and follow-up actions.';
     case 'hero_seeress':
-      return 'Draws two room tokens and chooses one. Gains +1 combat strength before the first step is spent.';
+      return 'Draws two room tokens and chooses one. Gains +1 combat strength in a fight after the first step is spent.';
   }
 }
 
