@@ -28,8 +28,6 @@ export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
   const [activeHeroInfoPlayerId, setActiveHeroInfoPlayerId] = useState<
     string | undefined
   >(undefined);
-  const playerGridClass =
-    state.players.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1';
 
   useEffect(() => {
     if (!activeHeroInfoPlayerId) {
@@ -60,10 +58,7 @@ export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
       <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-300">
         Players
       </h2>
-      <div
-        className={`mt-3 grid gap-2 ${playerGridClass}`}
-        data-testid="player-panel-grid"
-      >
+      <div className="mt-3 grid grid-cols-1 gap-2" data-testid="player-panel-grid">
         {state.players.map((player, index) => (
           <PlayerCard
             activeHeroInfoPlayerId={activeHeroInfoPlayerId}
@@ -99,7 +94,6 @@ function PlayerCard({
   state: GameState;
 }) {
   const isActive = index === state.activePlayerIndex;
-  const isThreePlayerTail = state.players.length === 3 && index === 2;
   const showHeroInfo = activeHeroInfoPlayerId === player.id;
   const weaponBonus = player.inventory.weapons.reduce(
     (sum, weapon) => sum + weapon.bonus,
@@ -117,7 +111,7 @@ function PlayerCard({
         isActive
           ? 'border-amber-300 bg-stone-800'
           : 'border-stone-700 bg-stone-950'
-      } ${isThreePlayerTail ? 'sm:col-span-2' : ''}`}
+      }`}
       data-asset-id={`${player.heroId}_portrait`}
       data-testid={`player-card-${player.id}`}
     >
@@ -129,62 +123,69 @@ function PlayerCard({
           {heroInfo}
         </div>
       ) : null}
-      <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-2">
-        <HeroPortrait
-          heroId={player.heroId}
-          onShowHeroInfo={() =>
-            setActiveHeroInfoPlayerId((current) =>
-              current === player.id ? undefined : player.id,
-            )
-          }
-          onFocusPosition={onFocusPosition}
-        />
-        <div className="grid content-start gap-1">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold leading-tight text-stone-100">
-              {heroName(player.heroId)}
-            </p>
-            <p className="text-[10px] uppercase tracking-wide text-stone-400">
-              {player.kind}
-            </p>
+      <div
+        className="grid gap-2 min-[360px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]"
+        data-testid={`player-card-layout-${player.id}`}
+      >
+        <div
+          className="grid content-start gap-1.5"
+          data-testid={`player-card-left-${player.id}`}
+        >
+          <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-2">
+            <HeroPortrait
+              heroId={player.heroId}
+              onShowHeroInfo={() =>
+                setActiveHeroInfoPlayerId((current) =>
+                  current === player.id ? undefined : player.id,
+                )
+              }
+              onFocusPosition={onFocusPosition}
+            />
+            <div className="grid content-start gap-1">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold leading-tight text-stone-100">
+                  {heroName(player.heroId)}
+                </p>
+                <p className="text-[10px] uppercase tracking-wide text-stone-400">
+                  {player.kind}
+                </p>
+              </div>
+              <div className="flex flex-col items-start gap-1">
+                <MetricChip
+                  label={`HP ${player.hp}/${player.maxHp}`}
+                  title={`Health: ${player.hp} of ${player.maxHp}`}
+                />
+                {isActive ? (
+                  <MetricChip
+                    label="Active"
+                    title="Current active player"
+                    tone="amber"
+                  />
+                ) : null}
+              </div>
+            </div>
           </div>
           <div className="flex flex-wrap gap-1">
-            <MetricChip
-              label={`HP ${player.hp}/${player.maxHp}`}
-              title={`Health: ${player.hp} of ${player.maxHp}`}
+            <BonusBadge
+              label={`ATK +${weaponBonus}`}
+              title={`Current weapon bonus: +${weaponBonus}`}
             />
-            {isActive ? (
-              <MetricChip
-                label="Active"
-                title="Current active player"
-                tone="amber"
-              />
-            ) : null}
+            <BonusBadge
+              label={
+                hasMageFlameBonus ? 'Fireball ∞' : `Fireball ${flameSpellCount}`
+              }
+              title={
+                hasMageFlameBonus
+                  ? 'Mage: fireball spells are not consumed'
+                  : `Available fireball spells: ${flameSpellCount}`
+              }
+            />
           </div>
         </div>
-      </div>
-      <div className="mt-2 grid gap-1.5">
-        <div className="flex flex-wrap gap-1">
-          <BonusBadge
-            label={`ATK +${weaponBonus}`}
-            title={`Current weapon bonus: +${weaponBonus}`}
-          />
-          <BonusBadge
-            label={
-              hasMageFlameBonus
-                ? 'Fireball ∞'
-                : `Fireball ${flameSpellCount}`
-            }
-            title={
-              hasMageFlameBonus
-                ? 'Mage: fireball spells are not consumed'
-                : `Available fireball spells: ${flameSpellCount}`
-            }
-          />
-        </div>
         <div
-          className="grid gap-1 text-[10px] text-stone-300"
+          className="grid content-start gap-1 text-[10px] text-stone-300"
           data-asset-id="ui_icon_inventory"
+          data-testid={`player-card-right-${player.id}`}
         >
           <InventoryRow
             emptyLabel="-"
@@ -199,7 +200,10 @@ function PlayerCard({
           <InventoryRow
             emptyLabel="-"
             icons={player.inventory.weapons.map((weapon, weaponIndex) => (
-              <ItemIcon key={`${player.id}-weapon-${weaponIndex}`} item={weapon} />
+              <ItemIcon
+                key={`${player.id}-weapon-${weaponIndex}`}
+                item={weapon}
+              />
             ))}
             label="Weapons"
             title={`Weapons carried: ${player.inventory.weapons.length}`}

@@ -4142,8 +4142,38 @@ describe('Milestone 6 UI', () => {
     const grid = screen.getByTestId('player-panel-grid');
     const mageCard = screen.getByTestId('player-card-player_human');
     const thiefCard = screen.getByTestId('player-card-player_ai_1');
+    const mageLayout = screen.getByTestId('player-card-layout-player_human');
+    const thiefLayout = screen.getByTestId('player-card-layout-player_ai_1');
 
-    expect(grid).toHaveClass('sm:grid-cols-2');
+    expect(grid).toHaveClass('grid-cols-1');
+    expect(grid).not.toHaveClass('sm:grid-cols-2');
+    expect(mageLayout).toHaveClass(
+      'min-[360px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]',
+    );
+    expect(thiefLayout).toHaveClass(
+      'min-[360px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]',
+    );
+    expect(
+      within(mageCard).getByText('HP 5/5').parentElement?.className,
+    ).toContain('flex-col');
+    expect(mageCard).toContainElement(
+      screen.getByTestId('player-card-left-player_human'),
+    );
+    expect(mageCard).toContainElement(
+      screen.getByTestId('player-card-right-player_human'),
+    );
+    expect(thiefCard).toContainElement(
+      screen.getByTestId('player-card-left-player_ai_1'),
+    );
+    expect(thiefCard).toContainElement(
+      screen.getByTestId('player-card-right-player_ai_1'),
+    );
+    expect(screen.getByTestId('player-card-right-player_human')).toContainElement(
+      within(mageCard).getByText('0 pts'),
+    );
+    expect(screen.getByTestId('player-card-right-player_ai_1')).toContainElement(
+      within(thiefCard).getByText('0 pts'),
+    );
     expect(screen.getByText('Mage')).toBeInTheDocument();
     expect(screen.getByText('Rogue')).toBeInTheDocument();
     expect(screen.getByText('ATK +2')).toHaveAttribute(
@@ -4187,7 +4217,7 @@ describe('Milestone 6 UI', () => {
     );
   });
 
-  it('spans the last player card across both columns for three players', () => {
+  it('renders three player cards as a single full-width column', () => {
     const state = createUiStateWithPlayerCount(3, [
       'hero_mage',
       'hero_valkyrie',
@@ -4196,13 +4226,16 @@ describe('Milestone 6 UI', () => {
 
     render(<PlayerPanel state={state} />);
 
-    expect(screen.getByTestId('player-panel-grid')).toHaveClass('sm:grid-cols-2');
-    expect(screen.getByTestId('player-card-player_ai_2')).toHaveClass(
+    expect(screen.getByTestId('player-panel-grid')).toHaveClass('grid-cols-1');
+    expect(screen.getByTestId('player-panel-grid')).not.toHaveClass(
+      'sm:grid-cols-2',
+    );
+    expect(screen.getByTestId('player-card-player_ai_2')).not.toHaveClass(
       'sm:col-span-2',
     );
   });
 
-  it('renders a two-by-two compact player grid for four players and shows the seeress bonus only when active', () => {
+  it('renders four player cards as a single full-width column and shows the seeress bonus only when active', () => {
     const state = {
       ...createUiStateWithPlayerCount(4, [
         'hero_mage',
@@ -4216,8 +4249,13 @@ describe('Milestone 6 UI', () => {
 
     render(<PlayerPanel state={state} />);
 
-    expect(screen.getByTestId('player-panel-grid')).toHaveClass('sm:grid-cols-2');
-    expect(screen.getAllByTestId(/player-card-/)).toHaveLength(4);
+    expect(screen.getByTestId('player-panel-grid')).toHaveClass('grid-cols-1');
+    expect(screen.getByTestId('player-panel-grid')).not.toHaveClass(
+      'sm:grid-cols-2',
+    );
+    expect(
+      screen.getAllByTestId(/^player-card-(player_human|player_ai_[0-9]+)$/),
+    ).toHaveLength(4);
     expect(screen.queryByText('+1 First Fight')).toBeNull();
     expect(screen.queryByText('Sacrifice +1')).toBeNull();
     expect(screen.queryByText('Reroll')).toBeNull();
