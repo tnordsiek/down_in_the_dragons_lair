@@ -2,14 +2,22 @@ import { AudioRuntime } from './AudioRuntime';
 import { useSetupStore } from '../state/setupStore';
 import { GameScreen } from '../ui/screens/GameScreen';
 import { StartScreen } from '../ui/screens/StartScreen';
+import { TutorialScreen } from '../ui/screens/TutorialScreen';
 
 export function App() {
   const gameState = useSetupStore((state) => state.gameState);
+  const tutorialActive = useSetupStore((state) => state.tutorialActive);
 
   return (
     <>
       <AudioRuntime />
-      {gameState ? <GameScreen /> : <StartScreen />}
+      {gameState ? (
+        <GameScreen />
+      ) : tutorialActive ? (
+        <TutorialScreen />
+      ) : (
+        <StartScreen />
+      )}
     </>
   );
 }

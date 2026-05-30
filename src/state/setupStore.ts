@@ -38,6 +38,7 @@ type SetupState = {
   musicEnabled: boolean;
   sfxEnabled: boolean;
   movementPointsEnabled: boolean;
+  tutorialActive: boolean;
   gameState?: GameState;
   hasSavedGame: boolean;
   lastError?: string;
@@ -53,6 +54,8 @@ type SetupState = {
   toggleSfxEnabled: () => void;
   toggleMovementPointsEnabled: () => void;
   clearPendingAudioCues: () => void;
+  startTutorial: () => void;
+  exitTutorial: () => void;
   startGame: () => void;
   resumeSavedGame: () => void;
   dispatch: (action: GameAction) => void;
@@ -77,6 +80,7 @@ export const useSetupStore = create<SetupState>((set) => ({
   musicEnabled: initialAudioSettings.musicEnabled,
   sfxEnabled: initialAudioSettings.sfxEnabled,
   movementPointsEnabled: initialAudioSettings.movementPointsEnabled,
+  tutorialActive: false,
   gameState: initialGameState,
   hasSavedGame: initialGameState !== undefined,
   persistenceError: initialPersistenceError,
@@ -172,6 +176,17 @@ export const useSetupStore = create<SetupState>((set) => ({
       };
     }),
   clearPendingAudioCues: () => set({ pendingAudioCues: [] }),
+  startTutorial: () =>
+    set({
+      tutorialActive: true,
+      lastError: undefined,
+      pendingAudioCues: [createPendingAudioCue('sfx_button_click')],
+    }),
+  exitTutorial: () =>
+    set({
+      tutorialActive: false,
+      pendingAudioCues: [createPendingAudioCue('sfx_button_click')],
+    }),
   startGame: () =>
     set((state) => {
       const gameState = applyGameAction(undefined, {

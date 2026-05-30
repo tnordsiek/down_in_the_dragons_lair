@@ -61,6 +61,7 @@ export function StartScreen() {
   const setSeed = useSetupStore((state) => state.setSeed);
   const setPoolScale = useSetupStore((state) => state.setPoolScale);
   const startGame = useSetupStore((state) => state.startGame);
+  const startTutorial = useSetupStore((state) => state.startTutorial);
   const resumeSavedGame = useSetupStore((state) => state.resumeSavedGame);
   const clearSavedGame = useSetupStore((state) => state.clearSavedGame);
   const background = useAsset('bg_start_screen');
@@ -84,7 +85,15 @@ export function StartScreen() {
           <p className="justify-self-center text-center text-[1.5rem] leading-9 text-stone-200">
             Choose a hero, set the opposition, and enter the dungeon...
           </p>
-          <div aria-hidden="true" className="h-11 w-11 justify-self-end" />
+          <div className="justify-self-end">
+            <button
+              className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
+              data-asset-id="ui_button_secondary"
+              onClick={startTutorial}
+            >
+              How to Play
+            </button>
+          </div>
         </header>
 
         <div className="grid flex-1 gap-8 pt-6 md:grid-cols-[1fr_0.95fr] md:items-start">

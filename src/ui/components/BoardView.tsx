@@ -49,6 +49,8 @@ type BoardViewProps = {
   onMovePath?: (targets: BoardPosition[]) => void;
   onRotatePendingTile?: (direction: RotationDirection) => void;
   selectableHealingPositions?: BoardPosition[];
+  showZoomControl?: boolean;
+  fitToContent?: boolean;
 };
 
 export function BoardView({
@@ -62,6 +64,8 @@ export function BoardView({
   onMovePath,
   onRotatePendingTile,
   selectableHealingPositions = [],
+  showZoomControl = true,
+  fitToContent = false,
 }: BoardViewProps) {
   const cellSizePx = 72;
   const cellGapPx = 1;
@@ -464,6 +468,10 @@ export function BoardView({
   }, []);
 
   useEffect(() => {
+    if (fitToContent) {
+      return;
+    }
+
     if (!cameraRequest) {
       return;
     }
@@ -527,10 +535,61 @@ export function BoardView({
   }, [
     boardLayoutSignature,
     cameraRequest,
+    fitToContent,
     gridOriginSignature,
     onCameraRequestApplied,
     pendingTileSignature,
     playerPositionSignature,
+    viewportSize,
+  ]);
+
+  useEffect(() => {
+    if (!fitToContent) {
+      return;
+    }
+
+    if (
+      viewportSize.width <= 0 ||
+      viewportSize.height <= 0 ||
+      boardWidthPx <= 0 ||
+      boardHeightPx <= 0
+    ) {
+      return;
+    }
+
+    // Maximise the zoom so the whole board fills the available area, then center
+    // the board's bounding box in the viewport. A pending tile shows rotate/
+    // confirm controls that overhang the tile edges, so reserve screen-space
+    // margin for them in that case.
+    const padding = 0.92;
+    const controlMargin = state.pendingTile ? 48 : 0;
+    const availableWidth = Math.max(
+      1,
+      viewportSize.width * padding - 2 * controlMargin,
+    );
+    const availableHeight = Math.max(
+      1,
+      viewportSize.height * padding - 2 * controlMargin,
+    );
+    const fitZoom = clampBoardZoom(
+      Math.min(availableWidth / boardWidthPx, availableHeight / boardHeightPx),
+    );
+    const nextPan = {
+      x: Number(
+        (viewportSize.width / 2 - (boardWidthPx / 2) * fitZoom).toFixed(3),
+      ),
+      y: Number(
+        (viewportSize.height / 2 - (boardHeightPx / 2) * fitZoom).toFixed(3),
+      ),
+    };
+
+    setZoom(fitZoom);
+    setPan(nextPan);
+  }, [
+    boardHeightPx,
+    boardWidthPx,
+    fitToContent,
+    state.pendingTile,
     viewportSize,
   ]);
 
@@ -619,6 +678,7 @@ export function BoardView({
           stopDragging(event.pointerId, event.currentTarget);
         }}
       >
+        {showZoomControl ? (
         <div className="pointer-events-none absolute inset-y-0 left-2 z-20 flex items-center">
           <div
             className="pointer-events-auto flex flex-col items-center gap-2"
@@ -652,6 +712,7 @@ export function BoardView({
             />
           </div>
         </div>
+        ) : null}
         <div
           className={`origin-top-left transition-transform ${
             isDragging ? 'cursor-grabbing' : 'cursor-grab'
