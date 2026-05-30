@@ -517,7 +517,7 @@ export function GameScreen() {
           </div>
         </div>
       ) : null}
-      <FooterMeta align="left" versionLabel="v1.3 fnord GAMES 2026" />
+      <FooterMeta align="left" versionLabel="v1.4 fnord GAMES 2026" />
     </main>
   );
 }

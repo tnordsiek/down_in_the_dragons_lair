@@ -135,7 +135,7 @@ describe('App', () => {
       screen.getByRole('button', { name: 'Movement Points on' }),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'New Game' })).toBeNull();
-    expect(screen.getByText('v1.3')).toBeInTheDocument();
+    expect(screen.getByText('v1.4')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Imprint' })).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Privacy Policy' }),
@@ -153,10 +153,10 @@ describe('App', () => {
       screen.getByRole('button', { name: 'Privacy Policy' }),
     );
     expect(creditsContainer?.parentElement).toContainElement(
-      screen.getByText('v1.3'),
+      screen.getByText('v1.4'),
     );
 
-    const footerMetaContainer = screen.getByText('v1.3').parentElement;
+    const footerMetaContainer = screen.getByText('v1.4').parentElement;
 
     expect(footerMetaContainer).not.toHaveClass(
       'absolute',
@@ -260,7 +260,7 @@ describe('App', () => {
       screen.getByRole('heading', { name: 'Actions' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Players')).toBeInTheDocument();
-    expect(screen.getByText('v1.3 fnord GAMES 2026')).toBeInTheDocument();
+    expect(screen.getByText('v1.4 fnord GAMES 2026')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Imprint' })).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Privacy Policy' }),

@@ -25,7 +25,7 @@ const legalContentLoaders: Record<LegalSectionId, () => Promise<LegalContent>> =
 export function FooterMeta({
   align = 'right',
   layout = 'absolute',
-  versionLabel = 'v1.3',
+  versionLabel = 'v1.4',
 }: FooterMetaProps) {
   const [activeSection, setActiveSection] = useState<LegalSectionId | null>(null);
   const [loadedContent, setLoadedContent] = useState<
