@@ -1,0 +1,34 @@
+# Dependencies — kein relevanter Quellcode, massiv groß
+node_modules/
+
+# Build-Artefakte — abgeleitet aus src/, nicht bearbeiten
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# Vite/Tool-Caches
+.vite/
+.cache/
+
+# Binary Assets — Claude kann PNGs/OGGs nicht sinnvoll lesen oder editieren
+public/assets/sounds/
+public/assets/tiles/*.png
+public/assets/monsters/*.png
+public/assets/heroes/*.png
+public/assets/items/*.png
+public/assets/status/*.png
+public/assets/ui/*.png
+
+# Git-Interna
+.git/
+
+# Log-Dateien
+*.log
+npm-debug.log*
+
+# Temporäre Dateien
+*.tmp
+*.bak
+tmp/
+temp/
