@@ -502,7 +502,7 @@ describe('App', () => {
       'lg:h-full',
       'lg:w-[400px]',
       'lg:justify-self-end',
-      'lg:overflow-y-auto',
+      'overflow-y-auto',
     );
     expect(header).toHaveClass('min-h-[72px]', 'pb-2', 'lg:h-[120px]');
     expect(leftHeaderCell).toContainElement(settingsButton);
@@ -545,11 +545,11 @@ describe('App', () => {
     const contentColumn = boardSection?.parentElement;
     const main = board.closest('main');
 
-    expect(main).toHaveClass('lg:h-screen');
-    expect(contentColumn).toHaveClass('min-h-0', 'flex-col', 'lg:h-full');
+    expect(main).toHaveClass('h-[100dvh]');
+    expect(contentColumn).toHaveClass('min-h-0', 'flex-col', 'h-full');
     expect(boardSection).toHaveClass('flex', 'min-h-0', 'flex-1');
     expect(board).toHaveClass('h-full', 'flex-1');
-    expect(board.closest('main')?.firstElementChild).toHaveClass('lg:min-h-0');
+    expect(board.closest('main')?.firstElementChild).toHaveClass('min-h-0');
   });
 
   it('resumes a saved game from the setup flow', () => {

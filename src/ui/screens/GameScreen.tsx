@@ -298,9 +298,9 @@ export function GameScreen() {
   };
 
   return (
-    <main className="relative min-h-screen bg-stone-950 text-stone-100 lg:h-screen">
-      <div className="grid min-h-screen w-full gap-4 px-4 py-4 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_400px]">
-        <div className="flex min-h-0 min-w-0 flex-col gap-4 lg:h-full">
+    <main className="relative h-[100dvh] bg-stone-950 text-stone-100">
+      <div className="grid h-full min-h-0 w-full gap-4 px-4 py-4 grid-rows-[minmax(25rem,55dvh)_minmax(0,1fr)] lg:grid-rows-none lg:grid-cols-[minmax(0,1fr)_400px]">
+        <div className="flex h-full min-h-0 min-w-0 flex-col gap-4">
           <header className="flex min-h-[72px] items-center gap-3 border-b border-stone-800 pb-2 lg:grid lg:h-[120px] lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-4">
             <div className="flex items-center justify-start">
               <SettingsMenu
@@ -359,7 +359,7 @@ export function GameScreen() {
             selectableHealingPositions={selectableHealingPositions}
           />
         </div>
-        <aside className="grid min-h-0 content-start gap-4 lg:h-full lg:w-[400px] lg:justify-self-end lg:overflow-y-auto lg:pr-1">
+        <aside className="grid min-h-0 content-start gap-4 overflow-y-auto lg:h-full lg:w-[400px] lg:justify-self-end lg:pr-1">
           <ActionPanel
             healingSpellSelection={healingSpellSelection}
             onCancelHealingSpellSelection={handleCancelHealingSpellSelection}
