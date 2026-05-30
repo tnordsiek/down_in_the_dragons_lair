@@ -92,6 +92,87 @@ describe('turn ending', () => {
     expect(nextState.turnContinuationReason).toBeUndefined();
   });
 
+  it('rotates the active player across more than two players', () => {
+    const state = createTestState({
+      phase: 'turn_end',
+      activePlayerIndex: 2,
+      players: [
+        createTestPlayer({ id: 'player_human' }),
+        createTestPlayer({ id: 'player_ai_1', kind: 'ai', heroId: 'hero_rogue' }),
+        createTestPlayer({ id: 'player_ai_2', kind: 'ai', heroId: 'hero_blade' }),
+      ],
+    });
+
+    const next = endTurn(state);
+
+    // Wraps from the last player back to index 0.
+    expect(next.activePlayerIndex).toBe(0);
+    expect(next.phase).toBe('turn_start');
+    expect(next.remainingSteps).toBe(4);
+  });
+
+  it('skips a queued unconscious next player by entering turn_skip with zero steps', () => {
+    const state = createTestState({
+      phase: 'turn_end',
+      activePlayerIndex: 0,
+      players: [
+        createTestPlayer({ id: 'player_human' }),
+        createTestPlayer({
+          id: 'player_ai_1',
+          kind: 'ai',
+          heroId: 'hero_rogue',
+          hp: 0,
+          skipNextTurn: true,
+        }),
+      ],
+    });
+
+    const next = endTurn(state);
+
+    expect(next.activePlayerIndex).toBe(1);
+    expect(next.phase).toBe('turn_skip');
+    expect(next.remainingSteps).toBe(0);
+    // The skip flag is only cleared when the skipped player's turn is ended.
+    expect(next.players[1].skipNextTurn).toBe(true);
+  });
+
+  it('heals the active player on a healing tile before advancing the turn', () => {
+    const state = createTestState({
+      phase: 'turn_end',
+      activePlayerIndex: 0,
+      remainingSteps: 0,
+      players: [
+        createTestPlayer({
+          id: 'player_human',
+          hp: 1,
+          isCursed: true,
+          position: createPosition(0, 0),
+        }),
+        createTestPlayer({
+          id: 'player_ai_1',
+          kind: 'ai',
+          heroId: 'hero_rogue',
+          position: createPosition(5, 5),
+        }),
+      ],
+      board: [
+        createTestTile({ boardX: 0, boardY: 0, blueprintId: 'start_cross_healing' }),
+        createTestTile({ tileInstanceId: 'tile-far', boardX: 5, boardY: 5 }),
+      ],
+    });
+
+    const next = endTurn(state);
+
+    expect(next.players[0].hp).toBe(5);
+    expect(next.players[0].isCursed).toBe(false);
+  });
+
+  it('blocks ending the turn while combat is unresolved', () => {
+    const state = createTestState({ phase: 'combat' });
+
+    expect(() => endTurn(state)).toThrow(/combat/i);
+  });
+
   it('starts optional rogue combat when the next uncursed rogue is standing on a monster', () => {
     const state = createTestState({
       phase: 'turn_end',
