@@ -83,7 +83,7 @@ describe('App', () => {
     expect(
       screen.getByText('May move through walls on discovered tiles.'),
     ).toBeInTheDocument();
-    expect(screen.getByText('Code powered by Codex')).toBeInTheDocument();
+    expect(screen.getByText('Code powered by Codex & Claude')).toBeInTheDocument();
     expect(
       screen.getByText('Graphics powered by Nano Banana'),
     ).toBeInTheDocument();
@@ -145,7 +145,7 @@ describe('App', () => {
       .getByText('Concept and AI Direction by fnord GAMES (2026)')
       .parentElement;
 
-    expect(creditsContainer).toContainElement(screen.getByText('Code powered by Codex'));
+    expect(creditsContainer).toContainElement(screen.getByText('Code powered by Codex & Claude'));
     expect(creditsContainer?.parentElement).toContainElement(
       screen.getByRole('button', { name: 'Imprint' }),
     );

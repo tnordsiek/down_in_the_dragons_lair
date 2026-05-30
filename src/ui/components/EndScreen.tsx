@@ -36,8 +36,9 @@ export function EndScreen({ state, onNewGame }: EndScreenProps) {
     .map(({ player, index }) => playerHeroLabel(player, index));
 
   return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
     <section
-      className="border border-amber-300 bg-stone-950 p-5"
+      className="border border-amber-300 bg-stone-950 p-5 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto"
       data-asset-id="bg_end_screen"
     >
       <div data-asset-id="ui_modal_frame">
@@ -95,5 +96,6 @@ export function EndScreen({ state, onNewGame }: EndScreenProps) {
         </button>
       </div>
     </section>
+    </div>
   );
 }

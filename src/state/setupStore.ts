@@ -259,12 +259,18 @@ export const useSetupStore = create<SetupState>((set) => ({
       }
     }),
   resetGame: () =>
-    set(() => ({
-      gameState: undefined,
-      hasSavedGame: loadPersistedGameState()?.ok === true,
-      lastError: undefined,
-      pendingAudioCues: [createPendingAudioCue('sfx_button_click')],
-    })),
+    set((state) => {
+      const isGameOver = state.gameState?.phase === 'game_over';
+      if (isGameOver) {
+        clearPersistedGameState();
+      }
+      return {
+        gameState: undefined,
+        hasSavedGame: !isGameOver && loadPersistedGameState()?.ok === true,
+        lastError: undefined,
+        pendingAudioCues: [createPendingAudioCue('sfx_button_click')],
+      };
+    }),
   clearSavedGame: () =>
     set(() => {
       clearPersistedGameState();

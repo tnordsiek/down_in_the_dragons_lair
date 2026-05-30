@@ -347,7 +347,7 @@ export function StartScreen() {
 
         <div className="flex flex-col gap-3 text-left text-xs text-stone-400 md:flex-row md:items-end md:justify-between">
           <div className="leading-5">
-            <p>Code powered by Codex</p>
+            <p>Code powered by Codex & Claude</p>
             <p>Graphics powered by Nano Banana</p>
             <p>Concept and AI Direction by fnord GAMES (2026)</p>
           </div>
