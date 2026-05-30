@@ -215,6 +215,10 @@ function getLegalWitchSwapActions(
 }
 
 function canOpenChest(state: GameState, activePlayer: Player): boolean {
+  if (state.phase !== 'turn_start' && state.phase !== 'await_move') {
+    return false;
+  }
+
   const activeTile = getTileAt(state.board, activePlayer.position);
 
   return (

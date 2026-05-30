@@ -124,6 +124,7 @@ export function ActionPanel({
     (spell) => spell.spellKind === 'flame',
   ).length;
   const canOpenChest =
+    (state.phase === 'turn_start' || state.phase === 'await_move') &&
     activeTile?.roomToken?.id === 'treasure_chest' &&
     activePlayer.inventory.keyCount > 0;
   const groundLootItem = activeTile?.looseItems[0];

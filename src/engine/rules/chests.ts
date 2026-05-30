@@ -4,6 +4,10 @@ import type { GameState } from '../core/types';
 import { getContinuationPhaseAfterAction } from '../turns/continuation';
 
 export function openChest(state: GameState): GameState {
+  if (state.phase !== 'turn_start' && state.phase !== 'await_move') {
+    throw new Error('Cannot open chest outside of movement phases');
+  }
+
   const activePlayer = state.players[state.activePlayerIndex];
   const tile = getTileAt(state.board, activePlayer.position);
 

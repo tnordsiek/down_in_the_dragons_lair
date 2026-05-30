@@ -708,8 +708,8 @@ function resolveRetreat(
     turnContinuationReason: continuationReason,
     rng: warlockFallback?.rng ?? state.rng,
   };
-  const phase = continuationReason
-    ? getContinuationPhaseAfterAction(stateAfterRetreat)
+  const phase = continuationReason && stateAfterRetreat.remainingSteps > 0
+    ? 'await_move'
     : 'turn_end';
 
   return appendGameEvent({
