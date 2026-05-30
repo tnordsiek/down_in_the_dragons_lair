@@ -76,6 +76,62 @@ describe('inventory and loot rules', () => {
     expect(resolved.board[0].looseItems).toEqual([]);
   });
 
+  it('ends the turn after picking up ground loot even when blade_on_six continuation is active', () => {
+    const state = createTestState({
+      phase: 'await_move',
+      remainingSteps: 2,
+      turnContinuationReason: 'blade_on_six',
+      board: [
+        createTestTile({
+          looseItems: [{ type: 'weapon', bonus: 3 }],
+        }),
+      ],
+    });
+
+    const resolved = beginGroundLoot(state);
+
+    expect(resolved.phase).toBe('turn_end');
+    expect(resolved.turnContinuationReason).toBeUndefined();
+    expect(resolved.players[0].inventory.weapons).toEqual([
+      { type: 'weapon', bonus: 3 },
+    ]);
+  });
+
+  it('ends the turn after swapping ground loot even when blade_on_six continuation is active', () => {
+    const state = createTestState({
+      phase: 'loot_resolution',
+      remainingSteps: 2,
+      turnContinuationReason: 'blade_on_six',
+      pendingLoot: {
+        source: 'ground_item',
+        position: createPosition(0, 0),
+        item: { type: 'weapon', bonus: 3 },
+      },
+      board: [
+        createTestTile({
+          looseItems: [{ type: 'weapon', bonus: 3 }],
+        }),
+      ],
+      players: [
+        createTestPlayer({
+          inventory: {
+            weapons: [
+              { type: 'weapon', bonus: 1 },
+              { type: 'weapon', bonus: 2 },
+            ],
+            spells: [],
+            keyCount: 0,
+          },
+        }),
+      ],
+    });
+
+    const resolved = swapPendingLoot(state, { kind: 'weapon', index: 0 });
+
+    expect(resolved.phase).toBe('turn_end');
+    expect(resolved.turnContinuationReason).toBeUndefined();
+  });
+
   it('enters loot resolution when ground loot cannot be stored immediately', () => {
     const state = createTestState({
       phase: 'await_move',

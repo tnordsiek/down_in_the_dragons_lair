@@ -63,7 +63,7 @@ export function beginGroundLoot(state: GameState): GameState {
       looseItems: [],
     };
 
-    return finalizeLootState(state, player, updatedTile);
+    return finalizeLootState(state, player, updatedTile, true);
   }
 
   return {
@@ -83,11 +83,13 @@ export function leavePendingLoot(state: GameState): GameState {
   }
 
   const pendingLoot = requirePendingLoot(state);
+  const isGroundItem = pendingLoot.source === 'ground_item';
 
   return finalizeLootState(
     state,
     state.players[state.activePlayerIndex],
     updateTileLoot(getTileAt(state.board, pendingLoot.position)!, pendingLoot),
+    isGroundItem,
   );
 }
 
@@ -109,7 +111,7 @@ export function takePendingLoot(state: GameState): GameState {
     pendingLoot,
   );
 
-  return finalizeLootState(state, player, tile);
+  return finalizeLootState(state, player, tile, pendingLoot.source === 'ground_item');
 }
 
 export function swapPendingLoot(
@@ -138,7 +140,7 @@ export function swapPendingLoot(
   );
   const tile = setTileLooseItem(tileWithRemovedPendingLoot, swapResult.droppedItem);
 
-  return finalizeLootState(state, swapResult.player, tile);
+  return finalizeLootState(state, swapResult.player, tile, pendingLoot.source === 'ground_item');
 }
 
 export function getLootSwapChoices(player: Player, item: Item): LootSwapSlot[] {
@@ -186,6 +188,7 @@ function finalizeLootState(
   state: GameState,
   activePlayer: Player,
   tile: PlacedTile,
+  forceEndTurn = false,
 ): GameState {
   const updatedState: GameState = {
     ...state,
@@ -196,6 +199,7 @@ function finalizeLootState(
       samePosition(boardTile, tile) ? tile : boardTile,
     ),
     pendingLoot: undefined,
+    ...(forceEndTurn ? { turnContinuationReason: undefined } : {}),
   };
   const phase = getContinuationPhaseAfterAction(updatedState);
 
