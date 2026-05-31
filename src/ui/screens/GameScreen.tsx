@@ -9,6 +9,7 @@ import type {
   RotationDirection,
   TileSide,
 } from '../../engine/core/types';
+import { isMainTurnActionPhase } from '../../engine/turns/turns';
 import { useSetupStore } from '../../state/setupStore';
 import { ActionPanel } from '../components/ActionPanel';
 import { BoardView } from '../components/BoardView';
@@ -31,11 +32,7 @@ type WitchSwapSelectionState =
 function canUseHealingSpellNow(
   state: NonNullable<ReturnType<typeof useSetupStore.getState>['gameState']>,
 ): boolean {
-  return (
-    state.phase === 'turn_start' ||
-    state.phase === 'await_move' ||
-    state.phase === 'optional_monster_combat'
-  );
+  return isMainTurnActionPhase(state.phase);
 }
 
 export function GameScreen() {

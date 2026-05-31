@@ -22,6 +22,14 @@ export function isEndTurnBlockedPhase(phase: GameState['phase']): boolean {
   );
 }
 
+export function isMainTurnActionPhase(phase: GameState['phase']): boolean {
+  return (
+    phase === 'turn_start' ||
+    phase === 'await_move' ||
+    phase === 'optional_monster_combat'
+  );
+}
+
 export function endTurn(state: GameState): GameState {
   if (isEndTurnBlockedPhase(state.phase)) {
     if (state.phase === 'choose_pending_tile_rotation') {

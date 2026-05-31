@@ -13,14 +13,13 @@ import {
   canStoreItem,
   getLootSwapChoices,
 } from '../engine/rules/inventory';
-import { isEndTurnBlockedPhase } from '../engine/turns/turns';
+import {
+  isEndTurnBlockedPhase,
+  isMainTurnActionPhase,
+} from '../engine/turns/turns';
 
 function canUseHealingSpellNow(state: GameState): boolean {
-  return (
-    state.phase === 'turn_start' ||
-    state.phase === 'await_move' ||
-    state.phase === 'optional_monster_combat'
-  );
+  return isMainTurnActionPhase(state.phase);
 }
 
 export function getLegalAiActions(state: GameState): GameAction[] {
@@ -143,11 +142,7 @@ export function getLegalAiActions(state: GameState): GameAction[] {
     return actions;
   }
 
-  if (
-    state.phase === 'turn_start' ||
-    state.phase === 'await_move' ||
-    state.phase === 'optional_monster_combat'
-  ) {
+  if (isMainTurnActionPhase(state.phase)) {
     if (canBeginGroundLoot(state)) {
       actions.push({ type: 'beginLoot' });
     }

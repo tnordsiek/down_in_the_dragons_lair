@@ -2,12 +2,9 @@ import { tileBlueprints } from '../../data/tiles';
 import { getTileAt, hasTileAt } from '../core/board';
 import { samePosition } from '../core/board';
 import type { GameState, KnownMove, PlacedTile, TileSide } from '../core/types';
-import { hasActiveHeroAbility } from '../rules/abilities';
+import { getActivePlayer, hasActiveHeroAbility } from '../rules/abilities';
+import { isMainTurnActionPhase } from '../turns/turns';
 import { adjacentPosition, canExit, canTilesConnect } from './topology';
-
-export function getActivePlayer(state: GameState) {
-  return state.players[state.activePlayerIndex];
-}
 
 export function getLegalKnownMoves(state: GameState): KnownMove[] {
   const activePlayer = getActivePlayer(state);
@@ -16,11 +13,7 @@ export function getLegalKnownMoves(state: GameState): KnownMove[] {
   if (
     !originTile ||
     state.remainingSteps <= 0 ||
-    ![
-      'turn_start',
-      'await_move',
-      'optional_monster_combat',
-    ].includes(state.phase)
+    !isMainTurnActionPhase(state.phase)
   ) {
     return [];
   }
