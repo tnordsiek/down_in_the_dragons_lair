@@ -134,7 +134,7 @@ function completeRoomTokenResolution(
     message:
       token.kind === 'chest'
         ? 'Resolved room and found a treasure chest'
-        : `Resolved room and found ${monsterDefinitions[token.id as keyof typeof monsterDefinitions].displayName}`,
+        : `Resolved room and found ${monsterDefinitions[token.id].displayName}`,
     ...createPlayerEventFields(activePlayer, state.players),
     room: {
       tokenId: token.id,
@@ -253,12 +253,11 @@ function createCombatContext(
   tile: PlacedTile,
   token: Token,
 ): CombatContext {
-  const monster =
-    monsterDefinitions[token.id as keyof typeof monsterDefinitions];
-
-  if (!monster) {
+  if (token.kind !== 'monster') {
     throw new Error(`Token is not a monster: ${token.id}`);
   }
+
+  const monster = monsterDefinitions[token.id];
 
   return {
     playerId: state.players[state.activePlayerIndex].id,

@@ -33,10 +33,9 @@ export function getScaledTokenCount(tokenId: TokenId, poolScale = 1): number {
 }
 
 export function createToken(tokenId: TokenId): Token {
-  return {
-    id: tokenId,
-    kind: tokenId === 'treasure_chest' ? 'chest' : 'monster',
-  };
+  return tokenId === 'treasure_chest'
+    ? { kind: 'chest', id: tokenId }
+    : { kind: 'monster', id: tokenId };
 }
 
 export function createTokenBag(poolScale = 1): Token[] {

@@ -382,6 +382,10 @@ function actionMessage(
       return 'Ended turn';
     case 'startGame':
       return undefined;
+    default: {
+      const _exhaustive: never = action;
+      return _exhaustive;
+    }
   }
 }
 

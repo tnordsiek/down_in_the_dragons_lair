@@ -13,8 +13,12 @@ import {
   getCombatOutcomeForPlayer,
 } from '../../engine/combat/combat';
 import { hasActiveHeroAbility } from '../../engine/rules/abilities';
+import { canOpenChest as canOpenChestRule } from '../../engine/rules/chests';
 import { canStoreItem } from '../../engine/rules/inventory';
-import { isEndTurnBlockedPhase } from '../../engine/turns/turns';
+import {
+  isEndTurnBlockedPhase,
+  isMainTurnActionPhase,
+} from '../../engine/turns/turns';
 import { getUiLegalActions } from '../../state/setupStore';
 import { heroName, monsterName, sideLabels } from '../labels';
 import { itemLabel } from '../items';
@@ -29,11 +33,7 @@ type WitchSwapSelectionState =
   | { mode: 'select_target' };
 
 function canUseHealingSpellNow(state: GameState): boolean {
-  return (
-    state.phase === 'turn_start' ||
-    state.phase === 'await_move' ||
-    state.phase === 'optional_monster_combat'
-  );
+  return isMainTurnActionPhase(state.phase);
 }
 
 type ActionPanelProps = {
@@ -123,10 +123,7 @@ export function ActionPanel({
   const availableFlameSpells = activePlayer.inventory.spells.filter(
     (spell) => spell.spellKind === 'flame',
   ).length;
-  const canOpenChest =
-    (state.phase === 'turn_start' || state.phase === 'await_move') &&
-    activeTile?.roomToken?.id === 'treasure_chest' &&
-    activePlayer.inventory.keyCount > 0;
+  const canOpenChest = canOpenChestRule(state);
   const groundLootItem = activeTile?.looseItems[0];
   const pendingLoot = state.pendingLoot;
   const canTakePendingLoot =

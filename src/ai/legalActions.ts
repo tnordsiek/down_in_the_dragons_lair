@@ -1,4 +1,3 @@
-import { getTileAt } from '../engine/core/board';
 import type { BoardPosition, GameAction, GameState, Player } from '../engine/core/types';
 import { getCombatFlameSpellChoices } from '../engine/combat/combat';
 import {
@@ -8,19 +7,19 @@ import {
 import { adjacentPosition } from '../engine/movement/topology';
 import { getDiscoveredHealingPositions } from '../engine/rules/abilities';
 import { hasActiveHeroAbility } from '../engine/rules/abilities';
+import { canOpenChest } from '../engine/rules/chests';
 import {
   canBeginGroundLoot,
   canStoreItem,
   getLootSwapChoices,
 } from '../engine/rules/inventory';
-import { isEndTurnBlockedPhase } from '../engine/turns/turns';
+import {
+  isEndTurnBlockedPhase,
+  isMainTurnActionPhase,
+} from '../engine/turns/turns';
 
 function canUseHealingSpellNow(state: GameState): boolean {
-  return (
-    state.phase === 'turn_start' ||
-    state.phase === 'await_move' ||
-    state.phase === 'optional_monster_combat'
-  );
+  return isMainTurnActionPhase(state.phase);
 }
 
 export function getLegalAiActions(state: GameState): GameAction[] {
@@ -60,7 +59,7 @@ export function getLegalAiActions(state: GameState): GameAction[] {
     actions.push(...getLegalWitchSwapActions(state, activePlayer));
   }
 
-  if (canOpenChest(state, activePlayer)) {
+  if (canOpenChest(state)) {
     actions.push({ type: 'openChest' });
   }
 
@@ -143,11 +142,7 @@ export function getLegalAiActions(state: GameState): GameAction[] {
     return actions;
   }
 
-  if (
-    state.phase === 'turn_start' ||
-    state.phase === 'await_move' ||
-    state.phase === 'optional_monster_combat'
-  ) {
+  if (isMainTurnActionPhase(state.phase)) {
     if (canBeginGroundLoot(state)) {
       actions.push({ type: 'beginLoot' });
     }
@@ -212,19 +207,6 @@ function getLegalWitchSwapActions(
       type: 'swapWitchPosition' as const,
       targetPlayerId: player.id,
     }));
-}
-
-function canOpenChest(state: GameState, activePlayer: Player): boolean {
-  if (state.phase !== 'turn_start' && state.phase !== 'await_move') {
-    return false;
-  }
-
-  const activeTile = getTileAt(state.board, activePlayer.position);
-
-  return (
-    activeTile?.roomToken?.id === 'treasure_chest' &&
-    activePlayer.inventory.keyCount > 0
-  );
 }
 
 export function getActionTargetPosition(

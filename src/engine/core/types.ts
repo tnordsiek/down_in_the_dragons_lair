@@ -113,10 +113,9 @@ export interface TilePoolEntry {
   count: number;
 }
 
-export interface Token {
-  id: TokenId;
-  kind: 'monster' | 'chest';
-}
+export type Token =
+  | { kind: 'monster'; id: MonsterId }
+  | { kind: 'chest'; id: 'treasure_chest' };
 
 export type RewardDefinition =
   | { type: 'weapon'; bonus: WeaponBonus }

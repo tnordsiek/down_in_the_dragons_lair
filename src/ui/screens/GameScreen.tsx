@@ -9,7 +9,8 @@ import type {
   RotationDirection,
   TileSide,
 } from '../../engine/core/types';
-import { useSetupStore } from '../../state/setupStore';
+import { isMainTurnActionPhase } from '../../engine/turns/turns';
+import { getUiLegalActions, useSetupStore } from '../../state/setupStore';
 import { ActionPanel } from '../components/ActionPanel';
 import { BoardView } from '../components/BoardView';
 import { EndScreen } from '../components/EndScreen';
@@ -31,11 +32,7 @@ type WitchSwapSelectionState =
 function canUseHealingSpellNow(
   state: NonNullable<ReturnType<typeof useSetupStore.getState>['gameState']>,
 ): boolean {
-  return (
-    state.phase === 'turn_start' ||
-    state.phase === 'await_move' ||
-    state.phase === 'optional_monster_combat'
-  );
+  return isMainTurnActionPhase(state.phase);
 }
 
 export function GameScreen() {
@@ -139,11 +136,7 @@ export function GameScreen() {
     }
     const canUseWitchSwap =
       activePlayer.kind === 'human' &&
-      state.phase === 'turn_start' &&
-      state.remainingSteps === 4 &&
-      activePlayer.heroId === 'hero_witch' &&
-      !activePlayer.isCursed &&
-      state.players.some((player) => player.id !== activePlayer.id);
+      getUiLegalActions(state).witchSwapTargets.length > 0;
 
     if (!canUseWitchSwap && witchSwapSelection.mode !== 'idle') {
       setWitchSwapSelection({ mode: 'idle' });

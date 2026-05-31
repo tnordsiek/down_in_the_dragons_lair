@@ -795,7 +795,7 @@ function resolvePendingCombat(
   );
 }
 
-function getAutomaticFlameSpellCount(player: Player): number {
+export function getAutomaticFlameSpellCount(player: Player): number {
   return hasActiveHeroAbility(player, 'hero_mage')
     ? getAvailableFlameSpellCount(player)
     : 0;
