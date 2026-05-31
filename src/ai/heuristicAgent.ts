@@ -9,6 +9,7 @@ import type {
 } from '../engine/core/types';
 import {
   calculateCombatTotal,
+  getAutomaticFlameSpellCount,
   getCombatFlameSpellChoices,
   getCombatOutcomeForPlayer,
 } from '../engine/combat/combat';
@@ -198,10 +199,7 @@ function chooseCombatAction(
 
     const activePlayer = state.players[state.activePlayerIndex];
     const monster = monsterDefinitions[state.combat.monsterId];
-    const automaticFlameBonus = hasActiveHeroAbility(activePlayer, 'hero_mage')
-      ? activePlayer.inventory.spells.filter((spell) => spell.spellKind === 'flame')
-          .length
-      : 0;
+    const automaticFlameBonus = getAutomaticFlameSpellCount(activePlayer);
     const winChance = estimateCombatWinChance(
       activePlayer,
       monster.strength,
@@ -233,10 +231,7 @@ function chooseCombatAction(
 
   const activePlayer = state.players[state.activePlayerIndex];
   const monster = monsterDefinitions[state.combat.monsterId];
-  const automaticFlameBonus = hasActiveHeroAbility(activePlayer, 'hero_mage')
-    ? activePlayer.inventory.spells.filter((spell) => spell.spellKind === 'flame')
-        .length
-    : 0;
+  const automaticFlameBonus = getAutomaticFlameSpellCount(activePlayer);
   const winChance = estimateCombatWinChance(
     activePlayer,
     monster.strength,
