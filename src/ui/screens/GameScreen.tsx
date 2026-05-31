@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 
 import { chooseHeuristicAiAction } from '../../ai/heuristicAgent';
@@ -54,6 +54,30 @@ export function GameScreen() {
   const showStartPlayerOverlay =
     startPlayerEvent !== undefined &&
     startPlayerEvent.id !== dismissedStartOverlayEventId;
+  const startOverlayRef = useRef<HTMLDivElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+
+  const dismissStartOverlay = () => {
+    if (startPlayerEvent) {
+      setDismissedStartOverlayEventId(startPlayerEvent.id);
+    }
+  };
+
+  useEffect(() => {
+    if (!showStartPlayerOverlay) {
+      return;
+    }
+
+    previouslyFocusedRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    startOverlayRef.current?.focus();
+
+    return () => {
+      previouslyFocusedRef.current?.focus();
+    };
+  }, [showStartPlayerOverlay]);
 
   useEffect(() => {
     if (!state) {
@@ -389,14 +413,29 @@ export function GameScreen() {
       overlayStartPlayerHeroId &&
       overlayStartPlayerDetails ? (
         <div
-          className="absolute inset-0 z-30 bg-stone-950/90 px-4 py-6 text-left backdrop-blur-sm"
+          ref={startOverlayRef}
+          className="absolute inset-0 z-30 bg-stone-950/90 px-4 py-6 text-left backdrop-blur-sm focus:outline-none"
           data-testid="start-player-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="start-overlay-title"
+          tabIndex={-1}
           onClick={(event) => {
             if (event.button !== 0) {
               return;
             }
 
-            setDismissedStartOverlayEventId(startPlayerEvent.id);
+            dismissStartOverlay();
+          }}
+          onKeyDown={(event) => {
+            if (
+              event.key === 'Escape' ||
+              event.key === 'Enter' ||
+              event.key === ' '
+            ) {
+              event.preventDefault();
+              dismissStartOverlay();
+            }
           }}
         >
           <div className="mx-auto flex h-full w-full max-w-5xl items-center justify-center">
@@ -406,7 +445,10 @@ export function GameScreen() {
                   <p className="text-xs uppercase tracking-[0.3em] text-amber-300">
                     Starting Player Roll-Off
                   </p>
-                  <h2 className="mt-2 text-2xl font-semibold text-stone-100">
+                  <h2
+                    id="start-overlay-title"
+                    className="mt-2 text-2xl font-semibold text-stone-100"
+                  >
                     {heroName(overlayStartPlayerHeroId)} begins the game
                   </h2>
                 </div>
@@ -429,6 +471,11 @@ export function GameScreen() {
                             : `Tiebreak ${roundIndex}`}
                         </h3>
                         <table className="w-full border-collapse text-sm text-stone-200">
+                          <caption className="sr-only">
+                            {round.roundType === 'initial'
+                              ? 'Initial roll results'
+                              : `Tiebreak ${roundIndex} roll results`}
+                          </caption>
                           <thead>
                             <tr className="border-b border-stone-700 text-left text-xs uppercase tracking-wide text-stone-400">
                               <th className="px-3 py-2 font-medium">Player</th>
@@ -468,6 +515,7 @@ export function GameScreen() {
                     Turn Order
                   </h3>
                   <table className="w-full border-collapse text-sm text-stone-200">
+                    <caption className="sr-only">Turn order</caption>
                     <thead>
                       <tr className="border-b border-stone-700 text-left text-xs uppercase tracking-wide text-stone-400">
                         <th className="px-3 py-2 font-medium">#</th>
