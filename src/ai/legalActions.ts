@@ -18,10 +18,6 @@ import {
   isMainTurnActionPhase,
 } from '../engine/turns/turns';
 
-function canUseHealingSpellNow(state: GameState): boolean {
-  return isMainTurnActionPhase(state.phase);
-}
-
 export function getLegalAiActions(state: GameState): GameAction[] {
   if (state.phase === 'game_over') {
     return [];
@@ -170,7 +166,7 @@ function getLegalHealingSpellActions(
   state: GameState,
   activePlayer: Player,
 ): GameAction[] {
-  if (!canUseHealingSpellNow(state)) {
+  if (!isMainTurnActionPhase(state.phase)) {
     return [];
   }
 
