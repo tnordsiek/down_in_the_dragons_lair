@@ -1,6 +1,7 @@
+import { contactEmailDisplay } from './contact';
 import type { LegalContent } from './types';
 
-const controllerEmail = ['tnordsiek', ' [at] ', 'web', ' [dot] ', 'de'].join('');
+const controllerEmail = contactEmailDisplay;
 
 export const privacyPolicyContent: LegalContent = {
   sections: [

@@ -1,7 +1,8 @@
+import { contactEmailDisplay } from './contact';
 import type { LegalContent } from './types';
 
 const contactPhone = ['+', '49', ' (0)521 ', '1648447'].join('');
-const contactEmail = ['tnordsiek', ' [at] ', 'web', ' [dot] ', 'de'].join('');
+const contactEmail = contactEmailDisplay;
 const sectionSign = '\u00A7';
 
 export const imprintContent: LegalContent = {

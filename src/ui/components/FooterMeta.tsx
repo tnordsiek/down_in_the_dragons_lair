@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { useSetupStore } from '../../state/setupStore';
 import type { LegalContent } from '../../legal/types';
 
 type FooterMetaProps = {
@@ -38,6 +39,7 @@ export function FooterMeta({
   const [loadErrorSection, setLoadErrorSection] =
     useState<LegalSectionId | null>(null);
   const isLeftAligned = align === 'left';
+  const openFeedbackModal = useSetupStore((state) => state.openFeedbackModal);
 
   const handleToggleSection = async (section: LegalSectionId) => {
     if (activeSection === section) {
@@ -133,6 +135,13 @@ export function FooterMeta({
               {legalSectionLabels[section]}
             </button>
           ))}
+          <button
+            className="text-parchment-200 transition-colors hover:text-torch-200"
+            onClick={openFeedbackModal}
+            type="button"
+          >
+            Bug Report
+          </button>
         </div>
       </div>
       <span>{versionLabel}</span>
