@@ -8,7 +8,6 @@ import type {
   HeroId,
   Item,
   KnownMove,
-  MonsterId,
   RotationDirection,
   TileSide,
   Token,
@@ -913,12 +912,10 @@ function RoomToken({ token }: { token: Token }) {
   const assetId = `token_${token.id}`;
   const assetUrl = getAssetUrl(assetId);
   const label =
-    token.kind === 'monster'
-      ? monsterName(token.id as MonsterId)
-      : 'Treasure chest';
+    token.kind === 'monster' ? monsterName(token.id) : 'Treasure chest';
   const tooltip =
     token.kind === 'monster'
-      ? getMonsterTileTooltip(token.id as MonsterId)
+      ? getMonsterTileTooltip(token.id)
       : getChestTileTooltip();
 
   return (

@@ -1,5 +1,5 @@
 import { getTileAt } from '../core/board';
-import type { GameState, MonsterId } from '../core/types';
+import type { GameState } from '../core/types';
 import { getZeroStepFollowUpPhase } from '../turns/continuation';
 import { hasActiveHeroAbility } from './abilities';
 
@@ -55,7 +55,7 @@ export function swapWitchPosition(
     combat: targetMonster
       ? {
           playerId: activePlayer.id,
-          monsterId: targetMonster.id as MonsterId,
+          monsterId: targetMonster.id,
           position: targetOriginalPosition,
           enteredFrom: activeOriginalPosition,
           source: 'witch_swap',

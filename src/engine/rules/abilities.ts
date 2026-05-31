@@ -1,11 +1,5 @@
 import { getTileAt } from '../core/board';
-import type {
-  CombatContext,
-  GameState,
-  HeroId,
-  MonsterId,
-  Player,
-} from '../core/types';
+import type { CombatContext, GameState, HeroId, Player } from '../core/types';
 
 export function hasActiveHeroAbility(player: Player, heroId: HeroId): boolean {
   return player.heroId === heroId && !player.isCursed;
@@ -52,7 +46,7 @@ export function getActiveTileMonsterCombat(state: GameState): CombatContext | un
 
   return {
     playerId: activePlayer.id,
-    monsterId: tile.roomToken.id as MonsterId,
+    monsterId: tile.roomToken.id,
     position: activePlayer.position,
     enteredFrom: state.lastMoveFrom ?? activePlayer.position,
   };

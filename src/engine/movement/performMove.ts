@@ -1,5 +1,5 @@
 import { getTileAt, samePosition } from '../core/board';
-import type { BoardPosition, GameState, MonsterId } from '../core/types';
+import type { BoardPosition, GameState } from '../core/types';
 import {
   getActiveTileMonsterCombat,
   hasActiveHeroAbility,
@@ -74,7 +74,7 @@ export function moveActivePlayer(
       targetMonster && !canIgnoreMonster
         ? {
             playerId: activePlayer.id,
-            monsterId: targetMonster.id as MonsterId,
+            monsterId: targetMonster.id,
             position: targetPosition,
             enteredFrom: activePlayer.position,
           }

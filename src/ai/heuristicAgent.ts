@@ -651,10 +651,7 @@ function scoreMovementAction(
   }
 
   if (targetTile?.roomToken?.kind === 'monster') {
-    const monster =
-      monsterDefinitions[
-        targetTile.roomToken.id as keyof typeof monsterDefinitions
-      ];
+    const monster = monsterDefinitions[targetTile.roomToken.id];
     const winChance = estimateCombatWinChance(activePlayer, monster.strength);
 
     score +=
