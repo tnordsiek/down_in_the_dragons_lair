@@ -74,7 +74,7 @@ export function StartScreen() {
 
   return (
     <main
-      className="min-h-screen bg-stone-950 text-stone-100"
+      className="min-h-screen bg-stone-wall text-parchment-50"
       data-asset-id={background.assetId}
     >
       <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-2 sm:px-8">
@@ -82,12 +82,12 @@ export function StartScreen() {
           <div className="justify-self-start">
             <SettingsMenu />
           </div>
-          <p className="justify-self-center text-center text-[1.5rem] leading-9 text-stone-200">
+          <p className="justify-self-center text-center font-display text-[1.5rem] leading-9 text-parchment-100">
             Choose a hero, set the opposition, and enter the dungeon...
           </p>
           <div className="justify-self-end">
             <button
-              className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
+              className="rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200"
               data-asset-id="ui_button_secondary"
               onClick={startTutorial}
             >
@@ -112,20 +112,20 @@ export function StartScreen() {
               </h1>
             )}
             {hasSavedGame ? (
-              <div className="mt-5 w-full border border-stone-700 bg-stone-900/80 p-4 text-left">
-                <p className="text-lg font-semibold text-amber-100">
+              <div className="mt-5 w-full rounded-forged border border-stone-700 bg-stone-900/80 p-4 text-left shadow-forged">
+                <p className="font-display text-lg font-semibold text-amber-100">
                   Saved game available
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
-                    className="bg-amber-300 px-3 py-2 text-sm font-semibold text-stone-950"
+                    className="rounded-forged bg-torch-300 px-3 py-2 text-sm font-semibold text-obsidian-950 shadow-forged transition-colors hover:bg-torch-400"
                     data-asset-id="ui_button_primary"
                     onClick={resumeSavedGame}
                   >
                     Resume Game
                   </button>
                   <button
-                    className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
+                    className="rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200"
                     data-asset-id="ui_button_secondary"
                     onClick={clearSavedGame}
                   >
@@ -138,12 +138,12 @@ export function StartScreen() {
 
           <div className="grid content-start gap-5">
             <section
-              className="w-full border border-stone-700 bg-stone-900/80 p-4 text-left"
+              className="w-full rounded-forged border border-stone-700 bg-stone-900/80 p-4 text-left shadow-forged"
               data-asset-id={`${heroId}_portrait`}
             >
               <div className="grid gap-3 sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)] sm:items-start">
                 <div className="mx-auto flex w-full flex-col items-center justify-center gap-2 sm:mx-0">
-                  <p className="text-lg font-semibold text-amber-100">
+                  <p className="font-display text-lg font-semibold text-amber-100">
                     Chosen Hero
                   </p>
                   {heroPortraitUrl ? (
@@ -160,20 +160,20 @@ export function StartScreen() {
                 </div>
                 <div>
                   <div className="grid gap-1">
-                    <h2 className="text-lg font-semibold text-amber-100">
+                    <h2 className="font-display text-lg font-semibold text-amber-100">
                       {heroDefinitions[heroId].displayName}
                     </h2>
                   </div>
                   <div className="mt-3 grid gap-2">
                     {heroAbilityLines.map((ability, index) => (
                       <div
-                        className="border border-stone-700 bg-stone-950/80 px-2.5 py-2"
+                        className="rounded-carve border border-stone-700 bg-stone-950/80 px-2.5 py-2 shadow-carve"
                         key={ability}
                       >
-                        <p className="text-[10px] uppercase tracking-[0.14em] text-stone-500">
+                        <p className="text-[10px] uppercase tracking-[0.14em] text-torch-500">
                           Ability {index + 1}
                         </p>
-                        <p className="mt-0.5 text-sm leading-5 text-stone-200">
+                        <p className="mt-0.5 text-sm leading-5 text-parchment-100">
                           {ability}
                         </p>
                       </div>
@@ -185,22 +185,22 @@ export function StartScreen() {
 
             <div data-asset-id="bg_panel_texture">
               <div
-                className="border border-stone-700 bg-stone-900/80 p-4"
+                className="rounded-forged border border-stone-700 bg-stone-900/80 p-4 shadow-forged"
                 data-asset-id="ui_modal_frame"
               >
-                <h2 className="text-base font-semibold text-amber-100">
+                <h2 className="font-display text-base font-semibold text-amber-100">
                   Game Setup
                 </h2>
                 {lastError || persistenceError ? (
-                  <p className="mt-3 bg-red-950 p-2 text-sm text-red-100">
+                  <p className="mt-3 rounded-carve border border-blood-500/50 bg-blood-900 p-2 text-sm text-blood-200">
                     {lastError ?? persistenceError}
                   </p>
                 ) : null}
                 <div className="mt-3 grid gap-3">
-                  <label className="grid gap-2 text-sm text-stone-300">
+                  <label className="grid gap-2 text-sm text-parchment-200">
                     Hero
                     <select
-                      className="border border-stone-600 bg-stone-950 px-3 py-2 text-stone-100"
+                      className="rounded-forged border border-obsidian-600 bg-obsidian-950 px-3 py-2 text-parchment-50 shadow-carve"
                       value={heroId}
                       onChange={(event) =>
                         setSelectedHeroId(event.target.value as HeroId)
@@ -214,7 +214,7 @@ export function StartScreen() {
                     </select>
                   </label>
 
-                  <label className="grid gap-2 text-sm text-stone-300">
+                  <label className="grid gap-2 text-sm text-parchment-200">
                     AI Opponents
                     <input
                       aria-label="AI Opponents"
@@ -228,7 +228,7 @@ export function StartScreen() {
                     <span className="font-mono text-stone-100">{aiCount}</span>
                   </label>
 
-                  <fieldset className="grid gap-2 text-sm text-stone-300">
+                  <fieldset className="grid gap-2 text-sm text-parchment-200">
                     <legend>Opponent Selection</legend>
                     <label className="flex items-center gap-2">
                       <input
@@ -253,7 +253,7 @@ export function StartScreen() {
                   </fieldset>
 
                   {opponentSelectionMode === 'manual' ? (
-                    <fieldset className="grid gap-2 text-sm text-stone-300">
+                    <fieldset className="grid gap-2 text-sm text-parchment-200">
                       <legend>
                         Opponents ({selectedOpponentHeroIds.length}/{aiCount})
                       </legend>
@@ -265,10 +265,10 @@ export function StartScreen() {
                           return (
                             <label
                               key={id}
-                              className={`flex items-center justify-between gap-3 border px-3 py-2 ${
+                              className={`flex items-center justify-between gap-3 rounded-forged border px-3 py-2 ${
                                 disabled
-                                  ? 'border-stone-800 bg-stone-950/60 text-stone-500'
-                                  : 'border-stone-700 bg-stone-950 text-stone-200'
+                                  ? 'border-obsidian-800 bg-obsidian-950/60 text-stone-500'
+                                  : 'border-obsidian-700 bg-obsidian-950 text-parchment-100'
                               }`}
                             >
                               <span>{heroDefinitions[id].displayName}</span>
@@ -295,7 +295,7 @@ export function StartScreen() {
                   <button
                     aria-controls={advancedSetupId}
                     aria-expanded={advancedSetupVisible}
-                    className="border border-stone-600 bg-stone-950 px-3 py-2 text-left text-sm font-semibold text-amber-100"
+                    className="rounded-forged border border-obsidian-600 bg-obsidian-950 px-3 py-2 text-left text-sm font-semibold text-amber-100 transition-colors hover:border-torch-500"
                     type="button"
                     onClick={() =>
                       setAdvancedSetupVisible((current) => !current)
@@ -308,7 +308,7 @@ export function StartScreen() {
 
                   {advancedSetupVisible ? (
                     <div className="grid gap-3" id={advancedSetupId}>
-                      <label className="grid gap-2 text-sm text-stone-300">
+                      <label className="grid gap-2 text-sm text-parchment-200">
                         Token and Tile Factor
                         <input
                           aria-label="Token and Tile Factor"
@@ -330,10 +330,10 @@ export function StartScreen() {
                         </span>
                       </label>
 
-                      <label className="grid gap-2 text-sm text-stone-300">
+                      <label className="grid gap-2 text-sm text-parchment-200">
                         Seed
                         <input
-                          className="border border-stone-600 bg-stone-950 px-3 py-2 font-mono text-stone-100"
+                          className="rounded-forged border border-obsidian-600 bg-obsidian-950 px-3 py-2 font-mono text-parchment-50 shadow-carve"
                           value={seed}
                           onChange={(event) => setSeed(event.target.value)}
                         />
@@ -342,7 +342,7 @@ export function StartScreen() {
                   ) : null}
 
                   <button
-                    className="bg-amber-300 px-4 py-3 font-semibold text-stone-950"
+                    className="rounded-forged bg-torch-300 px-4 py-3 font-semibold text-obsidian-950 shadow-forged transition-colors hover:bg-torch-400"
                     data-asset-id="ui_button_primary"
                     onClick={startGame}
                   >

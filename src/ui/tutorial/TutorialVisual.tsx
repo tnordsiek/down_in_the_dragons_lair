@@ -89,7 +89,7 @@ function BoardVisual({ config }: { config: BoardVisualConfig }) {
   );
 
   return (
-    <div className="pointer-events-none relative h-[58vh] min-h-72 overflow-hidden border border-stone-700 bg-stone-950 lg:h-[26rem] lg:min-h-0">
+    <div className="pointer-events-none relative h-[58vh] min-h-72 overflow-hidden rounded-forged border border-obsidian-700 bg-stone-950 shadow-forged lg:h-[26rem] lg:min-h-0">
       <BoardView
         state={config.state}
         cameraRequest={cameraRequest}
@@ -102,7 +102,7 @@ function BoardVisual({ config }: { config: BoardVisualConfig }) {
 
 function CombatDiceVisual() {
   return (
-    <div className="grid gap-3 border border-stone-700 bg-stone-900/80 p-4">
+    <div className="grid gap-3 rounded-forged border border-obsidian-700 bg-obsidian-800/85 p-4 shadow-forged">
       <div className="flex items-center justify-center gap-3" aria-label="Example combat roll">
         {tutorialCombatDice.map((die, index) => {
           const dieAssetId = `ui_dice_0${die}`;
@@ -119,14 +119,14 @@ function CombatDiceVisual() {
           ) : (
             <span
               key={`${index}-${die}`}
-              className="flex h-20 w-20 items-center justify-center border border-stone-600 font-mono text-2xl text-amber-100"
+              className="flex h-20 w-20 items-center justify-center rounded-carve border border-obsidian-600 font-mono text-2xl text-amber-100 shadow-carve"
             >
               {die}
             </span>
           );
         })}
       </div>
-      <p className="text-center font-mono text-sm text-stone-300">
+      <p className="text-center font-mono text-sm text-parchment-200">
         2d6 + weapons must beat the monster’s strength
       </p>
     </div>

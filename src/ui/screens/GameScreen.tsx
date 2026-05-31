@@ -305,10 +305,10 @@ export function GameScreen() {
   };
 
   return (
-    <main className="relative h-[100dvh] bg-stone-950 text-stone-100">
-      <div className="grid h-full min-h-0 w-full gap-4 px-4 py-4 grid-rows-[minmax(25rem,55dvh)_minmax(0,1fr)] lg:grid-rows-none lg:grid-cols-[minmax(0,1fr)_400px]">
+    <main className="relative flex h-[100dvh] flex-col text-parchment-50">
+      <div className="grid min-h-0 w-full flex-1 gap-4 px-4 py-4 grid-rows-[minmax(25rem,55dvh)_minmax(0,1fr)] lg:grid-rows-none lg:grid-cols-[minmax(0,1fr)_400px]">
         <div className="flex h-full min-h-0 min-w-0 flex-col gap-4">
-          <header className="flex min-h-[72px] items-center gap-3 border-b border-stone-800 pb-2 lg:grid lg:h-[120px] lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-4">
+          <header className="flex min-h-[72px] items-center gap-3 border-b border-obsidian-700 pb-2 shadow-[0_2px_0_rgba(196,132,42,0.2)] lg:grid lg:h-[120px] lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-4">
             <div className="flex items-center justify-start">
               <SettingsMenu
                 onNewGame={resetGame}
@@ -414,7 +414,7 @@ export function GameScreen() {
       overlayStartPlayerDetails ? (
         <div
           ref={startOverlayRef}
-          className="absolute inset-0 z-30 bg-stone-950/90 px-4 py-6 text-left backdrop-blur-sm focus:outline-none"
+          className="absolute inset-0 z-30 bg-obsidian-950/90 px-4 py-6 text-left backdrop-blur-sm focus:outline-none"
           data-testid="start-player-overlay"
           role="dialog"
           aria-modal="true"
@@ -439,20 +439,20 @@ export function GameScreen() {
           }}
         >
           <div className="mx-auto flex h-full w-full max-w-5xl items-center justify-center">
-            <div className="w-full max-w-4xl border border-amber-500/40 bg-stone-900/95 p-6 shadow-2xl shadow-black/40">
-              <div className="flex flex-col gap-2 border-b border-stone-700 pb-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="w-full max-w-4xl rounded-forged border border-torch-500/40 bg-obsidian-900/95 p-6 shadow-forged">
+              <div className="flex flex-col gap-2 border-b border-obsidian-700 pb-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-amber-300">
+                  <p className="text-xs uppercase tracking-[0.3em] text-torch-300">
                     Starting Player Roll-Off
                   </p>
                   <h2
                     id="start-overlay-title"
-                    className="mt-2 text-2xl font-semibold text-stone-100"
+                    className="mt-2 font-display text-2xl font-semibold text-parchment-50"
                   >
                     {heroName(overlayStartPlayerHeroId)} begins the game
                   </h2>
                 </div>
-                <p className="text-sm text-stone-300">
+                <p className="text-sm text-parchment-200">
                   Click anywhere to begin
                 </p>
               </div>
@@ -465,19 +465,19 @@ export function GameScreen() {
 
                     return (
                       <div key={`${startPlayerEvent.id}-overlay-round-${roundIndex}`}>
-                        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-200">
+                        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-torch-200">
                           {round.roundType === 'initial'
                             ? 'Initial Roll'
                             : `Tiebreak ${roundIndex}`}
                         </h3>
-                        <table className="w-full border-collapse text-sm text-stone-200">
+                        <table className="w-full border-collapse text-sm text-parchment-100">
                           <caption className="sr-only">
                             {round.roundType === 'initial'
                               ? 'Initial roll results'
                               : `Tiebreak ${roundIndex} roll results`}
                           </caption>
                           <thead>
-                            <tr className="border-b border-stone-700 text-left text-xs uppercase tracking-wide text-stone-400">
+                            <tr className="border-b border-obsidian-700 text-left text-xs uppercase tracking-wide text-parchment-200">
                               <th className="px-3 py-2 font-medium">Player</th>
                               <th className="px-3 py-2 font-medium">Hero</th>
                               <th className="px-3 py-2 font-medium">Roll</th>
@@ -489,8 +489,8 @@ export function GameScreen() {
                                 key={`${startPlayerEvent.id}-${roundIndex}-${entry.playerId}`}
                                 className={
                                   entry.roll === highestRoll
-                                    ? 'bg-amber-500/10 text-amber-100'
-                                    : 'border-b border-stone-800 last:border-b-0'
+                                    ? 'bg-torch-500/15 text-torch-200'
+                                    : 'border-b border-obsidian-700 last:border-b-0'
                                 }
                               >
                                 <td className="px-3 py-2">
@@ -511,13 +511,13 @@ export function GameScreen() {
                   })}
                 </div>
                 <div>
-                  <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-200">
+                  <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-torch-200">
                     Turn Order
                   </h3>
-                  <table className="w-full border-collapse text-sm text-stone-200">
+                  <table className="w-full border-collapse text-sm text-parchment-100">
                     <caption className="sr-only">Turn order</caption>
                     <thead>
-                      <tr className="border-b border-stone-700 text-left text-xs uppercase tracking-wide text-stone-400">
+                      <tr className="border-b border-obsidian-700 text-left text-xs uppercase tracking-wide text-parchment-200">
                         <th className="px-3 py-2 font-medium">#</th>
                         <th className="px-3 py-2 font-medium">Player</th>
                         <th className="px-3 py-2 font-medium">Hero</th>
@@ -529,8 +529,8 @@ export function GameScreen() {
                           key={`turn-order-${player.id}`}
                           className={
                             index === 0
-                              ? 'bg-emerald-500/10 text-emerald-100'
-                              : 'border-b border-stone-800 last:border-b-0'
+                              ? 'bg-jade-600/15 text-jade-200'
+                              : 'border-b border-obsidian-700 last:border-b-0'
                           }
                         >
                           <td className="px-3 py-2 font-semibold">{index + 1}</td>
@@ -548,7 +548,9 @@ export function GameScreen() {
           </div>
         </div>
       ) : null}
-      <FooterMeta align="left" versionLabel="v1.4 fnord GAMES 2026" />
+      <div className="shrink-0 border-t border-obsidian-700 px-4 pb-2 pt-2">
+        <FooterMeta layout="flow" spread versionLabel="v1.5 fnord GAMES 2026" />
+      </div>
     </main>
   );
 }

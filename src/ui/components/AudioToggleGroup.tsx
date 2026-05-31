@@ -14,7 +14,7 @@ export function AudioToggleGroup({ className }: AudioToggleGroupProps) {
     <div className={className ?? 'flex flex-wrap items-center gap-2'}>
       <button
         type="button"
-        className="inline-flex items-center gap-2 border border-stone-600 px-3 py-2 text-sm text-stone-100"
+        className="inline-flex items-center gap-2 rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200"
         aria-pressed={musicEnabled}
         aria-label={`Music ${musicEnabled ? 'on' : 'off'}`}
         onClick={toggleMusicEnabled}
@@ -24,7 +24,7 @@ export function AudioToggleGroup({ className }: AudioToggleGroupProps) {
       </button>
       <button
         type="button"
-        className="inline-flex items-center gap-2 border border-stone-600 px-3 py-2 text-sm text-stone-100"
+        className="inline-flex items-center gap-2 rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200"
         aria-pressed={sfxEnabled}
         aria-label={`Audio Effects ${sfxEnabled ? 'on' : 'off'}`}
         onClick={toggleSfxEnabled}

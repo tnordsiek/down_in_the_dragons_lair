@@ -16,6 +16,7 @@ import { isEndTurnBlockedPhase } from '../../engine/turns/turns';
 import { getUiLegalActions } from '../../state/setupStore';
 import { heroName, monsterName, sideLabels } from '../labels';
 import { itemLabel } from '../items';
+import { Button } from '../primitives';
 import { weaponDisplayNames } from '../../data/displayNames';
 import type {
   HealingSpellSelectionState,
@@ -159,12 +160,12 @@ export function ActionPanel({
 
   return (
     <section
-      className="border border-stone-700 bg-stone-900 p-4"
+      className="rounded-forged border border-obsidian-700 bg-obsidian-800/85 p-4 shadow-forged"
       data-asset-id="ui_icon_move"
     >
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-300">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-torch-200">
             Actions
           </h2>
           <p className="mt-1 font-mono text-sm text-amber-100">
@@ -172,28 +173,22 @@ export function ActionPanel({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
-            onClick={onCenterMap}
-          >
-            Center Map
-          </button>
-          <button
-            className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
+          <Button onClick={onCenterMap}>Center Map</Button>
+          <Button
             disabled={isEndTurnBlockedPhase(state.phase)}
             onClick={onEndTurn}
           >
             End Turn
-          </button>
+          </Button>
         </div>
       </div>
 
       {state.phase === 'choose_pending_tile_rotation' && state.pendingTile ? (
         <div className="mt-4 grid gap-2">
-          <h3 className="text-sm text-stone-300">
+          <h3 className="text-sm text-parchment-200">
             {state.pendingTile.blueprintId}
           </h3>
-          <p className="text-sm text-stone-400">
+          <p className="text-sm text-parchment-200">
             Rotate the preview tile on the board, then confirm placement in the
             center of the tile.
           </p>
@@ -202,13 +197,13 @@ export function ActionPanel({
 
       {state.phase === 'turn_skip' && activePlayer.skipNextTurn ? (
         <div className="mt-4 grid gap-2">
-          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+          <h3 className="text-xs uppercase tracking-wide text-torch-300">
             Unconscious
           </h3>
-          <p className="text-sm text-stone-200">
+          <p className="text-sm text-parchment-100">
             This hero is unconscious and must skip this turn.
           </p>
-          <p className="text-sm text-stone-400">
+          <p className="text-sm text-parchment-200">
             End the turn to finish the skipped round and recover afterward.
           </p>
         </div>
@@ -217,21 +212,21 @@ export function ActionPanel({
       {state.phase === 'resolve_room_token_seeress_choice' &&
       pendingSeeressRoomChoice ? (
         <div className="mt-4 grid gap-2">
-          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+          <h3 className="text-xs uppercase tracking-wide text-torch-300">
             Seeress Choice
           </h3>
-          <p className="text-sm text-stone-200">
+          <p className="text-sm text-parchment-100">
             Drawn room tokens at {pendingSeeressRoomChoice.position.boardX},
             {pendingSeeressRoomChoice.position.boardY}
           </p>
-          <p className="text-sm text-stone-300">
+          <p className="text-sm text-parchment-200">
             Choose one token to resolve. The other returns to the bag.
           </p>
           <div className="flex flex-wrap gap-2">
             {pendingSeeressRoomChoice.drawnTokens.map((token, index) => (
               <button
                 key={`${token.id}-${index}`}
-                className="border border-amber-500 px-3 py-2 text-sm text-amber-100"
+                className="rounded-forged border border-torch-500 px-3 py-2 text-sm text-torch-200 transition-colors hover:bg-torch-500/10"
                 onClick={() => onChooseSeeressRoomToken(index as 0 | 1)}
               >
                 Choose option {index + 1}: {tokenChoiceLabel(token)}
@@ -243,17 +238,17 @@ export function ActionPanel({
 
       {state.phase === 'optional_monster_combat' && combatMonster ? (
         <div className="mt-4 grid gap-2">
-          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+          <h3 className="text-xs uppercase tracking-wide text-torch-300">
             Monster Encounter
           </h3>
-          <p className="text-sm text-stone-200">
+          <p className="text-sm text-parchment-100">
             {monsterName(combatMonster.id)} strength {combatMonster.strength}
           </p>
-          <p className="text-sm text-stone-300">
+          <p className="text-sm text-parchment-200">
             The Rogue may ignore this monster, move on, stay here, or start combat.
           </p>
           <button
-            className="w-fit bg-red-700 px-3 py-2 text-sm font-semibold text-white"
+            className="w-fit rounded-forged bg-blood-600 px-3 py-2 text-sm font-semibold text-white shadow-forged transition-colors hover:bg-blood-500"
             data-asset-id="ui_icon_attack"
             onClick={onStartOptionalCombat}
           >
@@ -264,20 +259,20 @@ export function ActionPanel({
 
       {state.phase === 'combat' && combatMonster ? (
         <div className="mt-4 grid gap-2">
-          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+          <h3 className="text-xs uppercase tracking-wide text-torch-300">
             Combat
           </h3>
-          <p className="text-sm text-stone-200">
+          <p className="text-sm text-parchment-100">
             {monsterName(combatMonster.id)} strength {combatMonster.strength}
           </p>
-          <p className="font-mono text-xs text-stone-300">
+          <p className="font-mono text-xs text-parchment-200">
             2d6 + weapons +{weaponBonus}
             {hasActiveSeeressCombatBonus ? ' + Seeress Sight +1' : ''}
             {' + fireball spells ('}
             {availableFlameSpells} available) must beat {combatMonster.strength}
           </p>
           <button
-            className="w-fit bg-red-700 px-3 py-2 text-sm font-semibold text-white"
+            className="w-fit rounded-forged bg-blood-600 px-3 py-2 text-sm font-semibold text-white shadow-forged transition-colors hover:bg-blood-500"
             data-asset-id="ui_icon_attack"
             onClick={onResolveCombat}
           >
@@ -290,10 +285,10 @@ export function ActionPanel({
       combatMonster &&
       state.players.some((player) => player.id !== activePlayer.id) ? (
         <div className="mt-4 grid gap-2">
-          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+          <h3 className="text-xs uppercase tracking-wide text-torch-300">
             Mummified Priest Curse
           </h3>
-          <p className="text-sm text-stone-200">
+          <p className="text-sm text-parchment-100">
             {monsterName(combatMonster.id)} defeated. Choose another hero to receive the curse.
           </p>
           <div className="flex flex-wrap gap-2">
@@ -302,7 +297,7 @@ export function ActionPanel({
               .map((player) => (
                 <button
                   key={`curse-target-${player.id}`}
-                  className="border border-amber-500 px-3 py-2 text-sm text-amber-100"
+                  className="rounded-forged border border-torch-500 px-3 py-2 text-sm text-torch-200 transition-colors hover:bg-torch-500/10"
                   onClick={() => onSelectCurseTarget(player.id)}
                 >
                   {heroName(player.heroId)}
@@ -317,26 +312,26 @@ export function ActionPanel({
       initialCombatDice &&
       initialCombatOutcome ? (
         <div className="mt-4 grid gap-2">
-          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+          <h3 className="text-xs uppercase tracking-wide text-torch-300">
             Valkyrie Reroll
           </h3>
-          <p className="text-sm text-stone-200">
+          <p className="text-sm text-parchment-100">
             {monsterName(combatMonster.id)} strength {combatMonster.strength}
           </p>
-          <p className="font-mono text-xs text-stone-300">
+          <p className="font-mono text-xs text-parchment-200">
             Rolled {initialCombatDice[0]} + {initialCombatDice[1]} + weapons{' '}
             {weaponBonus} = {initialCombatDice[0] + initialCombatDice[1] + weaponBonus}
             {` and currently face ${initialCombatOutcome}`}
           </p>
           <div className="flex flex-wrap gap-2">
             <button
-              className="bg-red-700 px-3 py-2 text-sm font-semibold text-white"
+              className="rounded-forged bg-blood-600 px-3 py-2 text-sm font-semibold text-white shadow-forged transition-colors hover:bg-blood-500"
               onClick={onUseValkyrieReroll}
             >
               Reroll both dice
             </button>
             <button
-              className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
+              className="rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200"
               onClick={onDeclineValkyrieReroll}
             >
               Keep this result
@@ -349,13 +344,13 @@ export function ActionPanel({
       combatMonster &&
       pendingCombatDice ? (
         <div className="mt-4 grid gap-2">
-          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+          <h3 className="text-xs uppercase tracking-wide text-torch-300">
             Blade Reroll
           </h3>
-          <p className="text-sm text-stone-200">
+          <p className="text-sm text-parchment-100">
             {monsterName(combatMonster.id)} strength {combatMonster.strength}
           </p>
-          <p className="font-mono text-xs text-stone-300">
+          <p className="font-mono text-xs text-parchment-200">
             Current dice {pendingCombatDice[0]} + {pendingCombatDice[1]}
             {pendingCombatDice.includes(1)
               ? ' · reroll every die showing 1'
@@ -363,14 +358,14 @@ export function ActionPanel({
           </p>
           {pendingBladeTotal !== undefined &&
           pendingBladeOutcome ? (
-            <p className="font-mono text-xs text-stone-300">
+            <p className="font-mono text-xs text-parchment-200">
               Current result {pendingCombatDice[0]} + {pendingCombatDice[1]} +
               weapons {weaponBonus} = {pendingBladeTotal}
               {` and currently faces ${pendingBladeOutcome}`}
             </p>
           ) : null}
           <button
-            className="bg-red-700 px-3 py-2 text-sm font-semibold text-white"
+            className="rounded-forged bg-blood-600 px-3 py-2 text-sm font-semibold text-white shadow-forged transition-colors hover:bg-blood-500"
             onClick={onUseBladeReroll}
           >
             Reroll 1s
@@ -383,26 +378,26 @@ export function ActionPanel({
       initialCombatDice &&
       initialCombatOutcome ? (
         <div className="mt-4 grid gap-2">
-          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+          <h3 className="text-xs uppercase tracking-wide text-torch-300">
             Witch Sacrifice
           </h3>
-          <p className="text-sm text-stone-200">
+          <p className="text-sm text-parchment-100">
             {monsterName(combatMonster.id)} strength {combatMonster.strength}
           </p>
-          <p className="font-mono text-xs text-stone-300">
+          <p className="font-mono text-xs text-parchment-200">
             Rolled {initialCombatDice[0]} + {initialCombatDice[1]} + weapons{' '}
             {weaponBonus} = {initialCombatDice[0] + initialCombatDice[1] + weaponBonus}
             {` and currently face ${initialCombatOutcome}`}
           </p>
           <div className="flex flex-wrap gap-2">
             <button
-              className="bg-red-700 px-3 py-2 text-sm font-semibold text-white"
+              className="rounded-forged bg-blood-600 px-3 py-2 text-sm font-semibold text-white shadow-forged transition-colors hover:bg-blood-500"
               onClick={onUseWitchSacrifice}
             >
               Sacrifice 1 HP for +1
             </button>
             <button
-              className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
+              className="rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200"
               onClick={onDeclineWitchSacrifice}
             >
               Keep this result
@@ -413,13 +408,13 @@ export function ActionPanel({
 
       {state.phase === 'combat_flame_spells' && combatMonster && pendingCombatDice ? (
         <div className="mt-4 grid gap-2">
-          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+          <h3 className="text-xs uppercase tracking-wide text-torch-300">
             Fireball Spells
           </h3>
-          <p className="text-sm text-stone-200">
+          <p className="text-sm text-parchment-100">
             {monsterName(combatMonster.id)} strength {combatMonster.strength}
           </p>
-          <p className="font-mono text-xs text-stone-300">
+          <p className="font-mono text-xs text-parchment-200">
             Rolled {pendingCombatDice[0]} + {pendingCombatDice[1]} + weapons{' '}
             {weaponBonus}
             {pendingWitchSacrificeBonus > 0
@@ -431,7 +426,7 @@ export function ActionPanel({
           </p>
           <div className="flex flex-wrap gap-2">
             <button
-              className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
+              className="rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200"
               onClick={onResolveCombatWithoutFlameSpells}
             >
               Do not use fireball spells
@@ -439,7 +434,7 @@ export function ActionPanel({
             {flameSpellChoices.map((flameSpellCount) => (
               <button
                 key={`combat-flame-${flameSpellCount}`}
-                className="border border-amber-500 px-3 py-2 text-sm text-amber-100"
+                className="rounded-forged border border-torch-500 px-3 py-2 text-sm text-torch-200 transition-colors hover:bg-torch-500/10"
                 onClick={() => onResolveCombatWithFlameSpells(flameSpellCount)}
               >
                 Use {flameSpellCount} Fireball Spell{flameSpellCount === 1 ? '' : 's'}
@@ -451,12 +446,12 @@ export function ActionPanel({
 
       {canUseWitchSwap ? (
         <div className="mt-4 grid gap-2">
-          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+          <h3 className="text-xs uppercase tracking-wide text-torch-300">
             Witch Swap
           </h3>
           {witchSwapSelection.mode === 'idle' ? (
             <button
-              className="w-fit border border-violet-500 px-3 py-2 text-sm text-violet-100"
+              className="w-fit rounded-forged border border-arcane-400 px-3 py-2 text-sm text-arcane-200 transition-colors hover:bg-arcane-400/10"
               onClick={onStartWitchSwapSelection}
             >
               Swap Position
@@ -464,21 +459,21 @@ export function ActionPanel({
           ) : null}
           {witchSwapSelection.mode === 'select_target' ? (
             <>
-              <p className="text-sm text-stone-300">
+              <p className="text-sm text-parchment-200">
                 Choose another hero to swap positions with.
               </p>
               <div className="flex flex-wrap gap-2">
                 {legalActions.witchSwapTargets.map((player) => (
                   <button
                     key={`witch-swap-target-${player.id}`}
-                    className="border border-violet-500 px-3 py-2 text-sm text-violet-100"
+                    className="rounded-forged border border-arcane-400 px-3 py-2 text-sm text-arcane-200 transition-colors hover:bg-arcane-400/10"
                     onClick={() => onSelectWitchSwapTarget(player.id)}
                   >
                     {heroName(player.heroId)}
                   </button>
                 ))}
                 <button
-                  className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
+                  className="rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200"
                   onClick={onCancelWitchSwapSelection}
                 >
                   Cancel
@@ -492,7 +487,7 @@ export function ActionPanel({
       {canOpenChest ? (
         <div className="mt-4">
           <button
-            className="bg-amber-300 px-3 py-2 text-sm font-semibold text-stone-950"
+            className="rounded-forged bg-torch-300 px-3 py-2 text-sm font-semibold text-obsidian-950 shadow-forged transition-colors hover:bg-torch-400"
             data-asset-id="sfx_chest_open"
             onClick={onOpenChest}
           >
@@ -503,21 +498,21 @@ export function ActionPanel({
 
       {state.phase === 'loot_resolution' && pendingLoot ? (
         <div className="mt-4 grid gap-2">
-          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+          <h3 className="text-xs uppercase tracking-wide text-torch-300">
             Loot
           </h3>
-          <p className="text-sm text-stone-200">{itemLabel(pendingLoot.item)}</p>
+          <p className="text-sm text-parchment-100">{itemLabel(pendingLoot.item)}</p>
           <div className="flex flex-wrap gap-2">
             {canTakePendingLoot ? (
               <button
-                className="border border-amber-500 px-3 py-2 text-sm text-amber-100"
+                className="rounded-forged border border-torch-500 px-3 py-2 text-sm text-torch-200 transition-colors hover:bg-torch-500/10"
                 onClick={onTakeLoot}
               >
                 Take
               </button>
             ) : null}
             <button
-              className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
+              className="rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200"
               onClick={onLeaveLoot}
             >
               Leave
@@ -526,7 +521,7 @@ export function ActionPanel({
               ? activePlayer.inventory.weapons.map((weapon, index) => (
                   <button
                     key={`swap-weapon-${index}`}
-                    className="border border-sky-500 px-3 py-2 text-sm text-sky-100"
+                    className="rounded-forged border border-portal-400 px-3 py-2 text-sm text-portal-200 transition-colors hover:bg-portal-400/10"
                     onClick={() =>
                       onSwapLoot({ kind: 'weapon', index })
                     }
@@ -539,7 +534,7 @@ export function ActionPanel({
               ? activePlayer.inventory.spells.map((spell, index) => (
                   <button
                     key={`swap-spell-${index}`}
-                    className="border border-sky-500 px-3 py-2 text-sm text-sky-100"
+                    className="rounded-forged border border-portal-400 px-3 py-2 text-sm text-portal-200 transition-colors hover:bg-portal-400/10"
                     onClick={() =>
                       onSwapLoot({ kind: 'spell', index })
                     }
@@ -554,12 +549,12 @@ export function ActionPanel({
 
       {canUseHealingSpell ? (
         <div className="mt-4 grid gap-2">
-          <h3 className="text-xs uppercase tracking-wide text-stone-400">
+          <h3 className="text-xs uppercase tracking-wide text-torch-300">
             Healing Spell
           </h3>
           {healingSpellSelection.mode === 'idle' ? (
             <button
-              className="w-fit border border-amber-500 px-3 py-2 text-sm text-amber-100"
+              className="w-fit rounded-forged border border-torch-500 px-3 py-2 text-sm text-torch-200 transition-colors hover:bg-torch-500/10"
               onClick={onStartHealingSpellSelection}
             >
               Use Healing Spell
@@ -567,21 +562,21 @@ export function ActionPanel({
           ) : null}
           {healingSpellSelection.mode === 'select_target' ? (
             <>
-              <p className="text-sm text-stone-300">
+              <p className="text-sm text-parchment-200">
                 Choose which hero to teleport to a discovered healing tile.
               </p>
               <div className="flex flex-wrap gap-2">
                 {state.players.map((player) => (
                   <button
                     key={player.id}
-                    className="border border-amber-500 px-3 py-2 text-sm text-amber-100"
+                    className="rounded-forged border border-torch-500 px-3 py-2 text-sm text-torch-200 transition-colors hover:bg-torch-500/10"
                     onClick={() => onSelectHealingSpellTarget(player.id)}
                   >
                     {heroName(player.heroId)}
                   </button>
                 ))}
                 <button
-                  className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
+                  className="rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200"
                   onClick={onCancelHealingSpellSelection}
                 >
                   Cancel
@@ -591,11 +586,11 @@ export function ActionPanel({
           ) : null}
           {healingSpellSelection.mode === 'select_tile' && selectedHealingTarget ? (
             <>
-              <p className="text-sm text-stone-300">
+              <p className="text-sm text-parchment-200">
                 Choose a discovered healing tile for {heroName(selectedHealingTarget.heroId)}.
               </p>
               <button
-                className="w-fit border border-stone-500 px-3 py-2 text-sm text-stone-100"
+                className="w-fit rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200"
                 onClick={onCancelHealingSpellSelection}
               >
                 Cancel
@@ -609,12 +604,12 @@ export function ActionPanel({
         {groundLootItem &&
         (state.phase === 'turn_start' || state.phase === 'await_move') ? (
           <div>
-            <h3 className="text-xs uppercase tracking-wide text-stone-400">
+            <h3 className="text-xs uppercase tracking-wide text-torch-300">
               Loot
             </h3>
             <div className="mt-2 flex flex-wrap gap-2">
               <button
-                className="border border-amber-500 px-3 py-2 text-sm text-amber-100"
+                className="rounded-forged border border-torch-500 px-3 py-2 text-sm text-torch-200 transition-colors hover:bg-torch-500/10"
                 onClick={onBeginLoot}
               >
                 Take {itemLabel(groundLootItem)}
@@ -625,14 +620,14 @@ export function ActionPanel({
 
         {adjacentMoves.length > 0 ? (
           <div>
-            <h3 className="text-xs uppercase tracking-wide text-stone-400">
+            <h3 className="text-xs uppercase tracking-wide text-torch-300">
               Move
             </h3>
             <div className="mt-2 flex flex-wrap gap-2">
               {adjacentMoves.map((move) => (
                 <button
                   key={`${move.target.boardX},${move.target.boardY}`}
-                  className="border border-stone-500 px-3 py-2 text-sm text-stone-100"
+                  className="rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200"
                   onClick={() => onMove(move.target)}
                 >
                   {sideLabels[move.direction!]}
@@ -644,7 +639,7 @@ export function ActionPanel({
 
         {isOnTeleportTile ? (
           <div>
-            <h3 className="text-xs uppercase tracking-wide text-stone-400">
+            <h3 className="text-xs uppercase tracking-wide text-torch-300">
               Portal
             </h3>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -652,7 +647,7 @@ export function ActionPanel({
                 portalMoves.map((move) => (
                   <button
                     key={`portal-${move.target.boardX},${move.target.boardY}`}
-                    className="border border-sky-500 px-3 py-2 text-sm text-sky-100"
+                    className="rounded-forged border border-portal-400 px-3 py-2 text-sm text-portal-200 transition-colors hover:bg-portal-400/10"
                     onClick={() => onMove(move.target)}
                     onContextMenu={(event) => {
                       event.preventDefault();
@@ -665,7 +660,7 @@ export function ActionPanel({
                 ))
               ) : (
                 <button
-                  className="cursor-not-allowed border border-stone-700 px-3 py-2 text-sm text-stone-500"
+                  className="cursor-not-allowed rounded-forged border border-obsidian-700 px-3 py-2 text-sm text-stone-500"
                   disabled
                   type="button"
                 >
@@ -678,14 +673,14 @@ export function ActionPanel({
 
         {legalActions.explorationDirections.length > 0 ? (
           <div>
-            <h3 className="text-xs uppercase tracking-wide text-stone-400">
+            <h3 className="text-xs uppercase tracking-wide text-torch-300">
               Explore
             </h3>
             <div className="mt-2 flex flex-wrap gap-2">
               {legalActions.explorationDirections.map((direction) => (
                 <button
                   key={direction}
-                  className="border border-amber-500 px-3 py-2 text-sm text-amber-100"
+                  className="rounded-forged border border-torch-500 px-3 py-2 text-sm text-torch-200 transition-colors hover:bg-torch-500/10"
                   data-asset-id="sfx_tile_place"
                   onClick={() => onExplore(direction)}
                 >

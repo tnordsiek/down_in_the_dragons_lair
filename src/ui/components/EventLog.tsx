@@ -11,35 +11,35 @@ export function EventLog({ state, lastError }: EventLogProps) {
 
   return (
     <section
-      className="border border-stone-700 bg-stone-900 p-4"
+      className="rounded-forged border border-obsidian-700 bg-obsidian-800/85 p-4 shadow-forged"
       data-asset-id="ui_icon_log"
     >
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-300">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-torch-200">
         Log
       </h2>
       {lastError ? (
-        <p className="mt-3 bg-red-950 p-2 text-sm text-red-100">{lastError}</p>
+        <p className="mt-3 rounded-carve border border-blood-500/50 bg-blood-900 p-2 text-sm text-blood-200">{lastError}</p>
       ) : null}
-      <ol className="mt-3 grid max-h-48 gap-2 overflow-auto text-sm text-stone-300">
+      <ol className="mt-3 grid max-h-48 gap-2 overflow-auto text-sm text-parchment-200">
         {visibleEvents.map((event) => (
           <li
             key={event.id}
-            className="border-b border-stone-800 pb-2 last:border-b-0 last:pb-0"
+            className="border-b border-obsidian-700 pb-2 last:border-b-0 last:pb-0"
           >
-            <p className="text-xs uppercase tracking-wide text-stone-500">
+            <p className="text-xs uppercase tracking-wide text-torch-500">
               {event.playerLabel ?? event.playerId ?? 'System'}
             </p>
-            <p className="text-stone-200">{renderPrimaryText(event)}</p>
+            <p className="text-parchment-100">{renderPrimaryText(event)}</p>
             {event.exploration ? (
-              <p className="text-xs text-stone-400">
+              <p className="text-xs text-parchment-200">
                 {renderExplorationDetails(event)}
               </p>
             ) : null}
             {event.room ? (
-              <p className="text-xs text-stone-400">{renderRoomDetails(event)}</p>
+              <p className="text-xs text-parchment-200">{renderRoomDetails(event)}</p>
             ) : null}
             {event.startPlayer ? (
-              <div className="mt-1 grid gap-1 text-xs text-stone-400">
+              <div className="mt-1 grid gap-1 text-xs text-parchment-200">
                 {event.startPlayer.rounds.map((round, index) => (
                   <p key={`${event.id}-start-round-${index}`}>
                     {round.roundType === 'initial'
@@ -57,7 +57,7 @@ export function EventLog({ state, lastError }: EventLogProps) {
             ) : null}
             {event.combat ? (
               <>
-                <p className="text-xs text-stone-400">
+                <p className="text-xs text-parchment-200">
                   {monsterName(event.combat.monsterId)} strength{' '}
                   {event.combat.monsterStrength} · dice {event.combat.dice[0]} +{' '}
                   {event.combat.dice[1]} · total {event.combat.total}

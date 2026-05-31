@@ -267,7 +267,7 @@ export function BoardView({
             {isSelectableHealingTarget ? (
               <button
                 aria-label={`Select healing tile ${cell.boardX},${cell.boardY}`}
-                className="absolute inset-0 z-10 border border-yellow-300 bg-yellow-200/10 shadow-[inset_0_0_0_2px_rgba(253,224,71,0.6)] transition-colors hover:bg-yellow-200/18"
+                className="absolute inset-0 z-10 border border-yellow-300 bg-yellow-200/10 shadow-[inset_0_0_0_2px_rgba(253,224,71,0.6)] transition-colors hover:bg-yellow-200/18 motion-safe:animate-glow-pulse"
                 data-testid={`healing-target-${cell.boardX}-${cell.boardY}`}
                 onClick={() => onSelectHealingTile?.(cellPosition)}
                 onMouseDown={preventButtonFocus}
@@ -284,8 +284,8 @@ export function BoardView({
                 aria-label={`Move to tile ${cell.boardX},${cell.boardY}`}
                 className={`absolute inset-0 z-10 border transition-colors ${
                   isExtendedMoveTarget
-                    ? 'border-amber-100/60 bg-amber-200/14 shadow-[inset_0_0_0_1px_rgba(253,230,138,0.45)] hover:bg-amber-200/20'
-                    : 'border-amber-200/50 bg-amber-100/10 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.35)] hover:bg-amber-100/16'
+                    ? 'border-amber-100/60 bg-amber-200/14 shadow-[inset_0_0_0_1px_rgba(253,230,138,0.45),0_0_12px_2px_rgba(224,165,52,0.28)] hover:bg-amber-200/20'
+                    : 'border-amber-200/50 bg-amber-100/10 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.35),0_0_8px_1px_rgba(224,165,52,0.2)] hover:bg-amber-100/16'
                 }`}
                 data-testid={`move-target-${cell.boardX}-${cell.boardY}`}
                 onClick={() => {
@@ -307,7 +307,7 @@ export function BoardView({
                 {movementPointsEnabled ? (
                   <span
                     aria-hidden="true"
-                    className="absolute left-1 top-1 rounded-sm bg-stone-950/70 px-1 py-px text-[0.6rem] font-semibold leading-none text-stone-300"
+                    className="absolute left-1 top-1 rounded-sm border border-torch-500/30 bg-obsidian-950/80 px-1 py-px text-[0.6rem] font-semibold leading-none text-torch-200"
                     data-testid={`move-cost-${cell.boardX}-${cell.boardY}`}
                   >
                     {moveCost}
@@ -328,7 +328,7 @@ export function BoardView({
         ) : isClickableExplorationTarget ? (
           <button
             aria-label={`Explore tile ${cell.boardX},${cell.boardY}`}
-            className="relative h-full w-full border border-stone-500 bg-stone-900/80 shadow-[inset_0_0_0_1px_rgba(168,162,158,0.35)] transition-colors hover:bg-stone-800/85"
+            className="relative h-full w-full border border-dashed border-stone-500 bg-stone-900/80 shadow-[inset_0_0_0_1px_rgba(168,162,158,0.35)] transition-colors hover:border-torch-500 hover:bg-stone-800/85"
             data-testid={`explore-target-${cell.boardX}-${cell.boardY}`}
             data-asset-id="sfx_tile_place"
             onClick={() => onExplore?.(explorationDirection)}
@@ -631,7 +631,7 @@ export function BoardView({
     >
       <div
         aria-label="Dungeon board"
-        className="relative h-full min-h-[24rem] flex-1 select-none overflow-hidden bg-stone-950 p-2 touch-none"
+        className="relative h-full min-h-[24rem] flex-1 select-none overflow-hidden bg-stone-950 bg-stone-wall p-2 shadow-[inset_0_0_60px_rgba(0,0,0,0.55)] touch-none"
         ref={boardViewportRef}
         onPointerDown={(event) => {
           if (!canStartBoardDrag(event)) {
@@ -680,7 +680,7 @@ export function BoardView({
         {showZoomControl ? (
         <div className="pointer-events-none absolute inset-y-0 left-2 z-20 flex items-center">
           <div
-            className="pointer-events-auto flex flex-col items-center gap-2"
+            className="pointer-events-auto flex flex-col items-center gap-2 rounded-forged border border-obsidian-700 bg-obsidian-900/70 px-2 py-2 shadow-forged"
             data-testid="board-zoom-control"
             style={{ height: `${zoomSliderHeightPx}px` }}
           >
@@ -817,7 +817,7 @@ function PendingTileControls({
       >
         <button
           aria-label="Rotate tile counterclockwise"
-          className="pointer-events-auto flex items-center justify-center rounded-full border border-stone-500 bg-stone-950/90 font-semibold text-amber-100"
+          className="pointer-events-auto flex items-center justify-center rounded-full border border-torch-500 bg-obsidian-950/90 font-semibold text-torch-200 shadow-forged"
           onClick={() => onRotate?.('counterclockwise')}
           onMouseDown={preventButtonFocus}
           onPointerDown={(event) => event.stopPropagation()}
@@ -838,7 +838,7 @@ function PendingTileControls({
       >
         <button
           aria-label="Rotate tile clockwise"
-          className="pointer-events-auto flex items-center justify-center rounded-full border border-stone-500 bg-stone-950/90 font-semibold text-amber-100"
+          className="pointer-events-auto flex items-center justify-center rounded-full border border-torch-500 bg-obsidian-950/90 font-semibold text-torch-200 shadow-forged"
           onClick={() => onRotate?.('clockwise')}
           onMouseDown={preventButtonFocus}
           onPointerDown={(event) => event.stopPropagation()}
@@ -859,7 +859,7 @@ function PendingTileControls({
       >
         <button
           aria-label="Confirm tile rotation"
-          className="pointer-events-auto flex items-center justify-center rounded-full border border-amber-300 bg-amber-300/90 font-semibold uppercase tracking-wide text-stone-950 disabled:cursor-not-allowed disabled:border-stone-600 disabled:bg-stone-800 disabled:text-stone-400"
+          className="pointer-events-auto flex items-center justify-center rounded-full border border-torch-300 bg-torch-300/90 font-semibold uppercase tracking-wide text-obsidian-950 shadow-forged disabled:cursor-not-allowed disabled:border-stone-600 disabled:bg-stone-800 disabled:text-stone-400"
           disabled={!canConfirm}
           onClick={onConfirm}
           onMouseDown={preventButtonFocus}
@@ -902,7 +902,7 @@ function TileGraphic({
       />
     </div>
   ) : (
-    <div className="flex h-full items-start justify-start p-1 font-mono text-stone-200">
+    <div className="flex h-full items-start justify-start bg-gradient-to-br from-obsidian-700/40 to-transparent p-1 font-mono text-parchment-200">
       {blueprintId}
     </div>
   );
@@ -920,7 +920,7 @@ function RoomToken({ token }: { token: Token }) {
 
   return (
     <div
-      className="absolute left-1/2 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-stone-950/80 font-mono text-amber-200"
+      className="absolute left-1/2 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-torch-500/40 bg-obsidian-950/80 font-mono text-torch-200 shadow-forged"
       data-asset-id={assetId}
       title={tooltip}
     >
@@ -946,7 +946,7 @@ function HeroToken({
 
   return (
     <span
-      className="inline-flex items-center justify-center bg-amber-300 font-mono text-stone-950"
+      className="inline-flex items-center justify-center rounded-carve bg-torch-300 font-mono text-obsidian-950 shadow-forged ring-1 ring-obsidian-950/50"
       data-asset-id={assetId}
       title={label}
       style={{ height: `${sizePx}px`, width: `${sizePx}px` }}
@@ -1020,7 +1020,7 @@ function LooseItemToken({ item }: { item: Item }) {
 
   return (
     <div
-      className="absolute right-1 top-1 z-[1] flex h-6 w-6 items-center justify-center rounded-sm bg-stone-950/85"
+      className="absolute right-1 top-1 z-[1] flex h-6 w-6 items-center justify-center rounded-sm border border-torch-500/30 bg-obsidian-950/85 shadow-forged"
       data-asset-id={assetId}
       title={tooltip}
     >

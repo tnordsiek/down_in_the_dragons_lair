@@ -22,16 +22,16 @@ export function TutorialScreen() {
 
   return (
     <main
-      className="min-h-screen bg-stone-950 text-stone-100"
+      className="min-h-screen bg-stone-wall text-parchment-50"
       data-asset-id={background.assetId}
     >
       <section className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-6 py-6 sm:px-8">
-        <header className="flex items-center justify-between gap-4 border-b border-stone-800 pb-3">
+        <header className="flex items-center justify-between gap-4 border-b border-obsidian-700 pb-3 shadow-[0_2px_0_rgba(196,132,42,0.2)]">
           <h1 className="font-display text-2xl text-amber-100 sm:text-3xl">
             How to Play
           </h1>
           <button
-            className="border border-stone-600 px-3 py-2 text-sm text-stone-100"
+            className="rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200"
             data-asset-id="ui_button_secondary"
             onClick={exitTutorial}
           >
@@ -41,14 +41,14 @@ export function TutorialScreen() {
 
         <div className="mt-6 flex flex-1 flex-col">
           <p
-            className="text-xs uppercase tracking-[0.2em] text-stone-400"
+            className="text-xs uppercase tracking-[0.2em] text-parchment-200"
             aria-live="polite"
           >
             Step {currentStep + 1} of {stepCount}
           </p>
 
-          <section className="mt-3 flex-1 border border-stone-700 bg-stone-900/80 p-5">
-            <h2 className="text-xl font-semibold text-amber-100">
+          <section className="mt-3 flex-1 rounded-forged border border-stone-700 bg-stone-900/80 p-5 shadow-forged">
+            <h2 className="font-display text-xl font-semibold text-amber-100">
               {step.title}
             </h2>
             <div
@@ -57,15 +57,15 @@ export function TutorialScreen() {
               }`}
             >
               <div>
-                <p className="leading-6 text-stone-200">{step.intro}</p>
+                <p className="leading-6 text-parchment-100">{step.intro}</p>
                 {step.bullets && step.bullets.length > 0 ? (
                   <ul className="mt-4 grid gap-2">
                     {step.bullets.map((bullet) => (
                       <li
                         key={bullet}
-                        className="flex gap-2 text-sm leading-5 text-stone-300"
+                        className="flex gap-2 text-sm leading-5 text-parchment-200"
                       >
-                        <span aria-hidden="true" className="text-amber-300">
+                        <span aria-hidden="true" className="text-torch-300">
                           •
                         </span>
                         <span>{bullet}</span>
@@ -84,7 +84,7 @@ export function TutorialScreen() {
 
           <div className="mt-5 flex items-center justify-between gap-3">
             <button
-              className="border border-stone-600 px-4 py-2 text-sm text-stone-100 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-forged border border-obsidian-600 px-4 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200 disabled:cursor-not-allowed disabled:opacity-40"
               data-asset-id="ui_button_secondary"
               disabled={isFirstStep}
               onClick={goBack}
@@ -93,7 +93,7 @@ export function TutorialScreen() {
             </button>
             {isLastStep ? (
               <button
-                className="bg-amber-300 px-4 py-2 font-semibold text-stone-950"
+                className="rounded-forged bg-torch-300 px-4 py-2 font-semibold text-obsidian-950 shadow-forged transition-colors hover:bg-torch-400"
                 data-asset-id="ui_button_primary"
                 onClick={exitTutorial}
               >
@@ -101,7 +101,7 @@ export function TutorialScreen() {
               </button>
             ) : (
               <button
-                className="bg-amber-300 px-4 py-2 font-semibold text-stone-950"
+                className="rounded-forged bg-torch-300 px-4 py-2 font-semibold text-obsidian-950 shadow-forged transition-colors hover:bg-torch-400"
                 data-asset-id="ui_button_primary"
                 onClick={goNext}
               >

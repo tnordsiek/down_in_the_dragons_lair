@@ -52,10 +52,10 @@ export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
 
   return (
     <section
-      className="border border-stone-700 bg-stone-900 p-4"
+      className="rounded-forged border border-obsidian-700 bg-obsidian-800/85 p-4 shadow-forged"
       data-asset-id={panel.assetId}
     >
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-300">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-torch-200">
         Players
       </h2>
       <div className="mt-3 grid grid-cols-1 gap-2" data-testid="player-panel-grid">
@@ -107,17 +107,17 @@ function PlayerCard({
 
   return (
     <article
-      className={`relative min-w-0 border p-2.5 ${
+      className={`relative min-w-0 rounded-forged border p-2.5 shadow-forged ${
         isActive
-          ? 'border-amber-300 bg-stone-800'
-          : 'border-stone-700 bg-stone-950'
+          ? 'border-torch-400 bg-obsidian-800 shadow-[0_0_12px_rgba(224,165,52,0.22)]'
+          : 'border-obsidian-700 bg-obsidian-950'
       }`}
       data-asset-id={`${player.heroId}_portrait`}
       data-testid={`player-card-${player.id}`}
     >
       {showHeroInfo ? (
         <div
-          className="pointer-events-none absolute bottom-full left-0 right-0 z-10 mb-2 border border-stone-700 bg-stone-900 px-2 py-1 text-[10px] text-stone-300 shadow-lg"
+          className="pointer-events-none absolute bottom-full left-0 right-0 z-10 mb-2 rounded-carve border border-obsidian-700 bg-obsidian-900 px-2 py-1 text-[10px] text-parchment-200 shadow-forged"
           data-testid={`hero-info-${player.id}`}
         >
           {heroInfo}
@@ -143,10 +143,10 @@ function PlayerCard({
             />
             <div className="grid content-start gap-1">
               <div className="min-w-0">
-                <p className="text-sm font-semibold leading-tight text-stone-100">
+                <p className="text-sm font-semibold leading-tight text-parchment-50">
                   {heroName(player.heroId)}
                 </p>
-                <p className="text-[10px] uppercase tracking-wide text-stone-400">
+                <p className="text-[10px] uppercase tracking-wide text-parchment-200">
                   {player.kind}
                 </p>
               </div>
@@ -183,7 +183,7 @@ function PlayerCard({
           </div>
         </div>
         <div
-          className="grid content-start gap-1 text-[10px] text-stone-300"
+          className="grid content-start gap-1 text-[10px] text-parchment-200"
           data-asset-id="ui_icon_inventory"
           data-testid={`player-card-right-${player.id}`}
         >
@@ -276,7 +276,7 @@ function HeroPortrait({
   return (
     <button
       aria-label={`${label} portrait actions`}
-      className="flex h-20 w-20 shrink-0 items-center justify-center border border-stone-700 bg-stone-900 font-mono text-sm text-amber-100"
+      className="flex h-20 w-20 shrink-0 items-center justify-center rounded-carve border border-obsidian-700 bg-obsidian-900 font-mono text-sm text-amber-100 shadow-carve"
       data-asset-id={assetId}
       onClick={(event) => {
         event.stopPropagation();
@@ -316,7 +316,7 @@ function InventoryRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="uppercase tracking-wide text-stone-500">{label}</span>
+      <span className="uppercase tracking-wide text-parchment-200">{label}</span>
       <div
         className="flex min-h-5 flex-wrap items-center justify-end gap-1"
         title={title}
@@ -324,7 +324,7 @@ function InventoryRow({
         {icons.length > 0 ? (
           icons
         ) : (
-          <span className="text-stone-500">{emptyLabel}</span>
+          <span className="text-parchment-200/60">{emptyLabel}</span>
         )}
       </div>
     </div>
@@ -342,10 +342,10 @@ function MetricChip({
 }) {
   return (
     <span
-      className={`inline-flex items-center px-1.5 py-0.5 font-mono text-[10px] ${
+      className={`inline-flex items-center rounded-carve px-1.5 py-0.5 font-mono text-[10px] ${
         tone === 'amber'
-          ? 'bg-amber-950 text-amber-100'
-          : 'bg-stone-800 text-stone-200'
+          ? 'border border-torch-500/40 bg-torch-600/25 text-torch-200'
+          : 'border border-obsidian-600 bg-obsidian-800 text-parchment-100'
       }`}
       title={title}
     >
@@ -357,7 +357,7 @@ function MetricChip({
 function BonusBadge({ label, title }: { label: string; title: string }) {
   return (
     <span
-      className="inline-flex items-center border border-stone-700 bg-stone-900 px-1.5 py-0.5 text-[10px] font-mono text-sky-100"
+      className="inline-flex items-center rounded-carve border border-portal-400/50 bg-obsidian-900 px-1.5 py-0.5 text-[10px] font-mono text-portal-200"
       title={title}
     >
       {label}
@@ -398,7 +398,7 @@ function StatusBadge({
 
   return (
     <span
-      className="inline-flex items-center gap-1 bg-stone-800 px-1.5 py-0.5 text-[10px]"
+      className="inline-flex items-center gap-1 rounded-carve border border-blood-500/40 bg-blood-900/60 px-1.5 py-0.5 text-[10px] text-blood-200"
       data-asset-id={assetId}
       title={title}
     >

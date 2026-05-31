@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  color: #f7f0df;
-  background: #171713;
+  color: #f7f0df; /* parchment-50 */
+  background: #171713; /* obsidian-900 */
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -15,10 +15,32 @@
   box-sizing: border-box;
 }
 
-body {
-  min-width: 320px;
-  min-height: 100vh;
-  margin: 0;
+@layer base {
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    font-family: theme('fontFamily.body');
+    color: theme('colors.parchment.50');
+    /* Layered cavern atmosphere via pure CSS: grain over a stone depth gradient. */
+    background-color: theme('colors.obsidian.900');
+    background-image: theme('backgroundImage.noise-grain'),
+      theme('backgroundImage.stone-wall');
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: theme('fontFamily.display');
+    letter-spacing: 0.02em;
+  }
+
+  /* Visible torch-glow focus ring for keyboard users (WCAG-AA). */
+  :focus-visible {
+    outline: none;
+    box-shadow: theme('boxShadow.torch-glow');
+  }
 }
 
 button,
@@ -26,4 +48,16 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+/* Global motion gate: collapse all atmosphere animation/transition on request. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
