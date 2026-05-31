@@ -9,16 +9,10 @@ import type {
 } from '../../engine/core/types';
 import {
   calculateCombatTotal,
-  getCombatFlameSpellChoices,
   getCombatOutcomeForPlayer,
 } from '../../engine/combat/combat';
 import { hasActiveHeroAbility } from '../../engine/rules/abilities';
-import { canOpenChest as canOpenChestRule } from '../../engine/rules/chests';
-import { canStoreItem } from '../../engine/rules/inventory';
-import {
-  isEndTurnBlockedPhase,
-  isMainTurnActionPhase,
-} from '../../engine/turns/turns';
+import { isEndTurnBlockedPhase } from '../../engine/turns/turns';
 import { getUiLegalActions } from '../../state/setupStore';
 import { heroName, monsterName, sideLabels } from '../labels';
 import { itemLabel } from '../items';
@@ -31,10 +25,6 @@ type HealingSpellSelectionState =
 type WitchSwapSelectionState =
   | { mode: 'idle' }
   | { mode: 'select_target' };
-
-function canUseHealingSpellNow(state: GameState): boolean {
-  return isMainTurnActionPhase(state.phase);
-}
 
 type ActionPanelProps = {
   state: GameState;
@@ -102,6 +92,12 @@ export function ActionPanel({
   onSelectWitchSwapTarget,
 }: ActionPanelProps) {
   const legalActions = getUiLegalActions(state);
+  const {
+    canOpenChest,
+    canTakePendingLoot,
+    combatFlameSpellChoices: flameSpellChoices,
+    canUseHealingSpell,
+  } = legalActions;
   const activePlayer = state.players[state.activePlayerIndex];
   const activeTile = getTileAt(state.board, activePlayer.position);
   const isOnTeleportTile =
@@ -123,12 +119,8 @@ export function ActionPanel({
   const availableFlameSpells = activePlayer.inventory.spells.filter(
     (spell) => spell.spellKind === 'flame',
   ).length;
-  const canOpenChest = canOpenChestRule(state);
   const groundLootItem = activeTile?.looseItems[0];
   const pendingLoot = state.pendingLoot;
-  const canTakePendingLoot =
-    pendingLoot !== undefined && canStoreItem(activePlayer, pendingLoot.item);
-  const flameSpellChoices = getCombatFlameSpellChoices(state);
   const initialCombatDice = state.combat?.initialRolledDice;
   const initialCombatOutcome = state.combat?.initialBaseOutcome;
   const pendingCombatDice = state.combat?.rolledDice;
@@ -156,10 +148,6 @@ export function ActionPanel({
           combatMonster.strength,
         )
       : undefined;
-  const hasHealingSpell = activePlayer.inventory.spells.some(
-    (spell) => spell.spellKind === 'healing',
-  );
-  const canUseHealingSpell = hasHealingSpell && canUseHealingSpellNow(state);
   const selectedHealingTarget =
     healingSpellSelection.mode === 'select_tile'
       ? state.players.find(

@@ -2,7 +2,7 @@ import { act } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createNewGame } from '../engine/setup/createGame';
-import { useSetupStore } from './setupStore';
+import { getUiLegalActions, useSetupStore } from './setupStore';
 
 describe('setup store audio cues', () => {
   afterEach(() => {
@@ -140,5 +140,53 @@ describe('setup store audio cues', () => {
         expect.objectContaining({ assetId: 'sfx_curse_apply' }),
       ]),
     );
+  });
+});
+
+describe('getUiLegalActions affordances', () => {
+  it('exposes UI affordance flags alongside the legal-move lists', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ui-affordances',
+    });
+
+    const legal = getUiLegalActions(state);
+
+    expect(Array.isArray(legal.knownMoves)).toBe(true);
+    expect(Array.isArray(legal.explorationDirections)).toBe(true);
+    expect(Array.isArray(legal.combatFlameSpellChoices)).toBe(true);
+    expect(typeof legal.canOpenChest).toBe('boolean');
+    expect(typeof legal.canUseHealingSpell).toBe('boolean');
+    // A freshly created game has no pending ground loot to resolve.
+    expect(legal.canTakePendingLoot).toBe(false);
+  });
+
+  it('reports a takeable pending loot item via canTakePendingLoot', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ui-pending-loot',
+    });
+    const activeIndex = base.activePlayerIndex;
+    const activePosition = base.players[activeIndex].position;
+    // Clear the active player's spells so a healing spell is definitely storable.
+    const players = base.players.map((player, index) =>
+      index === activeIndex
+        ? { ...player, inventory: { ...player.inventory, spells: [] } }
+        : player,
+    );
+    const state: typeof base = {
+      ...base,
+      phase: 'loot_resolution',
+      players,
+      pendingLoot: {
+        source: 'ground_item',
+        position: activePosition,
+        item: { type: 'spell', spellKind: 'healing' },
+      },
+    };
+
+    expect(getUiLegalActions(state).canTakePendingLoot).toBe(true);
   });
 });

@@ -9,6 +9,10 @@ import {
   getLegalKnownMoves,
 } from '../engine/movement/movement';
 import { hasActiveHeroAbility } from '../engine/rules/abilities';
+import { getCombatFlameSpellChoices } from '../engine/combat/combat';
+import { canOpenChest } from '../engine/rules/chests';
+import { canStoreItem } from '../engine/rules/inventory';
+import { isMainTurnActionPhase } from '../engine/turns/turns';
 import {
   clearPersistedGameState,
   loadPersistedGameState,
@@ -391,6 +395,10 @@ function actionMessage(
 
 export function getUiLegalActions(state: GameState) {
   const activePlayer = state.players[state.activePlayerIndex];
+  const pendingLoot = state.pendingLoot;
+  const hasHealingSpell = activePlayer.inventory.spells.some(
+    (spell) => spell.spellKind === 'healing',
+  );
 
   return {
     knownMoves: getLegalKnownMoves(state),
@@ -401,6 +409,11 @@ export function getUiLegalActions(state: GameState) {
       hasActiveHeroAbility(activePlayer, 'hero_witch')
         ? state.players.filter((player) => player.id !== activePlayer.id)
         : [],
+    canOpenChest: canOpenChest(state),
+    canTakePendingLoot:
+      pendingLoot !== undefined && canStoreItem(activePlayer, pendingLoot.item),
+    combatFlameSpellChoices: getCombatFlameSpellChoices(state),
+    canUseHealingSpell: hasHealingSpell && isMainTurnActionPhase(state.phase),
   };
 }
 
