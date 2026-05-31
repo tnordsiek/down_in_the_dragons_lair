@@ -3,6 +3,20 @@ import { getTileAt, samePosition } from '../core/board';
 import type { GameState } from '../core/types';
 import { getContinuationPhaseAfterAction } from '../turns/continuation';
 
+export function canOpenChest(state: GameState): boolean {
+  if (state.phase !== 'turn_start' && state.phase !== 'await_move') {
+    return false;
+  }
+
+  const activePlayer = state.players[state.activePlayerIndex];
+  const tile = getTileAt(state.board, activePlayer.position);
+
+  return (
+    tile?.roomToken?.id === 'treasure_chest' &&
+    activePlayer.inventory.keyCount > 0
+  );
+}
+
 export function openChest(state: GameState): GameState {
   if (state.phase !== 'turn_start' && state.phase !== 'await_move') {
     throw new Error('Cannot open chest outside of movement phases');

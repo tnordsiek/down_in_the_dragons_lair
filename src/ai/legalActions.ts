@@ -1,4 +1,3 @@
-import { getTileAt } from '../engine/core/board';
 import type { BoardPosition, GameAction, GameState, Player } from '../engine/core/types';
 import { getCombatFlameSpellChoices } from '../engine/combat/combat';
 import {
@@ -8,6 +7,7 @@ import {
 import { adjacentPosition } from '../engine/movement/topology';
 import { getDiscoveredHealingPositions } from '../engine/rules/abilities';
 import { hasActiveHeroAbility } from '../engine/rules/abilities';
+import { canOpenChest } from '../engine/rules/chests';
 import {
   canBeginGroundLoot,
   canStoreItem,
@@ -59,7 +59,7 @@ export function getLegalAiActions(state: GameState): GameAction[] {
     actions.push(...getLegalWitchSwapActions(state, activePlayer));
   }
 
-  if (canOpenChest(state, activePlayer)) {
+  if (canOpenChest(state)) {
     actions.push({ type: 'openChest' });
   }
 
@@ -207,19 +207,6 @@ function getLegalWitchSwapActions(
       type: 'swapWitchPosition' as const,
       targetPlayerId: player.id,
     }));
-}
-
-function canOpenChest(state: GameState, activePlayer: Player): boolean {
-  if (state.phase !== 'turn_start' && state.phase !== 'await_move') {
-    return false;
-  }
-
-  const activeTile = getTileAt(state.board, activePlayer.position);
-
-  return (
-    activeTile?.roomToken?.id === 'treasure_chest' &&
-    activePlayer.inventory.keyCount > 0
-  );
 }
 
 export function getActionTargetPosition(

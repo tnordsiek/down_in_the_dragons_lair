@@ -13,6 +13,7 @@ import {
   getCombatOutcomeForPlayer,
 } from '../../engine/combat/combat';
 import { hasActiveHeroAbility } from '../../engine/rules/abilities';
+import { canOpenChest as canOpenChestRule } from '../../engine/rules/chests';
 import { canStoreItem } from '../../engine/rules/inventory';
 import {
   isEndTurnBlockedPhase,
@@ -122,10 +123,7 @@ export function ActionPanel({
   const availableFlameSpells = activePlayer.inventory.spells.filter(
     (spell) => spell.spellKind === 'flame',
   ).length;
-  const canOpenChest =
-    (state.phase === 'turn_start' || state.phase === 'await_move') &&
-    activeTile?.roomToken?.id === 'treasure_chest' &&
-    activePlayer.inventory.keyCount > 0;
+  const canOpenChest = canOpenChestRule(state);
   const groundLootItem = activeTile?.looseItems[0];
   const pendingLoot = state.pendingLoot;
   const canTakePendingLoot =
