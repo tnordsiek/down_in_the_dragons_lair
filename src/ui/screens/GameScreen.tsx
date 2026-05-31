@@ -10,7 +10,7 @@ import type {
   TileSide,
 } from '../../engine/core/types';
 import { isMainTurnActionPhase } from '../../engine/turns/turns';
-import { useSetupStore } from '../../state/setupStore';
+import { getUiLegalActions, useSetupStore } from '../../state/setupStore';
 import { ActionPanel } from '../components/ActionPanel';
 import { BoardView } from '../components/BoardView';
 import { EndScreen } from '../components/EndScreen';
@@ -136,11 +136,7 @@ export function GameScreen() {
     }
     const canUseWitchSwap =
       activePlayer.kind === 'human' &&
-      state.phase === 'turn_start' &&
-      state.remainingSteps === 4 &&
-      activePlayer.heroId === 'hero_witch' &&
-      !activePlayer.isCursed &&
-      state.players.some((player) => player.id !== activePlayer.id);
+      getUiLegalActions(state).witchSwapTargets.length > 0;
 
     if (!canUseWitchSwap && witchSwapSelection.mode !== 'idle') {
       setWitchSwapSelection({ mode: 'idle' });
