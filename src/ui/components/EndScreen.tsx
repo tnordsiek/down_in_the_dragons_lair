@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 import type { GameState } from '../../engine/core/types';
 import {
   formatTreasurePoints,
@@ -10,6 +12,15 @@ type EndScreenProps = {
 };
 
 export function EndScreen({ state, onNewGame }: EndScreenProps) {
+  const newGameButtonRef = useRef<HTMLButtonElement>(null);
+  const hasVictory = state.victory !== undefined;
+
+  useEffect(() => {
+    if (hasVictory) {
+      newGameButtonRef.current?.focus();
+    }
+  }, [hasVictory]);
+
   if (!state.victory) {
     return null;
   }
@@ -36,13 +47,20 @@ export function EndScreen({ state, onNewGame }: EndScreenProps) {
     .map(({ player, index }) => playerHeroLabel(player, index));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="end-screen-title"
+    >
     <section
       className="border border-amber-300 bg-stone-950 p-5 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto"
       data-asset-id="bg_end_screen"
     >
       <div data-asset-id="ui_modal_frame">
-        <h2 className="font-display text-3xl text-amber-100">Game Over</h2>
+        <h2 id="end-screen-title" className="font-display text-3xl text-amber-100">
+          Game Over
+        </h2>
         <div className="mt-4 grid gap-3 text-sm text-stone-200">
           <div className="border border-emerald-700/60 bg-emerald-950/30 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">
@@ -88,6 +106,7 @@ export function EndScreen({ state, onNewGame }: EndScreenProps) {
           ))}
         </div>
         <button
+          ref={newGameButtonRef}
           className="mt-4 bg-amber-300 px-4 py-2 font-semibold text-stone-950"
           data-asset-id="ui_button_primary"
           onClick={onNewGame}

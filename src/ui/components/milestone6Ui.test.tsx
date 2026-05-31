@@ -22,7 +22,7 @@ import { EventLog } from './EventLog';
 import { GameScreen } from '../screens/GameScreen';
 import { PlayerPanel } from './PlayerPanel';
 import { useSetupStore } from '../../state/setupStore';
-import { getBoardSelectableHealingPositions } from './boardViewUtils';
+import { getDiscoveredHealingPositions } from '../../engine/rules/abilities';
 import { heroName } from '../labels';
 
 const noopActions = {
@@ -4565,7 +4565,7 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
   const targetPlayer = state.players.find((player) => player.id === 'player_ai_1');
   const selectableHealingPositions =
     healingSpellSelection.mode === 'select_tile'
-      ? getBoardSelectableHealingPositions(state)
+      ? getDiscoveredHealingPositions(state)
       : [];
 
   return (
