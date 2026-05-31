@@ -17,14 +17,10 @@ import { getUiLegalActions } from '../../state/setupStore';
 import { heroName, monsterName, sideLabels } from '../labels';
 import { itemLabel } from '../items';
 import { weaponDisplayNames } from '../../data/displayNames';
-
-type HealingSpellSelectionState =
-  | { mode: 'idle' }
-  | { mode: 'select_target' }
-  | { mode: 'select_tile'; targetPlayerId: string };
-type WitchSwapSelectionState =
-  | { mode: 'idle' }
-  | { mode: 'select_target' };
+import type {
+  HealingSpellSelectionState,
+  WitchSwapSelectionState,
+} from '../selectionState';
 
 type ActionPanelProps = {
   state: GameState;

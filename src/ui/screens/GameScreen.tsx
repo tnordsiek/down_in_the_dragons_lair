@@ -9,6 +9,7 @@ import type {
   RotationDirection,
   TileSide,
 } from '../../engine/core/types';
+import { getDiscoveredHealingPositions } from '../../engine/rules/abilities';
 import { isMainTurnActionPhase } from '../../engine/turns/turns';
 import { getUiLegalActions, useSetupStore } from '../../state/setupStore';
 import { ActionPanel } from '../components/ActionPanel';
@@ -18,22 +19,11 @@ import { EventLog } from '../components/EventLog';
 import { FooterMeta } from '../components/FooterMeta';
 import { PlayerPanel } from '../components/PlayerPanel';
 import { SettingsMenu } from '../components/SettingsMenu';
-import { getBoardSelectableHealingPositions } from '../components/boardViewUtils';
 import { heroName } from '../labels';
-
-type HealingSpellSelectionState =
-  | { mode: 'idle' }
-  | { mode: 'select_target' }
-  | { mode: 'select_tile'; targetPlayerId: string };
-type WitchSwapSelectionState =
-  | { mode: 'idle' }
-  | { mode: 'select_target' };
-
-function canUseHealingSpellNow(
-  state: NonNullable<ReturnType<typeof useSetupStore.getState>['gameState']>,
-): boolean {
-  return isMainTurnActionPhase(state.phase);
-}
+import type {
+  HealingSpellSelectionState,
+  WitchSwapSelectionState,
+} from '../selectionState';
 
 export function GameScreen() {
   const state = useSetupStore((store) => store.gameState);
@@ -118,7 +108,7 @@ export function GameScreen() {
       (spell) => spell.spellKind === 'healing',
     );
 
-    if (isAiTurn || !hasHealingSpell || !canUseHealingSpellNow(state)) {
+    if (isAiTurn || !hasHealingSpell || !isMainTurnActionPhase(state.phase)) {
       if (healingSpellSelection.mode !== 'idle') {
         setHealingSpellSelection({ mode: 'idle' });
       }
@@ -155,7 +145,7 @@ export function GameScreen() {
 
   const selectableHealingPositions =
     healingSpellSelection.mode === 'select_tile'
-      ? getBoardSelectableHealingPositions(state)
+      ? getDiscoveredHealingPositions(state)
       : [];
   const overlayStartPlayerHeroId = startPlayerEvent?.playerHeroId;
   const overlayStartPlayerDetails = startPlayerEvent?.startPlayer;
