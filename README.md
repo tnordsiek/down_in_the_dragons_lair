@@ -1,4 +1,6 @@
-# Down in the Dragon's Lair
+<h1 align="center">
+  <img src="public/assets/ui/ui_logo_header.png" alt="Down in the Dragon's Lair" width="700">
+</h1>
 
 ## Game
 *Down in the Dragon's Lair* is a browser-based dungeon board game for 2 to 5 players. One human-controlled hero faces 1 to 4 AI opponents in a race through an expanding labyrinth of corridors, chambers, monsters, and treasure.
@@ -17,6 +19,12 @@ This is a small educational and hobby project that combines the enjoyable and in
 The project is built as a React frontend with TypeScript and Vite. The game rules run in a deterministic, testable engine, while UI, persistence, audio, and AI are separated into dedicated modules. Quality assurance relies on Vitest for unit and integration coverage, Playwright for end-to-end checks, and ESLint, Prettier, and a production build step for release verification.
 
 ## Development
-Code powered by Codex
+Code powered by Codex & Claude
+
 Graphics powered by Nano Banana
+
 Concept and AI Direction by fnord GAMES (2026)
+
+<p align="center">
+  <img src="public/assets/ui/ui_logo_wordmark.png" alt="Down in the Dragon's Lair emblem" width="160">
+</p>
