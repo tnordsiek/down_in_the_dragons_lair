@@ -22,6 +22,7 @@ import {
   loadAudioSettings,
   saveAudioSettings,
 } from './audioSettings';
+import { generateRandomSeed } from '../utils/randomSeed';
 
 export type PendingAudioCue = {
   id: number;
@@ -82,7 +83,7 @@ export const useSetupStore = create<SetupState>((set) => ({
   aiCount: 1,
   opponentSelectionMode: 'random',
   selectedOpponentHeroIds: [],
-  seed: 'v1-local-seed',
+  seed: generateRandomSeed(),
   poolScale: 1,
   musicEnabled: initialAudioSettings.musicEnabled,
   sfxEnabled: initialAudioSettings.sfxEnabled,
@@ -221,6 +222,8 @@ export const useSetupStore = create<SetupState>((set) => ({
         hasSavedGame: true,
         lastError: undefined,
         persistenceError: undefined,
+        // Refresh the seed so the next game differs even with the same setup.
+        seed: generateRandomSeed(),
         pendingAudioCues: [createPendingAudioCue('sfx_button_click')],
       };
     }),

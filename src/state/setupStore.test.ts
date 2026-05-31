@@ -1,30 +1,35 @@
 import { act } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createNewGame } from '../engine/setup/createGame';
 import { getUiLegalActions, useSetupStore } from './setupStore';
 
-describe('setup store audio cues', () => {
-  afterEach(() => {
-    act(() => {
-      useSetupStore.getState().clearSavedGame();
-      useSetupStore.setState({
-        selectedHeroId: 'hero_mage',
-        aiCount: 1,
-        opponentSelectionMode: 'random',
-        selectedOpponentHeroIds: [],
-        seed: 'v1-local-seed',
-        poolScale: 1,
-        musicEnabled: true,
-        sfxEnabled: true,
-        movementPointsEnabled: true,
-        pendingAudioCues: [],
-        lastError: undefined,
-        persistenceError: undefined,
-      });
+function resetStore() {
+  act(() => {
+    useSetupStore.getState().clearSavedGame();
+    useSetupStore.setState({
+      selectedHeroId: 'hero_mage',
+      aiCount: 1,
+      opponentSelectionMode: 'random',
+      selectedOpponentHeroIds: [],
+      seed: 'v1-local-seed',
+      poolScale: 1,
+      musicEnabled: true,
+      sfxEnabled: true,
+      movementPointsEnabled: true,
+      pendingAudioCues: [],
+      lastError: undefined,
+      persistenceError: undefined,
     });
-    window.localStorage.clear();
   });
+  window.localStorage.clear();
+}
+
+describe('setup store audio cues', () => {
+  // Reset before each test too: the production initial seed is now random, so
+  // tests must set a deterministic seed up front (not just clean up afterwards).
+  beforeEach(resetStore);
+  afterEach(resetStore);
 
   it('queues a button click cue when starting a game from the setup screen', () => {
     act(() => {
@@ -34,6 +39,23 @@ describe('setup store audio cues', () => {
     expect(useSetupStore.getState().pendingAudioCues).toEqual([
       expect.objectContaining({ assetId: 'sfx_button_click' }),
     ]);
+  });
+
+  it('refreshes the seed after starting so consecutive games differ', () => {
+    const seedBefore = useSetupStore.getState().seed;
+
+    act(() => {
+      useSetupStore.getState().startGame();
+    });
+    const seedAfterFirst = useSetupStore.getState().seed;
+
+    act(() => {
+      useSetupStore.getState().startGame();
+    });
+    const seedAfterSecond = useSetupStore.getState().seed;
+
+    expect(seedAfterFirst).not.toBe(seedBefore);
+    expect(seedAfterSecond).not.toBe(seedAfterFirst);
   });
 
   it('passes manual opponent picks into the started game', () => {

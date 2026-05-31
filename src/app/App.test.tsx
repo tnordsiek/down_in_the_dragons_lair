@@ -1,9 +1,37 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 import { persistedGameStateKey } from '../state/persistence';
 import { useSetupStore } from '../state/setupStore';
 import { App } from './App';
+
+function resetSetupStore() {
+  act(() => {
+    useSetupStore.getState().clearSavedGame();
+    useSetupStore.setState({
+      selectedHeroId: 'hero_mage',
+      aiCount: 1,
+      opponentSelectionMode: 'random',
+      selectedOpponentHeroIds: [],
+      seed: 'v1-local-seed',
+      poolScale: 1,
+      musicEnabled: true,
+      sfxEnabled: true,
+      movementPointsEnabled: true,
+      pendingAudioCues: [],
+    });
+  });
+  window.localStorage.clear();
+}
 
 describe('App', () => {
   const originalAudio = window.Audio;
@@ -28,24 +56,10 @@ describe('App', () => {
     window.Audio = originalAudio;
   });
 
-  afterEach(() => {
-    act(() => {
-      useSetupStore.getState().clearSavedGame();
-      useSetupStore.setState({
-        selectedHeroId: 'hero_mage',
-        aiCount: 1,
-        opponentSelectionMode: 'random',
-        selectedOpponentHeroIds: [],
-        seed: 'v1-local-seed',
-        poolScale: 1,
-        musicEnabled: true,
-        sfxEnabled: true,
-        movementPointsEnabled: true,
-        pendingAudioCues: [],
-      });
-    });
-    window.localStorage.clear();
-  });
+  // The production initial seed is random, so set a deterministic seed before
+  // each test (not only after) to keep tests order-independent.
+  beforeEach(resetSetupStore);
+  afterEach(resetSetupStore);
 
   it('renders the setup flow', () => {
     render(<App />);

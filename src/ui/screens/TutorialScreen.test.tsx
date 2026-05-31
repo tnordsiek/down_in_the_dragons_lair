@@ -1,9 +1,38 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 import { App } from '../../app/App';
 import { useSetupStore } from '../../state/setupStore';
 import { tutorialSteps } from '../tutorialSteps';
+
+function resetSetupStore() {
+  act(() => {
+    useSetupStore.getState().clearSavedGame();
+    useSetupStore.setState({
+      selectedHeroId: 'hero_mage',
+      aiCount: 1,
+      opponentSelectionMode: 'random',
+      selectedOpponentHeroIds: [],
+      seed: 'v1-local-seed',
+      poolScale: 1,
+      musicEnabled: true,
+      sfxEnabled: true,
+      movementPointsEnabled: true,
+      tutorialActive: false,
+      pendingAudioCues: [],
+    });
+  });
+  window.localStorage.clear();
+}
 
 describe('TutorialScreen', () => {
   const originalAudio = window.Audio;
@@ -28,25 +57,9 @@ describe('TutorialScreen', () => {
     window.Audio = originalAudio;
   });
 
-  afterEach(() => {
-    act(() => {
-      useSetupStore.getState().clearSavedGame();
-      useSetupStore.setState({
-        selectedHeroId: 'hero_mage',
-        aiCount: 1,
-        opponentSelectionMode: 'random',
-        selectedOpponentHeroIds: [],
-        seed: 'v1-local-seed',
-        poolScale: 1,
-        musicEnabled: true,
-        sfxEnabled: true,
-        movementPointsEnabled: true,
-        tutorialActive: false,
-        pendingAudioCues: [],
-      });
-    });
-    window.localStorage.clear();
-  });
+  // The production initial seed is random, so reset before each test too.
+  beforeEach(resetSetupStore);
+  afterEach(resetSetupStore);
 
   const startScreenClaim =
     'Choose a hero, set the opposition, and enter the dungeon...';

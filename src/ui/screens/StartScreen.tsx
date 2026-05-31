@@ -4,6 +4,7 @@ import { getAssetUrl, useAsset } from '../../data/assets';
 import { heroDefinitions, heroIds } from '../../data/heroes';
 import type { HeroId } from '../../engine/core/types';
 import { useSetupStore } from '../../state/setupStore';
+import { generateRandomSeed } from '../../utils/randomSeed';
 import { FooterMeta } from '../components/FooterMeta';
 import { SettingsMenu } from '../components/SettingsMenu';
 
@@ -332,11 +333,20 @@ export function StartScreen() {
 
                       <label className="grid gap-2 text-sm text-parchment-200">
                         Seed
-                        <input
-                          className="rounded-forged border border-obsidian-600 bg-obsidian-950 px-3 py-2 font-mono text-parchment-50 shadow-carve"
-                          value={seed}
-                          onChange={(event) => setSeed(event.target.value)}
-                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            className="min-w-0 flex-1 rounded-forged border border-obsidian-600 bg-obsidian-950 px-3 py-2 font-mono text-parchment-50 shadow-carve"
+                            value={seed}
+                            onChange={(event) => setSeed(event.target.value)}
+                          />
+                          <button
+                            className="shrink-0 rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200"
+                            type="button"
+                            onClick={() => setSeed(generateRandomSeed())}
+                          >
+                            Randomize
+                          </button>
+                        </div>
                       </label>
                     </div>
                   ) : null}
