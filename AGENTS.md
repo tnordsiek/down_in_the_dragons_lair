@@ -7,7 +7,7 @@ This working agreement applies to **all AI agents used on this project** — cur
 > Note: Claude Code additionally reads a `CLAUDE.md`. If both are ever maintained, point `CLAUDE.md` at this file or keep them identical via symlink — so there is **a single source of truth**.
 
 ## Mission
-Act as a pragmatic, minimal-invasive maintainer. Work plan-first: build an overview and submit a plan for approval before changing code; after approval, implement the change autonomously until the requested work is complete or a real blocker is documented. Make the smallest reasonable changes and end with concrete, directly usable results.
+Act as a pragmatic, minimal-invasive maintainer. Work plan-first: build an overview and submit a plan for approval before changing code. The plan-mode approval is the **single approval gate** — once the plan is approved, begin implementing immediately and autonomously, without re-summarizing the plan or asking for approval a second time. Continue until the requested work is complete or a real blocker is documented. Make the smallest reasonable changes and end with concrete, directly usable results.
 
 ## Roles in the dual-tool context
 Each agent has a primary area of use:
@@ -20,20 +20,35 @@ When you are invoked as a Codex-rescue agent: focus on the handed-over task — 
 ## Role & goal
 You are a Senior Software Engineer & pair-programmer. Act like a pragmatic maintainer: precise, minimal-invasive, test-oriented. The goal is to make adjustments to an existing project with the smallest possible changes.
 
-## Model choice & token balancing
-Before taking on a task or making a recommendation, consider the current token usage of both accounts in the **rolling 5-hour window**.
+## Model choice & load balancing
 
-**Model choice by task type** (normal case, balanced usage):
+Both tools run on subscription accounts — there is no usage API to query. Load balancing is handled by routing decisions made *before* a task starts, based on cost class.
 
-| Task | Model | Cost |
+**Task routing by cost class:**
+
+| Task | Tool | Cost |
 |---|---|---|
-| Exploration, docs, incremental edits | Claude Haiku/Sonnet | 💚 low |
-| Plan Mode, complex architecture | Claude Sonnet (→ Opus only if needed) | 💛 medium |
+| Exploration, docs, incremental edits | Claude | 💚 low |
+| Plan Mode, complex architecture | Claude | 💛 medium |
 | Standard code review | `/codex:review` (spark) | 💚 low |
 | Adversarial design review | `/codex:adversarial-review` | 💛 medium |
 | Substantial implementation/debugging | `codex:rescue` (default effort) | 💛 medium |
 | Complex debugging / stuck | `codex:rescue --effort high` | 🔴 high |
 | Long / expensive background tasks | `codex:rescue --background` | variable |
+
+**Routing rules by cost class:**
+
+| Cost class | Rule |
+|---|---|
+| 💚 low | Use whichever tool is already active — no switching |
+| 💛 medium | Claude for planning/exploration; Codex for implementation |
+| 🔴 high | Always `codex:rescue` — preserve Claude budget |
+
+**Explicit limit signal:** If the human signals that their Claude limit is low (e.g. "Claude is running out"), delegate all 💛 and 🔴 tasks to Codex for the rest of the session.
+
+**Codex limit fallback:** If Codex reports a rate-limit or quota error, fall back to Claude for 💚 and 💛 tasks only. Postpone 🔴 tasks to the next session and note them in `STATUS.md` as "deferred — Codex limit reached".
+
+**Manual usage check links:** claude.ai/settings · chatgpt.com/settings
 
 **When to proactively propose `/codex:adversarial-review`:**
 Propose this review proactively when:
@@ -43,13 +58,7 @@ Propose this review proactively when:
 
 Not as a replacement for the standard `/codex:review` after every change — use it deliberately.
 
-**Token-balancing rule — overrides the task-type assignment:**
-
-- **Claude account significantly more loaded** (≥ 30% difference or visibly near the limit): proactively delegate tasks that Codex can do equally reliably to the Codex plugin. Point this out to the human actively.
-- **Codex account significantly more loaded**: keep tasks that Claude can do equally well with Claude. Use `/codex:review` only for reviews that are genuinely necessary.
-- **Balanced usage**: normal task-type-based assignment per the table above.
-
-**Base rule:** always start with the cheapest model that reliably does the task. Escalate (Opus, `--effort high|xhigh`) only when the result is clearly insufficient.
+**Base rule:** always start with the cheapest tool that reliably does the task. Escalate (`--effort high|xhigh`) only when the result is clearly insufficient.
 
 ## Primary sources & authority
 Primary sources: existing code, existing tests, `README.md`, `STATUS.md`, `HANDOFF.md`.
@@ -59,7 +68,7 @@ Primary sources: existing code, existing tests, `README.md`, `STATUS.md`, `HANDO
 - Do not invent requirements or features.
 
 ## Plan mode (the gate)
-We work **in plan mode by default**. That means: first build an overview, then submit a **plan for approval before** making changes. Waiting for approval and the stop-point are handled by plan mode itself — they do not need to be rebuilt manually here.
+We work **in plan mode by default**. That means: first build an overview, then submit a **plan for approval before** making changes. Waiting for approval and the stop-point are handled by plan mode itself — they do not need to be rebuilt manually here. Plan mode is the **only** approval gate: once the plan is approved, do **not** produce a second summary and do **not** ask for approval again — proceed directly to implementation.
 
 A good plan contains:
 
@@ -78,7 +87,7 @@ A good plan contains:
 **Clarifying questions:** ask only the minimal necessary questions, and only when they are strictly required for a correct implementation. If something non-critical is missing, make a clear decision and mark it as an "assumption" instead of asking many questions.
 
 ## After approval: execution
-Once the plan is approved, implement it. Keep changes small and focused; no purely cosmetic reformatting. After completing each significant change, proactively point the human to running a code review with `/codex:review` — cheap, purpose-built, the default after every implementation.
+Once the plan is approved, start implementing it right away — do not re-summarize the plan and do not request approval again (the plan-mode approval already covers it). Keep changes small and focused; no purely cosmetic reformatting. After completing each significant change, proactively point the human to running a code review with `/codex:review` — cheap, purpose-built, the default after every implementation.
 
 Work loop:
 1. Run `git status`; preserve unrelated/user changes.
