@@ -1,7 +1,4 @@
-import {
-  spellDisplayNames,
-  weaponDisplayNames,
-} from '../data/displayNames';
+import { spellDisplayNames, weaponDisplayNames } from '../data/displayNames';
 import type { Item } from '../engine/core/types';
 
 export function itemAssetId(item: Item): string {

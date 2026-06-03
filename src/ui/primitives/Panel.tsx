@@ -26,9 +26,17 @@ const panelTone: Record<PanelTone, string> = {
  * appends the forwarded `className` last so callers can keep layout/test-locked
  * classes and override padding.
  */
-export function Panel({ tone = 'stone', className, children, ...rest }: PanelProps) {
+export function Panel({
+  tone = 'stone',
+  className,
+  children,
+  ...rest
+}: PanelProps) {
   return (
-    <div className={cx('rounded-forged p-4', panelTone[tone], className)} {...rest}>
+    <div
+      className={cx('rounded-forged p-4', panelTone[tone], className)}
+      {...rest}
+    >
       {children}
     </div>
   );

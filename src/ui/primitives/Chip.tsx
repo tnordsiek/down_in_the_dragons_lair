@@ -31,7 +31,12 @@ const chipTone: Record<ChipTone, string> = {
  * Small forged status tag. Single `<span>` root; forwarded `className` wins so
  * callers keep mono/size tokens that tests assert.
  */
-export function Chip({ tone = 'neutral', className, children, ...rest }: ChipProps) {
+export function Chip({
+  tone = 'neutral',
+  className,
+  children,
+  ...rest
+}: ChipProps) {
   return (
     <span
       className={cx(

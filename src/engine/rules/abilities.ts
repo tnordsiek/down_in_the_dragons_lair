@@ -36,7 +36,9 @@ export function hasMonsterOnActiveTile(state: GameState): boolean {
   return tile?.roomToken?.kind === 'monster';
 }
 
-export function getActiveTileMonsterCombat(state: GameState): CombatContext | undefined {
+export function getActiveTileMonsterCombat(
+  state: GameState,
+): CombatContext | undefined {
   const activePlayer = getActivePlayer(state);
   const tile = getTileAt(state.board, activePlayer.position);
 

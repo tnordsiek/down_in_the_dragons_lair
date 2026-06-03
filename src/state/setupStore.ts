@@ -18,10 +18,7 @@ import {
   loadPersistedGameState,
   savePersistedGameState,
 } from './persistence';
-import {
-  loadAudioSettings,
-  saveAudioSettings,
-} from './audioSettings';
+import { loadAudioSettings, saveAudioSettings } from './audioSettings';
 import { generateRandomSeed } from '../utils/randomSeed';
 
 export type PendingAudioCue = {
@@ -267,7 +264,8 @@ export const useSetupStore = create<SetupState>((set) => ({
           previousGameState,
           nextState,
         );
-        const actingPlayer = state.gameState?.players[state.gameState.activePlayerIndex];
+        const actingPlayer =
+          state.gameState?.players[state.gameState.activePlayerIndex];
         const gameState = appendUiEvent(
           nextState,
           actionMessage(action, previousGameState, nextState),
@@ -479,7 +477,10 @@ function collectPendingAudioCues(
     const nextEvents = nextState.eventLog.slice(previousState.eventLog.length);
 
     for (const event of nextEvents) {
-      if (event.type === 'room_resolved' && event.room?.tokenKind === 'monster') {
+      if (
+        event.type === 'room_resolved' &&
+        event.room?.tokenKind === 'monster'
+      ) {
         assetIds.add('sfx_monster_reveal');
       }
 

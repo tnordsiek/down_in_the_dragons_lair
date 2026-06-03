@@ -85,11 +85,16 @@ describe('spell rules', () => {
       targetPlayerId: caster.id,
       healingPosition: { boardX: 0, boardY: 0 },
     });
-    const resolvedSpells = resolved.players[resolved.activePlayerIndex].inventory.spells;
+    const resolvedSpells =
+      resolved.players[resolved.activePlayerIndex].inventory.spells;
 
     expect(resolvedSpells).toHaveLength(2);
-    expect(resolvedSpells.filter((spell) => spell.spellKind === 'healing')).toHaveLength(1);
-    expect(resolvedSpells.some((spell) => spell.spellKind === 'flame')).toBe(true);
+    expect(
+      resolvedSpells.filter((spell) => spell.spellKind === 'healing'),
+    ).toHaveLength(1);
+    expect(resolvedSpells.some((spell) => spell.spellKind === 'flame')).toBe(
+      true,
+    );
     expect(resolved.players[resolved.activePlayerIndex].hp).toBe(5);
   });
 

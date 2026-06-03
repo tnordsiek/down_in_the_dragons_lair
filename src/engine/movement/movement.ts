@@ -82,11 +82,9 @@ export function getLegalExplorationDirections(state: GameState): TileSide[] {
     !originTile ||
     state.remainingSteps <= 0 ||
     state.tileStack.length === 0 ||
-    ![
-      'turn_start',
-      'await_move',
-      'optional_monster_combat',
-    ].includes(state.phase)
+    !['turn_start', 'await_move', 'optional_monster_combat'].includes(
+      state.phase,
+    )
   ) {
     return [];
   }

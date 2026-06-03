@@ -56,8 +56,8 @@ export function endTurn(state: GameState): GameState {
   const activePlayer = state.players[state.activePlayerIndex];
   const resolvedCurrentState =
     activePlayer.skipNextTurn && state.phase === 'turn_skip'
-    ? recoverUnconsciousActivePlayer(state)
-    : applyHealingIfOnHealingTile(state);
+      ? recoverUnconsciousActivePlayer(state)
+      : applyHealingIfOnHealingTile(state);
   const activePlayerIndex =
     (resolvedCurrentState.activePlayerIndex + 1) %
     resolvedCurrentState.players.length;

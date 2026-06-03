@@ -69,7 +69,10 @@ const boardVisuals: Partial<Record<TutorialVisualId, () => BoardVisualConfig>> =
   {
     movement: () => ({ state: movementState(), focus: startTileFocus }),
     exploration: () => ({ state: explorationState(), focus: startTileFocus }),
-    'tile-rotation': () => ({ state: tileRotationState(), focus: startTileFocus }),
+    'tile-rotation': () => ({
+      state: tileRotationState(),
+      focus: startTileFocus,
+    }),
     'room-token': () => ({ state: roomTokenState(), focus: startTileFocus }),
     chest: () => ({ state: chestState(), focus: startTileFocus }),
   };
@@ -103,7 +106,10 @@ function BoardVisual({ config }: { config: BoardVisualConfig }) {
 function CombatDiceVisual() {
   return (
     <div className="grid gap-3 rounded-forged border border-obsidian-700 bg-obsidian-800/85 p-4 shadow-forged">
-      <div className="flex items-center justify-center gap-3" aria-label="Example combat roll">
+      <div
+        className="flex items-center justify-center gap-3"
+        aria-label="Example combat roll"
+      >
         {tutorialCombatDice.map((die, index) => {
           const dieAssetId = `ui_dice_0${die}`;
           const dieUrl = getAssetUrl(dieAssetId);

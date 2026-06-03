@@ -16,9 +16,7 @@ export function moveActivePlayer(
   );
 
   if (!legalMove) {
-    throw new Error(
-      `Illegal move target: ${target.boardX},${target.boardY}`,
-    );
+    throw new Error(`Illegal move target: ${target.boardX},${target.boardY}`);
   }
 
   const activePlayer = state.players[state.activePlayerIndex];
@@ -64,9 +62,9 @@ export function moveActivePlayer(
         ? 'combat'
         : targetMonster && canIgnoreMonster
           ? 'optional_monster_combat'
-        : remainingSteps > 0
-          ? 'await_move'
-          : getZeroStepFollowUpPhase(zeroStepFollowUpState),
+          : remainingSteps > 0
+            ? 'await_move'
+            : getZeroStepFollowUpPhase(zeroStepFollowUpState),
     players,
     lastMoveFrom: activePlayer.position,
     remainingSteps,

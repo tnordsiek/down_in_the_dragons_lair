@@ -41,7 +41,9 @@ describe('createNewGame', () => {
       second.players.map((player) => player.heroId),
     );
     expect(first.activePlayerIndex).toBe(second.activePlayerIndex);
-    expect(first.eventLog[0].startPlayer).toEqual(second.eventLog[0].startPlayer);
+    expect(first.eventLog[0].startPlayer).toEqual(
+      second.eventLog[0].startPlayer,
+    );
     expect(first.tileStack).toEqual(second.tileStack);
     expect(first.tokenBag).toEqual(second.tokenBag);
   });

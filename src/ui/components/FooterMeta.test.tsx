@@ -53,8 +53,6 @@ describe('FooterMeta', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close Imprint' }));
 
     expect(screen.queryByText('Torsten Nordsiek')).toBeNull();
-    expect(
-      screen.queryByRole('button', { name: 'Close Imprint' }),
-    ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Close Imprint' })).toBeNull();
   });
 });

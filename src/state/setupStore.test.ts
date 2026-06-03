@@ -70,7 +70,9 @@ describe('setup store audio cues', () => {
     });
 
     expect(
-      useSetupStore.getState().gameState?.players.map((player) => player.heroId),
+      useSetupStore
+        .getState()
+        .gameState?.players.map((player) => player.heroId),
     ).toEqual(['hero_mage', 'hero_rogue', expect.any(String)]);
   });
 

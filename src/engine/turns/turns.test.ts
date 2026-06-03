@@ -64,7 +64,10 @@ describe('turn ending', () => {
         item: { type: 'key' },
       },
       players: [
-        createTestPlayer({ id: 'player_human', position: createPosition(0, 0) }),
+        createTestPlayer({
+          id: 'player_human',
+          position: createPosition(0, 0),
+        }),
         createTestPlayer({
           id: 'player_ai_1',
           kind: 'ai',
@@ -98,8 +101,16 @@ describe('turn ending', () => {
       activePlayerIndex: 2,
       players: [
         createTestPlayer({ id: 'player_human' }),
-        createTestPlayer({ id: 'player_ai_1', kind: 'ai', heroId: 'hero_rogue' }),
-        createTestPlayer({ id: 'player_ai_2', kind: 'ai', heroId: 'hero_blade' }),
+        createTestPlayer({
+          id: 'player_ai_1',
+          kind: 'ai',
+          heroId: 'hero_rogue',
+        }),
+        createTestPlayer({
+          id: 'player_ai_2',
+          kind: 'ai',
+          heroId: 'hero_blade',
+        }),
       ],
     });
 
@@ -156,7 +167,11 @@ describe('turn ending', () => {
         }),
       ],
       board: [
-        createTestTile({ boardX: 0, boardY: 0, blueprintId: 'start_cross_healing' }),
+        createTestTile({
+          boardX: 0,
+          boardY: 0,
+          blueprintId: 'start_cross_healing',
+        }),
         createTestTile({ tileInstanceId: 'tile-far', boardX: 5, boardY: 5 }),
       ],
     });

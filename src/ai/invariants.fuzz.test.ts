@@ -85,8 +85,10 @@ function runGame(config: FuzzConfig): { steps: number; reachedEnd: boolean } {
 }
 
 describe('bounded full-game invariant fuzzing', () => {
-  let runs: { config: FuzzConfig; result: { steps: number; reachedEnd: boolean } }[] =
-    [];
+  let runs: {
+    config: FuzzConfig;
+    result: { steps: number; reachedEnd: boolean };
+  }[] = [];
 
   beforeAll(() => {
     runs = CONFIGS.map((config) => ({ config, result: runGame(config) }));
@@ -99,7 +101,10 @@ describe('bounded full-game invariant fuzzing', () => {
 
   it('progresses each game through many actions without deadlock', () => {
     for (const { config, result } of runs) {
-      expect(result.steps, `game ${config.seed} made no progress`).toBeGreaterThan(5);
+      expect(
+        result.steps,
+        `game ${config.seed} made no progress`,
+      ).toBeGreaterThan(5);
     }
   });
 });

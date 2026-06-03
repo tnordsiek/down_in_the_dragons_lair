@@ -16,6 +16,19 @@ export default tseslint.config(
     },
   },
   {
+    // Type-aware rules: scoped to src/ only (e2e and config files are not in tsconfig.app.json)
+    files: ['src/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'warn',
+    },
+  },
+  {
     files: ['src/app/**/*.tsx', 'src/ui/**/*.tsx'],
     languageOptions: {
       ecmaVersion: 2022,

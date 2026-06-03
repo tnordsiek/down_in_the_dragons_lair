@@ -111,7 +111,12 @@ export function takePendingLoot(state: GameState): GameState {
     pendingLoot,
   );
 
-  return finalizeLootState(state, player, tile, pendingLoot.source === 'ground_item');
+  return finalizeLootState(
+    state,
+    player,
+    tile,
+    pendingLoot.source === 'ground_item',
+  );
 }
 
 export function swapPendingLoot(
@@ -133,14 +138,26 @@ export function swapPendingLoot(
     throw new Error('Swap slot must match the loot item type');
   }
 
-  const swapResult = swapInventoryItem(activePlayer, pendingLoot.item, inventorySlot);
+  const swapResult = swapInventoryItem(
+    activePlayer,
+    pendingLoot.item,
+    inventorySlot,
+  );
   const tileWithRemovedPendingLoot = removePendingLootFromTile(
     getTileAt(state.board, pendingLoot.position)!,
     pendingLoot,
   );
-  const tile = setTileLooseItem(tileWithRemovedPendingLoot, swapResult.droppedItem);
+  const tile = setTileLooseItem(
+    tileWithRemovedPendingLoot,
+    swapResult.droppedItem,
+  );
 
-  return finalizeLootState(state, swapResult.player, tile, pendingLoot.source === 'ground_item');
+  return finalizeLootState(
+    state,
+    swapResult.player,
+    tile,
+    pendingLoot.source === 'ground_item',
+  );
 }
 
 export function getLootSwapChoices(player: Player, item: Item): LootSwapSlot[] {
@@ -225,7 +242,10 @@ function requirePendingLoot(state: GameState): PendingLoot {
   return state.pendingLoot;
 }
 
-function updateTileLoot(tile: PlacedTile, pendingLoot: PendingLoot): PlacedTile {
+function updateTileLoot(
+  tile: PlacedTile,
+  pendingLoot: PendingLoot,
+): PlacedTile {
   if (pendingLoot.source === 'combat_reward') {
     return setTileLooseItem(tile, pendingLoot.item);
   }

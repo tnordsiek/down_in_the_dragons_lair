@@ -464,7 +464,9 @@ export function GameScreen() {
                     );
 
                     return (
-                      <div key={`${startPlayerEvent.id}-overlay-round-${roundIndex}`}>
+                      <div
+                        key={`${startPlayerEvent.id}-overlay-round-${roundIndex}`}
+                      >
                         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-torch-200">
                           {round.roundType === 'initial'
                             ? 'Initial Roll'
@@ -533,11 +535,15 @@ export function GameScreen() {
                               : 'border-b border-obsidian-700 last:border-b-0'
                           }
                         >
-                          <td className="px-3 py-2 font-semibold">{index + 1}</td>
+                          <td className="px-3 py-2 font-semibold">
+                            {index + 1}
+                          </td>
                           <td className="px-3 py-2">
                             {playerTurnLabel(player.id, state)}
                           </td>
-                          <td className="px-3 py-2">{heroName(player.heroId)}</td>
+                          <td className="px-3 py-2">
+                            {heroName(player.heroId)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -562,17 +568,11 @@ function getLatestCombatDice(
     return undefined;
   }
 
-  if (
-    state.phase === 'combat_blade_reroll' &&
-    state.combat?.rolledDice
-  ) {
+  if (state.phase === 'combat_blade_reroll' && state.combat?.rolledDice) {
     return state.combat.rolledDice;
   }
 
-  if (
-    state.phase === 'combat_flame_spells' &&
-    state.combat?.rolledDice
-  ) {
+  if (state.phase === 'combat_flame_spells' && state.combat?.rolledDice) {
     return state.combat.rolledDice;
   }
 
@@ -621,7 +621,9 @@ function playerTurnLabel(
   playerId: string,
   state: NonNullable<ReturnType<typeof useSetupStore.getState>['gameState']>,
 ) {
-  const playerIndex = state.players.findIndex((player) => player.id === playerId);
+  const playerIndex = state.players.findIndex(
+    (player) => player.id === playerId,
+  );
 
   if (playerIndex === 0) {
     return 'Human';

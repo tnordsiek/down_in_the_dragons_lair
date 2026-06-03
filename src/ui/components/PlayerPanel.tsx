@@ -2,6 +2,7 @@ import {
   type Dispatch,
   type SetStateAction,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from 'react';
@@ -58,7 +59,10 @@ export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
       <h2 className="text-sm font-semibold uppercase tracking-wide text-torch-200">
         Players
       </h2>
-      <div className="mt-3 grid grid-cols-1 gap-2" data-testid="player-panel-grid">
+      <div
+        className="mt-3 grid grid-cols-1 gap-2"
+        data-testid="player-panel-grid"
+      >
         {state.players.map((player, index) => (
           <PlayerCard
             activeHeroInfoPlayerId={activeHeroInfoPlayerId}
@@ -95,9 +99,9 @@ function PlayerCard({
 }) {
   const isActive = index === state.activePlayerIndex;
   const showHeroInfo = activeHeroInfoPlayerId === player.id;
-  const weaponBonus = player.inventory.weapons.reduce(
-    (sum, weapon) => sum + weapon.bonus,
-    0,
+  const weaponBonus = useMemo(
+    () => player.inventory.weapons.reduce((sum, weapon) => sum + weapon.bonus, 0),
+    [player],
   );
   const flameSpellCount = player.inventory.spells.filter(
     (spell) => spell.spellKind === 'flame',
@@ -316,7 +320,9 @@ function InventoryRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="uppercase tracking-wide text-parchment-200">{label}</span>
+      <span className="uppercase tracking-wide text-parchment-200">
+        {label}
+      </span>
       <div
         className="flex min-h-5 flex-wrap items-center justify-end gap-1"
         title={title}

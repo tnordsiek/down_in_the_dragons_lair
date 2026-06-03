@@ -191,7 +191,10 @@ function chooseCombatAction(
   }
 
   if (state.phase === 'optional_monster_combat') {
-    const startCombatAction = requireAction(legalActions, 'startOptionalCombat');
+    const startCombatAction = requireAction(
+      legalActions,
+      'startOptionalCombat',
+    );
 
     if (!state.combat) {
       return requireAction(legalActions, 'endTurn');
@@ -317,7 +320,9 @@ function chooseCombatFlameSpellAction(
   const monster = state.combat
     ? monsterDefinitions[state.combat.monsterId]
     : undefined;
-  const spellChoices = getCombatFlameSpellChoices(state).sort((left, right) => left - right);
+  const spellChoices = getCombatFlameSpellChoices(state).sort(
+    (left, right) => left - right,
+  );
 
   if (!monster || spellChoices.length === 0) {
     return requireAction(legalActions, 'resolveCombatWithoutFlameSpells');
@@ -464,7 +469,9 @@ function chooseGroundLootAction(
   state: GameState,
   legalActions: GameAction[],
 ): GameAction | undefined {
-  const beginLootAction = legalActions.find((action) => action.type === 'beginLoot');
+  const beginLootAction = legalActions.find(
+    (action) => action.type === 'beginLoot',
+  );
   const activeTile = getTileAt(
     state.board,
     state.players[state.activePlayerIndex].position,
@@ -511,7 +518,10 @@ function chooseGroundLootAction(
     : undefined;
 }
 
-function chooseLootAction(state: GameState, legalActions: GameAction[]): GameAction {
+function chooseLootAction(
+  state: GameState,
+  legalActions: GameAction[],
+): GameAction {
   const pendingLoot = state.pendingLoot;
   const activePlayer = state.players[state.activePlayerIndex];
 
@@ -535,12 +545,14 @@ function chooseLootAction(state: GameState, legalActions: GameAction[]): GameAct
       .sort((left, right) => left.bonus - right.bonus)[0];
 
     if (worstWeapon && pendingLoot.item.bonus > worstWeapon.bonus) {
-      return legalActions.find(
-        (action) =>
-          action.type === 'swapLoot' &&
-          action.inventorySlot.kind === 'weapon' &&
-          action.inventorySlot.index === worstWeapon.index,
-      ) ?? requireAction(legalActions, 'leaveLoot');
+      return (
+        legalActions.find(
+          (action) =>
+            action.type === 'swapLoot' &&
+            action.inventorySlot.kind === 'weapon' &&
+            action.inventorySlot.index === worstWeapon.index,
+        ) ?? requireAction(legalActions, 'leaveLoot')
+      );
     }
 
     return requireAction(legalActions, 'leaveLoot');
@@ -565,12 +577,14 @@ function chooseLootAction(state: GameState, legalActions: GameAction[]): GameAct
     worstSpell &&
     spellPriority[pendingLoot.item.spellKind] > worstSpell.priority
   ) {
-    return legalActions.find(
-      (action) =>
-        action.type === 'swapLoot' &&
-        action.inventorySlot.kind === 'spell' &&
-        action.inventorySlot.index === worstSpell.index,
-    ) ?? requireAction(legalActions, 'leaveLoot');
+    return (
+      legalActions.find(
+        (action) =>
+          action.type === 'swapLoot' &&
+          action.inventorySlot.kind === 'spell' &&
+          action.inventorySlot.index === worstSpell.index,
+      ) ?? requireAction(legalActions, 'leaveLoot')
+    );
   }
 
   return requireAction(legalActions, 'leaveLoot');

@@ -40,9 +40,8 @@ export function createToken(tokenId: TokenId): Token {
 
 export function createTokenBag(poolScale = 1): Token[] {
   return tokenBagEntries.flatMap((entry) =>
-    Array.from(
-      { length: getScaledTokenCount(entry.tokenId, poolScale) },
-      () => createToken(entry.tokenId),
+    Array.from({ length: getScaledTokenCount(entry.tokenId, poolScale) }, () =>
+      createToken(entry.tokenId),
     ),
   );
 }

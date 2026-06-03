@@ -1,11 +1,9 @@
 import { heroDisplayNames, monsterDisplayNames } from '../data/displayNames';
-import { playerHeroLabel as sharedPlayerHeroLabel, playerName as sharedPlayerName } from '../data/playerLabels';
-import type {
-  HeroId,
-  MonsterId,
-  Player,
-  TileSide,
-} from '../engine/core/types';
+import {
+  playerHeroLabel as sharedPlayerHeroLabel,
+  playerName as sharedPlayerName,
+} from '../data/playerLabels';
+import type { HeroId, MonsterId, Player, TileSide } from '../engine/core/types';
 
 export const sideLabels = {
   A: 'North',

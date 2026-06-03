@@ -29,7 +29,10 @@ describe('inventory and loot rules', () => {
     expect(rewardToItem({ type: 'key' })).toEqual({ type: 'key' });
     expect(rewardToItem({ type: 'treasure', points: 2 })).toBeUndefined();
     expect(
-      createCombatRewardLoot({ type: 'treasure', points: 2 }, createPosition(0, 0)),
+      createCombatRewardLoot(
+        { type: 'treasure', points: 2 },
+        createPosition(0, 0),
+      ),
     ).toBeUndefined();
   });
 
@@ -201,7 +204,9 @@ describe('inventory and loot rules', () => {
       { type: 'weapon', bonus: 1 },
       { type: 'weapon', bonus: 3 },
     ]);
-    expect(resolved.board[0].looseItems).toEqual([{ type: 'weapon', bonus: 2 }]);
+    expect(resolved.board[0].looseItems).toEqual([
+      { type: 'weapon', bonus: 2 },
+    ]);
     expect(resolved.pendingLoot).toBeUndefined();
   });
 

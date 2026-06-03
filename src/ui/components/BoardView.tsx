@@ -1,5 +1,5 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { getAssetUrl, useAsset } from '../../data/assets';
 import type {
@@ -112,52 +112,70 @@ export function BoardView({
     .join('|');
 
   const activePlayer = state.players[state.activePlayerIndex];
-  const reachableMoveTargets = new Map(
-    getReachableKnownMovePaths(state).map((target) => [
-      positionKey(target.position),
-      target.path,
-    ]),
+  const reachableMoveTargets = useMemo(
+    () =>
+      new Map(
+        getReachableKnownMovePaths(state).map((target) => [
+          positionKey(target.position),
+          target.path,
+        ]),
+      ),
+    [state],
   );
   const legalMoveTargets = new Map<string, KnownMove>(
-    getLegalKnownMoves(state).map((move) => [
-      positionKey(move.target),
-      move,
-    ]),
+    getLegalKnownMoves(state).map((move) => [positionKey(move.target), move]),
   );
-  const legalExplorationTargets = new Map<string, TileSide>(
-    getLegalExplorationDirections(state).map((direction) => {
-      const targetPosition = adjacentPosition(activePlayer.position, direction);
+  const legalExplorationTargets = useMemo(
+    () =>
+      new Map<string, TileSide>(
+        getLegalExplorationDirections(state).map((direction) => {
+          const targetPosition = adjacentPosition(
+            activePlayer.position,
+            direction,
+          );
 
-      return [positionKey(targetPosition), direction];
-    }),
+          return [positionKey(targetPosition), direction];
+        }),
+      ),
+    [activePlayer.position, state],
   );
   const healingSelectionTargets = new Set(
     selectableHealingPositions.map(positionKey),
   );
-  const visiblePositions = new Map<string, BoardPosition>();
+  const visiblePositions = useMemo(() => {
+    const positions = new Map<string, BoardPosition>();
 
-  for (const tile of state.board) {
-    visiblePositions.set(positionKey(tile), {
-      boardX: tile.boardX,
-      boardY: tile.boardY,
-    });
-  }
+    for (const tile of state.board) {
+      positions.set(positionKey(tile), {
+        boardX: tile.boardX,
+        boardY: tile.boardY,
+      });
+    }
 
-  if (state.pendingTile) {
-    visiblePositions.set(positionKey(state.pendingTile.target), {
-      boardX: state.pendingTile.target.boardX,
-      boardY: state.pendingTile.target.boardY,
-    });
-  }
+    if (state.pendingTile) {
+      positions.set(positionKey(state.pendingTile.target), {
+        boardX: state.pendingTile.target.boardX,
+        boardY: state.pendingTile.target.boardY,
+      });
+    }
 
-  for (const move of legalExplorationTargets.keys()) {
-    const [boardX, boardY] = move.split(',').map(Number);
+    for (const move of legalExplorationTargets.keys()) {
+      const [boardX, boardY] = move.split(',').map(Number);
 
-    visiblePositions.set(move, { boardX, boardY });
-  }
+      positions.set(move, { boardX, boardY });
+    }
 
-  const visibleXValues = Array.from(visiblePositions.values(), (position) => position.boardX);
-  const visibleYValues = Array.from(visiblePositions.values(), (position) => position.boardY);
+    return positions;
+  }, [legalExplorationTargets, state]);
+
+  const visibleXValues = Array.from(
+    visiblePositions.values(),
+    (position) => position.boardX,
+  );
+  const visibleYValues = Array.from(
+    visiblePositions.values(),
+    (position) => position.boardY,
+  );
   const boardMinX = Math.min(...visibleXValues);
   const boardMaxX = Math.max(...visibleXValues);
   const boardMinY = Math.min(...visibleYValues);
@@ -165,27 +183,34 @@ export function BoardView({
   const columns = boardMaxX - boardMinX + 1;
   const rows = boardMaxY - boardMinY + 1;
   const gridOriginSignature = `${boardMinX},${boardMinY},${columns},${rows}`;
-  const boardWidthPx = columns * cellSizePx + Math.max(0, columns - 1) * cellGapPx;
+  const boardWidthPx =
+    columns * cellSizePx + Math.max(0, columns - 1) * cellGapPx;
   const boardHeightPx = rows * cellSizePx + Math.max(0, rows - 1) * cellGapPx;
 
-  const cells = Array.from(visiblePositions.values()).map(({ boardX, boardY }) => {
-    const tile = state.board.find(
-      (candidate) => candidate.boardX === boardX && candidate.boardY === boardY,
-    );
-    const players = state.players.filter(
-      (player) =>
-        player.position.boardX === boardX && player.position.boardY === boardY,
-    );
-    const pendingTile =
-      state.pendingTile?.target.boardX === boardX &&
-      state.pendingTile.target.boardY === boardY
-        ? state.pendingTile
-        : undefined;
-    const offsetX = (boardX - boardMinX) * cellStridePx;
-    const offsetY = (boardY - boardMinY) * cellStridePx;
+  const cells = useMemo(
+    () =>
+      Array.from(visiblePositions.values()).map(({ boardX, boardY }) => {
+        const tile = state.board.find(
+          (candidate) =>
+            candidate.boardX === boardX && candidate.boardY === boardY,
+        );
+        const players = state.players.filter(
+          (player) =>
+            player.position.boardX === boardX &&
+            player.position.boardY === boardY,
+        );
+        const pendingTile =
+          state.pendingTile?.target.boardX === boardX &&
+          state.pendingTile.target.boardY === boardY
+            ? state.pendingTile
+            : undefined;
+        const offsetX = (boardX - boardMinX) * cellStridePx;
+        const offsetY = (boardY - boardMinY) * cellStridePx;
 
-    return { boardX, boardY, tile, players, pendingTile, offsetX, offsetY };
-  });
+        return { boardX, boardY, tile, players, pendingTile, offsetX, offsetY };
+      }),
+    [boardMinX, boardMinY, cellStridePx, state, visiblePositions],
+  );
   const renderCell = (cell: (typeof cells)[number]) => {
     const cellPosition = { boardX: cell.boardX, boardY: cell.boardY };
     const cellKey = positionKey(cellPosition);
@@ -368,7 +393,10 @@ export function BoardView({
       return;
     }
 
-    if (cameraRequest && appliedCameraNonceRef.current !== cameraRequest.nonce) {
+    if (
+      cameraRequest &&
+      appliedCameraNonceRef.current !== cameraRequest.nonce
+    ) {
       previousGridOriginRef.current = { boardMinX, boardMinY };
       return;
     }
@@ -678,39 +706,39 @@ export function BoardView({
         }}
       >
         {showZoomControl ? (
-        <div className="pointer-events-none absolute inset-y-0 left-2 z-20 flex items-center">
-          <div
-            className="pointer-events-auto flex flex-col items-center gap-2 rounded-forged border border-obsidian-700 bg-obsidian-900/70 px-2 py-2 shadow-forged"
-            data-testid="board-zoom-control"
-            style={{ height: `${zoomSliderHeightPx}px` }}
-          >
-            <output
-              className="text-center text-xs font-semibold tabular-nums text-amber-100"
-              data-testid="board-zoom-value"
+          <div className="pointer-events-none absolute inset-y-0 left-2 z-20 flex items-center">
+            <div
+              className="pointer-events-auto flex flex-col items-center gap-2 rounded-forged border border-obsidian-700 bg-obsidian-900/70 px-2 py-2 shadow-forged"
+              data-testid="board-zoom-control"
+              style={{ height: `${zoomSliderHeightPx}px` }}
             >
-              {zoom.toFixed(1)}x
-            </output>
-            <input
-              aria-label="Board zoom"
-              aria-valuemax={maxBoardZoom}
-              aria-valuemin={minBoardZoom}
-              aria-valuenow={zoom}
-              aria-valuetext={`${Math.round(zoom * 100)} percent`}
-              className="w-4 flex-1 accent-amber-300"
-              data-testid="board-zoom-slider"
-              max={maxBoardZoom}
-              min={minBoardZoom}
-              onChange={(event) => {
-                applyZoom(Number(event.target.value));
-              }}
-              onPointerDown={(event) => event.stopPropagation()}
-              step={boardZoomStep}
-              style={{ writingMode: 'vertical-lr', direction: 'rtl' }}
-              type="range"
-              value={zoom}
-            />
+              <output
+                className="text-center text-xs font-semibold tabular-nums text-amber-100"
+                data-testid="board-zoom-value"
+              >
+                {zoom.toFixed(1)}x
+              </output>
+              <input
+                aria-label="Board zoom"
+                aria-valuemax={maxBoardZoom}
+                aria-valuemin={minBoardZoom}
+                aria-valuenow={zoom}
+                aria-valuetext={`${Math.round(zoom * 100)} percent`}
+                className="w-4 flex-1 accent-amber-300"
+                data-testid="board-zoom-slider"
+                max={maxBoardZoom}
+                min={minBoardZoom}
+                onChange={(event) => {
+                  applyZoom(Number(event.target.value));
+                }}
+                onPointerDown={(event) => event.stopPropagation()}
+                step={boardZoomStep}
+                style={{ writingMode: 'vertical-lr', direction: 'rtl' }}
+                type="range"
+                value={zoom}
+              />
+            </div>
           </div>
-        </div>
         ) : null}
         <div
           className={`origin-top-left transition-transform ${
@@ -744,7 +772,10 @@ function positionKey(position: BoardPosition): string {
 }
 
 function clampBoardZoom(zoom: number) {
-  return Math.min(maxBoardZoom, Math.max(minBoardZoom, Number(zoom.toFixed(3))));
+  return Math.min(
+    maxBoardZoom,
+    Math.max(minBoardZoom, Number(zoom.toFixed(3))),
+  );
 }
 
 function clampDimension(value: number, min: number, max: number) {
@@ -991,10 +1022,7 @@ function HeroTokenStack({
   const topOffset = players.length >= 4 ? 10 : 12;
 
   return (
-    <div
-      className="absolute left-1 top-1 z-[2] w-8"
-      data-testid="hero-stack"
-    >
+    <div className="absolute left-1 top-1 z-[2] w-8" data-testid="hero-stack">
       {orderedPlayers.map((player, index) => (
         <div
           key={player.id}

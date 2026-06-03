@@ -124,7 +124,11 @@ describe('movement rules', () => {
       activePlayerIndex: 0,
       players: state.players.map((player, index) =>
         index === 0
-          ? { ...player, heroId: 'hero_rogue', position: { boardX: 0, boardY: 0 } }
+          ? {
+              ...player,
+              heroId: 'hero_rogue',
+              position: { boardX: 0, boardY: 0 },
+            }
           : player,
       ),
       board: [
@@ -300,9 +304,7 @@ function createPortalState(overrides: Partial<GameState> = {}): GameState {
     phase: 'await_move',
     activePlayerIndex: 0,
     players: state.players.map((player, index) =>
-      index === 0
-        ? { ...player, position: { boardX: 0, boardY: 0 } }
-        : player,
+      index === 0 ? { ...player, position: { boardX: 0, boardY: 0 } } : player,
     ),
     board: createPortalBoard(),
     ...overrides,

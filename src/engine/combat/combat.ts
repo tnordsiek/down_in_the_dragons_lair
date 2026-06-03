@@ -222,10 +222,7 @@ export function useBladeReroll(
     };
   }
 
-  return continueResolvedCombat(
-    updatedState,
-    resolvedDice,
-  );
+  return continueResolvedCombat(updatedState, resolvedDice);
 }
 
 export function useValkyrieReroll(
@@ -245,10 +242,7 @@ export function useValkyrieReroll(
   const rerollDice = options.dice ?? [rng.rollDie(6), rng.rollDie(6)];
   const stateWithUpdatedRng = { ...state, rng: rng.snapshot() };
 
-  return continueResolvedCombat(
-    stateWithUpdatedRng,
-    rerollDice,
-  );
+  return continueResolvedCombat(stateWithUpdatedRng, rerollDice);
 }
 
 export function declineValkyrieReroll(state: GameState): GameState {
@@ -407,7 +401,9 @@ export function selectCurseTarget(
   targetPlayerId: string,
 ): GameState {
   if (state.phase !== 'combat_curse_target' || !state.combat) {
-    throw new Error('Curse target selection is only available after defeating a mummified_priest');
+    throw new Error(
+      'Curse target selection is only available after defeating a mummified_priest',
+    );
   }
 
   const activePlayer = state.players[state.activePlayerIndex];
@@ -432,10 +428,8 @@ export function selectCurseTarget(
     {
       ...pendingCombatEvent,
       curseTargetPlayerId: target.id,
-      curseTargetPlayerLabel: createPlayerEventFields(
-        target,
-        state.players,
-      ).playerLabel,
+      curseTargetPlayerLabel: createPlayerEventFields(target, state.players)
+        .playerLabel,
     },
   );
 }
@@ -555,14 +549,18 @@ function resolveVictory(
     ? 'game_over'
     : combatRewardLoot
       ? 'loot_resolution'
-      : getPostVictoryPhase(activePlayer, {
-          ...state,
-          players: playersAfterReward,
-          board: boardAfterVictory,
-          combat: undefined,
-          pendingLoot: combatRewardLoot,
-          turnContinuationReason,
-        }, dice);
+      : getPostVictoryPhase(
+          activePlayer,
+          {
+            ...state,
+            players: playersAfterReward,
+            board: boardAfterVictory,
+            combat: undefined,
+            pendingLoot: combatRewardLoot,
+            turnContinuationReason,
+          },
+          dice,
+        );
   const preparedVictoryState: GameState = {
     ...state,
     phase,
@@ -638,12 +636,7 @@ function resolveCombatOutcome(
   );
 
   if (outcome === 'victory') {
-    return resolveVictory(
-      stateWithSpentResources,
-      monster,
-      dice,
-      combatEvent,
-    );
+    return resolveVictory(stateWithSpentResources, monster, dice, combatEvent);
   }
 
   return resolveRetreat(stateWithSpentResources, outcome, combatEvent);
@@ -708,23 +701,27 @@ function resolveRetreat(
     turnContinuationReason: continuationReason,
     rng: warlockFallback?.rng ?? state.rng,
   };
-  const phase = continuationReason && stateAfterRetreat.remainingSteps > 0
-    ? 'await_move'
-    : 'turn_end';
+  const phase =
+    continuationReason && stateAfterRetreat.remainingSteps > 0
+      ? 'await_move'
+      : 'turn_end';
 
-  return appendGameEvent({
-    ...stateAfterRetreat,
-    phase,
-  }, {
-    type: 'combat_resolved',
-    message: `Resolved combat against ${monsterDefinitions[combat.monsterId].displayName}`,
-    ...createPlayerEventFields(activePlayer, state.players),
-    combat: {
-      ...combatEvent,
-      retreatPosition:
-        players[state.activePlayerIndex]?.position ?? combat.enteredFrom,
+  return appendGameEvent(
+    {
+      ...stateAfterRetreat,
+      phase,
     },
-  });
+    {
+      type: 'combat_resolved',
+      message: `Resolved combat against ${monsterDefinitions[combat.monsterId].displayName}`,
+      ...createPlayerEventFields(activePlayer, state.players),
+      combat: {
+        ...combatEvent,
+        retreatPosition:
+          players[state.activePlayerIndex]?.position ?? combat.enteredFrom,
+      },
+    },
+  );
 }
 
 function spendFlameSpells(
@@ -878,13 +875,20 @@ function getMeaningfulFlameSpellCounts(
     dice,
     warlockSacrificeBonus + oracleBonus,
   );
-  const baseOutcome = getCombatOutcomeForPlayer(player, baseTotal, monsterStrength);
+  const baseOutcome = getCombatOutcomeForPlayer(
+    player,
+    baseTotal,
+    monsterStrength,
+  );
 
   if (baseOutcome === 'victory') {
     return [];
   }
 
-  return Array.from({ length: availableFlameSpells }, (_, index) => index + 1).filter(
+  return Array.from(
+    { length: availableFlameSpells },
+    (_, index) => index + 1,
+  ).filter(
     (flameSpellCount) =>
       getCombatOutcomeForPlayer(
         player,
@@ -899,7 +903,10 @@ function getMeaningfulFlameSpellCounts(
 }
 
 function getWeaponBonus(player: Player): number {
-  return player.inventory.weapons.reduce((sum, weapon) => sum + weapon.bonus, 0);
+  return player.inventory.weapons.reduce(
+    (sum, weapon) => sum + weapon.bonus,
+    0,
+  );
 }
 
 function createCombatEventDetails(
@@ -966,15 +973,14 @@ function shouldPauseForWitchSacrifice(
     return false;
   }
 
-  return Array.from({ length: availableFlameSpells }, (_, index) => index + 1).some(
+  return Array.from(
+    { length: availableFlameSpells },
+    (_, index) => index + 1,
+  ).some(
     (flameSpellCount) =>
       getCombatOutcomeForPlayer(
         player,
-        calculateCombatTotal(
-          player,
-          dice,
-          flameSpellCount + 1 + oracleBonus,
-        ),
+        calculateCombatTotal(player, dice, flameSpellCount + 1 + oracleBonus),
         monsterStrength,
       ) === 'victory',
   );
@@ -1150,7 +1156,10 @@ function finalizeVictoryState(
   };
 }
 
-function getValidCurseTargets(players: Player[], activePlayerId: string): Player[] {
+function getValidCurseTargets(
+  players: Player[],
+  activePlayerId: string,
+): Player[] {
   return players.filter((player) => player.id !== activePlayerId);
 }
 
@@ -1164,7 +1173,10 @@ function getCurseTarget(
   );
 }
 
-function applyCurseToTarget(players: Player[], targetPlayerId: string): Player[] {
+function applyCurseToTarget(
+  players: Player[],
+  targetPlayerId: string,
+): Player[] {
   return players.map((player) => ({
     ...player,
     isCursed: player.id === targetPlayerId,

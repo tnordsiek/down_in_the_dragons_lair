@@ -2,11 +2,18 @@ import { describe, expect, it } from 'vitest';
 
 import type { GameEvent } from '../engine/core/types';
 import { createNewGame } from '../engine/setup/createGame';
-import { DIAGNOSTICS_EVENT_LIMIT, buildDiagnosticsSummary } from './diagnostics';
+import {
+  DIAGNOSTICS_EVENT_LIMIT,
+  buildDiagnosticsSummary,
+} from './diagnostics';
 
 describe('buildDiagnosticsSummary', () => {
   it('includes version, seed, phase and player lines', () => {
-    const game = createNewGame({ humanHeroId: 'hero_mage', aiCount: 1, seed: 'seed-123' });
+    const game = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'seed-123',
+    });
 
     const summary = buildDiagnosticsSummary(game, 'v9.9');
 
@@ -17,7 +24,11 @@ describe('buildDiagnosticsSummary', () => {
   });
 
   it('caps the event log at the configured limit', () => {
-    const game = createNewGame({ humanHeroId: 'hero_mage', aiCount: 1, seed: 'seed-123' });
+    const game = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'seed-123',
+    });
     const manyEvents: GameEvent[] = Array.from({ length: 40 }, (_, index) => ({
       id: `evt-${index}`,
       type: 'test_event',

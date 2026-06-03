@@ -34,7 +34,12 @@ const buttonVariant: Record<ButtonVariant, string> = {
  * `className` last. Two call sites with identical props produce byte-identical
  * `className` strings (relied on by the Center Map / End Turn equality test).
  */
-export function Button({ variant = 'secondary', className, type, ...rest }: ButtonProps) {
+export function Button({
+  variant = 'secondary',
+  className,
+  type,
+  ...rest
+}: ButtonProps) {
   return (
     <button
       type={type ?? 'button'}

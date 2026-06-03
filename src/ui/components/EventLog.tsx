@@ -18,7 +18,9 @@ export function EventLog({ state, lastError }: EventLogProps) {
         Log
       </h2>
       {lastError ? (
-        <p className="mt-3 rounded-carve border border-blood-500/50 bg-blood-900 p-2 text-sm text-blood-200">{lastError}</p>
+        <p className="mt-3 rounded-carve border border-blood-500/50 bg-blood-900 p-2 text-sm text-blood-200">
+          {lastError}
+        </p>
       ) : null}
       <ol className="mt-3 grid max-h-48 gap-2 overflow-auto text-sm text-parchment-200">
         {visibleEvents.map((event) => (
@@ -36,7 +38,9 @@ export function EventLog({ state, lastError }: EventLogProps) {
               </p>
             ) : null}
             {event.room ? (
-              <p className="text-xs text-parchment-200">{renderRoomDetails(event)}</p>
+              <p className="text-xs text-parchment-200">
+                {renderRoomDetails(event)}
+              </p>
             ) : null}
             {event.startPlayer ? (
               <div className="mt-1 grid gap-1 text-xs text-parchment-200">
@@ -100,10 +104,13 @@ function renderPrimaryText(event: GameState['eventLog'][number]): string {
   return event.message;
 }
 
-function renderExplorationDetails(event: GameState['eventLog'][number]): string {
+function renderExplorationDetails(
+  event: GameState['eventLog'][number],
+): string {
   const exploration = event.exploration!;
   const skippedSuffix =
-    exploration.skippedBlueprintIds && exploration.skippedBlueprintIds.length > 0
+    exploration.skippedBlueprintIds &&
+    exploration.skippedBlueprintIds.length > 0
       ? ` · skipped ${exploration.skippedBlueprintIds.join(', ')}`
       : '';
 

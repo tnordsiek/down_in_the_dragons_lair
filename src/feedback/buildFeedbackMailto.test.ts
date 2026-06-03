@@ -22,7 +22,9 @@ describe('buildFeedbackMailto', () => {
     });
 
     expect(href.startsWith('mailto:tnordsiek@web.de?')).toBe(true);
-    expect(decodeSubject(href)).toBe('[Down in the Dragons Lair] Feedback (v9.9)');
+    expect(decodeSubject(href)).toBe(
+      '[Down in the Dragons Lair] Feedback (v9.9)',
+    );
   });
 
   it('encodes the message into the body', () => {
@@ -45,7 +47,11 @@ describe('buildFeedbackMailto', () => {
   });
 
   it('omits diagnostics when not opted in', () => {
-    const game = createNewGame({ humanHeroId: 'hero_mage', aiCount: 1, seed: 'seed-a' });
+    const game = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'seed-a',
+    });
     const href = buildFeedbackMailto({
       message: 'No data please',
       includeDiagnostics: false,
@@ -57,7 +63,11 @@ describe('buildFeedbackMailto', () => {
   });
 
   it('appends diagnostics with the seed when opted in', () => {
-    const game = createNewGame({ humanHeroId: 'hero_mage', aiCount: 1, seed: 'seed-xyz' });
+    const game = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'seed-xyz',
+    });
     const href = buildFeedbackMailto({
       message: 'Here is my game',
       includeDiagnostics: true,

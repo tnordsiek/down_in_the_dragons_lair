@@ -13,7 +13,10 @@ export function playerHeroLabel(player: Player, playerIndex: number): string {
   return `${heroDisplayNames[player.heroId]} (${playerName(playerIndex)})`;
 }
 
-export function findPlayerIndexById(players: Player[], playerId: string): number {
+export function findPlayerIndexById(
+  players: Player[],
+  playerId: string,
+): number {
   return players.findIndex((player) => player.id === playerId);
 }
 

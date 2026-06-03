@@ -72,16 +72,11 @@ export function createTestTile(
   };
 }
 
-export function createPosition(
-  boardX: number,
-  boardY: number,
-): BoardPosition {
+export function createPosition(boardX: number, boardY: number): BoardPosition {
   return { boardX, boardY };
 }
 
-export function createTestState(
-  overrides: TestStateOverrides = {},
-): GameState {
+export function createTestState(overrides: TestStateOverrides = {}): GameState {
   return {
     schemaVersion: 2,
     phase: overrides.phase ?? 'turn_start',

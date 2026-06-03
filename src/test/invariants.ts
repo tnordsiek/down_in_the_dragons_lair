@@ -77,19 +77,27 @@ export function assertStateInvariants(state: GameState): void {
     }
 
     if (player.treasurePoints < 0) {
-      fail(`negative treasurePoints for ${player.id}: ${player.treasurePoints}`);
+      fail(
+        `negative treasurePoints for ${player.id}: ${player.treasurePoints}`,
+      );
     }
 
     if (player.inventory.weapons.length > 2) {
-      fail(`weapon capacity exceeded for ${player.id}: ${player.inventory.weapons.length}`);
+      fail(
+        `weapon capacity exceeded for ${player.id}: ${player.inventory.weapons.length}`,
+      );
     }
 
     if (player.inventory.spells.length > 3) {
-      fail(`spell capacity exceeded for ${player.id}: ${player.inventory.spells.length}`);
+      fail(
+        `spell capacity exceeded for ${player.id}: ${player.inventory.spells.length}`,
+      );
     }
 
     if (player.inventory.keyCount !== 0 && player.inventory.keyCount !== 1) {
-      fail(`keyCount must be 0 or 1 for ${player.id}: ${player.inventory.keyCount}`);
+      fail(
+        `keyCount must be 0 or 1 for ${player.id}: ${player.inventory.keyCount}`,
+      );
     }
 
     if (!getTileAt(state.board, player.position)) {
@@ -110,12 +118,16 @@ export function assertStateInvariants(state: GameState): void {
   }
 
   // There is never more than one dragon present across the bag and the board.
-  const dragonsInBag = state.tokenBag.filter((token) => token.id === 'dragon').length;
+  const dragonsInBag = state.tokenBag.filter(
+    (token) => token.id === 'dragon',
+  ).length;
   const dragonsOnBoard = state.board.filter(
     (tile) => tile.roomToken?.id === 'dragon',
   ).length;
   if (dragonsInBag + dragonsOnBoard > 1) {
-    fail(`more than one dragon present: bag=${dragonsInBag} board=${dragonsOnBoard}`);
+    fail(
+      `more than one dragon present: bag=${dragonsInBag} board=${dragonsOnBoard}`,
+    );
   }
 
   // Combat context must reference the active player and a real tile.

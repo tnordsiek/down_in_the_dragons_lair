@@ -24,7 +24,9 @@ describe('TutorialVisual', () => {
     render(<TutorialVisual visual="turn-actions" />);
 
     expect(screen.getByText('turn_start / 4')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'End Turn' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'End Turn' }),
+    ).toBeInTheDocument();
   });
 
   it('shows a clean move-cost badge on the adjacent tile only', () => {

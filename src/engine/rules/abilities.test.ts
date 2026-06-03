@@ -24,7 +24,10 @@ import {
 describe('hero ability helpers', () => {
   it('gates abilities on hero identity and curse status', () => {
     const witch = createTestPlayer({ heroId: 'hero_witch' });
-    const cursedWitch = createTestPlayer({ heroId: 'hero_witch', isCursed: true });
+    const cursedWitch = createTestPlayer({
+      heroId: 'hero_witch',
+      isCursed: true,
+    });
 
     expect(hasActiveHeroAbility(witch, 'hero_witch')).toBe(true);
     expect(hasActiveHeroAbility(witch, 'hero_blade')).toBe(false);
@@ -36,7 +39,11 @@ describe('hero ability helpers', () => {
       activePlayerIndex: 1,
       players: [
         createTestPlayer({ id: 'player_human', heroId: 'hero_mage' }),
-        createTestPlayer({ id: 'player_ai_1', kind: 'ai', heroId: 'hero_rogue' }),
+        createTestPlayer({
+          id: 'player_ai_1',
+          kind: 'ai',
+          heroId: 'hero_rogue',
+        }),
       ],
     });
 
@@ -48,7 +55,11 @@ describe('hero ability helpers', () => {
   it('collects discovered healing tile positions', () => {
     const state = createTestState({
       board: [
-        createTestTile({ boardX: 0, boardY: 0, blueprintId: 'start_cross_healing' }),
+        createTestTile({
+          boardX: 0,
+          boardY: 0,
+          blueprintId: 'start_cross_healing',
+        }),
         createTestTile({
           tileInstanceId: 'tile-heal',
           boardX: 1,
@@ -75,7 +86,10 @@ describe('hero ability helpers', () => {
       activePlayerIndex: 0,
       lastMoveFrom: createPosition(0, 0),
       players: [
-        createTestPlayer({ id: 'player_human', position: createPosition(1, 0) }),
+        createTestPlayer({
+          id: 'player_human',
+          position: createPosition(1, 0),
+        }),
       ],
       board: [
         createTestTile({ boardX: 0, boardY: 0 }),
@@ -99,7 +113,12 @@ describe('hero ability helpers', () => {
 
   it('returns no combat context when the active tile has no monster', () => {
     const safeState = createTestState({
-      players: [createTestPlayer({ id: 'player_human', position: createPosition(0, 0) })],
+      players: [
+        createTestPlayer({
+          id: 'player_human',
+          position: createPosition(0, 0),
+        }),
+      ],
       board: [createTestTile({ boardX: 0, boardY: 0 })],
     });
 

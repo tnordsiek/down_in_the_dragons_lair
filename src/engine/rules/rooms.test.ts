@@ -186,7 +186,9 @@ describe('room and chest rules', () => {
         index === 0 ? { ...player, kind: 'ai' as const } : player,
       ),
     };
-    const resolved = resolveRoomToken(aiSeeressState, { seeressChoiceIndex: 1 });
+    const resolved = resolveRoomToken(aiSeeressState, {
+      seeressChoiceIndex: 1,
+    });
 
     expect(resolved.tokenBag).toEqual([
       { id: 'kitchen_rat', kind: 'monster' },
@@ -294,9 +296,7 @@ function createRoomState(
     phase: 'resolve_room_token',
     board: [...base.board, roomTile],
     players: base.players.map((player, index) =>
-      index === 0
-        ? { ...player, position: { boardX: 0, boardY: -1 } }
-        : player,
+      index === 0 ? { ...player, position: { boardX: 0, boardY: -1 } } : player,
     ),
     tokenBag: overrides.tokenBag ?? [token],
     remainingSteps: overrides.remainingSteps ?? 3,

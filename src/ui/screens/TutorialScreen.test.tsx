@@ -87,9 +87,7 @@ describe('TutorialScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'How to Play' }));
 
-    expect(
-      screen.getByRole('button', { name: 'Back' }),
-    ).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Back' })).toBeDisabled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(
@@ -118,7 +116,9 @@ describe('TutorialScreen', () => {
     }
 
     expect(
-      screen.getByText(`Step ${tutorialSteps.length} of ${tutorialSteps.length}`),
+      screen.getByText(
+        `Step ${tutorialSteps.length} of ${tutorialSteps.length}`,
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Next' })).toBeNull();
 

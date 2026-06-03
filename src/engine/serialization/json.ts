@@ -87,12 +87,16 @@ function validateGameState(state: Partial<GameState>): void {
 
   for (const player of state.players ?? []) {
     if (!validHeroId(player.heroId)) {
-      throw new Error(`Unsupported heroId in saved game: ${String(player.heroId)}`);
+      throw new Error(
+        `Unsupported heroId in saved game: ${String(player.heroId)}`,
+      );
     }
   }
 
   if (state.combat?.source && !validCombatSources.has(state.combat.source)) {
-    throw new Error(`Unsupported combat source in saved game: ${state.combat.source}`);
+    throw new Error(
+      `Unsupported combat source in saved game: ${state.combat.source}`,
+    );
   }
 
   if (
@@ -111,13 +115,18 @@ function validateGameState(state: Partial<GameState>): void {
       );
     }
 
-    if (event.action?.actionType && !validActionTypes.has(event.action.actionType)) {
+    if (
+      event.action?.actionType &&
+      !validActionTypes.has(event.action.actionType)
+    ) {
       throw new Error(
         `Unsupported action type in saved game: ${event.action.actionType}`,
       );
     }
 
-    for (const roll of event.startPlayer?.rounds.flatMap((round) => round.rolls) ?? []) {
+    for (const roll of event.startPlayer?.rounds.flatMap(
+      (round) => round.rolls,
+    ) ?? []) {
       if (!validHeroId(roll.playerHeroId)) {
         throw new Error(
           `Unsupported start-player heroId in saved game: ${String(roll.playerHeroId)}`,
@@ -127,6 +136,8 @@ function validateGameState(state: Partial<GameState>): void {
   }
 }
 
-function validHeroId(heroId: unknown): heroId is GameState['players'][number]['heroId'] {
+function validHeroId(
+  heroId: unknown,
+): heroId is GameState['players'][number]['heroId'] {
   return typeof heroId === 'string' && validHeroIds.has(heroId);
 }

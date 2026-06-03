@@ -27,7 +27,9 @@ describe('SettingsMenu', () => {
       name: 'Close settings menu',
     });
     expect(openToggle).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('button', { name: 'Music on' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Music on' }),
+    ).toBeInTheDocument();
 
     fireEvent.click(openToggle);
 

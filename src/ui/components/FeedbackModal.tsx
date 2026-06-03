@@ -68,9 +68,7 @@ export function FeedbackModal() {
         onClick={handleClose}
         type="button"
       />
-      <section
-        className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-forged border border-torch-300 bg-obsidian-900 p-5 shadow-[0_0_40px_rgba(224,165,52,0.2),inset_0_1px_0_rgba(247,240,223,0.1)]"
-      >
+      <section className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-forged border border-torch-300 bg-obsidian-900 p-5 shadow-[0_0_40px_rgba(224,165,52,0.2),inset_0_1px_0_rgba(247,240,223,0.1)]">
         <h2
           id="feedback-modal-title"
           className="font-display text-2xl text-amber-100"
@@ -79,8 +77,8 @@ export function FeedbackModal() {
         </h2>
         <p className="mt-2 text-sm text-parchment-200">
           Found a bug or have an idea? Write a short note below. Pressing
-          &ldquo;Open e-mail&rdquo; prepares a message in your e-mail app &mdash;
-          nothing is sent until you send it yourself.
+          &ldquo;Open e-mail&rdquo; prepares a message in your e-mail app
+          &mdash; nothing is sent until you send it yourself.
         </p>
 
         <div className="mt-4 grid gap-4">

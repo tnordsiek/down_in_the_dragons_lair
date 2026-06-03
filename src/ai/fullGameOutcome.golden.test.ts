@@ -56,20 +56,30 @@ function outcome(config: FinishConfig, state: GameState, actionCount: number) {
 }
 
 describe('curated full-game golden', () => {
-  let finished: { config: FinishConfig; state: GameState; actionCount: number }[] = [];
+  let finished: {
+    config: FinishConfig;
+    state: GameState;
+    actionCount: number;
+  }[] = [];
 
   beforeAll(() => {
     finished = CONFIGS.map((config) => {
       const trace = traceAutoplay(seededGame({ ...config, poolScale: 0.5 }), {
         maxActions: 15000,
       });
-      return { config, state: trace.finalState, actionCount: trace.actionCount };
+      return {
+        config,
+        state: trace.finalState,
+        actionCount: trace.actionCount,
+      };
     });
   }, 120000);
 
   it('every curated game reaches a consistent game_over with the dragon defeated', () => {
     for (const { config, state } of finished) {
-      expect(state.phase, `seed ${config.seed} did not finish`).toBe('game_over');
+      expect(state.phase, `seed ${config.seed} did not finish`).toBe(
+        'game_over',
+      );
       expect(() => assertStateInvariants(state)).not.toThrow();
       expect(state.victory).toBeDefined();
 

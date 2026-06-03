@@ -3,7 +3,9 @@
 // as a literal string in the bundle (basic protection against e-mail harvesting).
 
 /** Real, machine-usable address for `mailto:` links, e.g. tnordsiek@web.de */
-export const contactEmailAddress = ['tnordsiek', '@', 'web', '.', 'de'].join('');
+export const contactEmailAddress = ['tnordsiek', '@', 'web', '.', 'de'].join(
+  '',
+);
 
 /** Human-readable, obfuscated form shown in the imprint / privacy policy. */
 export const contactEmailDisplay = [

@@ -19,19 +19,30 @@ import { seededGame, traceAutoplay } from '../test/scenarios';
 
 const SEEDS = ['det-1', 'det-2'];
 
-type Replay = { seed: string; first: GameState; second: GameState; counts: [number, number] };
+type Replay = {
+  seed: string;
+  first: GameState;
+  second: GameState;
+  counts: [number, number];
+};
 
 describe('full-stream determinism', () => {
   let replays: Replay[] = [];
 
   beforeAll(() => {
     replays = SEEDS.map((seed) => {
-      const first = traceAutoplay(seededGame({ seed, aiCount: 2, poolScale: 0.5 }), {
-        maxActions: 250,
-      });
-      const second = traceAutoplay(seededGame({ seed, aiCount: 2, poolScale: 0.5 }), {
-        maxActions: 250,
-      });
+      const first = traceAutoplay(
+        seededGame({ seed, aiCount: 2, poolScale: 0.5 }),
+        {
+          maxActions: 250,
+        },
+      );
+      const second = traceAutoplay(
+        seededGame({ seed, aiCount: 2, poolScale: 0.5 }),
+        {
+          maxActions: 250,
+        },
+      );
 
       return {
         seed,
@@ -47,7 +58,9 @@ describe('full-stream determinism', () => {
       expect(replay.counts[1]).toBe(replay.counts[0]);
       expect(replay.second).toEqual(replay.first);
       // Serialized form must be byte-identical (catches key-ordering drift).
-      expect(serializeGameState(replay.second)).toBe(serializeGameState(replay.first));
+      expect(serializeGameState(replay.second)).toBe(
+        serializeGameState(replay.first),
+      );
     }
   });
 

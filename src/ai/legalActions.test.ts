@@ -26,7 +26,9 @@ describe('AI legal actions', () => {
       phase: 'await_move',
       activePlayerIndex: 0,
       players: state.players.map((player, index) =>
-        index === 0 ? { ...player, position: { boardX: 0, boardY: 0 } } : player,
+        index === 0
+          ? { ...player, position: { boardX: 0, boardY: 0 } }
+          : player,
       ),
       board: [
         {
@@ -172,11 +174,13 @@ describe('AI legal actions', () => {
   });
 
   it('does not offer healing spell actions during combat', () => {
-    const state = withHealingSpell(createNewGame({
-      humanHeroId: 'hero_mage',
-      aiCount: 1,
-      seed: 'healing-combat-seed',
-    }));
+    const state = withHealingSpell(
+      createNewGame({
+        humanHeroId: 'hero_mage',
+        aiCount: 1,
+        seed: 'healing-combat-seed',
+      }),
+    );
 
     expect(
       getLegalAiActions({
@@ -193,11 +197,13 @@ describe('AI legal actions', () => {
   });
 
   it('does not offer healing spell actions during loot resolution', () => {
-    const state = withHealingSpell(createNewGame({
-      humanHeroId: 'hero_mage',
-      aiCount: 1,
-      seed: 'healing-loot-seed',
-    }));
+    const state = withHealingSpell(
+      createNewGame({
+        humanHeroId: 'hero_mage',
+        aiCount: 1,
+        seed: 'healing-loot-seed',
+      }),
+    );
 
     expect(
       getLegalAiActions({
@@ -388,11 +394,13 @@ describe('AI legal actions', () => {
   });
 
   it('offers healing spell actions during free movement phases', () => {
-    const state = withHealingSpell(createNewGame({
-      humanHeroId: 'hero_mage',
-      aiCount: 1,
-      seed: 'healing-await-move-seed',
-    }));
+    const state = withHealingSpell(
+      createNewGame({
+        humanHeroId: 'hero_mage',
+        aiCount: 1,
+        seed: 'healing-await-move-seed',
+      }),
+    );
 
     expect(
       getLegalAiActions({
@@ -518,9 +526,7 @@ function createPortalState(): GameState {
     phase: 'await_move',
     activePlayerIndex: 0,
     players: state.players.map((player, index) =>
-      index === 0
-        ? { ...player, position: { boardX: 0, boardY: 0 } }
-        : player,
+      index === 0 ? { ...player, position: { boardX: 0, boardY: 0 } } : player,
     ),
     board: [
       {

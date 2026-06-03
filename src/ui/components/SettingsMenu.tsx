@@ -7,10 +7,7 @@ type SettingsMenuProps = {
   newGameTitle?: string;
 };
 
-export function SettingsMenu({
-  onNewGame,
-  newGameTitle,
-}: SettingsMenuProps) {
+export function SettingsMenu({ onNewGame, newGameTitle }: SettingsMenuProps) {
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const musicEnabled = useSetupStore((state) => state.musicEnabled);

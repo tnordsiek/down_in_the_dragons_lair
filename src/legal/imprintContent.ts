@@ -12,7 +12,12 @@ export const imprintContent: LegalContent = {
       blocks: [
         {
           type: 'paragraph',
-          lines: ['Torsten Nordsiek', 'Taigaweg 4', '33739 Bielefeld', 'Germany'],
+          lines: [
+            'Torsten Nordsiek',
+            'Taigaweg 4',
+            '33739 Bielefeld',
+            'Germany',
+          ],
         },
       ],
     },

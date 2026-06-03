@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "lint": "eslint .",
+    "typecheck": "tsc -b --noEmit",
     "verify": "npm run test && npm run lint && npm run build",
     "format": "prettier --check .",
     "format:write": "prettier --write ."
@@ -19,7 +20,6 @@
   "dependencies": {
     "@fontsource/cinzel": "^5.2.8",
     "@fontsource/eb-garamond": "^5.2.7",
-    "@vitejs/plugin-react": "^5.0.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "typescript": "^5.9.3",
@@ -27,6 +27,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.4",
     "@eslint/js": "^9.36.0",
     "@playwright/test": "^1.55.1",
     "@testing-library/jest-dom": "^6.8.0",

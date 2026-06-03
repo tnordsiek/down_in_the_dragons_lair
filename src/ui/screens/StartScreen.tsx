@@ -224,7 +224,9 @@ export function StartScreen() {
                       min={1}
                       type="range"
                       value={aiCount}
-                      onChange={(event) => setAiCount(Number(event.target.value))}
+                      onChange={(event) =>
+                        setAiCount(Number(event.target.value))
+                      }
                     />
                     <span className="font-mono text-stone-100">{aiCount}</span>
                   </label>
@@ -280,15 +282,17 @@ export function StartScreen() {
                                 data-testid={`opponent-checkbox-${id}`}
                                 disabled={disabled}
                                 type="checkbox"
-                                onChange={() => toggleSelectedOpponentHeroId(id)}
+                                onChange={() =>
+                                  toggleSelectedOpponentHeroId(id)
+                                }
                               />
                             </label>
                           );
                         })}
                       </div>
                       <p className="text-xs text-stone-400">
-                        Any unselected opponents will be filled at random from the
-                        remaining heroes.
+                        Any unselected opponents will be filled at random from
+                        the remaining heroes.
                       </p>
                     </fieldset>
                   ) : null}
@@ -327,7 +331,8 @@ export function StartScreen() {
                           {poolScale.toFixed(1)}x
                         </span>
                         <span className="text-xs text-stone-400">
-                          Counts are rounded up. The dragon always remains unique.
+                          Counts are rounded up. The dragon always remains
+                          unique.
                         </span>
                       </label>
 

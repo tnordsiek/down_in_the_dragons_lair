@@ -92,24 +92,26 @@ describe('combat resolution', () => {
     expect(() => endTurn(warlockPending)).toThrow(/pending combat/i);
     expect(() => endTurn(flamePending)).toThrow(/pending combat/i);
     expect(() => endTurn(optionalPostCombatState)).toThrow(/pending combat/i);
-    expect(
-      () =>
-        endTurn({
-          ...baseState,
-          phase: 'combat_curse_target',
-        }),
+    expect(() =>
+      endTurn({
+        ...baseState,
+        phase: 'combat_curse_target',
+      }),
     ).toThrow(/pending combat/i);
   });
 
   it('pauses for valkyrie reroll before flame spell selection after a valkyrie draw', () => {
-    const state = withActivePlayer(createCombatState('kitchen_rat'), (player) => ({
-      ...player,
-      heroId: 'hero_valkyrie',
-      inventory: {
-        ...player.inventory,
-        spells: [{ type: 'spell', spellKind: 'flame' }],
-      },
-    }));
+    const state = withActivePlayer(
+      createCombatState('kitchen_rat'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_valkyrie',
+        inventory: {
+          ...player.inventory,
+          spells: [{ type: 'spell', spellKind: 'flame' }],
+        },
+      }),
+    );
     const pending = resolveCombat(state, { dice: [2, 3] });
 
     expect(pending.phase).toBe('combat_valkyrie_reroll');
@@ -148,14 +150,17 @@ describe('combat resolution', () => {
   });
 
   it('allows declining flame spell use without consuming spells', () => {
-    const state = withActivePlayer(createCombatState('kitchen_rat'), (player) => ({
-      ...player,
-      heroId: 'hero_valkyrie',
-      inventory: {
-        ...player.inventory,
-        spells: [{ type: 'spell', spellKind: 'flame' }],
-      },
-    }));
+    const state = withActivePlayer(
+      createCombatState('kitchen_rat'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_valkyrie',
+        inventory: {
+          ...player.inventory,
+          spells: [{ type: 'spell', spellKind: 'flame' }],
+        },
+      }),
+    );
     const pending = resolveCombat(state, { dice: [2, 3] });
     const withKeptRoll = declineValkyrieReroll(pending);
     const resolved = applyGameAction(withKeptRoll, {
@@ -175,14 +180,17 @@ describe('combat resolution', () => {
   });
 
   it('does not pause when available flame spells still cannot avoid defeat', () => {
-    const state = withActivePlayer(createCombatState('kitchen_rat'), (player) => ({
-      ...player,
-      heroId: 'hero_valkyrie',
-      inventory: {
-        ...player.inventory,
-        spells: [{ type: 'spell', spellKind: 'flame' }],
-      },
-    }));
+    const state = withActivePlayer(
+      createCombatState('kitchen_rat'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_valkyrie',
+        inventory: {
+          ...player.inventory,
+          spells: [{ type: 'spell', spellKind: 'flame' }],
+        },
+      }),
+    );
     const pending = resolveCombat(state, { dice: [1, 1] });
     const resolved = useValkyrieReroll(pending, { dice: [1, 1] });
 
@@ -193,10 +201,13 @@ describe('combat resolution', () => {
   });
 
   it('skips the valkyrie reroll step after a valkyrie victory', () => {
-    const state = withActivePlayer(createCombatState('kitchen_rat'), (player) => ({
-      ...player,
-      heroId: 'hero_valkyrie',
-    }));
+    const state = withActivePlayer(
+      createCombatState('kitchen_rat'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_valkyrie',
+      }),
+    );
 
     const resolved = resolveCombat(state, { dice: [6, 6] });
 
@@ -204,10 +215,13 @@ describe('combat resolution', () => {
   });
 
   it('offers a valkyrie reroll after a defeat', () => {
-    const state = withActivePlayer(createCombatState('kitchen_rat'), (player) => ({
-      ...player,
-      heroId: 'hero_valkyrie',
-    }));
+    const state = withActivePlayer(
+      createCombatState('kitchen_rat'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_valkyrie',
+      }),
+    );
 
     const pending = resolveCombat(state, { dice: [1, 1] });
 
@@ -221,14 +235,17 @@ describe('combat resolution', () => {
   });
 
   it('pauses for witch sacrifice before flame spell selection after a witch draw', () => {
-    const state = withActivePlayer(createCombatState('kitchen_rat'), (player) => ({
-      ...player,
-      heroId: 'hero_witch',
-      inventory: {
-        ...player.inventory,
-        spells: [{ type: 'spell', spellKind: 'flame' }],
-      },
-    }));
+    const state = withActivePlayer(
+      createCombatState('kitchen_rat'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_witch',
+        inventory: {
+          ...player.inventory,
+          spells: [{ type: 'spell', spellKind: 'flame' }],
+        },
+      }),
+    );
     const pending = resolveCombat(state, { dice: [2, 3] });
 
     expect(pending.phase).toBe('combat_witch_sacrifice');
@@ -252,14 +269,17 @@ describe('combat resolution', () => {
   });
 
   it('applies witch sacrifice before flame spell decisions', () => {
-    const state = withActivePlayer(createCombatState('kitchen_rat'), (player) => ({
-      ...player,
-      heroId: 'hero_witch',
-      inventory: {
-        ...player.inventory,
-        spells: [{ type: 'spell', spellKind: 'flame' }],
-      },
-    }));
+    const state = withActivePlayer(
+      createCombatState('kitchen_rat'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_witch',
+        inventory: {
+          ...player.inventory,
+          spells: [{ type: 'spell', spellKind: 'flame' }],
+        },
+      }),
+    );
     const pending = resolveCombat(state, { dice: [2, 2] });
     const sacrificed = useWitchSacrifice(pending);
 
@@ -275,17 +295,20 @@ describe('combat resolution', () => {
   });
 
   it('skips the witch sacrifice step when sacrifice plus all flame spells still cannot win', () => {
-    const state = withActivePlayer(createCombatState('mummified_priest'), (player) => ({
-      ...player,
-      heroId: 'hero_witch',
-      inventory: {
-        ...player.inventory,
-        spells: [
-          { type: 'spell', spellKind: 'flame' },
-          { type: 'spell', spellKind: 'flame' },
-        ],
-      },
-    }));
+    const state = withActivePlayer(
+      createCombatState('mummified_priest'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_witch',
+        inventory: {
+          ...player.inventory,
+          spells: [
+            { type: 'spell', spellKind: 'flame' },
+            { type: 'spell', spellKind: 'flame' },
+          ],
+        },
+      }),
+    );
     const resolved = resolveCombat(state, { dice: [2, 2] });
 
     expect(resolved.phase).toBe('turn_end');
@@ -293,11 +316,14 @@ describe('combat resolution', () => {
   });
 
   it('keeps the witch sacrifice bonus when sacrificing down to 0 HP', () => {
-    const state = withActivePlayer(createCombatState('kitchen_rat'), (player) => ({
-      ...player,
-      heroId: 'hero_witch',
-      hp: 1,
-    }));
+    const state = withActivePlayer(
+      createCombatState('kitchen_rat'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_witch',
+        hp: 1,
+      }),
+    );
     const pending = resolveCombat(state, { dice: [2, 3] });
     const resolved = useWitchSacrifice(pending);
 
@@ -316,10 +342,13 @@ describe('combat resolution', () => {
   });
 
   it('skips the witch sacrifice step after a witch victory', () => {
-    const state = withActivePlayer(createCombatState('kitchen_rat'), (player) => ({
-      ...player,
-      heroId: 'hero_witch',
-    }));
+    const state = withActivePlayer(
+      createCombatState('kitchen_rat'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_witch',
+      }),
+    );
 
     const resolved = resolveCombat(state, { dice: [6, 6] });
 
@@ -327,14 +356,17 @@ describe('combat resolution', () => {
   });
 
   it('still offers the witch sacrifice step when sacrifice plus flame spells can eventually win', () => {
-    const state = withActivePlayer(createCombatState('kitchen_rat'), (player) => ({
-      ...player,
-      heroId: 'hero_witch',
-      inventory: {
-        ...player.inventory,
-        spells: [{ type: 'spell', spellKind: 'flame' }],
-      },
-    }));
+    const state = withActivePlayer(
+      createCombatState('kitchen_rat'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_witch',
+        inventory: {
+          ...player.inventory,
+          spells: [{ type: 'spell', spellKind: 'flame' }],
+        },
+      }),
+    );
 
     const pending = resolveCombat(state, { dice: [1, 3] });
 
@@ -352,10 +384,13 @@ describe('combat resolution', () => {
   });
 
   it('retreats the blade on defeat instead of keeping combat open', () => {
-    const state = withActivePlayer(createCombatState('kitchen_rat'), (player) => ({
-      ...player,
-      heroId: 'hero_blade',
-    }));
+    const state = withActivePlayer(
+      createCombatState('kitchen_rat'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_blade',
+      }),
+    );
     const resolved = resolveCombat(state, { dice: [2, 2] });
 
     expect(resolved.phase).toBe('turn_end');
@@ -375,10 +410,13 @@ describe('combat resolution', () => {
   });
 
   it('pauses for blade rerolls and rerolls only dice showing 1', () => {
-    const state = withActivePlayer(createCombatState('kitchen_rat'), (player) => ({
-      ...player,
-      heroId: 'hero_blade',
-    }));
+    const state = withActivePlayer(
+      createCombatState('kitchen_rat'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_blade',
+      }),
+    );
     const pending = resolveCombat(state, { dice: [1, 4] });
     const resolved = useBladeReroll(pending, { dice: [6, 2] });
 
@@ -397,10 +435,13 @@ describe('combat resolution', () => {
   });
 
   it('repeats the blade reroll step while any die still shows 1', () => {
-    const state = withActivePlayer(createCombatState('kitchen_rat'), (player) => ({
-      ...player,
-      heroId: 'hero_blade',
-    }));
+    const state = withActivePlayer(
+      createCombatState('kitchen_rat'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_blade',
+      }),
+    );
     const pending = resolveCombat(state, { dice: [1, 1] });
     const rerolledOnce = useBladeReroll(pending, { dice: [1, 5] });
     const resolved = useBladeReroll(rerolledOnce, { dice: [6, 2] });
@@ -525,7 +566,9 @@ describe('combat resolution', () => {
     );
 
     expect(otherPlayersTurn.phase).toBe('turn_start');
-    expect(otherPlayersTurn.activePlayerIndex).not.toBe(resolved.activePlayerIndex);
+    expect(otherPlayersTurn.activePlayerIndex).not.toBe(
+      resolved.activePlayerIndex,
+    );
     expect(beforeSkippedTurnPlayer).toEqual(
       expect.objectContaining({
         hp: 0,
@@ -597,7 +640,9 @@ describe('combat resolution', () => {
   });
 
   it('leaves declined combat loot visibly on the combat tile and ends the turn', () => {
-    const state = resolveCombat(createCombatState('kitchen_rat'), { dice: [6, 6] });
+    const state = resolveCombat(createCombatState('kitchen_rat'), {
+      dice: [6, 6],
+    });
     const resolved = applyGameAction(state, { type: 'leaveLoot' });
     const combatTile = resolved.board.find(
       (tile) => tile.boardX === 1 && tile.boardY === -1,
@@ -609,10 +654,13 @@ describe('combat resolution', () => {
   });
 
   it('takes ground loot immediately as a turn-ending action when inventory space is free', () => {
-    const state = withActivePlayer(createCombatState('kitchen_rat'), (player) => ({
-      ...player,
-      position: { boardX: 1, boardY: -1 },
-    }));
+    const state = withActivePlayer(
+      createCombatState('kitchen_rat'),
+      (player) => ({
+        ...player,
+        position: { boardX: 1, boardY: -1 },
+      }),
+    );
     const prepared = {
       ...state,
       phase: 'await_move' as const,
@@ -643,17 +691,20 @@ describe('combat resolution', () => {
   });
 
   it('keeps ground loot in loot resolution when the matching inventory is full', () => {
-    const state = withActivePlayer(createCombatState('kitchen_rat'), (player) => ({
-      ...player,
-      position: { boardX: 1, boardY: -1 },
-      inventory: {
-        ...player.inventory,
-        weapons: [
-          { type: 'weapon', bonus: 2 },
-          { type: 'weapon', bonus: 3 },
-        ],
-      },
-    }));
+    const state = withActivePlayer(
+      createCombatState('kitchen_rat'),
+      (player) => ({
+        ...player,
+        position: { boardX: 1, boardY: -1 },
+        inventory: {
+          ...player.inventory,
+          weapons: [
+            { type: 'weapon', bonus: 2 },
+            { type: 'weapon', bonus: 3 },
+          ],
+        },
+      }),
+    );
     const prepared = {
       ...state,
       phase: 'await_move' as const,
@@ -812,18 +863,21 @@ describe('combat resolution', () => {
   });
 
   it('keeps the turn open for a blade victory with a six when only follow-up actions remain', () => {
-    const state = withActivePlayer(createCombatState('soulburner'), (player) => ({
-      ...player,
-      heroId: 'hero_blade',
-      inventory: {
-        ...player.inventory,
-        weapons: [
-          { type: 'weapon', bonus: 3 },
-          { type: 'weapon', bonus: 3 },
-        ],
-        spells: [{ type: 'spell', spellKind: 'healing' }],
-      },
-    }));
+    const state = withActivePlayer(
+      createCombatState('soulburner'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_blade',
+        inventory: {
+          ...player.inventory,
+          weapons: [
+            { type: 'weapon', bonus: 3 },
+            { type: 'weapon', bonus: 3 },
+          ],
+          spells: [{ type: 'spell', spellKind: 'healing' }],
+        },
+      }),
+    );
     const resolved = resolveCombat(
       {
         ...state,
@@ -838,10 +892,13 @@ describe('combat resolution', () => {
   });
 
   it('continues moving after resolving combat reward loot from a blade victory with a six', () => {
-    const state = withActivePlayer(createCombatState('kitchen_rat'), (player) => ({
-      ...player,
-      heroId: 'hero_blade',
-    }));
+    const state = withActivePlayer(
+      createCombatState('kitchen_rat'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_blade',
+      }),
+    );
     const resolved = resolveCombat(state, { dice: [6, 6] });
     const afterLoot = applyGameAction(resolved, { type: 'leaveLoot' });
 
@@ -925,9 +982,7 @@ function createCombatState(monsterId: MonsterId): GameState {
     activePlayerIndex: 0,
     board: [...base.board, originTile, combatTile],
     players: base.players.map((player, index) =>
-      index === 0
-        ? { ...player, position: { boardX: 1, boardY: -1 } }
-        : player,
+      index === 0 ? { ...player, position: { boardX: 1, boardY: -1 } } : player,
     ),
     remainingSteps: 3,
     lastMoveFrom: { boardX: 1, boardY: 0 },
@@ -967,7 +1022,9 @@ function withPlayerTreasure(
   };
 }
 
-function createChainedCombatState(monsterIds: [MonsterId, MonsterId]): GameState {
+function createChainedCombatState(
+  monsterIds: [MonsterId, MonsterId],
+): GameState {
   const base = createCombatState(monsterIds[0]);
 
   return withActivePlayer(

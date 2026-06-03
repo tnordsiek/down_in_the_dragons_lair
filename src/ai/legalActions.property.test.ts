@@ -43,12 +43,9 @@ describe('legal-action properties', () => {
 
       for (const action of getLegalAiActions(state)) {
         let next: GameState | undefined;
-        expect(
-          () => {
-            next = applyGameAction(state, action);
-          },
-          `action ${action.type} from phase ${state.phase}`,
-        ).not.toThrow();
+        expect(() => {
+          next = applyGameAction(state, action);
+        }, `action ${action.type} from phase ${state.phase}`).not.toThrow();
 
         expect(() => assertStateInvariants(next!)).not.toThrow();
       }

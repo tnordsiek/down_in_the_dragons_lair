@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import { monsterDefinitions } from '../../data/monsters';
 import { tileBlueprints } from '../../data/tiles';
 import { getTileAt } from '../../engine/core/board';
@@ -41,7 +43,10 @@ type ActionPanelProps = {
   onDeclineWitchSacrifice: () => void;
   onResolveCombatWithoutFlameSpells: () => void;
   onResolveCombatWithFlameSpells: (flameSpellCount: number) => void;
-  onSwapLoot: (inventorySlot: { kind: 'weapon' | 'spell'; index: number }) => void;
+  onSwapLoot: (inventorySlot: {
+    kind: 'weapon' | 'spell';
+    index: number;
+  }) => void;
   onTakeLoot: () => void;
   onOpenChest: () => void;
   onCenterMap: () => void;
@@ -92,7 +97,6 @@ export function ActionPanel({
   const {
     canOpenChest,
     canTakePendingLoot,
-    combatFlameSpellChoices: flameSpellChoices,
     canUseHealingSpell,
   } = legalActions;
   const activePlayer = state.players[state.activePlayerIndex];
@@ -109,9 +113,17 @@ export function ActionPanel({
   const combatMonster = state.combat
     ? monsterDefinitions[state.combat.monsterId]
     : undefined;
-  const weaponBonus = activePlayer.inventory.weapons.reduce(
-    (sum, weapon) => sum + weapon.bonus,
-    0,
+  const weaponBonus = useMemo(
+    () =>
+      activePlayer.inventory.weapons.reduce(
+        (sum, weapon) => sum + weapon.bonus,
+        0,
+      ),
+    [activePlayer],
+  );
+  const flameSpellChoices = useMemo(
+    () => legalActions.combatFlameSpellChoices,
+    [legalActions],
   );
   const availableFlameSpells = activePlayer.inventory.spells.filter(
     (spell) => spell.spellKind === 'flame',
@@ -132,9 +144,7 @@ export function ActionPanel({
         pendingWitchSacrificeBonus
       : undefined;
   const pendingBladeTotal =
-    state.phase === 'combat_blade_reroll' &&
-    combatMonster &&
-    pendingCombatDice
+    state.phase === 'combat_blade_reroll' && combatMonster && pendingCombatDice
       ? calculateCombatTotal(activePlayer, pendingCombatDice)
       : undefined;
   const pendingBladeOutcome =
@@ -245,7 +255,8 @@ export function ActionPanel({
             {monsterName(combatMonster.id)} strength {combatMonster.strength}
           </p>
           <p className="text-sm text-parchment-200">
-            The Rogue may ignore this monster, move on, stay here, or start combat.
+            The Rogue may ignore this monster, move on, stay here, or start
+            combat.
           </p>
           <button
             className="w-fit rounded-forged bg-blood-600 px-3 py-2 text-sm font-semibold text-white shadow-forged transition-colors hover:bg-blood-500"
@@ -289,7 +300,8 @@ export function ActionPanel({
             Mummified Priest Curse
           </h3>
           <p className="text-sm text-parchment-100">
-            {monsterName(combatMonster.id)} defeated. Choose another hero to receive the curse.
+            {monsterName(combatMonster.id)} defeated. Choose another hero to
+            receive the curse.
           </p>
           <div className="flex flex-wrap gap-2">
             {state.players
@@ -320,7 +332,8 @@ export function ActionPanel({
           </p>
           <p className="font-mono text-xs text-parchment-200">
             Rolled {initialCombatDice[0]} + {initialCombatDice[1]} + weapons{' '}
-            {weaponBonus} = {initialCombatDice[0] + initialCombatDice[1] + weaponBonus}
+            {weaponBonus} ={' '}
+            {initialCombatDice[0] + initialCombatDice[1] + weaponBonus}
             {` and currently face ${initialCombatOutcome}`}
           </p>
           <div className="flex flex-wrap gap-2">
@@ -356,8 +369,7 @@ export function ActionPanel({
               ? ' · reroll every die showing 1'
               : ''}
           </p>
-          {pendingBladeTotal !== undefined &&
-          pendingBladeOutcome ? (
+          {pendingBladeTotal !== undefined && pendingBladeOutcome ? (
             <p className="font-mono text-xs text-parchment-200">
               Current result {pendingCombatDice[0]} + {pendingCombatDice[1]} +
               weapons {weaponBonus} = {pendingBladeTotal}
@@ -386,7 +398,8 @@ export function ActionPanel({
           </p>
           <p className="font-mono text-xs text-parchment-200">
             Rolled {initialCombatDice[0]} + {initialCombatDice[1]} + weapons{' '}
-            {weaponBonus} = {initialCombatDice[0] + initialCombatDice[1] + weaponBonus}
+            {weaponBonus} ={' '}
+            {initialCombatDice[0] + initialCombatDice[1] + weaponBonus}
             {` and currently face ${initialCombatOutcome}`}
           </p>
           <div className="flex flex-wrap gap-2">
@@ -406,7 +419,9 @@ export function ActionPanel({
         </div>
       ) : null}
 
-      {state.phase === 'combat_flame_spells' && combatMonster && pendingCombatDice ? (
+      {state.phase === 'combat_flame_spells' &&
+      combatMonster &&
+      pendingCombatDice ? (
         <div className="mt-4 grid gap-2">
           <h3 className="text-xs uppercase tracking-wide text-torch-300">
             Fireball Spells
@@ -422,7 +437,9 @@ export function ActionPanel({
               : ''}
             {' = '}
             {pendingCombatTotal}
-            {pendingCombatOutcome ? ` and currently face ${pendingCombatOutcome}` : ''}
+            {pendingCombatOutcome
+              ? ` and currently face ${pendingCombatOutcome}`
+              : ''}
           </p>
           <div className="flex flex-wrap gap-2">
             <button
@@ -437,7 +454,8 @@ export function ActionPanel({
                 className="rounded-forged border border-torch-500 px-3 py-2 text-sm text-torch-200 transition-colors hover:bg-torch-500/10"
                 onClick={() => onResolveCombatWithFlameSpells(flameSpellCount)}
               >
-                Use {flameSpellCount} Fireball Spell{flameSpellCount === 1 ? '' : 's'}
+                Use {flameSpellCount} Fireball Spell
+                {flameSpellCount === 1 ? '' : 's'}
               </button>
             ))}
           </div>
@@ -501,7 +519,9 @@ export function ActionPanel({
           <h3 className="text-xs uppercase tracking-wide text-torch-300">
             Loot
           </h3>
-          <p className="text-sm text-parchment-100">{itemLabel(pendingLoot.item)}</p>
+          <p className="text-sm text-parchment-100">
+            {itemLabel(pendingLoot.item)}
+          </p>
           <div className="flex flex-wrap gap-2">
             {canTakePendingLoot ? (
               <button
@@ -522,9 +542,7 @@ export function ActionPanel({
                   <button
                     key={`swap-weapon-${index}`}
                     className="rounded-forged border border-portal-400 px-3 py-2 text-sm text-portal-200 transition-colors hover:bg-portal-400/10"
-                    onClick={() =>
-                      onSwapLoot({ kind: 'weapon', index })
-                    }
+                    onClick={() => onSwapLoot({ kind: 'weapon', index })}
                   >
                     Swap {weaponDisplayNames[weapon.bonus]}
                   </button>
@@ -535,9 +553,7 @@ export function ActionPanel({
                   <button
                     key={`swap-spell-${index}`}
                     className="rounded-forged border border-portal-400 px-3 py-2 text-sm text-portal-200 transition-colors hover:bg-portal-400/10"
-                    onClick={() =>
-                      onSwapLoot({ kind: 'spell', index })
-                    }
+                    onClick={() => onSwapLoot({ kind: 'spell', index })}
                   >
                     Swap {spell.spellKind} spell
                   </button>
@@ -584,10 +600,12 @@ export function ActionPanel({
               </div>
             </>
           ) : null}
-          {healingSpellSelection.mode === 'select_tile' && selectedHealingTarget ? (
+          {healingSpellSelection.mode === 'select_tile' &&
+          selectedHealingTarget ? (
             <>
               <p className="text-sm text-parchment-200">
-                Choose a discovered healing tile for {heroName(selectedHealingTarget.heroId)}.
+                Choose a discovered healing tile for{' '}
+                {heroName(selectedHealingTarget.heroId)}.
               </p>
               <button
                 className="w-fit rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200"

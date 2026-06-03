@@ -18,12 +18,13 @@ const legalSectionLabels: Record<LegalSectionId, string> = {
   privacy: 'Privacy Policy',
 };
 
-const legalContentLoaders: Record<LegalSectionId, () => Promise<LegalContent>> = {
-  imprint: async () =>
-    (await import('../../legal/imprintContent')).imprintContent,
-  privacy: async () =>
-    (await import('../../legal/privacyPolicyContent')).privacyPolicyContent,
-};
+const legalContentLoaders: Record<LegalSectionId, () => Promise<LegalContent>> =
+  {
+    imprint: async () =>
+      (await import('../../legal/imprintContent')).imprintContent,
+    privacy: async () =>
+      (await import('../../legal/privacyPolicyContent')).privacyPolicyContent,
+  };
 
 export function FooterMeta({
   align = 'right',
@@ -31,11 +32,15 @@ export function FooterMeta({
   spread = false,
   versionLabel = 'v1.5',
 }: FooterMetaProps) {
-  const [activeSection, setActiveSection] = useState<LegalSectionId | null>(null);
+  const [activeSection, setActiveSection] = useState<LegalSectionId | null>(
+    null,
+  );
   const [loadedContent, setLoadedContent] = useState<
     Partial<Record<LegalSectionId, LegalContent>>
   >({});
-  const [loadingSection, setLoadingSection] = useState<LegalSectionId | null>(null);
+  const [loadingSection, setLoadingSection] = useState<LegalSectionId | null>(
+    null,
+  );
   const [loadErrorSection, setLoadErrorSection] =
     useState<LegalSectionId | null>(null);
   const isLeftAligned = align === 'left';
@@ -74,8 +79,11 @@ export function FooterMeta({
     setLoadErrorSection(null);
   };
 
-  const activeContent = activeSection ? loadedContent[activeSection] : undefined;
-  const showLoading = activeSection !== null && loadingSection === activeSection;
+  const activeContent = activeSection
+    ? loadedContent[activeSection]
+    : undefined;
+  const showLoading =
+    activeSection !== null && loadingSection === activeSection;
   const showLoadError =
     activeSection !== null && loadErrorSection === activeSection;
   const isFlowLayout = layout === 'flow';
@@ -117,24 +125,26 @@ export function FooterMeta({
             {showLoadError ? (
               <p>Unable to load this legal notice right now.</p>
             ) : null}
-            {activeContent ? <LegalContentPanel content={activeContent} /> : null}
+            {activeContent ? (
+              <LegalContentPanel content={activeContent} />
+            ) : null}
           </div>
         ) : null}
         <div className="relative z-10 flex items-center gap-3">
-          {(
-            Object.keys(legalSectionLabels) as LegalSectionId[]
-          ).map((section) => (
-            <button
-              key={section}
-              className="text-parchment-200 transition-colors hover:text-torch-200"
-              onClick={() => {
-                void handleToggleSection(section);
-              }}
-              type="button"
-            >
-              {legalSectionLabels[section]}
-            </button>
-          ))}
+          {(Object.keys(legalSectionLabels) as LegalSectionId[]).map(
+            (section) => (
+              <button
+                key={section}
+                className="text-parchment-200 transition-colors hover:text-torch-200"
+                onClick={() => {
+                  void handleToggleSection(section);
+                }}
+                type="button"
+              >
+                {legalSectionLabels[section]}
+              </button>
+            ),
+          )}
           <button
             className="text-parchment-200 transition-colors hover:text-torch-200"
             onClick={openFeedbackModal}

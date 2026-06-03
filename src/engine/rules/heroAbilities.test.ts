@@ -303,7 +303,10 @@ describe('hero_witch abilities', () => {
         tile.boardX === 2 && tile.boardY === 0
           ? {
               ...tile,
-              roomToken: { id: 'treasure_chest' as const, kind: 'chest' as const },
+              roomToken: {
+                id: 'treasure_chest' as const,
+                kind: 'chest' as const,
+              },
             }
           : tile,
       ),
@@ -331,7 +334,9 @@ describe('hero_witch abilities', () => {
     const swappedToChest = swapWitchPosition(chestState, chestTarget.id);
 
     expect(swappedToLoot.phase).toBe('await_move');
-    expect(afterLoot.players[afterLoot.activePlayerIndex].inventory.weapons).toContainEqual({
+    expect(
+      afterLoot.players[afterLoot.activePlayerIndex].inventory.weapons,
+    ).toContainEqual({
       type: 'weapon',
       bonus: 1,
     });
@@ -361,7 +366,9 @@ describe('hero_witch abilities', () => {
         },
       ],
     } satisfies GameState;
-    const target = state.players.find((player) => player.id !== 'player_human')!;
+    const target = state.players.find(
+      (player) => player.id !== 'player_human',
+    )!;
     const swapped = swapWitchPosition(state, target.id);
     const resolved = resolveCombat(swapped, { dice: [2, 3] });
 
@@ -456,9 +463,7 @@ describe('hero_rogue abilities', () => {
     const nextTurn = endTurn({
       ...moved,
       players: moved.players.map((player, index) =>
-        index === 1
-          ? { ...player, skipNextTurn: true, hp: 0 }
-          : player,
+        index === 1 ? { ...player, skipNextTurn: true, hp: 0 } : player,
       ),
     });
     const thiefTurn = endTurn(nextTurn);
@@ -516,9 +521,7 @@ describe('hero_rogue abilities', () => {
       phase: 'turn_skip',
       combat: undefined,
       players: moved.players.map((player, index) =>
-        index === 1
-          ? { ...player, skipNextTurn: true, hp: 0 }
-          : player,
+        index === 1 ? { ...player, skipNextTurn: true, hp: 0 } : player,
       ),
     });
 
@@ -701,7 +704,9 @@ describe('hero_seeress abilities', () => {
 
     expect(noBonusResolved.phase).toBe('turn_end');
     expect(
-      noBonusResolved.board.find((tile) => tile.roomToken?.id === 'kitchen_rat'),
+      noBonusResolved.board.find(
+        (tile) => tile.roomToken?.id === 'kitchen_rat',
+      ),
     ).toBeDefined();
   });
 

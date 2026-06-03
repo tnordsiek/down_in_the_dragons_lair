@@ -125,9 +125,7 @@ describe('Milestone 6 UI', () => {
     render(<ActionPanel state={state} {...noopActions} />);
 
     expect(screen.getByRole('button', { name: 'End Turn' })).toBeDisabled();
-    expect(
-      screen.queryByRole('button', { name: 'Resolve Room' }),
-    ).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Resolve Room' })).toBeNull();
   });
 
   it('disables ending the turn while a pending tile rotation must be confirmed', () => {
@@ -388,9 +386,7 @@ describe('Milestone 6 UI', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('7 pts')).toBeInTheDocument();
     expect(screen.getByText('Mage (Human)')).toBeInTheDocument();
-    expect(
-      screen.getByText('Resolved combat: Victory'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Resolved combat: Victory')).toBeInTheDocument();
     expect(
       screen.getByText('Kitchen Rat strength 5 · dice 6 + 4 · total 14'),
     ).toBeInTheDocument();
@@ -461,7 +457,9 @@ describe('Milestone 6 UI', () => {
     render(<ActionPanel state={state} {...noopActions} />);
 
     expect(
-      screen.getByText('2d6 + weapons +0 + fireball spells (0 available) must beat 5'),
+      screen.getByText(
+        '2d6 + weapons +0 + fireball spells (0 available) must beat 5',
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Seeress Sight \+1/)).toBeNull();
   });
@@ -486,7 +484,9 @@ describe('Milestone 6 UI', () => {
     render(<ActionPanel state={state} {...noopActions} />);
 
     expect(
-      screen.getByText('2d6 + weapons +0 + fireball spells (0 available) must beat 5'),
+      screen.getByText(
+        '2d6 + weapons +0 + fireball spells (0 available) must beat 5',
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Seeress Sight \+1/)).toBeNull();
   });
@@ -554,9 +554,7 @@ describe('Milestone 6 UI', () => {
 
     render(<EventLog state={state} />);
 
-    expect(
-      screen.getByText(/curse -> Rogue \(AI 1\)/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/curse -> Rogue \(AI 1\)/)).toBeInTheDocument();
   });
 
   it('renders start-player rolls and tiebreaks inside a single game-start log entry', () => {
@@ -840,20 +838,18 @@ describe('Milestone 6 UI', () => {
       'justify-start',
       'gap-2',
     );
-    expect(screen.getByRole('img', { name: 'Combat die 1: 6' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_06.png',
-    );
+    expect(
+      screen.getByRole('img', { name: 'Combat die 1: 6' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_06.png');
     expect(screen.getByRole('img', { name: 'Combat die 1: 6' })).toHaveClass(
       'max-h-[50px]',
       'w-auto',
       'object-contain',
       'lg:max-h-[108px]',
     );
-    expect(screen.getByRole('img', { name: 'Combat die 2: 4' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_04.png',
-    );
+    expect(
+      screen.getByRole('img', { name: 'Combat die 2: 4' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_04.png');
     expect(
       screen.getByRole('img', { name: "Down in the Dragon's Lair" }),
     ).toHaveClass('max-h-[50px]', 'lg:max-h-[108px]');
@@ -907,14 +903,12 @@ describe('Milestone 6 UI', () => {
       useSetupStore.setState({ gameState: state });
     });
 
-    expect(screen.getByRole('img', { name: 'Combat die 1: 1' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_01.png',
-    );
-    expect(screen.getByRole('img', { name: 'Combat die 2: 4' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_04.png',
-    );
+    expect(
+      screen.getByRole('img', { name: 'Combat die 1: 1' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_01.png');
+    expect(
+      screen.getByRole('img', { name: 'Combat die 2: 4' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_04.png');
   });
 
   it('updates the header dice after a partial blade reroll', () => {
@@ -965,14 +959,12 @@ describe('Milestone 6 UI', () => {
       useSetupStore.setState({ gameState: state });
     });
 
-    expect(screen.getByRole('img', { name: 'Combat die 1: 1' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_01.png',
-    );
-    expect(screen.getByRole('img', { name: 'Combat die 2: 6' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_06.png',
-    );
+    expect(
+      screen.getByRole('img', { name: 'Combat die 1: 1' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_01.png');
+    expect(
+      screen.getByRole('img', { name: 'Combat die 2: 6' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_06.png');
   });
 
   it('shows valkyrie reroll dice in the header while the reroll choice is pending', () => {
@@ -1022,14 +1014,12 @@ describe('Milestone 6 UI', () => {
       useSetupStore.setState({ gameState: state });
     });
 
-    expect(screen.getByRole('img', { name: 'Combat die 1: 2' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_02.png',
-    );
-    expect(screen.getByRole('img', { name: 'Combat die 2: 3' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_03.png',
-    );
+    expect(
+      screen.getByRole('img', { name: 'Combat die 1: 2' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.png');
+    expect(
+      screen.getByRole('img', { name: 'Combat die 2: 3' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.png');
   });
 
   it('shows witch sacrifice dice in the header while the sacrifice choice is pending', () => {
@@ -1079,14 +1069,12 @@ describe('Milestone 6 UI', () => {
       useSetupStore.setState({ gameState: state });
     });
 
-    expect(screen.getByRole('img', { name: 'Combat die 1: 2' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_02.png',
-    );
-    expect(screen.getByRole('img', { name: 'Combat die 2: 3' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_03.png',
-    );
+    expect(
+      screen.getByRole('img', { name: 'Combat die 1: 2' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.png');
+    expect(
+      screen.getByRole('img', { name: 'Combat die 2: 3' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.png');
   });
 
   it('shows flame spell prompt dice in the header while flame spell choice is pending', () => {
@@ -1136,14 +1124,12 @@ describe('Milestone 6 UI', () => {
       useSetupStore.setState({ gameState: state });
     });
 
-    expect(screen.getByRole('img', { name: 'Combat die 1: 2' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_02.png',
-    );
-    expect(screen.getByRole('img', { name: 'Combat die 2: 3' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_03.png',
-    );
+    expect(
+      screen.getByRole('img', { name: 'Combat die 1: 2' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.png');
+    expect(
+      screen.getByRole('img', { name: 'Combat die 2: 3' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.png');
   });
 
   it('disables End Turn during unresolved combat prompts but keeps it available before optional rogue combat', () => {
@@ -1241,7 +1227,9 @@ describe('Milestone 6 UI', () => {
       ),
     });
 
-    const { rerender } = render(<ActionPanel state={combatState} {...noopActions} />);
+    const { rerender } = render(
+      <ActionPanel state={combatState} {...noopActions} />,
+    );
     expect(screen.getByRole('button', { name: 'End Turn' })).toBeDisabled();
 
     rerender(<ActionPanel state={swordswomanState} {...noopActions} />);
@@ -1323,18 +1311,20 @@ describe('Milestone 6 UI', () => {
     render(<GameScreen />);
 
     act(() => {
-      useSetupStore.getState().dispatch({ type: 'resolveCombat', dice: [1, 4] });
+      useSetupStore
+        .getState()
+        .dispatch({ type: 'resolveCombat', dice: [1, 4] });
     });
 
-    expect(screen.getByRole('button', { name: 'Reroll 1s' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Combat die 1: 1' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_01.png',
-    );
-    expect(screen.getByRole('img', { name: 'Combat die 2: 4' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_04.png',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Reroll 1s' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', { name: 'Combat die 1: 1' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_01.png');
+    expect(
+      screen.getByRole('img', { name: 'Combat die 2: 4' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_04.png');
   });
 
   it('keeps offering the blade reroll in the real GameScreen flow after a partial reroll', () => {
@@ -1365,7 +1355,9 @@ describe('Milestone 6 UI', () => {
     render(<GameScreen />);
 
     act(() => {
-      useSetupStore.getState().dispatch({ type: 'resolveCombat', dice: [1, 1] });
+      useSetupStore
+        .getState()
+        .dispatch({ type: 'resolveCombat', dice: [1, 1] });
     });
     act(() => {
       useSetupStore.getState().dispatch({
@@ -1374,15 +1366,15 @@ describe('Milestone 6 UI', () => {
       });
     });
 
-    expect(screen.getByRole('button', { name: 'Reroll 1s' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Combat die 1: 1' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_01.png',
-    );
-    expect(screen.getByRole('img', { name: 'Combat die 2: 6' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_06.png',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Reroll 1s' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', { name: 'Combat die 1: 1' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_01.png');
+    expect(
+      screen.getByRole('img', { name: 'Combat die 2: 6' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_06.png');
   });
 
   it('shows valkyrie pending dice in the real GameScreen flow after a rolled draw', () => {
@@ -1413,20 +1405,20 @@ describe('Milestone 6 UI', () => {
     render(<GameScreen />);
 
     act(() => {
-      useSetupStore.getState().dispatch({ type: 'resolveCombat', dice: [2, 3] });
+      useSetupStore
+        .getState()
+        .dispatch({ type: 'resolveCombat', dice: [2, 3] });
     });
 
     expect(
       screen.getByRole('button', { name: 'Reroll both dice' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Combat die 1: 2' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_02.png',
-    );
-    expect(screen.getByRole('img', { name: 'Combat die 2: 3' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_03.png',
-    );
+    expect(
+      screen.getByRole('img', { name: 'Combat die 1: 2' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.png');
+    expect(
+      screen.getByRole('img', { name: 'Combat die 2: 3' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.png');
   });
 
   it('shows witch pending dice in the real GameScreen flow after a rolled draw', () => {
@@ -1457,20 +1449,20 @@ describe('Milestone 6 UI', () => {
     render(<GameScreen />);
 
     act(() => {
-      useSetupStore.getState().dispatch({ type: 'resolveCombat', dice: [2, 3] });
+      useSetupStore
+        .getState()
+        .dispatch({ type: 'resolveCombat', dice: [2, 3] });
     });
 
     expect(
       screen.getByRole('button', { name: 'Sacrifice 1 HP for +1' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Combat die 1: 2' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_02.png',
-    );
-    expect(screen.getByRole('img', { name: 'Combat die 2: 3' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_03.png',
-    );
+    expect(
+      screen.getByRole('img', { name: 'Combat die 1: 2' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.png');
+    expect(
+      screen.getByRole('img', { name: 'Combat die 2: 3' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.png');
   });
 
   it('shows flame spell pending dice in the real GameScreen flow after a rolled draw', () => {
@@ -1506,20 +1498,20 @@ describe('Milestone 6 UI', () => {
     render(<GameScreen />);
 
     act(() => {
-      useSetupStore.getState().dispatch({ type: 'resolveCombat', dice: [2, 3] });
+      useSetupStore
+        .getState()
+        .dispatch({ type: 'resolveCombat', dice: [2, 3] });
     });
 
     expect(
       screen.getByRole('button', { name: 'Do not use fireball spells' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Combat die 1: 2' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_02.png',
-    );
-    expect(screen.getByRole('img', { name: 'Combat die 2: 3' })).toHaveAttribute(
-      'src',
-      '/assets/ui/ui_dice_03.png',
-    );
+    expect(
+      screen.getByRole('img', { name: 'Combat die 1: 2' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.png');
+    expect(
+      screen.getByRole('img', { name: 'Combat die 2: 3' }),
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.png');
   });
 
   it('renders mapped hero and monster images on the board', () => {
@@ -1589,14 +1581,38 @@ describe('Milestone 6 UI', () => {
       'bg-stone-800',
       'shadow-[inset_0_0_0_1px_rgba(120,113,108,1)]',
     );
-    expect(occupiedCell).toHaveAttribute('style', expect.stringContaining('left: 73px;'));
-    expect(occupiedCell).toHaveAttribute('style', expect.stringContaining('top: 73px;'));
-    expect(occupiedCell).toHaveAttribute('style', expect.stringContaining('width: 72px;'));
-    expect(occupiedCell).toHaveAttribute('style', expect.stringContaining('height: 72px;'));
-    expect(eastCell).toHaveAttribute('style', expect.stringContaining('left: 146px;'));
-    expect(eastCell).toHaveAttribute('style', expect.stringContaining('top: 73px;'));
-    expect(eastCell).toHaveAttribute('style', expect.stringContaining('width: 72px;'));
-    expect(eastCell).toHaveAttribute('style', expect.stringContaining('height: 72px;'));
+    expect(occupiedCell).toHaveAttribute(
+      'style',
+      expect.stringContaining('left: 73px;'),
+    );
+    expect(occupiedCell).toHaveAttribute(
+      'style',
+      expect.stringContaining('top: 73px;'),
+    );
+    expect(occupiedCell).toHaveAttribute(
+      'style',
+      expect.stringContaining('width: 72px;'),
+    );
+    expect(occupiedCell).toHaveAttribute(
+      'style',
+      expect.stringContaining('height: 72px;'),
+    );
+    expect(eastCell).toHaveAttribute(
+      'style',
+      expect.stringContaining('left: 146px;'),
+    );
+    expect(eastCell).toHaveAttribute(
+      'style',
+      expect.stringContaining('top: 73px;'),
+    );
+    expect(eastCell).toHaveAttribute(
+      'style',
+      expect.stringContaining('width: 72px;'),
+    );
+    expect(eastCell).toHaveAttribute(
+      'style',
+      expect.stringContaining('height: 72px;'),
+    );
   });
 
   it('stacks multiple hero tokens from the top of the tile and keeps the active player in front', () => {
@@ -1842,7 +1858,11 @@ describe('Milestone 6 UI', () => {
       ],
       players: createUiState().players.map((player, index) =>
         index === 0
-          ? { ...player, heroId: 'hero_mage', position: { boardX: 0, boardY: 0 } }
+          ? {
+              ...player,
+              heroId: 'hero_mage',
+              position: { boardX: 0, boardY: 0 },
+            }
           : player,
       ),
     });
@@ -1886,7 +1906,11 @@ describe('Milestone 6 UI', () => {
       remainingSteps: 2,
       players: createUiState().players.map((player, index) =>
         index === 0
-          ? { ...player, heroId: 'hero_rogue', position: { boardX: 0, boardY: 0 } }
+          ? {
+              ...player,
+              heroId: 'hero_rogue',
+              position: { boardX: 0, boardY: 0 },
+            }
           : player,
       ),
     });
@@ -2061,11 +2085,7 @@ describe('Milestone 6 UI', () => {
     const onBeginLoot = vi.fn();
 
     const { rerender } = render(
-      <ActionPanel
-        state={state}
-        {...noopActions}
-        onBeginLoot={onBeginLoot}
-      />,
+      <ActionPanel state={state} {...noopActions} onBeginLoot={onBeginLoot} />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Take Healing spell' }));
@@ -2088,9 +2108,7 @@ describe('Milestone 6 UI', () => {
 
     expect(screen.getByRole('button', { name: 'Take' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Leave' })).toBeInTheDocument();
-    expect(
-      screen.getByText('Healing spell'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Healing spell')).toBeInTheDocument();
   });
 
   it('shows the ground-loot button as the only prompt when inventory space is free', () => {
@@ -2107,11 +2125,7 @@ describe('Milestone 6 UI', () => {
     });
 
     render(
-      <ActionPanel
-        state={state}
-        {...noopActions}
-        onBeginLoot={onBeginLoot}
-      />,
+      <ActionPanel state={state} {...noopActions} onBeginLoot={onBeginLoot} />,
     );
 
     expect(
@@ -2223,9 +2237,7 @@ describe('Milestone 6 UI', () => {
         state={state}
         {...noopActions}
         onResolveCombatWithFlameSpells={onResolveCombatWithFlameSpells}
-        onResolveCombatWithoutFlameSpells={
-          onResolveCombatWithoutFlameSpells
-        }
+        onResolveCombatWithoutFlameSpells={onResolveCombatWithoutFlameSpells}
       />,
     );
 
@@ -2683,8 +2695,12 @@ describe('Milestone 6 UI', () => {
     const leftExploreTarget = screen.getByTestId('explore-target--1-0');
     const topExploreTarget = screen.getByTestId('explore-target-0--1');
 
-    expect(document.querySelector('[data-board-position="-1,0"]')).not.toBeNull();
-    expect(document.querySelector('[data-board-position="0,-1"]')).not.toBeNull();
+    expect(
+      document.querySelector('[data-board-position="-1,0"]'),
+    ).not.toBeNull();
+    expect(
+      document.querySelector('[data-board-position="0,-1"]'),
+    ).not.toBeNull();
     expect(document.querySelector('[data-board-position="1,-1"]')).toBeNull();
     expect(leftExploreTarget).toHaveClass('border', 'border-stone-500');
     expect(topExploreTarget).toHaveClass('border', 'border-stone-500');
@@ -2726,10 +2742,22 @@ describe('Milestone 6 UI', () => {
     expect(grid).not.toHaveClass('bg-stone-500');
     expect(document.querySelector('[data-board-position="3,0"]')).toBeNull();
     expect(centerExploreTarget).toHaveClass('border', 'border-stone-500');
-    expect(centerExploreCell).toHaveAttribute('style', expect.stringContaining('left: 146px;'));
-    expect(centerExploreCell).toHaveAttribute('style', expect.stringContaining('top: 73px;'));
-    expect(centerExploreCell).toHaveAttribute('style', expect.stringContaining('width: 72px;'));
-    expect(centerExploreCell).toHaveAttribute('style', expect.stringContaining('height: 72px;'));
+    expect(centerExploreCell).toHaveAttribute(
+      'style',
+      expect.stringContaining('left: 146px;'),
+    );
+    expect(centerExploreCell).toHaveAttribute(
+      'style',
+      expect.stringContaining('top: 73px;'),
+    );
+    expect(centerExploreCell).toHaveAttribute(
+      'style',
+      expect.stringContaining('width: 72px;'),
+    );
+    expect(centerExploreCell).toHaveAttribute(
+      'style',
+      expect.stringContaining('height: 72px;'),
+    );
   });
 
   it('swaps the human witch with the selected hero and writes a readable log entry', () => {
@@ -2750,8 +2778,16 @@ describe('Milestone 6 UI', () => {
       ],
       players: createUiState().players.map((player, index) =>
         index === 0
-          ? { ...player, heroId: 'hero_witch', position: { boardX: 0, boardY: 0 } }
-          : { ...player, heroId: 'hero_rogue', position: { boardX: 2, boardY: 0 } },
+          ? {
+              ...player,
+              heroId: 'hero_witch',
+              position: { boardX: 0, boardY: 0 },
+            }
+          : {
+              ...player,
+              heroId: 'hero_rogue',
+              position: { boardX: 2, boardY: 0 },
+            },
       ),
     });
 
@@ -2762,9 +2798,9 @@ describe('Milestone 6 UI', () => {
 
     expect(screen.getByTestId('witch-phase')).toHaveTextContent('turn_end');
     expect(screen.getByTestId('witch-position')).toHaveTextContent('2,0');
-    expect(screen.getByTestId('witch-target-position-player_ai_1')).toHaveTextContent(
-      '0,0',
-    );
+    expect(
+      screen.getByTestId('witch-target-position-player_ai_1'),
+    ).toHaveTextContent('0,0');
     expect(screen.getByText('Swapped with Rogue to 2,0')).toBeInTheDocument();
   });
 
@@ -2796,7 +2832,11 @@ describe('Milestone 6 UI', () => {
                 keyCount: 1,
               },
             }
-          : { ...player, heroId: 'hero_rogue', position: { boardX: 2, boardY: 0 } },
+          : {
+              ...player,
+              heroId: 'hero_rogue',
+              position: { boardX: 2, boardY: 0 },
+            },
       ),
     });
     const lootState = createUiState({
@@ -2816,8 +2856,16 @@ describe('Milestone 6 UI', () => {
       ],
       players: createUiState().players.map((player, index) =>
         index === 0
-          ? { ...player, heroId: 'hero_witch', position: { boardX: 0, boardY: 0 } }
-          : { ...player, heroId: 'hero_rogue', position: { boardX: 2, boardY: 0 } },
+          ? {
+              ...player,
+              heroId: 'hero_witch',
+              position: { boardX: 0, boardY: 0 },
+            }
+          : {
+              ...player,
+              heroId: 'hero_rogue',
+              position: { boardX: 2, boardY: 0 },
+            },
       ),
     });
     const { unmount } = render(<WitchSwapHarness initialState={chestState} />);
@@ -2826,7 +2874,9 @@ describe('Milestone 6 UI', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Rogue' }));
 
     expect(screen.getByTestId('witch-phase')).toHaveTextContent('await_move');
-    expect(screen.getByRole('button', { name: 'Open Chest' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Open Chest' }),
+    ).toBeInTheDocument();
 
     unmount();
     render(<WitchSwapHarness initialState={lootState} />);
@@ -2859,8 +2909,16 @@ describe('Milestone 6 UI', () => {
       ],
       players: createUiState().players.map((player, index) =>
         index === 0
-          ? { ...player, heroId: 'hero_witch', position: { boardX: 0, boardY: 0 } }
-          : { ...player, heroId: 'hero_rogue', position: { boardX: 2, boardY: 0 } },
+          ? {
+              ...player,
+              heroId: 'hero_witch',
+              position: { boardX: 0, boardY: 0 },
+            }
+          : {
+              ...player,
+              heroId: 'hero_rogue',
+              position: { boardX: 2, boardY: 0 },
+            },
       ),
     });
 
@@ -2927,7 +2985,9 @@ describe('Milestone 6 UI', () => {
     expect(
       screen.queryByRole('button', { name: 'Select healing tile -1,0' }),
     ).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Move to tile 1,0' })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Move to tile 1,0' }),
+    ).toBeNull();
 
     fireEvent.click(secondHealingTarget);
 
@@ -2971,11 +3031,17 @@ describe('Milestone 6 UI', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Use Healing Spell' }));
     fireEvent.click(screen.getByRole('button', { name: 'Rogue' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Select healing tile 1,0' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Select healing tile 1,0' }),
+    );
 
     expect(screen.getByTestId('healing-target-hp')).toHaveTextContent('5');
-    expect(screen.getByTestId('healing-target-curse')).toHaveTextContent('false');
-    expect(screen.getByTestId('healing-target-position')).toHaveTextContent('1,0');
+    expect(screen.getByTestId('healing-target-curse')).toHaveTextContent(
+      'false',
+    );
+    expect(screen.getByTestId('healing-target-position')).toHaveTextContent(
+      '1,0',
+    );
     expect(screen.getByTestId('active-spell-count')).toHaveTextContent('0');
     expect(screen.getByTestId('phase-label')).toHaveTextContent(state.phase);
     expect(
@@ -3014,7 +3080,9 @@ describe('Milestone 6 UI', () => {
       expect(screen.getByTestId('room-phase')).toHaveTextContent('await_move');
     });
 
-    expect(screen.getByTestId('room-token')).toHaveTextContent('treasure_chest');
+    expect(screen.getByTestId('room-token')).toHaveTextContent(
+      'treasure_chest',
+    );
     expect(screen.getByText('Move')).toBeInTheDocument();
   });
 
@@ -3175,12 +3243,18 @@ describe('Milestone 6 UI', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Use Healing Spell' }));
     fireEvent.click(screen.getByRole('button', { name: 'Mage' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Select healing tile 0,0' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Select healing tile 0,0' }),
+    );
 
-    expect(screen.queryByRole('button', { name: 'Select healing tile 0,0' })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Select healing tile 0,0' }),
+    ).toBeNull();
     expect(screen.getByText('Move')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'East' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Move to tile 1,0' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Move to tile 1,0' }),
+    ).toBeInTheDocument();
   });
 
   it('offers exploration again after self-healing when the healing tile can explore', () => {
@@ -3216,9 +3290,13 @@ describe('Milestone 6 UI', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Use Healing Spell' }));
     fireEvent.click(screen.getByRole('button', { name: 'Mage' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Select healing tile 1,0' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Select healing tile 1,0' }),
+    );
 
-    expect(screen.queryByRole('button', { name: 'Select healing tile 1,0' })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Select healing tile 1,0' }),
+    ).toBeNull();
     expect(screen.getByText('Explore')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'North' })).toBeInTheDocument();
   });
@@ -3261,13 +3339,21 @@ describe('Milestone 6 UI', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Use Healing Spell' }));
     fireEvent.click(screen.getByRole('button', { name: 'Rogue' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Select healing tile 0,0' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Select healing tile 0,0' }),
+    );
 
-    expect(screen.queryByRole('button', { name: 'Select healing tile 0,0' })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Select healing tile 0,0' }),
+    ).toBeNull();
     expect(screen.getByText('Move')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'East' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Move to tile 1,0' })).toBeInTheDocument();
-    expect(screen.getByTestId('healing-target-position')).toHaveTextContent('0,0');
+    expect(
+      screen.getByRole('button', { name: 'Move to tile 1,0' }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('healing-target-position')).toHaveTextContent(
+      '0,0',
+    );
   });
 
   it('extends the visible board by an unexplored row and column when a player reaches the edge', () => {
@@ -3830,12 +3916,7 @@ describe('Milestone 6 UI', () => {
             : index === 1
               ? 'hero_rogue'
               : 'hero_valkyrie',
-        treasurePoints:
-          index === 0
-            ? 1.5
-            : index === 1
-              ? 3.5
-              : 3.5,
+        treasurePoints: index === 0 ? 1.5 : index === 1 ? 3.5 : 3.5,
       })),
     });
 
@@ -3849,7 +3930,9 @@ describe('Milestone 6 UI', () => {
     expect(screen.getByText('Dragon Slayer')).toBeInTheDocument();
     expect(screen.getAllByText('Mage (Human)')).toHaveLength(2);
     expect(
-      screen.getByText('Dragon treasure worth 1.5 points is included in the final score.'),
+      screen.getByText(
+        'Dragon treasure worth 1.5 points is included in the final score.',
+      ),
     ).toBeInTheDocument();
 
     const rankingRows = [
@@ -3858,11 +3941,17 @@ describe('Milestone 6 UI', () => {
       screen.getByTestId('end-screen-rank-player_human'),
     ];
 
-    expect(within(rankingRows[0]).getByText('Rogue (AI 1)')).toBeInTheDocument();
+    expect(
+      within(rankingRows[0]).getByText('Rogue (AI 1)'),
+    ).toBeInTheDocument();
     expect(within(rankingRows[0]).getByText('3.5 pts')).toBeInTheDocument();
-    expect(within(rankingRows[1]).getByText('Valkyrie (AI 2)')).toBeInTheDocument();
+    expect(
+      within(rankingRows[1]).getByText('Valkyrie (AI 2)'),
+    ).toBeInTheDocument();
     expect(within(rankingRows[1]).getByText('3.5 pts')).toBeInTheDocument();
-    expect(within(rankingRows[2]).getByText('Mage (Human)')).toBeInTheDocument();
+    expect(
+      within(rankingRows[2]).getByText('Mage (Human)'),
+    ).toBeInTheDocument();
     expect(within(rankingRows[2]).getByText('1.5 pts')).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'New Game' }),
@@ -4168,12 +4257,12 @@ describe('Milestone 6 UI', () => {
     expect(thiefCard).toContainElement(
       screen.getByTestId('player-card-right-player_ai_1'),
     );
-    expect(screen.getByTestId('player-card-right-player_human')).toContainElement(
-      within(mageCard).getByText('0 pts'),
-    );
-    expect(screen.getByTestId('player-card-right-player_ai_1')).toContainElement(
-      within(thiefCard).getByText('0 pts'),
-    );
+    expect(
+      screen.getByTestId('player-card-right-player_human'),
+    ).toContainElement(within(mageCard).getByText('0 pts'));
+    expect(
+      screen.getByTestId('player-card-right-player_ai_1'),
+    ).toContainElement(within(thiefCard).getByText('0 pts'));
     expect(screen.getByText('Mage')).toBeInTheDocument();
     expect(screen.getByText('Rogue')).toBeInTheDocument();
     expect(screen.getByText('ATK +2')).toHaveAttribute(
@@ -4184,7 +4273,9 @@ describe('Milestone 6 UI', () => {
       'title',
       'Mage: fireball spells are not consumed',
     );
-    expect(screen.getByRole('button', { name: 'Mage portrait actions' })).toHaveAttribute(
+    expect(
+      screen.getByRole('button', { name: 'Mage portrait actions' }),
+    ).toHaveAttribute(
       'title',
       'Right-click to center the map on this hero. Left-click to show the hero description.',
     );
@@ -4321,7 +4412,9 @@ describe('Milestone 6 UI', () => {
     rerender(<BoardView state={keyState} />);
 
     expect(
-      screen.getByRole('img', { name: 'Key' }).closest('[data-asset-id="item_key"]'),
+      screen
+        .getByRole('img', { name: 'Key' })
+        .closest('[data-asset-id="item_key"]'),
     ).toHaveAttribute('title', 'Key: Opens a treasure chest');
   });
 
@@ -4420,7 +4513,8 @@ function setupBoardGeometry(board: HTMLElement, transformLayer: HTMLElement) {
   const minY = Math.min(...positions.map((position) => position.boardY));
   const maxX = Math.max(...positions.map((position) => position.boardX));
   const maxY = Math.max(...positions.map((position) => position.boardY));
-  const contentWidth = (maxX - minX + 1) * cellSizePx + (maxX - minX) * cellGapPx;
+  const contentWidth =
+    (maxX - minX + 1) * cellSizePx + (maxX - minX) * cellGapPx;
   const contentHeight =
     (maxY - minY + 1) * cellSizePx + (maxY - minY) * cellGapPx;
 
@@ -4531,9 +4625,7 @@ function parseTransform(style: string): {
   translateX: number;
   translateY: number;
 } {
-  const translateMatch = style.match(
-    /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/,
-  );
+  const translateMatch = style.match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)/);
   const scaleMatch = style.match(/scale\(([-\d.]+)\)/);
 
   return {
@@ -4560,9 +4652,13 @@ function createRect(left: number, top: number, width: number, height: number) {
 function HealingSpellHarness({ initialState }: { initialState: GameState }) {
   const [state, setState] = useState(initialState);
   const [healingSpellSelection, setHealingSpellSelection] = useState<
-    { mode: 'idle' } | { mode: 'select_target' } | { mode: 'select_tile'; targetPlayerId: string }
+    | { mode: 'idle' }
+    | { mode: 'select_target' }
+    | { mode: 'select_tile'; targetPlayerId: string }
   >({ mode: 'idle' });
-  const targetPlayer = state.players.find((player) => player.id === 'player_ai_1');
+  const targetPlayer = state.players.find(
+    (player) => player.id === 'player_ai_1',
+  );
   const selectableHealingPositions =
     healingSpellSelection.mode === 'select_tile'
       ? getDiscoveredHealingPositions(state)
@@ -4631,7 +4727,9 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
         selectableHealingPositions={selectableHealingPositions}
       />
       <div data-testid="healing-target-hp">{targetPlayer?.hp}</div>
-      <div data-testid="healing-target-curse">{String(targetPlayer?.isCursed)}</div>
+      <div data-testid="healing-target-curse">
+        {String(targetPlayer?.isCursed)}
+      </div>
       <div data-testid="healing-target-position">
         {targetPlayer?.position.boardX},{targetPlayer?.position.boardY}
       </div>
@@ -4719,7 +4817,9 @@ function RoomAutoResolveHarness({ initialState }: { initialState: GameState }) {
       state.phase === 'resolve_room_token' &&
       state.players[state.activePlayerIndex].kind === 'human'
     ) {
-      setState((current) => applyGameAction(current, { type: 'resolveRoomToken' }));
+      setState((current) =>
+        applyGameAction(current, { type: 'resolveRoomToken' }),
+      );
     }
   }, [state]);
 

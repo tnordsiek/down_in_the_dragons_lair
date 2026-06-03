@@ -79,7 +79,9 @@ export function chooseSeeressRoomToken(
     state.phase !== 'resolve_room_token_seeress_choice' ||
     !state.pendingSeeressRoomChoice
   ) {
-    throw new Error('Seeress room choice can only resolve during pending choice');
+    throw new Error(
+      'Seeress room choice can only resolve during pending choice',
+    );
   }
 
   const activePlayer = state.players[state.activePlayerIndex];
@@ -153,36 +155,44 @@ function completeRoomTokenResolution(
       pendingSeeressRoomChoice: undefined,
     };
 
-    return appendGameEvent({
+    return appendGameEvent(
+      {
+        ...state,
+        phase:
+          state.remainingSteps > 0
+            ? 'await_move'
+            : getZeroStepFollowUpPhase(zeroStepFollowUpState),
+        board,
+        tokenBag: remainingTokenBag,
+        pendingSeeressRoomChoice: undefined,
+      },
+      roomEvent,
+    );
+  }
+
+  const thiefMayIgnoreMonster = hasActiveHeroAbility(
+    activePlayer,
+    'hero_rogue',
+  );
+  const combat = createCombatContext(state, tile, token);
+
+  return appendGameEvent(
+    {
       ...state,
-      phase:
-        state.remainingSteps > 0
-          ? 'await_move'
-          : getZeroStepFollowUpPhase(zeroStepFollowUpState),
+      phase: thiefMayIgnoreMonster ? 'optional_monster_combat' : 'combat',
       board,
       tokenBag: remainingTokenBag,
       pendingSeeressRoomChoice: undefined,
-    }, roomEvent);
-  }
-
-  const thiefMayIgnoreMonster = hasActiveHeroAbility(activePlayer, 'hero_rogue');
-  const combat = createCombatContext(state, tile, token);
-
-  return appendGameEvent({
-    ...state,
-    phase: thiefMayIgnoreMonster ? 'optional_monster_combat' : 'combat',
-    board,
-    tokenBag: remainingTokenBag,
-    pendingSeeressRoomChoice: undefined,
-    combat:
-      thiefMayIgnoreMonster
-        ? getActiveTileMonsterCombat({
+      combat: thiefMayIgnoreMonster
+        ? (getActiveTileMonsterCombat({
             ...state,
             board,
             tokenBag: remainingTokenBag,
-          }) ?? combat
+          }) ?? combat)
         : combat,
-  }, roomEvent);
+    },
+    roomEvent,
+  );
 }
 
 function drawRoomToken(

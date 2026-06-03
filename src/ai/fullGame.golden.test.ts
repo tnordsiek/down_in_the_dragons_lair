@@ -29,14 +29,38 @@ type GameConfig = {
 // widening the branchy engine surface captured in the fingerprint.
 const CONFIGS: GameConfig[] = [
   { seed: 'golden-mage', humanHeroId: 'hero_mage', aiCount: 1, poolScale: 0.5 },
-  { seed: 'golden-valkyrie', humanHeroId: 'hero_valkyrie', aiCount: 2, poolScale: 0.5 },
-  { seed: 'golden-witch', humanHeroId: 'hero_witch', aiCount: 3, poolScale: 0.5 },
-  { seed: 'golden-rogue', humanHeroId: 'hero_rogue', aiCount: 4, poolScale: 0.5 },
+  {
+    seed: 'golden-valkyrie',
+    humanHeroId: 'hero_valkyrie',
+    aiCount: 2,
+    poolScale: 0.5,
+  },
+  {
+    seed: 'golden-witch',
+    humanHeroId: 'hero_witch',
+    aiCount: 3,
+    poolScale: 0.5,
+  },
+  {
+    seed: 'golden-rogue',
+    humanHeroId: 'hero_rogue',
+    aiCount: 4,
+    poolScale: 0.5,
+  },
   { seed: 'golden-blade', humanHeroId: 'hero_blade', aiCount: 2, poolScale: 1 },
-  { seed: 'golden-seeress', humanHeroId: 'hero_seeress', aiCount: 1, poolScale: 1 },
+  {
+    seed: 'golden-seeress',
+    humanHeroId: 'hero_seeress',
+    aiCount: 1,
+    poolScale: 1,
+  },
 ];
 
-function fingerprint(config: GameConfig, state: GameState, actionCount: number) {
+function fingerprint(
+  config: GameConfig,
+  state: GameState,
+  actionCount: number,
+) {
   return {
     seed: config.seed,
     humanHeroId: config.humanHeroId,
@@ -66,12 +90,19 @@ function fingerprint(config: GameConfig, state: GameState, actionCount: number) 
 }
 
 describe('golden bounded autoplay', () => {
-  let states: { config: GameConfig; state: GameState; actionCount: number }[] = [];
+  let states: { config: GameConfig; state: GameState; actionCount: number }[] =
+    [];
 
   beforeAll(() => {
     states = CONFIGS.map((config) => {
-      const trace = traceAutoplay(seededGame(config), { maxActions: STEP_BOUND });
-      return { config, state: trace.finalState, actionCount: trace.actionCount };
+      const trace = traceAutoplay(seededGame(config), {
+        maxActions: STEP_BOUND,
+      });
+      return {
+        config,
+        state: trace.finalState,
+        actionCount: trace.actionCount,
+      };
     });
   }, 120000);
 

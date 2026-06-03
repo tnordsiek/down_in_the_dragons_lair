@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 
 import { createNewGame } from '../../engine/setup/createGame';
 import { useSetupStore } from '../../state/setupStore';
@@ -34,7 +40,9 @@ describe('FeedbackModal', () => {
     expect(
       screen.getByRole('heading', { name: 'Feedback & Bug Report' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: 'Your message' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('textbox', { name: 'Your message' }),
+    ).toBeInTheDocument();
   });
 
   it('hides the diagnostics opt-in when no game is running', () => {
@@ -61,7 +69,9 @@ describe('FeedbackModal', () => {
 
     expect(screen.getByRole('checkbox')).toBeInTheDocument();
     expect(screen.getByText(/entirely voluntary/i)).toBeInTheDocument();
-    expect(screen.getByText(/No personal data is collected/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/No personal data is collected/i),
+    ).toBeInTheDocument();
   });
 
   it('builds a mailto link from the typed message', () => {

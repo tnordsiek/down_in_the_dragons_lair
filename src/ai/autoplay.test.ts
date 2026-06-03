@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { createNewGame } from '../engine/setup/createGame';
-import { createTestPlayer, createTestState, createTestTile } from '../test/gameStateFactory';
+import {
+  createTestPlayer,
+  createTestState,
+  createTestTile,
+} from '../test/gameStateFactory';
 import { playAiControlledTurn, playAiGameToEnd } from './autoplay';
 
 describe('AI autoplay control flow', () => {
@@ -43,7 +47,9 @@ describe('AI autoplay control flow', () => {
       ],
     });
 
-    expect(() => playAiControlledTurn(state, 0)).toThrow(/AI turn exceeded 0 actions/);
+    expect(() => playAiControlledTurn(state, 0)).toThrow(
+      /AI turn exceeded 0 actions/,
+    );
   });
 
   it('returns immediately for a finished game', () => {

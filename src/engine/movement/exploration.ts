@@ -42,32 +42,35 @@ export function drawPendingTileForExploration(
     );
 
     if (legalRotations.length > 0) {
-      return appendGameEvent({
-        ...state,
-        phase: 'choose_pending_tile_rotation',
-        tileStack: remainingStack,
-        pendingTile: {
-          origin,
-          target,
-          direction,
-          blueprintId,
-          previewRotation: 0,
-          legalRotations,
-          skippedBlueprintIds,
+      return appendGameEvent(
+        {
+          ...state,
+          phase: 'choose_pending_tile_rotation',
+          tileStack: remainingStack,
+          pendingTile: {
+            origin,
+            target,
+            direction,
+            blueprintId,
+            previewRotation: 0,
+            legalRotations,
+            skippedBlueprintIds,
+          },
         },
-      }, {
-        type: 'tile_drawn',
-        message: `Drew ${blueprintId} for exploration ${direction}`,
-        ...createPlayerEventFields(activePlayer, state.players),
-        exploration: {
-          origin,
-          target,
-          direction,
-          blueprintId,
-          skippedBlueprintIds,
-          legalRotations,
+        {
+          type: 'tile_drawn',
+          message: `Drew ${blueprintId} for exploration ${direction}`,
+          ...createPlayerEventFields(activePlayer, state.players),
+          exploration: {
+            origin,
+            target,
+            direction,
+            blueprintId,
+            skippedBlueprintIds,
+            legalRotations,
+          },
         },
-      });
+      );
     }
 
     skippedBlueprintIds.push(blueprintId);
@@ -137,38 +140,41 @@ export function placePendingTile(
     rng: rng.snapshot(),
   };
 
-  return appendGameEvent({
-    ...state,
-    phase:
-      blueprint.category === 'room'
-        ? 'resolve_room_token'
-        : remainingSteps > 0
-          ? 'await_move'
-          : getZeroStepFollowUpPhase(zeroStepFollowUpState),
-    players,
-    board: [...state.board, placedTile],
-    tileStack: [...returnedSkippedTiles, ...state.tileStack],
-    pendingTile: undefined,
-    lastMoveFrom: pendingTile.origin,
-    remainingSteps,
-    rng: rng.snapshot(),
-  }, {
-    type: 'tile_placed',
-    message: `Placed ${pendingTile.blueprintId} at ${pendingTile.target.boardX},${pendingTile.target.boardY}`,
-    ...createPlayerEventFields(
-      state.players[state.activePlayerIndex],
-      state.players,
-    ),
-    exploration: {
-      origin: pendingTile.origin,
-      target: pendingTile.target,
-      direction: pendingTile.direction,
-      blueprintId: pendingTile.blueprintId,
-      skippedBlueprintIds: pendingTile.skippedBlueprintIds,
-      legalRotations: pendingTile.legalRotations,
-      placedRotation: rotation,
+  return appendGameEvent(
+    {
+      ...state,
+      phase:
+        blueprint.category === 'room'
+          ? 'resolve_room_token'
+          : remainingSteps > 0
+            ? 'await_move'
+            : getZeroStepFollowUpPhase(zeroStepFollowUpState),
+      players,
+      board: [...state.board, placedTile],
+      tileStack: [...returnedSkippedTiles, ...state.tileStack],
+      pendingTile: undefined,
+      lastMoveFrom: pendingTile.origin,
+      remainingSteps,
+      rng: rng.snapshot(),
     },
-  });
+    {
+      type: 'tile_placed',
+      message: `Placed ${pendingTile.blueprintId} at ${pendingTile.target.boardX},${pendingTile.target.boardY}`,
+      ...createPlayerEventFields(
+        state.players[state.activePlayerIndex],
+        state.players,
+      ),
+      exploration: {
+        origin: pendingTile.origin,
+        target: pendingTile.target,
+        direction: pendingTile.direction,
+        blueprintId: pendingTile.blueprintId,
+        skippedBlueprintIds: pendingTile.skippedBlueprintIds,
+        legalRotations: pendingTile.legalRotations,
+        placedRotation: rotation,
+      },
+    },
+  );
 }
 
 export function hasPendingTileAtTarget(state: GameState): boolean {

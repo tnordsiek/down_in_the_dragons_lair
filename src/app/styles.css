@@ -24,8 +24,8 @@
     color: theme('colors.parchment.50');
     /* Layered cavern atmosphere via pure CSS: grain over a stone depth gradient. */
     background-color: theme('colors.obsidian.900');
-    background-image: theme('backgroundImage.noise-grain'),
-      theme('backgroundImage.stone-wall');
+    background-image:
+      theme('backgroundImage.noise-grain'), theme('backgroundImage.stone-wall');
     background-attachment: fixed;
   }
 

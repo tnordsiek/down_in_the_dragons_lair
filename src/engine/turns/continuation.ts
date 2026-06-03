@@ -16,9 +16,7 @@ export function getContinuationPhaseAfterAction(
   return getZeroStepFollowUpPhase(state);
 }
 
-export function getZeroStepFollowUpPhase(
-  state: GameState,
-): GameState['phase'] {
+export function getZeroStepFollowUpPhase(state: GameState): GameState['phase'] {
   return hasNonMovementFollowUpAction(state) ? 'await_move' : 'turn_end';
 }
 

@@ -97,7 +97,9 @@ describe('App', () => {
     expect(
       screen.getByText('May move through walls on discovered tiles.'),
     ).toBeInTheDocument();
-    expect(screen.getByText('Code powered by Codex & Claude')).toBeInTheDocument();
+    expect(
+      screen.getByText('Code powered by Codex & Claude'),
+    ).toBeInTheDocument();
     expect(
       screen.getByText('Graphics powered by Nano Banana'),
     ).toBeInTheDocument();
@@ -109,7 +111,12 @@ describe('App', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('img', { name: "Down in the Dragon's Lair" }),
-    ).toHaveClass('max-h-[18rem]', 'w-full', 'object-contain', 'lg:max-h-[30rem]');
+    ).toHaveClass(
+      'max-h-[18rem]',
+      'w-full',
+      'object-contain',
+      'lg:max-h-[30rem]',
+    );
     expect(screen.getByRole('img', { name: 'Mage' })).toBeInTheDocument();
     expect(startHeader).toContainElement(
       screen.getByRole('button', { name: 'Open settings menu' }),
@@ -118,16 +125,26 @@ describe('App', () => {
     const startLayout = startHeader?.nextElementSibling;
     const leftColumn = startLayout?.firstElementChild;
     const rightColumn = startLayout?.children[1] as Element | undefined;
-    const gameSetupHeading = screen.getByRole('heading', { name: 'Game Setup' });
+    const gameSetupHeading = screen.getByRole('heading', {
+      name: 'Game Setup',
+    });
     const heroPreviewHeading = screen.getByText('Chosen Hero');
 
     expect(startLayout).toHaveClass('md:grid-cols-[1fr_0.95fr]');
     expect(rightColumn).toContainElement(heroPreviewHeading);
     expect(rightColumn).toContainElement(gameSetupHeading);
     expect(leftColumn).not.toContainElement(heroPreviewHeading);
-    expect(heroPreviewHeading).toHaveClass('text-lg', 'font-semibold', 'text-amber-100');
-    expect(screen.getByRole('heading', { name: 'Mage' })).toHaveClass('text-lg');
-    const portraitContainer = screen.getByRole('img', { name: 'Mage' }).parentElement;
+    expect(heroPreviewHeading).toHaveClass(
+      'text-lg',
+      'font-semibold',
+      'text-amber-100',
+    );
+    expect(screen.getByRole('heading', { name: 'Mage' })).toHaveClass(
+      'text-lg',
+    );
+    const portraitContainer = screen.getByRole('img', {
+      name: 'Mage',
+    }).parentElement;
     const heroNameHeading = screen.getByRole('heading', { name: 'Mage' });
     const heroInfoBlock = heroNameHeading.parentElement;
 
@@ -141,10 +158,16 @@ describe('App', () => {
     expect(screen.getByRole('img', { name: 'Mage' })).toHaveClass('max-h-40');
     expect(heroInfoBlock).not.toContainElement(heroPreviewHeading);
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Open settings menu' }));
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Open settings menu' }),
+      );
     });
-    expect(screen.getByRole('button', { name: 'Music on' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Sound on' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Music on' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Sound on' }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Movement Points on' }),
     ).toBeInTheDocument();
@@ -155,11 +178,13 @@ describe('App', () => {
       screen.getByRole('button', { name: 'Privacy Policy' }),
     ).toBeInTheDocument();
 
-    const creditsContainer = screen
-      .getByText('Concept and AI Direction by fnord GAMES (2026)')
-      .parentElement;
+    const creditsContainer = screen.getByText(
+      'Concept and AI Direction by fnord GAMES (2026)',
+    ).parentElement;
 
-    expect(creditsContainer).toContainElement(screen.getByText('Code powered by Codex & Claude'));
+    expect(creditsContainer).toContainElement(
+      screen.getByText('Code powered by Codex & Claude'),
+    );
     expect(creditsContainer?.parentElement).toContainElement(
       screen.getByRole('button', { name: 'Imprint' }),
     );
@@ -236,9 +261,7 @@ describe('App', () => {
       screen.getByText('May swap position with another player at turn start.'),
     ).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Mage' })).toBeNull();
-    expect(
-      screen.queryByText('Fireball spells are not consumed.'),
-    ).toBeNull();
+    expect(screen.queryByText('Fireball spells are not consumed.')).toBeNull();
   });
 
   it('updates the hero preview when seeress is selected', () => {
@@ -250,7 +273,9 @@ describe('App', () => {
       });
     });
 
-    expect(screen.getByRole('heading', { name: 'Seeress' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Seeress' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Seeress' })).toBeInTheDocument();
     expect(
       screen.getByText('Draws two room tokens and chooses one.'),
@@ -290,12 +315,20 @@ describe('App', () => {
     ).toBeInTheDocument();
 
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Open settings menu' }));
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Open settings menu' }),
+      );
     });
 
-    expect(screen.getByRole('button', { name: 'New Game' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Music on' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Sound on' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'New Game' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Music on' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Sound on' }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Movement Points on' }),
     ).toBeInTheDocument();
@@ -309,9 +342,7 @@ describe('App', () => {
     });
 
     expect(screen.getByText('Opponents (0/1)')).toBeInTheDocument();
-    expect(
-      screen.queryByTestId('opponent-checkbox-hero_mage'),
-    ).toBeNull();
+    expect(screen.queryByTestId('opponent-checkbox-hero_mage')).toBeNull();
 
     const rogueCheckbox = screen.getByTestId(
       'opponent-checkbox-hero_rogue',
@@ -353,7 +384,9 @@ describe('App', () => {
 
     expect(screen.getByLabelText('Dungeon board')).toBeInTheDocument();
     expect(
-      useSetupStore.getState().gameState?.players.map((player) => player.heroId),
+      useSetupStore
+        .getState()
+        .gameState?.players.map((player) => player.heroId),
     ).toEqual(['hero_mage', 'hero_rogue', expect.any(String)]);
   });
 
@@ -373,15 +406,25 @@ describe('App', () => {
     }).parentElement;
     const resumeButton = screen.getByRole('button', { name: 'Resume Game' });
     const discardButton = screen.getByRole('button', { name: 'Discard Save' });
-    const savedGamePanel = screen.getByText('Saved game available').parentElement;
+    const savedGamePanel = screen.getByText(
+      'Saved game available',
+    ).parentElement;
     const savedGameHeading = screen.getByText('Saved game available');
 
     expect(leftColumn).toContainElement(resumeButton);
     expect(leftColumn).toContainElement(discardButton);
     expect(gameSetupPanel).not.toContainElement(resumeButton);
     expect(gameSetupPanel).not.toContainElement(discardButton);
-    expect(savedGamePanel).toHaveClass('border-stone-700', 'bg-stone-900/80', 'p-4');
-    expect(savedGameHeading).toHaveClass('text-lg', 'font-semibold', 'text-amber-100');
+    expect(savedGamePanel).toHaveClass(
+      'border-stone-700',
+      'bg-stone-900/80',
+      'p-4',
+    );
+    expect(savedGameHeading).toHaveClass(
+      'text-lg',
+      'font-semibold',
+      'text-amber-100',
+    );
   });
 
   it('lazy-loads and closes the imprint layer from the footer', async () => {
@@ -573,7 +616,9 @@ describe('App', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Start Game' }));
     });
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Open settings menu' }));
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Open settings menu' }),
+      );
     });
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'New Game' }));
@@ -590,7 +635,9 @@ describe('App', () => {
     expect(screen.getByLabelText('Dungeon board')).toBeInTheDocument();
 
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Open settings menu' }));
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Open settings menu' }),
+      );
     });
 
     act(() => {
@@ -656,7 +703,9 @@ describe('App', () => {
     render(<App />);
 
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Open settings menu' }));
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Open settings menu' }),
+      );
     });
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Music on' }));
@@ -665,11 +714,17 @@ describe('App', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Sound on' }));
     });
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Movement Points on' }));
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Movement Points on' }),
+      );
     });
 
-    expect(screen.getByRole('button', { name: 'Music off' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Sound off' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Music off' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Sound off' }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Movement Points off' }),
     ).toBeInTheDocument();
@@ -679,12 +734,20 @@ describe('App', () => {
     });
 
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Open settings menu' }));
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Open settings menu' }),
+      );
     });
 
-    expect(screen.getByRole('button', { name: 'New Game' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Music off' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Sound off' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'New Game' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Music off' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Sound off' }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Movement Points off' }),
     ).toBeInTheDocument();
@@ -694,7 +757,9 @@ describe('App', () => {
     render(<App />);
 
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Show Advanced Setup' }));
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Show Advanced Setup' }),
+      );
     });
     act(() => {
       fireEvent.change(screen.getByLabelText('Token and Tile Factor'), {

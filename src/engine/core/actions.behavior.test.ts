@@ -29,7 +29,11 @@ describe('dispatcher behavior: openChest', () => {
           heroId: 'hero_blade',
           inventory: { weapons: [], spells: [], keyCount: 1 },
         }),
-        createTestPlayer({ id: 'player_ai_1', kind: 'ai', heroId: 'hero_rogue' }),
+        createTestPlayer({
+          id: 'player_ai_1',
+          kind: 'ai',
+          heroId: 'hero_rogue',
+        }),
       ],
       board: [
         createTestTile({
@@ -71,7 +75,11 @@ describe('dispatcher behavior: openChest', () => {
           heroId: 'hero_blade',
           inventory: { weapons: [], spells: [], keyCount: 0 },
         }),
-        createTestPlayer({ id: 'player_ai_1', kind: 'ai', heroId: 'hero_rogue' }),
+        createTestPlayer({
+          id: 'player_ai_1',
+          kind: 'ai',
+          heroId: 'hero_rogue',
+        }),
       ],
     });
 
@@ -79,7 +87,9 @@ describe('dispatcher behavior: openChest', () => {
   });
 
   it('throws when there is no chest on the active tile', () => {
-    const state = chestState({ board: [createTestTile({ boardX: 0, boardY: 0 })] });
+    const state = chestState({
+      board: [createTestTile({ boardX: 0, boardY: 0 })],
+    });
 
     expect(() => applyGameAction(state, { type: 'openChest' })).toThrow(
       /treasure chest/i,
@@ -151,7 +161,11 @@ describe('dispatcher behavior: swapWitchPosition', () => {
   it('throws when the active hero is not an uncursed witch', () => {
     const cursedWitch = witchState({
       players: [
-        createTestPlayer({ id: 'player_human', heroId: 'hero_witch', isCursed: true }),
+        createTestPlayer({
+          id: 'player_human',
+          heroId: 'hero_witch',
+          isCursed: true,
+        }),
         createTestPlayer({
           id: 'player_ai_1',
           kind: 'ai',
@@ -201,7 +215,11 @@ describe('dispatcher behavior: healing on endTurn', () => {
       ],
       board: [
         // start_cross_healing grants healing
-        createTestTile({ boardX: 0, boardY: 0, blueprintId: 'start_cross_healing' }),
+        createTestTile({
+          boardX: 0,
+          boardY: 0,
+          blueprintId: 'start_cross_healing',
+        }),
         createTestTile({ tileInstanceId: 'tile-far', boardX: 5, boardY: 5 }),
       ],
     });
@@ -426,7 +444,9 @@ describe('dispatcher behavior: defeating the dragon', () => {
     expect(next.victory?.winnerPlayerIds).toContain('player_human');
     // The defeater scored the dragon hoard and so is the unique winner.
     expect(next.players[0].treasurePoints).toBeGreaterThan(0);
-    expect(next.board.find((tile) => tile.boardX === 1)?.roomToken).toBeUndefined();
+    expect(
+      next.board.find((tile) => tile.boardX === 1)?.roomToken,
+    ).toBeUndefined();
     expect(() => assertStateInvariants(next)).not.toThrow();
   });
 
@@ -462,7 +482,11 @@ describe('dispatcher behavior: combat retreat branches', () => {
         }),
       ],
       board: [
-        createTestTile({ boardX: 0, boardY: 0, blueprintId: 'start_cross_healing' }),
+        createTestTile({
+          boardX: 0,
+          boardY: 0,
+          blueprintId: 'start_cross_healing',
+        }),
         createTestTile({
           tileInstanceId: 'tile-monster',
           boardX: 1,
@@ -546,7 +570,10 @@ describe('dispatcher behavior: combat retreat branches', () => {
       },
     });
 
-    const next = applyGameAction(state, { type: 'resolveCombat', dice: [1, 1] });
+    const next = applyGameAction(state, {
+      type: 'resolveCombat',
+      dice: [1, 1],
+    });
 
     // Fallback BFS skips the monster tile at enteredFrom and lands on the safe tile.
     expect(next.players[0].position).toEqual(createPosition(2, 0));

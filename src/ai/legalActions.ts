@@ -1,4 +1,9 @@
-import type { BoardPosition, GameAction, GameState, Player } from '../engine/core/types';
+import type {
+  BoardPosition,
+  GameAction,
+  GameState,
+  Player,
+} from '../engine/core/types';
 import { getCombatFlameSpellChoices } from '../engine/combat/combat';
 import {
   getLegalExplorationDirections,
@@ -220,5 +225,8 @@ export function getActionTargetPosition(
     return action.target;
   }
 
-  return adjacentPosition(state.players[state.activePlayerIndex].position, action.direction);
+  return adjacentPosition(
+    state.players[state.activePlayerIndex].position,
+    action.direction,
+  );
 }
