@@ -275,6 +275,8 @@ export interface VictoryState {
 
 export type TurnContinuationReason = 'blade_on_six';
 
+export type AiDifficulty = 'easy' | 'normal' | 'hard';
+
 export interface SerializedRngState {
   seed: string;
   state: number;
@@ -298,6 +300,7 @@ export interface GameState {
   eventLog: GameEvent[];
   victory?: VictoryState;
   rng: SerializedRngState;
+  difficulty: AiDifficulty;
 }
 
 export type StartGameAction = {
@@ -307,6 +310,7 @@ export type StartGameAction = {
   seed: string;
   poolScale?: number;
   selectedAiHeroIds?: HeroId[];
+  difficulty?: AiDifficulty;
 };
 
 export type MovePlayerAction = {

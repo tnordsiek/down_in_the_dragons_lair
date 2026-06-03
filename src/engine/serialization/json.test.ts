@@ -46,6 +46,7 @@ describe('game state serialization foundation', () => {
         },
       ],
       rng: { seed: 'test-seed', state: 123 },
+      difficulty: 'normal',
     };
 
     expect(deserializeGameState(serializeGameState(state))).toEqual(state);

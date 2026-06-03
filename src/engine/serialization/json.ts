@@ -77,6 +77,8 @@ export function deserializeGameState(serializedState: string): GameState {
 
   validateGameState(parsed);
 
+  parsed.difficulty ??= 'normal';
+
   return parsed as GameState;
 }
 

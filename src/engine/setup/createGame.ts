@@ -4,6 +4,7 @@ import { getScaledTileCount, tilePoolCounts } from '../../data/tiles';
 import { createTokenBag } from '../../data/tokens';
 import { createSeededRng, type SeededRng } from '../../utils/rng';
 import type {
+  AiDifficulty,
   GameEvent,
   GameEventStartPlayerDetails,
   GameState,
@@ -19,6 +20,7 @@ export type CreateGameOptions = {
   seed: string;
   poolScale?: number;
   selectedAiHeroIds?: HeroId[];
+  difficulty?: AiDifficulty;
 };
 
 export function createNewGame(options: CreateGameOptions): GameState {
@@ -64,6 +66,7 @@ export function createNewGame(options: CreateGameOptions): GameState {
       startPlayerRoll.details,
     ),
     rng: rng.snapshot(),
+    difficulty: options.difficulty ?? 'normal',
   };
 }
 

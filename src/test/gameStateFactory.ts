@@ -95,5 +95,6 @@ export function createTestState(overrides: TestStateOverrides = {}): GameState {
     eventLog: overrides.eventLog ?? [],
     victory: overrides.victory,
     rng: overrides.rng ?? { seed: 'test-seed', state: 1 },
+    difficulty: overrides.difficulty ?? 'normal',
   };
 }

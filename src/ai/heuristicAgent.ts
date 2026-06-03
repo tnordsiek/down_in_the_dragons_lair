@@ -7,6 +7,7 @@ import type {
   Player,
   Rotation,
 } from '../engine/core/types';
+import { restoreSeededRng } from '../utils/rng';
 import {
   calculateCombatTotal,
   getAutomaticFlameSpellCount,
@@ -47,6 +48,14 @@ export function chooseHeuristicAiAction(
 ): GameAction {
   if (legalActions.length === 0) {
     throw new Error('AI has no legal actions');
+  }
+
+  if (config.mistakeRate > 0) {
+    const rng = restoreSeededRng(state.rng);
+
+    if (rng.next() < config.mistakeRate) {
+      return legalActions[rng.nextInt(legalActions.length)];
+    }
   }
 
   const activePlayer = state.players[state.activePlayerIndex];

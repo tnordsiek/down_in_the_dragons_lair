@@ -41,6 +41,7 @@ export function applyGameAction(
       seed: action.seed,
       poolScale: action.poolScale,
       selectedAiHeroIds: action.selectedAiHeroIds,
+      difficulty: action.difficulty,
     });
   }
 
