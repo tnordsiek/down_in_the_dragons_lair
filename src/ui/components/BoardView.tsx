@@ -948,15 +948,17 @@ function RoomToken({ token }: { token: Token }) {
     token.kind === 'monster'
       ? getMonsterTileTooltip(token.id)
       : getChestTileTooltip();
+  const sizePx = 58;
 
   return (
     <div
-      className="absolute left-1/2 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-torch-500/40 bg-obsidian-950/80 font-mono text-torch-200 shadow-forged"
+      className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-torch-500/40 bg-obsidian-950/80 font-mono text-torch-200 shadow-forged"
       data-asset-id={assetId}
+      style={{ height: `${sizePx}px`, width: `${sizePx}px` }}
       title={tooltip}
     >
       {assetUrl ? (
-        <img className="h-8 w-8 object-contain" src={assetUrl} alt={label} />
+        <img className="h-full w-full object-contain" src={assetUrl} alt={label} />
       ) : (
         token.id
       )}
@@ -1045,15 +1047,17 @@ function LooseItemToken({ item }: { item: Item }) {
   const assetUrl = getAssetUrl(assetId);
   const label = itemLabel(item);
   const tooltip = getItemTileTooltip(item);
+  const sizePx = 32;
 
   return (
     <div
-      className="absolute right-1 top-1 z-[1] flex h-6 w-6 items-center justify-center rounded-sm border border-torch-500/30 bg-obsidian-950/85 shadow-forged"
+      className="absolute bottom-1 right-1 z-[1] flex items-center justify-center rounded-sm border border-torch-500/30 bg-obsidian-950/85 shadow-forged"
       data-asset-id={assetId}
+      style={{ height: `${sizePx}px`, width: `${sizePx}px` }}
       title={tooltip}
     >
       {assetUrl ? (
-        <img className="h-5 w-5 object-contain" src={assetUrl} alt={label} />
+        <img className="h-full w-full object-contain" src={assetUrl} alt={label} />
       ) : (
         <span className="text-[0.55rem] text-amber-100">{label}</span>
       )}

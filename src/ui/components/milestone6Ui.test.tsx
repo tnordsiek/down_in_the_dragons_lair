@@ -1577,11 +1577,41 @@ describe('Milestone 6 UI', () => {
       'src',
       '/assets/monsters/token_kitchen_rat.png',
     );
+    const monsterToken = screen
+      .getByRole('img', { name: 'Kitchen Rat' })
+      .closest('[data-asset-id="token_kitchen_rat"]');
+
+    expect(monsterToken).toHaveAttribute('title', 'Kitchen Rat: Strength 5');
+    expect(monsterToken).toHaveAttribute(
+      'style',
+      expect.stringContaining('height: 58px; width: 58px;'),
+    );
+  });
+
+  it('renders treasure chest room tokens at the same enlarged board size', () => {
+    const state = createUiState({
+      board: [
+        {
+          ...baseBoard()[0],
+          roomToken: { id: 'treasure_chest', kind: 'chest' },
+        },
+      ],
+    });
+
+    render(<BoardView state={state} />);
+
+    expect(screen.getByRole('img', { name: 'Treasure chest' })).toHaveAttribute(
+      'src',
+      '/assets/monsters/token_treasure_chest.png',
+    );
     expect(
       screen
-        .getByRole('img', { name: 'Kitchen Rat' })
-        .closest('[data-asset-id="token_kitchen_rat"]'),
-    ).toHaveAttribute('title', 'Kitchen Rat: Strength 5');
+        .getByRole('img', { name: 'Treasure chest' })
+        .closest('[data-asset-id="token_treasure_chest"]'),
+    ).toHaveAttribute(
+      'style',
+      expect.stringContaining('height: 58px; width: 58px;'),
+    );
   });
 
   it('renders the dungeon board as a transparent sparse surface with positioned cells', () => {
@@ -1741,15 +1771,22 @@ describe('Milestone 6 UI', () => {
 
     render(<BoardView state={state} />);
 
-    expect(screen.getByRole('img', { name: 'Sword +2' })).toHaveAttribute(
+    const itemImage = screen.getByRole('img', { name: 'Sword +2' });
+    const itemToken = itemImage.closest('[data-asset-id="item_weapon_2"]');
+
+    expect(itemImage).toHaveAttribute(
       'src',
       '/assets/items/item_sword_2.png',
     );
-    expect(
-      screen
-        .getByRole('img', { name: 'Sword +2' })
-        .closest('[data-asset-id="item_weapon_2"]'),
-    ).toHaveAttribute('title', 'Sword +2: Combat bonus +2');
+    expect(itemToken).toHaveAttribute('title', 'Sword +2: Combat bonus +2');
+    expect(itemToken).toHaveAttribute(
+      'class',
+      expect.stringContaining('bottom-1 right-1'),
+    );
+    expect(itemToken).toHaveAttribute(
+      'style',
+      expect.stringContaining('height: 32px; width: 32px;'),
+    );
   });
 
   it('highlights legal move targets on the board and moves by tile click', () => {
