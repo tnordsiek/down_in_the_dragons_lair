@@ -44,6 +44,9 @@ export function EndScreen({ state, onNewGame }: EndScreenProps) {
     .map((player, index) => ({ player, index }))
     .filter(({ player }) => winnerIds.has(player.id))
     .map(({ player, index }) => playerHeroLabel(player, index));
+  const humanWon = state.players.some(
+    (player) => player.kind === 'human' && winnerIds.has(player.id),
+  );
 
   return (
     <div
@@ -61,7 +64,7 @@ export function EndScreen({ state, onNewGame }: EndScreenProps) {
             id="end-screen-title"
             className="font-display text-3xl text-amber-100"
           >
-            Game Over
+            {humanWon ? 'Victory!' : 'Game Over'}
           </h2>
           <div className="mt-4 grid gap-3 text-sm text-parchment-100">
             <div className="rounded-carve border border-jade-600/60 bg-jade-900/40 p-3">

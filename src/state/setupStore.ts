@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { heroDisplayNames } from '../data/displayNames';
 import { applyGameAction } from '../engine/core/actions';
 import { createPlayerEventFields } from '../engine/core/events';
-import type { GameAction, GameState, HeroId } from '../engine/core/types';
+import type { AiDifficulty, GameAction, GameState, HeroId } from '../engine/core/types';
 import {
   getLegalExplorationDirections,
   getLegalKnownMoves,
@@ -33,6 +33,7 @@ let nextPendingAudioCueId = 0;
 type SetupState = {
   selectedHeroId: HeroId;
   aiCount: number;
+  difficulty: AiDifficulty;
   opponentSelectionMode: OpponentSelectionMode;
   selectedOpponentHeroIds: HeroId[];
   seed: string;
@@ -49,6 +50,7 @@ type SetupState = {
   pendingAudioCues: PendingAudioCue[];
   setSelectedHeroId: (heroId: HeroId) => void;
   setAiCount: (aiCount: number) => void;
+  setDifficulty: (difficulty: AiDifficulty) => void;
   setOpponentSelectionMode: (mode: OpponentSelectionMode) => void;
   toggleSelectedOpponentHeroId: (heroId: HeroId) => void;
   setSeed: (seed: string) => void;
@@ -78,6 +80,7 @@ const initialAudioSettings = loadAudioSettings();
 export const useSetupStore = create<SetupState>((set) => ({
   selectedHeroId: 'hero_mage',
   aiCount: 1,
+  difficulty: 'normal',
   opponentSelectionMode: 'random',
   selectedOpponentHeroIds: [],
   seed: generateRandomSeed(),
@@ -109,6 +112,7 @@ export const useSetupStore = create<SetupState>((set) => ({
         aiCount,
       ),
     })),
+  setDifficulty: (difficulty) => set({ difficulty }),
   setOpponentSelectionMode: (opponentSelectionMode) =>
     set({ opponentSelectionMode }),
   toggleSelectedOpponentHeroId: (heroId) =>
@@ -207,6 +211,7 @@ export const useSetupStore = create<SetupState>((set) => ({
         aiCount: state.aiCount,
         seed: state.seed,
         poolScale: state.poolScale,
+        difficulty: state.difficulty,
         selectedAiHeroIds:
           state.opponentSelectionMode === 'manual'
             ? state.selectedOpponentHeroIds

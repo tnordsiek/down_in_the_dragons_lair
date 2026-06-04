@@ -2,7 +2,7 @@ import { useId, useState } from 'react';
 
 import { getAssetUrl, useAsset } from '../../data/assets';
 import { heroDefinitions, heroIds } from '../../data/heroes';
-import type { HeroId } from '../../engine/core/types';
+import type { AiDifficulty, HeroId } from '../../engine/core/types';
 import { useSetupStore } from '../../state/setupStore';
 import { generateRandomSeed } from '../../utils/randomSeed';
 import { FooterMeta } from '../components/FooterMeta';
@@ -51,8 +51,10 @@ export function StartScreen() {
   const hasSavedGame = useSetupStore((state) => state.hasSavedGame);
   const lastError = useSetupStore((state) => state.lastError);
   const persistenceError = useSetupStore((state) => state.persistenceError);
+  const difficulty = useSetupStore((state) => state.difficulty);
   const setSelectedHeroId = useSetupStore((state) => state.setSelectedHeroId);
   const setAiCount = useSetupStore((state) => state.setAiCount);
+  const setDifficulty = useSetupStore((state) => state.setDifficulty);
   const setOpponentSelectionMode = useSetupStore(
     (state) => state.setOpponentSelectionMode,
   );
@@ -198,22 +200,39 @@ export function StartScreen() {
                   </p>
                 ) : null}
                 <div className="mt-3 grid gap-3">
-                  <label className="grid gap-2 text-sm text-parchment-200">
-                    Hero
-                    <select
-                      className="rounded-forged border border-obsidian-600 bg-obsidian-950 px-3 py-2 text-parchment-50 shadow-carve"
-                      value={heroId}
-                      onChange={(event) =>
-                        setSelectedHeroId(event.target.value as HeroId)
-                      }
-                    >
-                      {heroIds.map((id) => (
-                        <option key={id} value={id}>
-                          {heroDefinitions[id].displayName}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="grid gap-2 text-sm text-parchment-200">
+                      Hero
+                      <select
+                        className="rounded-forged border border-obsidian-600 bg-obsidian-950 px-3 py-2 text-parchment-50 shadow-carve"
+                        value={heroId}
+                        onChange={(event) =>
+                          setSelectedHeroId(event.target.value as HeroId)
+                        }
+                      >
+                        {heroIds.map((id) => (
+                          <option key={id} value={id}>
+                            {heroDefinitions[id].displayName}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="grid gap-2 text-sm text-parchment-200">
+                      Difficulty
+                      <select
+                        className="rounded-forged border border-obsidian-600 bg-obsidian-950 px-3 py-2 text-parchment-50 shadow-carve"
+                        value={difficulty}
+                        onChange={(event) =>
+                          setDifficulty(event.target.value as AiDifficulty)
+                        }
+                      >
+                        <option value="easy">Easy</option>
+                        <option value="normal">Normal</option>
+                        <option value="hard">Hard</option>
+                      </select>
+                    </label>
+                  </div>
 
                   <label className="grid gap-2 text-sm text-parchment-200">
                     AI Opponents
