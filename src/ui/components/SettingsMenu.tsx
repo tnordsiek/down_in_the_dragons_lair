@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 
+import type { AiDifficulty } from '../../engine/core/types';
 import { useSetupStore } from '../../state/setupStore';
 
 type SettingsMenuProps = {
@@ -20,6 +21,8 @@ export function SettingsMenu({ onNewGame, newGameTitle }: SettingsMenuProps) {
   const toggleMovementPointsEnabled = useSetupStore(
     (state) => state.toggleMovementPointsEnabled,
   );
+  const difficulty = useSetupStore((state) => state.difficulty);
+  const setDifficulty = useSetupStore((state) => state.setDifficulty);
 
   return (
     <div className="relative">
@@ -69,9 +72,48 @@ export function SettingsMenu({ onNewGame, newGameTitle }: SettingsMenuProps) {
               pressed={movementPointsEnabled}
               onClick={toggleMovementPointsEnabled}
             />
+            <DifficultyMenuRow difficulty={difficulty} onSelect={setDifficulty} />
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+const DIFFICULTY_OPTIONS: AiDifficulty[] = ['easy', 'normal', 'hard'];
+const DIFFICULTY_LABELS: Record<AiDifficulty, string> = {
+  easy: 'Easy',
+  normal: 'Normal',
+  hard: 'Hard',
+};
+
+function DifficultyMenuRow({
+  difficulty,
+  onSelect,
+}: {
+  difficulty: AiDifficulty;
+  onSelect: (d: AiDifficulty) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50">
+      <span className="flex-1">Difficulty</span>
+      <div className="flex gap-1">
+        {DIFFICULTY_OPTIONS.map((opt) => (
+          <button
+            key={opt}
+            aria-pressed={difficulty === opt}
+            className={`rounded px-2 py-0.5 text-xs transition-colors ${
+              difficulty === opt
+                ? 'bg-torch-600 text-parchment-50'
+                : 'text-parchment-300 hover:text-torch-200'
+            }`}
+            onClick={() => onSelect(opt)}
+            type="button"
+          >
+            {DIFFICULTY_LABELS[opt]}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
