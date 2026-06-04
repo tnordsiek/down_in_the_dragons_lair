@@ -306,7 +306,7 @@ export function GameScreen() {
 
   return (
     <main className="relative flex h-[100dvh] flex-col text-parchment-50">
-      <div className="grid min-h-0 w-full flex-1 gap-4 px-4 py-4 grid-rows-[minmax(25rem,55dvh)_minmax(0,1fr)] lg:grid-rows-none lg:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="grid min-h-0 w-full flex-1 gap-4 px-4 py-4 grid-rows-[minmax(min(25rem,calc(100dvh_-_12rem)),55dvh)_minmax(0,1fr)] lg:grid-rows-none lg:grid-cols-[minmax(0,1fr)_400px]">
         <div className="flex h-full min-h-0 min-w-0 flex-col gap-4">
           <header className="flex min-h-[72px] items-center gap-3 border-b border-obsidian-700 pb-2 shadow-[0_2px_0_rgba(196,132,42,0.2)] lg:grid lg:h-[120px] lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-4">
             <div className="flex items-center justify-start">
@@ -366,7 +366,7 @@ export function GameScreen() {
             selectableHealingPositions={selectableHealingPositions}
           />
         </div>
-        <aside className="grid min-h-0 content-start gap-4 overflow-y-auto lg:h-full lg:w-[400px] lg:justify-self-end lg:pr-1">
+        <aside className="grid min-h-0 content-start gap-4 overflow-y-auto overscroll-y-contain lg:h-full lg:w-[400px] lg:justify-self-end lg:pr-1">
           <ActionPanel
             healingSpellSelection={healingSpellSelection}
             onCancelHealingSpellSelection={handleCancelHealingSpellSelection}
