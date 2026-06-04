@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { useSetupStore } from '../../state/setupStore';
@@ -23,7 +23,9 @@ describe('TutorialVisual', () => {
   it('shows the current phase and remaining steps for the turn', () => {
     render(<TutorialVisual visual="turn-actions" />);
 
-    expect(screen.getByText('turn_start / 4')).toBeInTheDocument();
+    const header = screen.getByTestId('action-panel-phase-header');
+    expect(within(header).getByText('Start turn')).toBeInTheDocument();
+    expect(within(header).getByText('4 steps left')).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'End Turn' }),
     ).toBeInTheDocument();

@@ -61,6 +61,26 @@ type ActionPanelProps = {
   onSelectWitchSwapTarget: (targetPlayerId: string) => void;
 };
 
+const phaseHeaderLabels: Partial<Record<GameState['phase'], string>> = {
+  turn_start: 'Start turn',
+  turn_skip: 'Skip turn',
+  await_move: 'Choose action',
+  choose_pending_tile_rotation: 'Place tile',
+  resolve_room_token: 'Resolve room',
+  resolve_room_token_seeress_choice: 'Seeress choice',
+  optional_monster_combat: 'Monster encounter',
+  combat: 'Combat',
+  combat_blade_reroll: 'Blade reroll',
+  combat_valkyrie_reroll: 'Valkyrie reroll',
+  combat_witch_sacrifice: 'Witch sacrifice',
+  combat_flame_spells: 'Fireball choice',
+  combat_curse_target: 'Choose curse target',
+  loot_resolution: 'Resolve loot',
+  optional_post_combat: 'After combat',
+  turn_end: 'Turn ending',
+  game_over: 'Game over',
+};
+
 export function ActionPanel({
   state,
   onMove,
@@ -167,6 +187,8 @@ export function ActionPanel({
     hasActiveHeroAbility(activePlayer, 'hero_seeress') &&
     state.remainingSteps === 3;
   const canUseWitchSwap = legalActions.witchSwapTargets.length > 0;
+  const phaseHeaderLabel = getPhaseHeaderLabel(state.phase);
+  const remainingStepsLabel = getRemainingStepsLabel(state.remainingSteps);
 
   return (
     <section
@@ -178,9 +200,13 @@ export function ActionPanel({
           <h2 className="text-sm font-semibold uppercase tracking-wide text-torch-200">
             Actions
           </h2>
-          <p className="mt-1 font-mono text-sm text-amber-100">
-            {state.phase} / {state.remainingSteps}
-          </p>
+          <div
+            className="mt-1 text-sm leading-snug text-amber-100"
+            data-testid="action-panel-phase-header"
+          >
+            <p>{phaseHeaderLabel}</p>
+            <p>{remainingStepsLabel}</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={onCenterMap}>Center Map</Button>
@@ -711,6 +737,18 @@ export function ActionPanel({
       </div>
     </section>
   );
+}
+
+function getPhaseHeaderLabel(phase: GameState['phase']): string {
+  return phaseHeaderLabels[phase] ?? 'In progress';
+}
+
+function getRemainingStepsLabel(remainingSteps: number): string {
+  if (remainingSteps <= 0) {
+    return 'No steps left';
+  }
+
+  return `${remainingSteps} ${remainingSteps === 1 ? 'step' : 'steps'} left`;
 }
 
 function tokenChoiceLabel(token: Token): string {

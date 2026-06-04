@@ -117,6 +117,42 @@ describe('Milestone 6 UI', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders a player-facing phase header with the remaining steps', () => {
+    const state = createUiState({
+      phase: 'await_move',
+      remainingSteps: 3,
+    });
+
+    render(<ActionPanel state={state} {...noopActions} />);
+
+    const header = screen.getByTestId('action-panel-phase-header');
+    expect(within(header).getByText('Choose action')).toBeInTheDocument();
+    expect(within(header).getByText('3 steps left')).toBeInTheDocument();
+  });
+
+  it('renders a short seeress phase label and zero-step text in the header', () => {
+    const state = createUiState({
+      phase: 'resolve_room_token_seeress_choice',
+      remainingSteps: 0,
+      pendingSeeressRoomChoice: {
+        position: { boardX: 0, boardY: -1 },
+        drawnTokens: [
+          { id: 'kitchen_rat', kind: 'monster' },
+          { id: 'treasure_chest', kind: 'chest' },
+        ],
+      },
+    });
+
+    render(<ActionPanel state={state} {...noopActions} />);
+
+    const header = screen.getByTestId('action-panel-phase-header');
+    expect(within(header).getByText('Seeress choice')).toBeInTheDocument();
+    expect(within(header).getByText('No steps left')).toBeInTheDocument();
+    expect(
+      within(header).queryByText('resolve_room_token_seeress_choice'),
+    ).toBeNull();
+  });
+
   it('disables ending the turn while room resolution is pending', () => {
     const state = createUiState({
       phase: 'resolve_room_token',
@@ -3117,7 +3153,9 @@ describe('Milestone 6 UI', () => {
       expect(screen.getByTestId('room-phase')).toHaveTextContent('combat');
     });
 
-    expect(screen.getByText('Combat')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Resolve Combat' }),
+    ).toBeInTheDocument();
     expect(screen.getByTestId('room-monster')).toHaveTextContent('kitchen_rat');
   });
 
