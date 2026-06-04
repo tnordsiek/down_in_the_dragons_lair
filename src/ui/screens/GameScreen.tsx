@@ -31,6 +31,19 @@ export function GameScreen() {
   const dispatch = useSetupStore((store) => store.dispatch);
   const resetGame = useSetupStore((store) => store.resetGame);
 
+  // On mobile Chrome the document can accumulate a non-zero window.scrollY
+  // (e.g. after orientation changes or address-bar animations) even though
+  // GameScreen fills exactly 100dvh and should never need page-level scroll.
+  // Resetting on every viewport resize keeps the sidebar top always visible.
+  useEffect(() => {
+    const resetScroll = () => {
+      if (window.scrollY !== 0) window.scrollTo(0, 0);
+    };
+    resetScroll();
+    window.addEventListener('resize', resetScroll);
+    return () => window.removeEventListener('resize', resetScroll);
+  }, []);
+
   const headerLogo = useAsset('ui_logo_header');
   const headerLogoUrl = getAssetUrl(headerLogo.assetId);
   const latestCombatDice = getLatestCombatDice(state);
