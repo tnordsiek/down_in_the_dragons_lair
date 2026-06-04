@@ -1,335 +1,335 @@
-# KI-Entscheidungsfindung: Down in the Dragon's Lair
+# AI Decision-Making: Down in the Dragon's Lair
 
-Dieses Dokument beschreibt, wie die KI im Spiel Entscheidungen trifft. Die KI ist ein **heuristischer Agent** – sie folgt expliziten Regeln und Bewertungsformeln, kein Machine Learning.
+This document explains how the AI makes decisions in the game. The AI is a **heuristic agent** - it follows explicit rules and scoring formulas, not machine learning.
 
-Der gesamte KI-Code liegt in `src/ai/`.
-
----
-
-## Überblick: Was ist ein heuristischer Agent?
-
-Statt einem neuronalen Netz oder Lernalgorithmus verwendet die KI einen simplen Prozess:
-
-1. **Was darf ich tun?** – Alle erlaubten Aktionen für die aktuelle Spielphase werden ermittelt.
-2. **Was ist am besten?** – Jede Aktion bekommt eine Punktzahl nach festen Regeln.
-3. **Tue das Beste.** – Die Aktion mit der höchsten Punktzahl wird ausgeführt.
-
-Dieser Prozess ist vollständig deterministisch: Gleiche Spielsituation → gleiche Entscheidung, immer.
+All AI code lives in `src/ai/`.
 
 ---
 
-## Das Grundprinzip: Phasenbasierte Entscheidungen
+## Overview: What is a heuristic agent?
 
-Das Spiel läuft in **Phasen** ab. Je nach Phase stehen andere Aktionen zur Verfügung, und die KI verwendet unterschiedliche Entscheidungslogik:
+Instead of using a neural network or learning algorithm, the AI uses a simple process:
+
+1. **What am I allowed to do?** - Determine all legal actions for the current game phase.
+2. **What is best?** - Assign a score to each action based on fixed rules.
+3. **Do the best thing.** - Execute the action with the highest score.
+
+This process is fully deterministic: same game state -> same decision, every time.
+
+---
+
+## The core principle: phase-based decisions
+
+The game runs in **phases**. Depending on the current phase, different actions are available, and the AI uses different decision logic:
 
 ```mermaid
 flowchart TD
-    Start([KI ist am Zug]) --> ForceCheck{Erzwungene Aktion?}
-    ForceCheck -- "Zug übersprungen" --> EndTurn[Zug beenden]
-    ForceCheck -- "Truhe verfügbar" --> OpenChest[Truhe öffnen]
-    ForceCheck -- Nein --> HealCheck{Heilzauber\naktiv & nötig?}
+    Start([AI turn begins]) --> ForceCheck{Forced action?}
+    ForceCheck -- "Turn skipped" --> EndTurn[End turn]
+    ForceCheck -- "Chest available" --> OpenChest[Open chest]
+    ForceCheck -- No --> HealCheck{Healing spell\nactive and needed?}
 
-    HealCheck -- Ja --> Heal[Heilzauber einsetzen]
-    HealCheck -- Nein --> PhaseSwitch{Aktuelle Phase?}
+    HealCheck -- Yes --> Heal[Use healing spell]
+    HealCheck -- No --> PhaseSwitch{Current phase?}
 
-    PhaseSwitch -- Kampf --> Combat[Kampf-Entscheidung]
-    PhaseSwitch -- Beute aufsammeln --> Loot[Beute-Entscheidung]
-    PhaseSwitch -- Raum-Token lösen --> RoomToken[Token automatisch lösen]
-    PhaseSwitch -- Kachel platzieren --> Tile[Kachel drehen & platzieren]
-    PhaseSwitch -- Bewegung/Erkundung --> GroundCheck{Gegenstand\nam Boden?}
+    PhaseSwitch -- Combat --> Combat[Combat decision]
+    PhaseSwitch -- Loot pickup --> Loot[Loot decision]
+    PhaseSwitch -- Resolve room token --> RoomToken[Resolve token automatically]
+    PhaseSwitch -- Place tile --> Tile[Rotate and place tile]
+    PhaseSwitch -- Movement/Exploration --> GroundCheck{Item on\nground?}
 
-    GroundCheck -- Ja & lohnenswert --> BeginLoot[Aufsammeln beginnen]
-    GroundCheck -- Nein/nicht lohnend --> Move[Bewegungs-Entscheidung]
-    Move -- Keine Bewegung möglich --> EndTurn
+    GroundCheck -- "Yes and worthwhile" --> BeginLoot[Start pickup]
+    GroundCheck -- "No / not worthwhile" --> Move[Movement decision]
+    Move -- "No movement possible" --> EndTurn
 ```
 
 ---
 
-## Die vier Hauptentscheidungsbereiche
+## The four main decision areas
 
-### 1. Bewegung & Erkundung
+### 1. Movement and exploration
 
-**Wann:** Phase `turn_start`, `await_move`, `optional_monster_combat`
+**When:** phase `turn_start`, `await_move`, `optional_monster_combat`
 
-Die KI bewertet jeden möglichen Zug mit einer **Punktzahl**. Der Zug mit der höchsten Punktzahl wird gewählt.
+The AI scores every possible move with a **point value**. The move with the highest score is chosen.
 
-#### Heilung zuerst
+#### Healing first
 
-Falls die KI **weniger als 3 Lebenspunkte** hat oder **verflucht** ist, ändert sich die Priorität komplett: Sie sucht den kürzesten Weg zu einer bekannten Heilungsposition.
-
-```
-Heilungs-Punktzahl = 12 − Entfernung zur Heilung
-```
-
-Je näher die Heilung, desto höher der Wert. Hat sie keine Heilung gefunden, ignoriert sie diesen Modus.
-
-#### Normale Bewegungs-Punktzahl
-
-Ohne Heilungsdruck setzt sich die Punktzahl aus mehreren Faktoren zusammen:
-
-| Faktor | Wert | Erklärung |
-|--------|------|-----------|
-| **Neue Kachel aufdecken** | +9 | Ins Unbekannte erkunden → immer attraktiv |
-| **Raum mit schlagbarem Monster betreten** | +8 | Angriff lohnt sich (≥50% Siegchance) |
-| **Truhe auf Zielfeld** (mit Schlüssel) | +10 | Schatz einsammeln |
-| **Truhe auf Zielfeld** (ohne Schlüssel) | +3 | Immerhin merken wo sie liegt |
-| **Heilungsfeld als Ziel** (wenn HP niedrig) | +12 | Direkt hinlaufen |
-| **Näher an Erkundungsfront** | +9 + Abstandsdifferenz | Progressives Erkunden |
-| **Näher an bekanntem Ziel** (Monster, Truhe) | +6 + Abstandsdifferenz | Ziele verfolgen |
-| **Drachen als Ziel** | +20 Prioritätsbonus | Der Drache ist das Hauptziel |
-| **Monster mit <50% Siegchance auf Zielfeld** | −6 | Schwachen Monstern ausweichen |
-| **Drache auf Zielfeld, kaum Siegchance** | −12 | Drachen meiden wenn zu schwach |
-| **Zurück auf vorherige Position** | −2 | Hin-und-her vermeiden |
-
-#### Wie wird Entfernung gemessen?
-
-Für bekannte Felder verwendet die KI **BFS (Breitensuche)** – sie findet den tatsächlichen kürzesten Weg durch die Gänge. Für Heilungspositionen wird die einfachere **Manhattan-Distanz** (Schachbrett-Abstand) verwendet.
-
----
-
-### 2. Kampfentscheidungen
-
-**Wann:** Kampfphasen (`combat`, `combat_*`)
-
-#### Wie berechnet die KI ihre Siegchance?
-
-Die KI probiert **alle 36 möglichen Würfelkombinationen** (2× W6) durch und zählt, wie viele davon zum Sieg führen:
+If the AI has **fewer than 3 hit points** or is **cursed**, its priorities change completely: it looks for the shortest path to a known healing location.
 
 ```
-Siegchance = Anzahl siegreicher Würfelergebnisse ÷ 36
+Healing score = 12 - distance to healing
 ```
 
-Beispiel: Ein Spieler mit Angriffswert 8 kämpft gegen ein Monster der Stärke 10. Die KI prüft alle Kombinationen von (1+1) bis (6+6) und errechnet so die exakte Wahrscheinlichkeit.
+The closer the healing location, the higher the score. If no healing location is known, this mode is ignored.
 
-#### Schwellenwerte für optionale Kämpfe
+#### Normal movement scoring
 
-| Situation | Mindestsiegchance | Quelle |
-|-----------|-------------------|--------|
-| Normales Monster (optional) | 20% | `minimumRepeatCombatWinChance` |
-| Drache | 35% | `minimumDragonWinChance` |
+Without healing pressure, the score is built from multiple factors:
 
-Liegt die Siegchance darunter, weicht die KI aus (wenn möglich).
+| Factor | Value | Explanation |
+|--------|------:|-------------|
+| **Reveal a new tile** | +9 | Exploring the unknown is always attractive |
+| **Enter a room with a beatable monster** | +8 | Worth attacking (>=50% win chance) |
+| **Chest on target tile** (with key) | +10 | Collect treasure |
+| **Chest on target tile** (without key) | +3 | At least remember where it is |
+| **Healing tile as target** (when HP is low) | +12 | Move there directly |
+| **Closer to exploration frontier** | +9 + distance delta | Progressive exploration |
+| **Closer to known objective** (monster, chest) | +6 + distance delta | Pursue objectives |
+| **Dragon as objective** | +20 priority bonus | The dragon is the main objective |
+| **Monster on target tile with <50% win chance** | -6 | Avoid unfavorable fights |
+| **Dragon on target tile with very low win chance** | -12 | Avoid the dragon when too weak |
+| **Return to previous position** | -2 | Avoid back-and-forth movement |
 
-#### Flammen-Zauber im Kampf
+#### How is distance measured?
 
-Die KI setzt Flammen-Zauber sparsam ein: Sie sucht die **Mindestanzahl**, mit der sie noch gewinnt, und setzt nur diese ein. Ausnahme: Beim Magier-Helden werden keine Flammen-Zauber eingesetzt, da seine Fähigkeit Zaubereinsatz überflüssig macht. Gegen schwache Monster (Stärke ≤ 9) werden ebenfalls keine Zauber verschwendet.
-
-#### Hexen-Opfer
-
-Wenn die Hexin im Kampf das „Opfer"-Bonus anbieten kann, prüft die KI:
-
-1. Führt das Opfer direkt zum Sieg? → **Opfer bringen**
-2. Führt Opfer + Flammen-Zauber zum Sieg? → **Opfer bringen** (dann Zauber einsetzen)
-3. Sonst → **Opfer ablehnen**
-
-#### Valkyrie & Blade: Automatischer Würfelwurf
-
-Die Valkyrie würfelt **immer neu** wenn möglich. Die Blade nutzt ihren Reroll **immer**. Beides geschieht automatisch ohne Abwägung.
+For known tiles, the AI uses **BFS (breadth-first search)** to find the actual shortest path through corridors. For healing locations, it uses the simpler **Manhattan distance**.
 
 ---
 
-### 3. Beute & Gegenstände
+### 2. Combat decisions
 
-**Wann:** Phasen `loot_resolution` (Aufheben) und während Bewegung (Boden-Gegenstände)
+**When:** combat phases (`combat`, `combat_*`)
 
-#### Soll ich einen Gegenstand aufheben?
+#### How does the AI calculate its win chance?
 
-Bevor die KI sich bewegt, prüft sie ob ein Gegenstand auf dem aktuellen Feld liegt:
+The AI tries **all 36 possible dice combinations** (2x D6) and counts how many of them lead to victory:
 
-| Gegenstandstyp | Aufheben wenn… |
-|----------------|----------------|
-| **Schlüssel** | Kein Schlüssel im Inventar |
-| **Waffe** | Weniger als 2 Waffen **oder** neue Waffe ist besser als schlechteste |
-| **Zauber** | Weniger als 3 Zauber **oder** neuer Zauber hat höhere Priorität |
+```
+Win chance = number of winning dice outcomes / 36
+```
 
-**Zauberprioritäten:** Flammen-Zauber (1) > Heilzauber (0)
+Example: a player with attack value 8 fights a monster with strength 10. The AI checks every combination from (1+1) to (6+6) and computes the exact probability.
 
-#### Was tue ich mit dem aufgehobenen Gegenstand?
+#### Thresholds for optional fights
 
-| Situation | Entscheidung |
-|-----------|-------------|
-| Schlüssel, Platz frei | Nehmen |
-| Schlüssel, kein Platz | Liegenlassen |
-| Waffe, Platz frei | Nehmen |
-| Waffe, kein Platz, neue > schlechteste im Inventar | Schlechteste tauschen |
-| Waffe, kein Platz, neue ≤ schlechteste | Liegenlassen |
-| Zauber, Platz frei | Nehmen |
-| Zauber, kein Platz, neue Priorität > niedrigste im Inventar | Niedrigsten Prioritätszauber tauschen |
-| Zauber, kein Platz, Priorität gleich/niedriger | Liegenlassen |
+| Situation | Minimum win chance | Source |
+|-----------|--------------------|--------|
+| Normal monster (optional) | 20% | `minimumRepeatCombatWinChance` |
+| Dragon | 35% | `minimumDragonWinChance` |
 
----
+If the win chance is below the threshold, the AI avoids the fight when possible.
 
-### 4. Fluch-Zielauswahl
+#### Flame spells in combat
 
-**Wann:** Phase `combat_curse_target` (nur beim Mumifizierten Priester)
+The AI uses flame spells conservatively: it looks for the **minimum number** needed to still win, and uses only that many. Exception: the Mage hero never uses flame spells, because that hero ability makes spell use unnecessary. The AI also avoids wasting spells on weak monsters (strength <= 9).
 
-Die KI verflucht immer den **Spieler mit den meisten Schatzpunkten** – also den Führenden. Das schwächt den stärksten Konkurrenten.
+#### Witch sacrifice
 
----
+If the Witch can offer the "sacrifice" bonus in combat, the AI checks:
 
-## Heldenspezifische Anpassungen
+1. Does the sacrifice alone lead directly to victory? -> **Make the sacrifice**
+2. Does sacrifice + flame spells lead to victory? -> **Make the sacrifice** (then use spells)
+3. Otherwise -> **Decline the sacrifice**
 
-Verschiedene Helden haben Sonderfähigkeiten, die die Entscheidungslogik beeinflussen:
+#### Valkyrie and Blade: automatic rerolls
 
-| Held | Fähigkeit | Auswirkung auf KI |
-|------|-----------|-------------------|
-| **Blade** | Würfel-Reroll im Kampf | Reroll wird immer genutzt (automatisch) |
-| **Mage** | Kann durch Wände gehen | Mehr Bewegungsoptionen; keine Flammen-Zauber im Kampf |
-| **Rogue** | Optionaler Kampf vor dem Weggehen | KI berechnet Siegchance und entscheidet ob sie kämpft |
-| **Witch** | Positionstausch mit anderem Spieler | Tausch hat feste Punktzahl (8) und wird gegen Bewegung abgewogen |
-| **Valkyrie** | Würfel-Reroll im Kampf | Reroll wird immer genutzt (automatisch) |
-| **Seeress** | Wählt aus 2 gezogenen Raum-Tokens | Wählt immer die erste Option (Index 0) |
+The Valkyrie **always rerolls** when possible. Blade **always uses** the reroll. Both happen automatically without further evaluation.
 
 ---
 
-## Konfiguration & Schwierigkeitsgrad
+### 3. Loot and items
 
-Alle entscheidenden Zahlenwerte sind in [`src/ai/config.ts`](../src/ai/config.ts) gebündelt:
+**When:** phases `loot_resolution` (pickup) and during movement (items on the ground)
 
-| Parameter | Wert | Bedeutung | Erhöhen bewirkt… |
-|-----------|------|-----------|-----------------|
-| `criticalHp` | 2 | HP-Grenze für Heilzaubereinsatz | KI heilt sich häufiger |
-| `preferHealingBelowHp` | 3 | HP-Grenze für Heilungsweg-Priorisierung | KI priorisiert Heilung früher |
-| `minimumRepeatCombatWinChance` | 0.2 | Mindest-Siegchance für optionale Kämpfe | KI geht mehr Risiko ein |
-| `minimumDragonWinChance` | 0.35 | Mindest-Siegchance für Drachenkampf | KI greift Drachen früher/seltener an |
-| `exploreTileBonus` | 9 | Bonus für Erkundung neuer Kacheln | KI erkundet aggressiver |
-| `exploreRoomBonus` | 8 | Bonus für Betreten neuer Räume | KI geht öfter in Räume |
-| `knownChestBonus` | 10 | Bonus für bekannte Truhen (mit Schlüssel) | KI priorisiert Schätze stärker |
-| `knownHealingBonus` | 12 | Bonus für Heilungsfelder | KI sucht häufiger Heilung |
-| `knownMonsterPenalty` | −6 | Strafe für nicht schlagbare Monster | KI meidet sie konsequenter |
-| `objectiveProgressBonus` | 6 | Bonus für Fortschritt Richtung Ziele | KI verfolgt Ziele direkter |
-| `dragonObjectiveBonus` | 20 | Prioritätsbonus für den Drachen | Drache wird früher/später priorisiert |
-| `backtrackPenalty` | −2 | Strafe fürs Umkehren | KI läuft seltener hin und her |
+#### Should I pick up an item?
 
----
+Before moving, the AI checks whether there is an item on the current tile:
 
-## Beispielzug (Schritt für Schritt)
+| Item type | Pick up when... |
+|-----------|-----------------|
+| **Key** | No key in inventory |
+| **Weapon** | Fewer than 2 weapons **or** the new weapon is better than the worst current one |
+| **Spell** | Fewer than 3 spells **or** the new spell has higher priority |
 
-**Szenario:** Die KI ist dran. HP = 4, kein Fluch, keine Truhe in Reichweite. Es gibt 3 legale Aktionen:
+**Spell priorities:** Flame Spell (1) > Healing Spell (0)
 
-- `movePlayer` → Feld (2, 1): bekanntes leeres Feld, einen Schritt näher an der Erkundungsfront
-- `movePlayer` → Feld (2, 3): bekanntes Feld mit Monster (Stärke 12, Siegchance 19%)
-- `declareExplorationDirection` → Richtung Norden: neue unbekannte Kachel aufdecken
+#### What do I do with the picked-up item?
 
-**Schritt 1 – Erzwungene Aktionen?**
-Kein Zug-Skip, keine Truhe. → Weiter.
-
-**Schritt 2 – Heilzauber?**
-HP = 4, nicht verflucht. Heilbedarf-Schwellenwert ist 3. → Kein Heilzauber.
-
-**Schritt 3 – Kampfphase?**
-Aktuelle Phase ist `await_move`. → Weiter zur Bewegungsentscheidung.
-
-**Schritt 4 – Boden-Gegenstände?**
-Kein Gegenstand auf aktuellem Feld. → Weiter.
-
-**Schritt 5 – Bewegungs-Punktzahlen berechnen:**
-
-| Aktion | Berechnung | Punktzahl |
-|--------|-----------|-----------|
-| `movePlayer` (2,1) | Näher an Erkundungsfront: +9 +1 Abstandsgewinn | **10** |
-| `movePlayer` (2,3) | Monster, Siegchance 19% < 50%: −6 | **−6** |
-| `declareExplorationDirection` Nord | Neue Kachel: fest +9 | **9** |
-
-**Ergebnis:** `movePlayer` nach (2,1) gewinnt mit 10 Punkten.
+| Situation | Decision |
+|-----------|----------|
+| Key, free slot | Take it |
+| Key, no slot | Leave it |
+| Weapon, free slot | Take it |
+| Weapon, no slot, new > worst in inventory | Replace the worst one |
+| Weapon, no slot, new <= worst | Leave it |
+| Spell, free slot | Take it |
+| Spell, no slot, new priority > lowest in inventory | Replace the lowest-priority spell |
+| Spell, no slot, equal/lower priority | Leave it |
 
 ---
 
----
+### 4. Curse target selection
 
-## Bekannte Schwachstellen der aktuellen KI
+**When:** phase `combat_curse_target` (only for the Mummified Priest)
 
-Die folgenden Punkte wurden bei der Analyse identifiziert. Sie sind dokumentiert, aber bewusst noch nicht behoben (Scope-Kontrolle):
-
-| # | Schwachstelle | Ort | Auswirkung |
-|---|--------------|-----|-----------|
-| 1 | **Heilzauber heilt nur sich selbst** | `chooseHealingSpellAction` (Filter `player.id === activePlayer.id`) | Andere Spieler werden ignoriert, auch wenn sie kritisch niedrige HP haben |
-| 2 | **Seeress wählt immer Token-Index 0** | `resolve_room_token_seeress_choice` | Keine Auswertung welches der beiden Tokens besser ist |
-| 3 | **Hexen-Positionstausch hat hardcoded Punktzahl** | `scoreMovementAction` (`exploreTileBonus - 1 = 8`) | Nicht kontextabhängig – ignoriert Spielerzustände beider Parteien |
-| 4 | **Heilungsweg nutzt Manhattan- statt BFS-Distanz** | `distanceToNearestHealing` | Weniger präzise als die Wegfindung für Monster und Objectives |
-| 5 | **Kein Spieler-Tracking** | gesamte `heuristicAgent.ts` | KI ignoriert Positionen und Stärken anderer Spieler vollständig |
+The AI always curses the **player with the most treasure points** - in other words, the current leader. This weakens the strongest competitor.
 
 ---
 
-## Schwierigkeitsgrade
+## Hero-specific adjustments
 
-Das Spiel unterstützt drei Schwierigkeitsgrade: **Easy**, **Normal** und **Hard**. Der Schwierigkeitsgrad wird beim Spielstart gesetzt und in `GameState.difficulty` gespeichert. `autoplay.ts` liest ihn aus und übergibt das passende Konfigurationsobjekt an `chooseHeuristicAiAction`.
+Different heroes have special abilities that affect decision logic:
 
-### Parameter-Vergleich
+| Hero | Ability | Effect on AI |
+|------|---------|--------------|
+| **Blade** | Combat dice reroll | Reroll is always used automatically |
+| **Mage** | Can move through walls | More movement options; no flame spells in combat |
+| **Rogue** | Optional combat before leaving | AI computes win chance and decides whether to fight |
+| **Witch** | Position swap with another player | Swap gets a fixed score (8) and is weighed against movement |
+| **Valkyrie** | Combat dice reroll | Reroll is always used automatically |
+| **Seeress** | Chooses from 2 drawn room tokens | Always selects the first option (index 0) |
 
-| Parameter | Easy | Normal | Hard | Effekt der Erhöhung |
-|-----------|------|--------|------|---------------------|
-| `mistakeRate` | **0.2** | 0 | 0 | KI trifft öfter zufällige Entscheidungen |
-| `criticalHp` | 3 | 2 | 2 | Heilzauber wird früher eingesetzt |
-| `preferHealingBelowHp` | **4** | 3 | **4** | Weg zur Heilung wird früher priorisiert |
-| `minimumRepeatCombatWinChance` | **0.1** | 0.2 | **0.3** | Optionale Kämpfe werden aggressiver/vorsichtiger gewählt |
-| `minimumDragonWinChance` | **0.2** | 0.35 | **0.5** | Drache wird früher/später angegriffen |
-| `exploreTileBonus` | **7** | 9 | **11** | Neue Kacheln werden mehr/weniger priorisiert |
-| `exploreRoomBonus` | **6** | 8 | **10** | Räume werden mehr/weniger betreten |
-| `knownChestBonus` | **8** | 10 | **12** | Truhen werden mehr/weniger priorisiert |
-| `knownHealingBonus` | **14** | 12 | **10** | Heilungsfelder werden mehr/weniger priorisiert |
-| `knownMonsterPenalty` | **−3** | −6 | **−8** | Unmögliche Monster werden mehr/weniger gemieden |
-| `objectiveProgressBonus` | **4** | 6 | **8** | Ziele werden direkter verfolgt |
-| `dragonObjectiveBonus` | **12** | 20 | **25** | Drache wird mehr/weniger als Hauptziel gewichtet |
-| `backtrackPenalty` | **−1** | −2 | **−3** | Hin-und-her-Laufen wird mehr/weniger bestraft |
+---
 
-### Verhaltensprofile
+## Configuration and difficulty
+
+All important numeric values are centralized in [`src/ai/config.ts`](../src/ai/config.ts):
+
+| Parameter | Value | Meaning | Higher value causes... |
+|-----------|------:|---------|------------------------|
+| `criticalHp` | 2 | HP threshold for using healing spells | AI heals itself more often |
+| `preferHealingBelowHp` | 3 | HP threshold for prioritizing healing routes | AI prioritizes healing earlier |
+| `minimumRepeatCombatWinChance` | 0.2 | Minimum win chance for optional fights | AI takes more risk |
+| `minimumDragonWinChance` | 0.35 | Minimum win chance for dragon combat | AI attacks the dragon earlier / less often |
+| `exploreTileBonus` | 9 | Bonus for exploring new tiles | AI explores more aggressively |
+| `exploreRoomBonus` | 8 | Bonus for entering new rooms | AI enters rooms more often |
+| `knownChestBonus` | 10 | Bonus for known chests (with key) | AI prioritizes treasure more strongly |
+| `knownHealingBonus` | 12 | Bonus for healing tiles | AI seeks healing more often |
+| `knownMonsterPenalty` | -6 | Penalty for unbeatable monsters | AI avoids them more consistently |
+| `objectiveProgressBonus` | 6 | Bonus for progress toward objectives | AI pursues objectives more directly |
+| `dragonObjectiveBonus` | 20 | Priority bonus for the dragon | Dragon is prioritized earlier / later |
+| `backtrackPenalty` | -2 | Penalty for turning back | AI moves back and forth less often |
+
+---
+
+## Example turn (step by step)
+
+**Scenario:** It is the AI's turn. HP = 4, no curse, no chest in reach. There are 3 legal actions:
+
+- `movePlayer` -> tile (2, 1): known empty tile, one step closer to the exploration frontier
+- `movePlayer` -> tile (2, 3): known tile with a monster (strength 12, win chance 19%)
+- `declareExplorationDirection` -> north: reveal a new unknown tile
+
+**Step 1 - Forced actions?**  
+No turn skip, no chest. -> Continue.
+
+**Step 2 - Healing spell?**  
+HP = 4, not cursed. The healing threshold is 3. -> No healing spell.
+
+**Step 3 - Combat phase?**  
+Current phase is `await_move`. -> Continue to movement decision.
+
+**Step 4 - Items on the ground?**  
+No item on the current tile. -> Continue.
+
+**Step 5 - Calculate movement scores:**
+
+| Action | Calculation | Score |
+|--------|-------------|------:|
+| `movePlayer` (2,1) | Closer to exploration frontier: +9 +1 distance gain | **10** |
+| `movePlayer` (2,3) | Monster, win chance 19% < 50%: -6 | **-6** |
+| `declareExplorationDirection` north | New tile: fixed +9 | **9** |
+
+**Result:** `movePlayer` to (2,1) wins with 10 points.
+
+---
+
+---
+
+## Known weaknesses of the current AI
+
+The following issues were identified during analysis. They are documented, but intentionally not fixed yet (scope control):
+
+| # | Weakness | Location | Impact |
+|---|----------|----------|--------|
+| 1 | **Healing spell only heals itself** | `chooseHealingSpellAction` (filter `player.id === activePlayer.id`) | Other players are ignored, even if they are critically low on HP |
+| 2 | **Seeress always selects token index 0** | `resolve_room_token_seeress_choice` | No evaluation of which of the two tokens is better |
+| 3 | **Witch position swap has a hardcoded score** | `scoreMovementAction` (`exploreTileBonus - 1 = 8`) | Not context-sensitive; ignores both players' current state |
+| 4 | **Healing route uses Manhattan instead of BFS distance** | `distanceToNearestHealing` | Less precise than pathfinding for monsters and objectives |
+| 5 | **No player tracking** | entire `heuristicAgent.ts` | AI completely ignores the positions and strength of other players |
+
+---
+
+## Difficulty levels
+
+The game supports three difficulty levels: **Easy**, **Normal**, and **Hard**. The difficulty is set when the game starts and stored in `GameState.difficulty`. `autoplay.ts` reads it and passes the matching configuration object into `chooseHeuristicAiAction`.
+
+### Parameter comparison
+
+| Parameter | Easy | Normal | Hard | Effect of increasing it |
+|-----------|------|--------|------|--------------------------|
+| `mistakeRate` | **0.2** | 0 | 0 | AI makes random decisions more often |
+| `criticalHp` | 3 | 2 | 2 | Healing spell is used earlier |
+| `preferHealingBelowHp` | **4** | 3 | **4** | Route to healing is prioritized earlier |
+| `minimumRepeatCombatWinChance` | **0.1** | 0.2 | **0.3** | Optional fights are chosen more aggressively / cautiously |
+| `minimumDragonWinChance` | **0.2** | 0.35 | **0.5** | Dragon is attacked earlier / later |
+| `exploreTileBonus` | **7** | 9 | **11** | New tiles are prioritized more / less |
+| `exploreRoomBonus` | **6** | 8 | **10** | Rooms are entered more / less |
+| `knownChestBonus` | **8** | 10 | **12** | Chests are prioritized more / less |
+| `knownHealingBonus` | **14** | 12 | **10** | Healing tiles are prioritized more / less |
+| `knownMonsterPenalty` | **-3** | -6 | **-8** | Impossible monsters are avoided more / less |
+| `objectiveProgressBonus` | **4** | 6 | **8** | Objectives are pursued more directly |
+| `dragonObjectiveBonus` | **12** | 20 | **25** | Dragon is weighted more / less as the main objective |
+| `backtrackPenalty` | **-1** | -2 | **-3** | Back-and-forth movement is penalized more / less |
+
+### Behavior profiles
 
 **Easy** (`mistakeRate: 0.2`)
-- 20 % aller Entscheidungen sind zufällig – die KI ignoriert die Scoring-Logik komplett
-- Panikiert bei höheren HP und verschwendet Züge mit Heilungssuche
-- Greift den Drachen zu früh an (bereits ab 20% Siegchance)
-- Weicht Monstern kaum aus → nimmt mehr Schaden
+- 20% of all decisions are random - the AI ignores scoring logic completely
+- Panics at higher HP values and wastes turns searching for healing
+- Attacks the dragon too early (already at 20% win chance)
+- Barely avoids monsters -> takes more damage
 
-**Normal** (aktuelle Standardwerte)
-- Keine zufälligen Fehler
-- Ausgewogene Erkundungs- und Kampfstrategie
-- Kämpft den Drachen ab 35% Siegchance
+**Normal** (current default values)
+- No random mistakes
+- Balanced exploration and combat strategy
+- Fights the dragon at 35% win chance
 
 **Hard** (`mistakeRate: 0`)
-- Keine zufälligen Fehler
-- Erkundet aggressiver, verfolgt Ziele direkter
-- Wartet auf 50% Siegchance gegen den Drachen → startet den Endkampf stärker ausgerüstet
-- Meidet unmögliche Kämpfe noch konsequenter
+- No random mistakes
+- Explores more aggressively and pursues objectives more directly
+- Waits for a 50% win chance against the dragon -> starts the end fight better equipped
+- Avoids impossible fights even more consistently
 
-### Fehlerinjektion (Easy)
+### Error injection (Easy)
 
-Die zufälligen Fehlentscheidungen bei Easy verwenden den seeded RNG aus `state.rng`. Da der RNG-Wert nur gelesen (nicht zurückgeschrieben) wird, beeinflusst die Fehlerinjektion den Spielfluss-RNG nicht:
+The random mistakes on Easy use the seeded RNG from `state.rng`. Because the RNG value is only read (not written back), the mistake injection does not affect the gameplay RNG:
 
 ```typescript
 if (config.mistakeRate > 0) {
-  const rng = restoreSeededRng(state.rng);   // lesen, nicht mutieren
+  const rng = restoreSeededRng(state.rng);   // read, do not mutate
   if (rng.next() < config.mistakeRate) {
     return legalActions[rng.nextInt(legalActions.length)];
   }
 }
 ```
 
-Gleicher `GameState` → gleiche Zufallszahl → identisches Verhalten bei jedem Testlauf.
+Same `GameState` -> same random number -> identical behavior in every test run.
 
-### Empirische Testergebnisse
+### Empirical test results
 
-Validiert durch [`src/ai/difficultyBalance.test.ts`](../src/ai/difficultyBalance.test.ts):
+Validated by [`src/ai/difficultyBalance.test.ts`](../src/ai/difficultyBalance.test.ts):
 
-| Test | Ergebnis |
-|------|---------|
-| Easy `mistakeRate` > Normal/Hard | ✅ |
-| Hard kämpft Drachen erst bei höherer Siegchance als Easy | ✅ |
-| Hard erkundet aggressiver (`exploreTileBonus` höher) | ✅ |
-| Hard meidet Unmögliches konsequenter (`knownMonsterPenalty` tiefer) | ✅ |
-| `getDifficultyConfig` liefert korrekte Presets | ✅ |
-| Drachen-Endkampf bei allen 3 Schwierigkeitsgraden erfolgreich | ✅ |
-| Hard weicht dem Drachen aus wenn Siegchance < 50% | ✅ |
+| Test | Result |
+|------|--------|
+| Easy `mistakeRate` > Normal/Hard | PASS |
+| Hard fights the dragon only at a higher win chance than Easy | PASS |
+| Hard explores more aggressively (`exploreTileBonus` higher) | PASS |
+| Hard avoids impossible fights more consistently (`knownMonsterPenalty` lower) | PASS |
+| `getDifficultyConfig` returns the correct presets | PASS |
+| Dragon endgame succeeds on all 3 difficulty levels | PASS |
+| Hard avoids the dragon when win chance < 50% | PASS |
 
 ---
 
-## Dateienübersicht
+## File overview
 
-| Datei | Inhalt |
-|-------|--------|
-| [`src/ai/heuristicAgent.ts`](../src/ai/heuristicAgent.ts) | Gesamte Entscheidungslogik |
-| [`src/ai/config.ts`](../src/ai/config.ts) | Alle konfigurierbaren Gewichtungen + 3 Difficulty-Presets |
-| [`src/ai/legalActions.ts`](../src/ai/legalActions.ts) | Erlaubte Aktionen je Phase |
-| [`src/ai/autoplay.ts`](../src/ai/autoplay.ts) | Ausführung ganzer Züge/Spiele (difficulty-aware) |
-| [`src/ai/difficultyBalance.test.ts`](../src/ai/difficultyBalance.test.ts) | Empirische Balance-Validierung |
-| [`src/engine/core/types.ts`](../src/engine/core/types.ts) | `AiDifficulty`-Typ + `GameState.difficulty`-Feld |
+| File | Contents |
+|------|----------|
+| [`src/ai/heuristicAgent.ts`](../src/ai/heuristicAgent.ts) | Full decision-making logic |
+| [`src/ai/config.ts`](../src/ai/config.ts) | All configurable weights and the 3 difficulty presets |
+| [`src/ai/legalActions.ts`](../src/ai/legalActions.ts) | Legal actions for each phase |
+| [`src/ai/autoplay.ts`](../src/ai/autoplay.ts) | Execution of full turns/games (difficulty-aware) |
+| [`src/ai/difficultyBalance.test.ts`](../src/ai/difficultyBalance.test.ts) | Empirical balance validation |
+| [`src/engine/core/types.ts`](../src/engine/core/types.ts) | `AiDifficulty` type and `GameState.difficulty` field |
