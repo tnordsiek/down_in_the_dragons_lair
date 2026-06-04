@@ -232,7 +232,7 @@ export function ActionPanel({
           <p className="text-sm text-parchment-200">
             Choose one token to resolve. The other returns to the bag.
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             {pendingSeeressRoomChoice.drawnTokens.map((token, index) => (
               <button
                 key={`${token.id}-${index}`}
