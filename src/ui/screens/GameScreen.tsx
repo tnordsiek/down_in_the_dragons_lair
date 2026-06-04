@@ -31,21 +31,6 @@ export function GameScreen() {
   const dispatch = useSetupStore((store) => store.dispatch);
   const resetGame = useSetupStore((store) => store.resetGame);
 
-  // Prevent the document from scrolling while the game screen is mounted.
-  // Without this, mobile Chrome preserves a non-zero window scroll position
-  // across orientation changes, which shifts the aside (sidebar) above the
-  // visible viewport even though its own scrollTop is 0.
-  useEffect(() => {
-    const html = document.documentElement;
-    const prevHtmlOverflow = html.style.overflow;
-    const prevBodyOverflow = document.body.style.overflow;
-    html.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-    return () => {
-      html.style.overflow = prevHtmlOverflow;
-      document.body.style.overflow = prevBodyOverflow;
-    };
-  }, []);
   const headerLogo = useAsset('ui_logo_header');
   const headerLogoUrl = getAssetUrl(headerLogo.assetId);
   const latestCombatDice = getLatestCombatDice(state);
