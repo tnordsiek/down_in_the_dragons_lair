@@ -383,6 +383,49 @@ describe('combat resolution', () => {
     expect(resolved.phase).toBe('turn_end');
   });
 
+  it('does not heal automatically after a draw retreat onto a healing tile', () => {
+    const state = createCombatStateWithHealingRetreat('kitchen_rat');
+    const resolved = resolveCombat(state, { dice: [2, 3] });
+    const activePlayer = resolved.players[resolved.activePlayerIndex];
+    const ended = endTurn(resolved);
+
+    expect(activePlayer.hp).toBe(5);
+    expect(activePlayer.position).toEqual({ boardX: 1, boardY: 0 });
+    expect(resolved.healingEndTurnSource).toBe('combat_retreat_blocked');
+    expect(ended.players.find((player) => player.id === activePlayer.id)?.hp).toBe(
+      5,
+    );
+  });
+
+  it('does not heal after a defeat retreat onto a healing tile even when ending the turn immediately', () => {
+    const state = withActivePlayer(
+      createCombatStateWithHealingRetreat('kitchen_rat'),
+      (player) => ({
+        ...player,
+        hp: 4,
+        isCursed: true,
+      }),
+    );
+    const resolved = resolveCombat(state, { dice: [1, 1] });
+    const activePlayer = resolved.players[resolved.activePlayerIndex];
+    const ended = endTurn(resolved);
+
+    expect(activePlayer).toEqual(
+      expect.objectContaining({
+        hp: 3,
+        isCursed: true,
+        position: { boardX: 1, boardY: 0 },
+      }),
+    );
+    expect(resolved.healingEndTurnSource).toBe('combat_retreat_blocked');
+    expect(ended.players.find((player) => player.id === activePlayer.id)).toEqual(
+      expect.objectContaining({
+        hp: 3,
+        isCursed: true,
+      }),
+    );
+  });
+
   it('retreats the blade on defeat instead of keeping combat open', () => {
     const state = withActivePlayer(
       createCombatState('kitchen_rat'),
@@ -481,6 +524,35 @@ describe('combat resolution', () => {
     );
   });
 
+  it('lets the blade heal after ending a six-draw continuation on the healing retreat tile', () => {
+    const state = withActivePlayer(
+      createCombatStateWithHealingRetreat('skeleton_key_guardian'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_blade',
+        hp: 3,
+      }),
+    );
+    const pending = resolveCombat(state, { dice: [6, 1] });
+    const resolved = useBladeReroll(pending, { dice: [2, 2] });
+    const activePlayer = resolved.players[resolved.activePlayerIndex];
+    const ended = endTurn(resolved);
+
+    expect(resolved.phase).toBe('await_move');
+    expect(activePlayer).toEqual(
+      expect.objectContaining({
+        hp: 3,
+        position: { boardX: 1, boardY: 0 },
+      }),
+    );
+    expect(resolved.healingEndTurnSource).toBe('idle_or_regular');
+    expect(ended.players.find((player) => player.id === activePlayer.id)).toEqual(
+      expect.objectContaining({
+        hp: 5,
+      }),
+    );
+  });
+
   it('keeps the turn open after a defeated combat with a six when the blade still has HP left', () => {
     const state = withActivePlayer(createCombatState('dragon'), (player) => ({
       ...player,
@@ -503,6 +575,35 @@ describe('combat resolution', () => {
         outcome: 'defeat',
         dice: [6, 2],
         retreatPosition: { boardX: 1, boardY: 0 },
+      }),
+    );
+  });
+
+  it('lets the blade heal after ending a six-defeat continuation on the healing retreat tile', () => {
+    const state = withActivePlayer(
+      createCombatStateWithHealingRetreat('dragon'),
+      (player) => ({
+        ...player,
+        heroId: 'hero_blade',
+        hp: 4,
+      }),
+    );
+    const pending = resolveCombat(state, { dice: [6, 1] });
+    const resolved = useBladeReroll(pending, { dice: [2, 2] });
+    const activePlayer = resolved.players[resolved.activePlayerIndex];
+    const ended = endTurn(resolved);
+
+    expect(resolved.phase).toBe('await_move');
+    expect(activePlayer).toEqual(
+      expect.objectContaining({
+        hp: 3,
+        position: { boardX: 1, boardY: 0 },
+      }),
+    );
+    expect(resolved.healingEndTurnSource).toBe('idle_or_regular');
+    expect(ended.players.find((player) => player.id === activePlayer.id)).toEqual(
+      expect.objectContaining({
+        hp: 5,
       }),
     );
   });
@@ -1057,4 +1158,17 @@ function createChainedCombatState(
       },
     }),
   );
+}
+
+function createCombatStateWithHealingRetreat(monsterId: MonsterId): GameState {
+  const base = createCombatState(monsterId);
+
+  return {
+    ...base,
+    board: base.board.map((tile) =>
+      tile.boardX === 1 && tile.boardY === 0
+        ? { ...tile, blueprintId: 'start_cross_healing' }
+        : tile,
+    ),
+  };
 }

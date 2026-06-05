@@ -47,6 +47,7 @@ export function swapWitchPosition(
     players,
     remainingSteps: 0,
     lastMoveFrom: activeOriginalPosition,
+    healingEndTurnSource: 'witch_swap' as const,
   } satisfies GameState;
 
   return {

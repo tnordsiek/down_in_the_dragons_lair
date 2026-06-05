@@ -15,7 +15,6 @@ import {
   getDiscoveredHealingPositions,
   hasActiveHeroAbility,
 } from '../rules/abilities';
-import { healPlayer, isHealingPosition } from '../rules/healing';
 import { createCombatRewardLoot } from '../rules/inventory';
 import { getContinuationPhaseAfterAction } from '../turns/continuation';
 import { createVictoryState } from '../victory/scoring';
@@ -676,13 +675,7 @@ function resolveRetreat(
         ? getDiscoveredHealingPositions(state)[0]
         : (warlockFallback?.position ?? combat.enteredFrom),
     };
-
-    return isHealingPosition(
-      { ...state, players: [retreatedPlayer] },
-      retreatedPlayer,
-    )
-      ? healPlayer(retreatedPlayer)
-      : retreatedPlayer;
+    return retreatedPlayer;
   });
 
   const resolvedActivePlayer = players[state.activePlayerIndex];
@@ -699,6 +692,9 @@ function resolveRetreat(
     players,
     combat: undefined,
     turnContinuationReason: continuationReason,
+    healingEndTurnSource: continuationReason
+      ? 'idle_or_regular'
+      : 'combat_retreat_blocked',
     rng: warlockFallback?.rng ?? state.rng,
   };
   const phase =

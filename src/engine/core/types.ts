@@ -274,6 +274,10 @@ export interface VictoryState {
 }
 
 export type TurnContinuationReason = 'blade_on_six';
+export type HealingEndTurnSource =
+  | 'idle_or_regular'
+  | 'witch_swap'
+  | 'combat_retreat_blocked';
 
 export type AiDifficulty = 'easy' | 'normal' | 'hard';
 
@@ -297,6 +301,7 @@ export interface GameState {
   pendingLoot?: PendingLoot;
   pendingSeeressRoomChoice?: PendingSeeressRoomChoice;
   turnContinuationReason?: TurnContinuationReason;
+  healingEndTurnSource?: HealingEndTurnSource;
   eventLog: GameEvent[];
   victory?: VictoryState;
   rng: SerializedRngState;

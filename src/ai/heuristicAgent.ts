@@ -21,6 +21,7 @@ import {
 } from '../engine/movement/topology';
 import { getDiscoveredHealingPositions } from '../engine/rules/abilities';
 import { hasActiveHeroAbility } from '../engine/rules/abilities';
+import { isHealingPosition } from '../engine/rules/healing';
 import { canStoreItem } from '../engine/rules/inventory';
 import { aiHeuristicConfig, type AiHeuristicConfig } from './config';
 import { getActionTargetPosition, getLegalAiActions } from './legalActions';
@@ -122,6 +123,36 @@ export function chooseHeuristicAiAction(
     return groundLootAction;
   }
 
+  const stalledEndTurnAction = chooseStalledEndTurnAction(
+    state,
+    legalActions,
+    config,
+  );
+
+  if (stalledEndTurnAction) {
+    return stalledEndTurnAction;
+  }
+
+  const healingEndTurnAction = chooseHealingEndTurnAction(
+    state,
+    legalActions,
+    config,
+  );
+
+  if (healingEndTurnAction) {
+    return healingEndTurnAction;
+  }
+
+  const forcedDragonEndgameAction = chooseForcedDragonEndgameAction(
+    state,
+    legalActions,
+    config,
+  );
+
+  if (forcedDragonEndgameAction) {
+    return forcedDragonEndgameAction;
+  }
+
   const movementAction = chooseMovementAction(state, legalActions, config);
 
   if (movementAction) {
@@ -161,6 +192,151 @@ function chooseHealingSpellAction(
           action.targetPlayerId === target.id,
       )
     : undefined;
+}
+
+function chooseHealingEndTurnAction(
+  state: GameState,
+  legalActions: GameAction[],
+  config: AiHeuristicConfig,
+): GameAction | undefined {
+  const endTurnAction = legalActions.find((action) => action.type === 'endTurn');
+  const activePlayer = state.players[state.activePlayerIndex];
+  const healingNeeded = needsHealing(activePlayer, config);
+
+  if (
+    !endTurnAction ||
+    !healingNeeded
+  ) {
+    return undefined;
+  }
+
+  if (isHealingPosition(state, activePlayer)) {
+    return canReceiveHealingFromEndTurn(state) ? endTurnAction : undefined;
+  }
+
+  if (!hasHealingProgressMove(state, legalActions, activePlayer.position)) {
+    return endTurnAction;
+  }
+
+  return undefined;
+}
+
+function chooseStalledEndTurnAction(
+  state: GameState,
+  legalActions: GameAction[],
+  config: AiHeuristicConfig,
+): GameAction | undefined {
+  const endTurnAction = legalActions.find((action) => action.type === 'endTurn');
+
+  if (
+    !endTurnAction ||
+    state.tileStack.length > 0 ||
+    state.tokenBag.length > 0 ||
+    hasObjectiveProgressMove(state, legalActions, config)
+  ) {
+    return undefined;
+  }
+
+  return endTurnAction;
+}
+
+function hasHealingProgressMove(
+  state: GameState,
+  legalActions: GameAction[],
+  currentPosition: BoardPosition,
+): boolean {
+  const currentHealingDistance = distanceToNearestHealing(state, currentPosition);
+
+  if (currentHealingDistance === undefined) {
+    return true;
+  }
+
+  return legalActions
+    .filter((action) => action.type === 'movePlayer')
+    .some((action) => {
+      const targetHealingDistance = distanceToNearestHealing(state, action.target);
+
+      return (
+        targetHealingDistance !== undefined &&
+        targetHealingDistance < currentHealingDistance
+      );
+    });
+}
+
+function hasObjectiveProgressMove(
+  state: GameState,
+  legalActions: GameAction[],
+  config: AiHeuristicConfig,
+): boolean {
+  const activePlayer = state.players[state.activePlayerIndex];
+  const currentObjectiveDistance = distanceToNearestObjective(
+    state,
+    activePlayer.position,
+    activePlayer,
+    config,
+  );
+
+  if (currentObjectiveDistance === undefined) {
+    return false;
+  }
+
+  return legalActions
+    .filter((action) => action.type === 'movePlayer')
+    .some((action) => {
+      const targetObjectiveDistance = distanceToNearestObjective(
+        state,
+        action.target,
+        activePlayer,
+        config,
+      );
+
+      return (
+        targetObjectiveDistance !== undefined &&
+        targetObjectiveDistance < currentObjectiveDistance
+      );
+    });
+}
+
+function chooseForcedDragonEndgameAction(
+  state: GameState,
+  legalActions: GameAction[],
+  config: AiHeuristicConfig,
+): GameAction | undefined {
+  const activePlayer = state.players[state.activePlayerIndex];
+
+  if (!shouldForceDragonEndgame(state, activePlayer, config)) {
+    return undefined;
+  }
+
+  const dragonTile = state.board.find((tile) => tile.roomToken?.id === 'dragon');
+
+  if (!dragonTile) {
+    return undefined;
+  }
+
+  const moveActions = legalActions.filter(
+    (action) => action.type === 'movePlayer',
+  );
+  const directDragonMove = moveActions.find(
+    (action) =>
+      action.target.boardX === dragonTile.boardX &&
+      action.target.boardY === dragonTile.boardY,
+  );
+
+  if (directDragonMove) {
+    return directDragonMove;
+  }
+
+  return moveActions
+    .slice()
+    .sort((left, right) => {
+      const leftDistance =
+        shortestKnownPathDistance(state, left.target, dragonTile) ?? Number.POSITIVE_INFINITY;
+      const rightDistance =
+        shortestKnownPathDistance(state, right.target, dragonTile) ?? Number.POSITIVE_INFINITY;
+
+      return leftDistance - rightDistance || actionOrder(left) - actionOrder(right);
+    })[0];
 }
 
 function chooseCombatAction(
@@ -222,6 +398,13 @@ function chooseCombatAction(
         ? config.minimumDragonWinChance
         : config.minimumRepeatCombatWinChance;
 
+    if (
+      monster.id === 'dragon' &&
+      shouldForceDragonEndgame(state, activePlayer, config)
+    ) {
+      return startCombatAction;
+    }
+
     if (winChance >= minimumWinChance) {
       return startCombatAction;
     }
@@ -256,7 +439,13 @@ function chooseCombatAction(
         ? config.minimumDragonWinChance
         : config.minimumRepeatCombatWinChance;
 
-    if (winChance < minimumWinChance) {
+    if (
+      winChance < minimumWinChance &&
+      !(
+        monster.id === 'dragon' &&
+        shouldForceDragonEndgame(state, activePlayer, config)
+      )
+    ) {
       return requireAction(legalActions, 'endTurn');
     }
   }
@@ -464,14 +653,31 @@ function chooseMovementAction(
     return undefined;
   }
 
-  return movementActions
+  const sortedActions = movementActions
     .slice()
     .sort(
       (left, right) =>
         scoreMovementAction(state, right, config) -
           scoreMovementAction(state, left, config) ||
         actionOrder(left) - actionOrder(right),
-    )[0];
+    );
+  const bestAction = sortedActions[0];
+
+  if (
+    !state.lastMoveFrom ||
+    bestAction.type !== 'movePlayer' ||
+    !isBacktrackMove(bestAction, state.lastMoveFrom)
+  ) {
+    return bestAction;
+  }
+
+  return (
+    sortedActions.find(
+      (action) =>
+        action.type !== 'movePlayer' ||
+        !isBacktrackMove(action, state.lastMoveFrom!),
+    ) ?? bestAction
+  );
 }
 
 function chooseGroundLootAction(
@@ -615,10 +821,9 @@ function scoreMovementAction(
     return 0;
   }
 
-  const needsHealing =
-    activePlayer.hp < config.preferHealingBelowHp || activePlayer.isCursed;
+  const healingNeeded = needsHealing(activePlayer, config);
 
-  if (needsHealing) {
+  if (healingNeeded) {
     const healingDistance = distanceToNearestHealing(state, targetPosition);
 
     if (healingDistance !== undefined) {
@@ -643,11 +848,13 @@ function scoreMovementAction(
     state,
     activePlayer.position,
     activePlayer,
+    config,
   );
   const targetObjectiveDistance = distanceToNearestObjective(
     state,
     targetPosition,
     activePlayer,
+    config,
   );
   let score = 0;
 
@@ -685,7 +892,7 @@ function scoreMovementAction(
     }
   }
 
-  if (needsHealing && isHealingTarget(state, targetPosition)) {
+  if (healingNeeded && isHealingTarget(state, targetPosition)) {
     score += config.knownHealingBonus;
   }
 
@@ -742,18 +949,47 @@ function distanceToNearestObjective(
   state: GameState,
   position: BoardPosition,
   player: Player,
+  config: AiHeuristicConfig,
 ): number | undefined {
-  const distances = state.board.flatMap((tile) => {
-    if (!isObjectiveTile(tile, player)) {
-      return [];
-    }
-
+  const objectiveTiles = getObjectiveTiles(state, player, config);
+  const distances = objectiveTiles.flatMap((tile) => {
     const distance = shortestKnownPathDistance(state, position, tile);
 
-    return distance === undefined ? [] : [distance - objectivePriority(tile)];
+    return distance === undefined ? [] : [distance - objectivePriority(tile, config)];
   });
 
   return distances.length > 0 ? Math.min(...distances) : undefined;
+}
+
+function getObjectiveTiles(
+  state: GameState,
+  player: Player,
+  config: AiHeuristicConfig,
+): GameState['board'] {
+  const allObjectiveTiles = state.board.filter((tile) =>
+    isObjectiveTile(tile, player),
+  );
+  const shouldDelayDragonObjective =
+    state.tileStack.length === 0 &&
+    state.tokenBag.length === 0 &&
+    estimateCombatWinChance(player, monsterDefinitions.dragon.strength) <
+      config.minimumDragonWinChance;
+
+  if (!shouldDelayDragonObjective) {
+    return allObjectiveTiles;
+  }
+
+  const nonDragonObjectiveTiles = allObjectiveTiles.filter(
+    (tile) => tile.roomToken?.id !== 'dragon',
+  );
+
+  if (nonDragonObjectiveTiles.length > 0) {
+    return nonDragonObjectiveTiles;
+  }
+
+  return shouldForceDragonEndgame(state, player, config)
+    ? allObjectiveTiles.filter((tile) => tile.roomToken?.id === 'dragon')
+    : [];
 }
 
 function isObjectiveTile(
@@ -775,10 +1011,53 @@ function isObjectiveTile(
   return true;
 }
 
-function objectivePriority(tile: GameState['board'][number]): number {
-  return tile.roomToken?.id === 'dragon'
-    ? aiHeuristicConfig.dragonObjectiveBonus
-    : 0;
+function objectivePriority(
+  tile: GameState['board'][number],
+  config: AiHeuristicConfig,
+): number {
+  return tile.roomToken?.id === 'dragon' ? config.dragonObjectiveBonus : 0;
+}
+
+function shouldForceDragonEndgame(
+  state: GameState,
+  player: Player,
+  config: AiHeuristicConfig,
+): boolean {
+  if (state.tileStack.length > 0 || state.tokenBag.length > 0) {
+    return false;
+  }
+
+  const dragonTiles = state.board.filter((tile) => tile.roomToken?.id === 'dragon');
+
+  if (dragonTiles.length === 0) {
+    return false;
+  }
+
+  const otherObjectiveTiles = state.board.filter(
+    (tile) => tile.roomToken?.id !== 'dragon' && isObjectiveTile(tile, player),
+  );
+
+  if (otherObjectiveTiles.length > 0) {
+    return false;
+  }
+
+  const dragonStrength = monsterDefinitions.dragon.strength;
+  const playerWinChance = estimateCombatWinChance(player, dragonStrength);
+
+  if (playerWinChance <= 0) {
+    return false;
+  }
+
+  const bestDragonWinChance = Math.max(
+    ...state.players.map((candidate) =>
+      estimateCombatWinChance(candidate, dragonStrength),
+    ),
+  );
+
+  return (
+    playerWinChance >= bestDragonWinChance &&
+    playerWinChance < config.minimumDragonWinChance
+  );
 }
 
 function distanceToNearestTile(
@@ -878,6 +1157,27 @@ function isHealingTarget(state: GameState, position: BoardPosition): boolean {
       healingPosition.boardX === position.boardX &&
       healingPosition.boardY === position.boardY,
   );
+}
+
+function canReceiveHealingFromEndTurn(state: GameState): boolean {
+  return state.healingEndTurnSource !== 'combat_retreat_blocked';
+}
+
+function isBacktrackMove(
+  action: Extract<GameAction, { type: 'movePlayer' }>,
+  lastMoveFrom: BoardPosition,
+): boolean {
+  return (
+    action.target.boardX === lastMoveFrom.boardX &&
+    action.target.boardY === lastMoveFrom.boardY
+  );
+}
+
+function needsHealing(
+  player: Player,
+  config: AiHeuristicConfig,
+): boolean {
+  return player.hp < config.preferHealingBelowHp || player.isCursed;
 }
 
 function actionOrder(action: GameAction): number {

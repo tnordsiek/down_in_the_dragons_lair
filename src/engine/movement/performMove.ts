@@ -53,6 +53,7 @@ export function moveActivePlayer(
     players,
     lastMoveFrom: activePlayer.position,
     remainingSteps,
+    healingEndTurnSource: 'idle_or_regular' as const,
   };
 
   return {
@@ -68,6 +69,7 @@ export function moveActivePlayer(
     players,
     lastMoveFrom: activePlayer.position,
     remainingSteps,
+    healingEndTurnSource: 'idle_or_regular',
     combat:
       targetMonster && !canIgnoreMonster
         ? {

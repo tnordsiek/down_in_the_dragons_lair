@@ -132,6 +132,40 @@ describe('dispatcher behavior: swapWitchPosition', () => {
     expect(next.combat).toBeUndefined();
   });
 
+  it('allows healing after a witch swap onto a healing tile', () => {
+    const swapped = applyGameAction(
+      witchState({
+        players: [
+          createTestPlayer({
+            id: 'player_human',
+            heroId: 'hero_witch',
+            hp: 2,
+          }),
+          createTestPlayer({
+            id: 'player_ai_1',
+            kind: 'ai',
+            heroId: 'hero_rogue',
+            position: createPosition(2, 0),
+          }),
+        ],
+        board: [
+          createTestTile({ boardX: 0, boardY: 0 }),
+          createTestTile({
+            tileInstanceId: 'tile-target',
+            boardX: 2,
+            boardY: 0,
+            blueprintId: 'start_cross_healing',
+          }),
+        ],
+      }),
+      { type: 'swapWitchPosition', targetPlayerId: 'player_ai_1' },
+    );
+    const next = applyGameAction(swapped, { type: 'endTurn' });
+
+    expect(swapped.players[0].hp).toBe(2);
+    expect(next.players[0].hp).toBe(5);
+  });
+
   it('enters combat when the witch lands on a monster tile', () => {
     const next = applyGameAction(
       witchState({
@@ -259,6 +293,46 @@ describe('dispatcher behavior: healing on endTurn', () => {
     const next = applyGameAction(state, { type: 'endTurn' });
 
     expect(next.players[0].hp).toBe(2);
+  });
+
+  it('heals after a regular move onto a healing tile and subsequent endTurn', () => {
+    const moved = applyGameAction(
+      createTestState({
+        phase: 'await_move',
+        remainingSteps: 1,
+        players: [
+          createTestPlayer({
+            id: 'player_human',
+            heroId: 'hero_blade',
+            hp: 2,
+            isCursed: true,
+            position: createPosition(0, 0),
+          }),
+          createTestPlayer({
+            id: 'player_ai_1',
+            kind: 'ai',
+            heroId: 'hero_rogue',
+            position: createPosition(5, 5),
+          }),
+        ],
+        board: [
+          createTestTile({ boardX: 0, boardY: 0, blueprintId: 'tunnel_cross' }),
+          createTestTile({
+            tileInstanceId: 'tile-healing',
+            boardX: 1,
+            boardY: 0,
+            blueprintId: 'start_cross_healing',
+          }),
+          createTestTile({ tileInstanceId: 'tile-far', boardX: 5, boardY: 5 }),
+        ],
+      }),
+      { type: 'movePlayer', target: createPosition(1, 0) },
+    );
+    const next = applyGameAction(moved, { type: 'endTurn' });
+
+    expect(moved.players[0].hp).toBe(2);
+    expect(next.players[0].hp).toBe(5);
+    expect(next.players[0].isCursed).toBe(false);
   });
 });
 
@@ -579,6 +653,58 @@ describe('dispatcher behavior: combat retreat branches', () => {
     expect(next.players[0].position).toEqual(createPosition(2, 0));
     expect(next.phase).toBe('turn_end');
     expect(() => assertStateInvariants(next)).not.toThrow();
+  });
+
+  it('does not heal after a combat retreat onto a healing tile', () => {
+    const retreated = applyGameAction(
+      createTestState({
+        phase: 'combat',
+        remainingSteps: 1,
+        players: [
+          createTestPlayer({
+            id: 'player_human',
+            heroId: 'hero_blade',
+            hp: 2,
+            isCursed: true,
+            position: createPosition(1, 0),
+          }),
+          createTestPlayer({
+            id: 'player_ai_1',
+            kind: 'ai',
+            heroId: 'hero_mage',
+            position: createPosition(9, 9),
+          }),
+        ],
+        board: [
+          createTestTile({
+            boardX: 0,
+            boardY: 0,
+            blueprintId: 'start_cross_healing',
+          }),
+          createTestTile({
+            tileInstanceId: 'tile-monster',
+            boardX: 1,
+            boardY: 0,
+            blueprintId: 'room_cross',
+            roomToken: { id: 'skeleton_lord', kind: 'monster' },
+          }),
+          createTestTile({ tileInstanceId: 'tile-far', boardX: 9, boardY: 9 }),
+        ],
+        combat: {
+          playerId: 'player_human',
+          monsterId: 'skeleton_lord',
+          position: createPosition(1, 0),
+          enteredFrom: createPosition(0, 0),
+        },
+      }),
+      { type: 'resolveCombat', dice: [1, 1] },
+    );
+    const next = applyGameAction(retreated, { type: 'endTurn' });
+
+    expect(retreated.players[0].position).toEqual(createPosition(0, 0));
+    expect(retreated.players[0].hp).toBe(1);
+    expect(next.players[0].hp).toBe(1);
+    expect(next.players[0].isCursed).toBe(true);
   });
 });
 

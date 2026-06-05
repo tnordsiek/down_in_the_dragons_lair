@@ -182,6 +182,77 @@ describe('turn ending', () => {
     expect(next.players[0].isCursed).toBe(false);
   });
 
+  it('heals the active player who ends the turn without moving on a healing tile', () => {
+    const state = createTestState({
+      phase: 'turn_start',
+      activePlayerIndex: 0,
+      remainingSteps: 4,
+      players: [
+        createTestPlayer({
+          id: 'player_human',
+          hp: 2,
+          isCursed: true,
+          position: createPosition(0, 0),
+        }),
+        createTestPlayer({
+          id: 'player_ai_1',
+          kind: 'ai',
+          heroId: 'hero_rogue',
+          position: createPosition(5, 5),
+        }),
+      ],
+      board: [
+        createTestTile({
+          boardX: 0,
+          boardY: 0,
+          blueprintId: 'start_cross_healing',
+        }),
+        createTestTile({ tileInstanceId: 'tile-far', boardX: 5, boardY: 5 }),
+      ],
+    });
+
+    const next = endTurn(state);
+
+    expect(next.players[0].hp).toBe(5);
+    expect(next.players[0].isCursed).toBe(false);
+  });
+
+  it('does not heal the active player after a blocked combat retreat onto a healing tile', () => {
+    const state = createTestState({
+      phase: 'turn_end',
+      activePlayerIndex: 0,
+      remainingSteps: 0,
+      healingEndTurnSource: 'combat_retreat_blocked',
+      players: [
+        createTestPlayer({
+          id: 'player_human',
+          hp: 2,
+          isCursed: true,
+          position: createPosition(0, 0),
+        }),
+        createTestPlayer({
+          id: 'player_ai_1',
+          kind: 'ai',
+          heroId: 'hero_rogue',
+          position: createPosition(5, 5),
+        }),
+      ],
+      board: [
+        createTestTile({
+          boardX: 0,
+          boardY: 0,
+          blueprintId: 'start_cross_healing',
+        }),
+        createTestTile({ tileInstanceId: 'tile-far', boardX: 5, boardY: 5 }),
+      ],
+    });
+
+    const next = endTurn(state);
+
+    expect(next.players[0].hp).toBe(2);
+    expect(next.players[0].isCursed).toBe(true);
+  });
+
   it('blocks ending the turn while combat is unresolved', () => {
     const state = createTestState({ phase: 'combat' });
 

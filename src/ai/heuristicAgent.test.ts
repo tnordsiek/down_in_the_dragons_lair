@@ -105,6 +105,340 @@ describe('heuristic AI', () => {
     });
   });
 
+  it('ends the turn to receive healing when standing on a healing tile', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-endturn-healing',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'await_move',
+      activePlayerIndex: 0,
+      remainingSteps: 2,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              hp: 2,
+              isCursed: true,
+              position: { boardX: 0, boardY: 0 },
+            }
+          : player,
+      ),
+      board: [
+        {
+          ...base.board[0],
+          blueprintId: 'start_cross_healing',
+        },
+      ],
+    };
+
+    expect(chooseHeuristicAiAction(state)).toEqual({ type: 'endTurn' });
+  });
+
+  it('does not end the turn for healing after a blocked combat retreat onto a healing tile', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-blocked-retreat-healing',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'await_move',
+      activePlayerIndex: 0,
+      remainingSteps: 2,
+      healingEndTurnSource: 'combat_retreat_blocked',
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              hp: 2,
+              isCursed: true,
+              position: { boardX: 0, boardY: 0 },
+            }
+          : player,
+      ),
+      board: [
+        {
+          ...base.board[0],
+          blueprintId: 'start_cross_healing',
+        },
+        {
+          tileInstanceId: 'tile-next',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    };
+
+    expect(chooseHeuristicAiAction(state)).not.toEqual({ type: 'endTurn' });
+  });
+
+  it('still prefers movement or exploration on a healing tile when already healthy and uncursed', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-healthy-healing-tile',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'await_move',
+      activePlayerIndex: 0,
+      remainingSteps: 2,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              hp: player.maxHp,
+              isCursed: false,
+              position: { boardX: 0, boardY: 0 },
+            }
+          : player,
+      ),
+      board: [
+        {
+          ...base.board[0],
+          blueprintId: 'start_cross_healing',
+        },
+        {
+          tileInstanceId: 'tile-next',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    };
+
+    expect(['movePlayer', 'declareExplorationDirection']).toContain(
+      chooseHeuristicAiAction(state).type,
+    );
+  });
+
+  it('ends the turn when healing is needed but no legal move gets closer to a healing tile', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-no-healing-progress',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'turn_start',
+      activePlayerIndex: 0,
+      remainingSteps: 4,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              hp: 3,
+              isCursed: true,
+              position: { boardX: 0, boardY: -2 },
+            }
+          : player,
+      ),
+      board: [
+        {
+          tileInstanceId: 'tile-healing',
+          blueprintId: 'start_cross_healing',
+          rotation: 0,
+          boardX: 0,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-current',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 0,
+          boardY: -2,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'treasure_chest', kind: 'chest' },
+        },
+        {
+          tileInstanceId: 'tile-farther',
+          blueprintId: 'tunnel_straight',
+          rotation: 0,
+          boardX: 0,
+          boardY: -3,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    };
+
+    expect(getLegalAiActions(state)).toEqual(
+      expect.arrayContaining([
+        { type: 'movePlayer', target: { boardX: 0, boardY: -3 } },
+        { type: 'endTurn' },
+      ]),
+    );
+    expect(chooseHeuristicAiAction(state)).toEqual({ type: 'endTurn' });
+  });
+
+  it('prefers a non-dragon objective when the dragon win chance is below the combat threshold', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-dragon-threshold',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'await_move',
+      activePlayerIndex: 0,
+      remainingSteps: 2,
+      tileStack: [],
+      tokenBag: [],
+      board: [
+        {
+          ...base.board[0],
+          blueprintId: 'room_cross',
+        },
+        {
+          tileInstanceId: 'tile-dragon',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 0,
+          boardY: -1,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'dragon', kind: 'monster' },
+        },
+        {
+          tileInstanceId: 'tile-rat',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'kitchen_rat', kind: 'monster' },
+        },
+      ],
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_mage',
+              hp: 3,
+              inventory: {
+                keyCount: 0,
+                weapons: [],
+                spells: [],
+              },
+              position: { boardX: 0, boardY: 0 },
+            }
+          : player,
+      ),
+    };
+
+    expect(chooseHeuristicAiAction(state)).toEqual({
+      type: 'movePlayer',
+      target: { boardX: 1, boardY: 0 },
+    });
+  });
+
+  it('starts the final dragon combat with the best remaining attacker even below the normal dragon threshold', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 2,
+      seed: 'ai-force-dragon-endgame',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'optional_monster_combat',
+      activePlayerIndex: 2,
+      remainingSteps: 2,
+      tileStack: [],
+      tokenBag: [],
+      board: [
+        {
+          ...base.board[0],
+          blueprintId: 'room_corner',
+          rotation: 90,
+          boardX: 0,
+          boardY: -1,
+          looseItems: [{ type: 'weapon', bonus: 2 }],
+        },
+        {
+          tileInstanceId: 'tile-dragon',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 6,
+          boardY: -7,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'dragon', kind: 'monster' },
+        },
+      ],
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_mage',
+              hp: 5,
+              inventory: {
+                keyCount: 0,
+                weapons: [
+                  { type: 'weapon', bonus: 1 },
+                  { type: 'weapon', bonus: 1 },
+                ],
+                spells: [{ type: 'spell', spellKind: 'flame' }],
+              },
+              position: { boardX: 0, boardY: 0 },
+            }
+          : index === 1
+            ? {
+                ...player,
+                heroId: 'hero_witch',
+                hp: 3,
+                isCursed: true,
+                inventory: {
+                  keyCount: 0,
+                  weapons: [
+                    { type: 'weapon', bonus: 1 },
+                    { type: 'weapon', bonus: 2 },
+                  ],
+                  spells: [],
+                },
+                position: { boardX: 0, boardY: -3 },
+              }
+            : {
+                ...player,
+                heroId: 'hero_seeress',
+                hp: 3,
+                inventory: {
+                  keyCount: 1,
+                  weapons: [
+                    { type: 'weapon', bonus: 3 },
+                    { type: 'weapon', bonus: 3 },
+                  ],
+                  spells: [],
+                },
+                position: { boardX: 6, boardY: -7 },
+              },
+      ),
+      combat: {
+        playerId: base.players[2].id,
+        monsterId: 'dragon',
+        position: { boardX: 6, boardY: -7 },
+        enteredFrom: { boardX: 6, boardY: -6 },
+      },
+    };
+
+    expect(chooseHeuristicAiAction(state)).toEqual({
+      type: 'startOptionalCombat',
+    });
+  });
+
   it('prefers taking useful loot and better swaps during loot resolution', () => {
     const base = createNewGame({
       humanHeroId: 'hero_mage',

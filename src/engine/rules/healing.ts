@@ -1,6 +1,6 @@
 import { tileBlueprints } from '../../data/tiles';
 import { getTileAt } from '../core/board';
-import type { GameState, Player } from '../core/types';
+import type { GameState, HealingEndTurnSource, Player } from '../core/types';
 
 export function healPlayer(player: Player): Player {
   return {
@@ -24,7 +24,10 @@ export function isHealingPosition(state: GameState, player: Player): boolean {
 export function applyHealingIfOnHealingTile(state: GameState): GameState {
   const activePlayer = state.players[state.activePlayerIndex];
 
-  if (!isHealingPosition(state, activePlayer)) {
+  if (
+    !isHealingPosition(state, activePlayer) ||
+    !canHealAtTurnEnd(state.healingEndTurnSource)
+  ) {
     return state;
   }
 
@@ -34,4 +37,8 @@ export function applyHealingIfOnHealingTile(state: GameState): GameState {
       index === state.activePlayerIndex ? healPlayer(player) : player,
     ),
   };
+}
+
+function canHealAtTurnEnd(source?: HealingEndTurnSource): boolean {
+  return source === undefined || source !== 'combat_retreat_blocked';
 }

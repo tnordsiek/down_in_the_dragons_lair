@@ -92,6 +92,7 @@ export function createTestState(overrides: TestStateOverrides = {}): GameState {
     pendingLoot: overrides.pendingLoot,
     pendingSeeressRoomChoice: overrides.pendingSeeressRoomChoice,
     turnContinuationReason: overrides.turnContinuationReason,
+    healingEndTurnSource: overrides.healingEndTurnSource,
     eventLog: overrides.eventLog ?? [],
     victory: overrides.victory,
     rng: overrides.rng ?? { seed: 'test-seed', state: 1 },

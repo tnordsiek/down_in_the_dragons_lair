@@ -91,6 +91,7 @@ export function endTurn(state: GameState): GameState {
     lastMoveFrom: undefined,
     combat: nextCombat,
     turnContinuationReason: undefined,
+    healingEndTurnSource: undefined,
   };
 }
 
