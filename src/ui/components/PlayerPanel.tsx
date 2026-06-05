@@ -378,7 +378,7 @@ function ItemIcon({ item }: { item: Item }) {
 
   return assetUrl ? (
     <img
-      className="h-4 w-4 rounded-sm object-contain"
+      className="h-6 w-6 rounded-sm object-contain"
       data-asset-id={assetId}
       src={assetUrl}
       alt={label}
@@ -410,7 +410,7 @@ function StatusBadge({
     >
       {assetUrl ? (
         <img
-          className="h-3.5 w-3.5 object-contain"
+          className="h-6 w-6 object-contain"
           src={assetUrl}
           alt={label}
           title={title}
