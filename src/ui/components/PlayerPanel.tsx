@@ -1,11 +1,4 @@
-import {
-  type Dispatch,
-  type SetStateAction,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 
 import { getAssetUrl, useAsset } from '../../data/assets';
 import type {
@@ -18,6 +11,7 @@ import type {
 import { itemAssetId, itemLabel } from '../items';
 import { heroName } from '../labels';
 import { getHeroPortraitTooltip } from '../tooltips';
+import { ImageLightbox, type LightboxImage } from './ImageLightbox';
 
 type PlayerPanelProps = {
   onFocusPosition?: (position: BoardPosition) => void;
@@ -26,30 +20,9 @@ type PlayerPanelProps = {
 
 export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
   const panel = useAsset('ui_panel_frame');
-  const [activeHeroInfoPlayerId, setActiveHeroInfoPlayerId] = useState<
-    string | undefined
-  >(undefined);
-
-  useEffect(() => {
-    if (!activeHeroInfoPlayerId) {
-      return;
-    }
-
-    const handleClick = () => {
-      setActiveHeroInfoPlayerId(undefined);
-    };
-    const handleContextMenu = () => {
-      setActiveHeroInfoPlayerId(undefined);
-    };
-
-    document.addEventListener('click', handleClick);
-    document.addEventListener('contextmenu', handleContextMenu);
-
-    return () => {
-      document.removeEventListener('click', handleClick);
-      document.removeEventListener('contextmenu', handleContextMenu);
-    };
-  }, [activeHeroInfoPlayerId]);
+  const [lightboxImage, setLightboxImage] = useState<LightboxImage | null>(
+    null,
+  );
 
   return (
     <section
@@ -65,40 +38,37 @@ export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
       >
         {state.players.map((player, index) => (
           <PlayerCard
-            activeHeroInfoPlayerId={activeHeroInfoPlayerId}
             key={player.id}
             index={index}
-            onFocusPosition={() => {
-              setActiveHeroInfoPlayerId(undefined);
-              onFocusPosition?.(player.position);
-            }}
+            onFocusPosition={() => onFocusPosition?.(player.position)}
+            onOpenImage={setLightboxImage}
             player={player}
-            setActiveHeroInfoPlayerId={setActiveHeroInfoPlayerId}
             state={state}
           />
         ))}
       </div>
+      <ImageLightbox
+        image={lightboxImage}
+        onClose={() => setLightboxImage(null)}
+      />
     </section>
   );
 }
 
 function PlayerCard({
-  activeHeroInfoPlayerId,
   index,
   onFocusPosition,
+  onOpenImage,
   player,
-  setActiveHeroInfoPlayerId,
   state,
 }: {
-  activeHeroInfoPlayerId?: string;
   index: number;
   onFocusPosition?: () => void;
+  onOpenImage: (image: LightboxImage) => void;
   player: Player;
-  setActiveHeroInfoPlayerId: Dispatch<SetStateAction<string | undefined>>;
   state: GameState;
 }) {
   const isActive = index === state.activePlayerIndex;
-  const showHeroInfo = activeHeroInfoPlayerId === player.id;
   const weaponBonus = useMemo(
     () => player.inventory.weapons.reduce((sum, weapon) => sum + weapon.bonus, 0),
     [player],
@@ -119,14 +89,6 @@ function PlayerCard({
       data-asset-id={`${player.heroId}_portrait`}
       data-testid={`player-card-${player.id}`}
     >
-      {showHeroInfo ? (
-        <div
-          className="pointer-events-none absolute bottom-full left-0 right-0 z-10 mb-2 rounded-carve border border-obsidian-700 bg-obsidian-900 px-2 py-1 text-[10px] text-parchment-200 shadow-forged"
-          data-testid={`hero-info-${player.id}`}
-        >
-          {heroInfo}
-        </div>
-      ) : null}
       <div
         className="grid gap-2 min-[360px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]"
         data-testid={`player-card-layout-${player.id}`}
@@ -138,11 +100,8 @@ function PlayerCard({
           <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-2">
             <HeroPortrait
               heroId={player.heroId}
-              onShowHeroInfo={() =>
-                setActiveHeroInfoPlayerId((current) =>
-                  current === player.id ? undefined : player.id,
-                )
-              }
+              heroInfo={heroInfo}
+              onOpenImage={onOpenImage}
               onFocusPosition={onFocusPosition}
             />
             <div className="grid content-start gap-1">
@@ -195,7 +154,13 @@ function PlayerCard({
             emptyLabel="-"
             icons={
               player.inventory.keyCount > 0
-                ? [<ItemIcon key={`${player.id}-key`} item={{ type: 'key' }} />]
+                ? [
+                    <ItemIcon
+                      key={`${player.id}-key`}
+                      item={{ type: 'key' }}
+                      onOpenImage={onOpenImage}
+                    />,
+                  ]
                 : []
             }
             label={`Key ${player.inventory.keyCount}`}
@@ -207,6 +172,7 @@ function PlayerCard({
               <ItemIcon
                 key={`${player.id}-weapon-${weaponIndex}`}
                 item={weapon}
+                onOpenImage={onOpenImage}
               />
             ))}
             label="Weapons"
@@ -215,7 +181,11 @@ function PlayerCard({
           <InventoryRow
             emptyLabel="-"
             icons={player.inventory.spells.map((spell, spellIndex) => (
-              <ItemIcon key={`${player.id}-spell-${spellIndex}`} item={spell} />
+              <ItemIcon
+                key={`${player.id}-spell-${spellIndex}`}
+                item={spell}
+                onOpenImage={onOpenImage}
+              />
             ))}
             label="Spells"
             title={`Spells carried: ${player.inventory.spells.length}`}
@@ -230,6 +200,7 @@ function PlayerCard({
               <StatusBadge
                 assetId="status_curse"
                 label="cursed"
+                onOpenImage={onOpenImage}
                 title="Cursed: hero abilities are inactive"
               />
             ) : null}
@@ -237,6 +208,7 @@ function PlayerCard({
               <StatusBadge
                 assetId="status_unconscious"
                 label="unconscious"
+                onOpenImage={onOpenImage}
                 title="Unconscious: this player skips the next turn"
               />
             ) : null}
@@ -266,11 +238,13 @@ function getHeroAbilityInfo(heroId: HeroId): string {
 
 function HeroPortrait({
   heroId,
-  onShowHeroInfo,
+  heroInfo,
+  onOpenImage,
   onFocusPosition,
 }: {
   heroId: HeroId;
-  onShowHeroInfo: () => void;
+  heroInfo: string;
+  onOpenImage: (image: LightboxImage) => void;
   onFocusPosition?: () => void;
 }) {
   const assetId = `${heroId}_portrait`;
@@ -284,7 +258,14 @@ function HeroPortrait({
       data-asset-id={assetId}
       onClick={(event) => {
         event.stopPropagation();
-        onShowHeroInfo();
+        if (assetUrl) {
+          onOpenImage({
+            src: assetUrl,
+            alt: label,
+            title: label,
+            caption: heroInfo,
+          });
+        }
       }}
       onContextMenu={(event) => {
         event.preventDefault();
@@ -371,19 +352,35 @@ function BonusBadge({ label, title }: { label: string; title: string }) {
   );
 }
 
-function ItemIcon({ item }: { item: Item }) {
+function ItemIcon({
+  item,
+  onOpenImage,
+}: {
+  item: Item;
+  onOpenImage: (image: LightboxImage) => void;
+}) {
   const assetId = itemAssetId(item);
   const label = itemLabel(item);
   const assetUrl = getAssetUrl(assetId);
 
   return assetUrl ? (
-    <img
-      className="h-6 w-6 rounded-sm object-contain"
-      data-asset-id={assetId}
-      src={assetUrl}
-      alt={label}
-      title={label}
-    />
+    <button
+      aria-label={`Enlarge ${label}`}
+      className="rounded-sm"
+      onClick={(event) => {
+        event.stopPropagation();
+        onOpenImage({ src: assetUrl, alt: label, caption: label });
+      }}
+      type="button"
+    >
+      <img
+        className="h-6 w-6 rounded-sm object-contain"
+        data-asset-id={assetId}
+        src={assetUrl}
+        alt={label}
+        title={label}
+      />
+    </button>
   ) : (
     <span className="text-xs" title={label}>
       {label}
@@ -394,10 +391,12 @@ function ItemIcon({ item }: { item: Item }) {
 function StatusBadge({
   assetId,
   label,
+  onOpenImage,
   title,
 }: {
   assetId: string;
   label: string;
+  onOpenImage: (image: LightboxImage) => void;
   title: string;
 }) {
   const assetUrl = getAssetUrl(assetId);
@@ -409,12 +408,21 @@ function StatusBadge({
       title={title}
     >
       {assetUrl ? (
-        <img
-          className="h-6 w-6 object-contain"
-          src={assetUrl}
-          alt={label}
-          title={title}
-        />
+        <button
+          aria-label={`Enlarge ${label}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpenImage({ src: assetUrl, alt: label, caption: title });
+          }}
+          type="button"
+        >
+          <img
+            className="h-6 w-6 object-contain"
+            src={assetUrl}
+            alt={label}
+            title={title}
+          />
+        </button>
       ) : null}
       {label}
     </span>

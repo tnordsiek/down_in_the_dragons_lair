@@ -29,5 +29,5 @@ export function getItemTileTooltip(item: Item): string {
 }
 
 export function getHeroPortraitTooltip(): string {
-  return 'Right-click to center the map on this hero. Left-click to show the hero description.';
+  return 'Right-click to center the map on this hero. Left-click to enlarge the portrait and read the hero description.';
 }

@@ -4352,7 +4352,7 @@ describe('Milestone 6 UI', () => {
       screen.getByRole('button', { name: 'Mage portrait actions' }),
     ).toHaveAttribute(
       'title',
-      'Right-click to center the map on this hero. Left-click to show the hero description.',
+      'Right-click to center the map on this hero. Left-click to enlarge the portrait and read the hero description.',
     );
     expect(within(mageCard).getByText('0 pts')).toBeInTheDocument();
     expect(within(thiefCard).getByText('0 pts')).toBeInTheDocument();
@@ -4378,7 +4378,8 @@ describe('Milestone 6 UI', () => {
       screen.getByRole('button', { name: 'Rogue portrait actions' }),
     );
 
-    expect(screen.getByTestId('hero-info-player_ai_1')).toHaveTextContent(
+    expect(screen.getByTestId('image-lightbox')).toBeInTheDocument();
+    expect(screen.getByTestId('image-lightbox-caption')).toHaveTextContent(
       'Combat draws count as wins. The Rogue may ignore monsters while moving.',
     );
   });
@@ -4430,29 +4431,105 @@ describe('Milestone 6 UI', () => {
       screen.getByRole('button', { name: 'Seeress portrait actions' }),
     );
 
-    expect(screen.getByTestId('hero-info-player_ai_3')).toHaveTextContent(
+    expect(screen.getByTestId('image-lightbox-caption')).toHaveTextContent(
       'Draws two room tokens and chooses one. Gains +1 combat strength in a fight after the first step is spent.',
     );
   });
 
-  it('closes the portrait description on the next click anywhere else in the app', () => {
+  it('opens the portrait lightbox with the hero name and ability caption on left-click', () => {
     const state = createUiState();
 
-    render(
-      <>
-        <PlayerPanel state={state} />
-        <ActionPanel state={state} {...noopActions} />
-      </>,
-    );
+    render(<PlayerPanel state={state} />);
 
     fireEvent.click(
       screen.getByRole('button', { name: 'Mage portrait actions' }),
     );
-    expect(screen.getByTestId('hero-info-player_human')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'End Turn' }));
+    expect(screen.getByTestId('image-lightbox')).toBeInTheDocument();
+    expect(screen.getByTestId('image-lightbox-title')).toHaveTextContent(
+      'Mage',
+    );
+    expect(screen.getByTestId('image-lightbox-caption')).toHaveTextContent(
+      /Fireball spells are not consumed/,
+    );
+  });
 
-    expect(screen.queryByTestId('hero-info-player_human')).toBeNull();
+  it('closes the image lightbox on backdrop click', () => {
+    const state = createUiState();
+
+    render(<PlayerPanel state={state} />);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Mage portrait actions' }),
+    );
+    expect(screen.getByTestId('image-lightbox')).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Close enlarged image' }),
+    );
+
+    expect(screen.queryByTestId('image-lightbox')).toBeNull();
+  });
+
+  it('closes the image lightbox on Escape', () => {
+    const state = createUiState();
+
+    render(<PlayerPanel state={state} />);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Mage portrait actions' }),
+    );
+    expect(screen.getByTestId('image-lightbox')).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.queryByTestId('image-lightbox')).toBeNull();
+  });
+
+  it('opens the lightbox with the item label caption when an inventory icon is clicked', () => {
+    const state = createUiState({
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_mage',
+              inventory: {
+                keyCount: 0,
+                weapons: [{ type: 'weapon', bonus: 2 }],
+                spells: [],
+              },
+            }
+          : player,
+      ),
+    });
+
+    render(<PlayerPanel state={state} />);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Enlarge Sword +2' }),
+    );
+
+    expect(screen.getByTestId('image-lightbox')).toBeInTheDocument();
+    expect(screen.getByTestId('image-lightbox-caption')).toHaveTextContent(
+      'Sword +2',
+    );
+  });
+
+  it('opens the lightbox with the status caption when a status icon is clicked', () => {
+    const state = createUiState({
+      players: createUiState().players.map((player, index) =>
+        index === 0 ? { ...player, isCursed: true } : player,
+      ),
+    });
+
+    render(<PlayerPanel state={state} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enlarge cursed' }));
+
+    expect(screen.getByTestId('image-lightbox')).toBeInTheDocument();
+    expect(screen.getByTestId('image-lightbox-caption')).toHaveTextContent(
+      'Cursed: hero abilities are inactive',
+    );
   });
 
   it('shows english item tooltips for healing spells and keys on tiles', () => {
