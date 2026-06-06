@@ -437,13 +437,24 @@ export const useSetupStore = create<SetupState>((set) => ({
     }),
 }));
 
+/**
+ * UI-action log entry. `message` stays English (used by the feedback
+ * diagnostics snapshot and as a fallback); `messageKey` + `messageParams`
+ * drive the localized render in {@link EventLog}.
+ */
+interface UiActionMessage {
+  message: string;
+  messageKey: string;
+  messageParams?: Record<string, string | number>;
+}
+
 function appendUiEvent(
   state: GameState,
-  message: string | undefined,
+  uiMessage: UiActionMessage | undefined,
   action?: GameAction,
   actingPlayer = state.players[state.activePlayerIndex],
 ): GameState {
-  if (!message) {
+  if (!uiMessage) {
     return state;
   }
 
@@ -454,7 +465,9 @@ function appendUiEvent(
       {
         id: `event-${state.eventLog.length}`,
         type: 'ui_action',
-        message,
+        message: uiMessage.message,
+        messageKey: uiMessage.messageKey,
+        messageParams: uiMessage.messageParams,
         ...createPlayerEventFields(actingPlayer, state.players),
         action: action ? { actionType: action.type } : undefined,
       },
@@ -466,21 +479,37 @@ function actionMessage(
   action: GameAction,
   previousState?: GameState,
   nextState?: GameState,
-): string | undefined {
+): UiActionMessage | undefined {
   switch (action.type) {
     case 'movePlayer':
-      return `Moved to ${action.target.boardX},${action.target.boardY}`;
+      return {
+        message: `Moved to ${action.target.boardX},${action.target.boardY}`,
+        messageKey: 'moved',
+        messageParams: { x: action.target.boardX, y: action.target.boardY },
+      };
     case 'declareExplorationDirection':
-      return `Explored ${action.direction}`;
+      return {
+        message: `Explored ${action.direction}`,
+        messageKey: 'explored',
+        messageParams: { direction: action.direction },
+      };
     case 'rotatePendingTilePreview':
-      return `Rotated preview ${action.direction}`;
+      return {
+        message: `Rotated preview ${action.direction}`,
+        messageKey: 'rotatedPreview',
+        messageParams: { direction: action.direction },
+      };
     case 'placePendingTile':
-      return `Placed tile at ${action.rotation} degrees`;
+      return {
+        message: `Placed tile at ${action.rotation} degrees`,
+        messageKey: 'placedTile',
+        messageParams: { rotation: action.rotation },
+      };
     case 'resolveRoomToken':
     case 'chooseSeeressRoomToken':
       return undefined;
     case 'startOptionalCombat':
-      return 'Started combat';
+      return { message: 'Started combat', messageKey: 'startedCombat' };
     case 'resolveCombat':
     case 'selectCurseTarget':
     case 'useBladeReroll':
@@ -492,31 +521,39 @@ function actionMessage(
     case 'resolveCombatWithFlameSpells':
       return undefined;
     case 'openChest':
-      return 'Opened chest';
+      return { message: 'Opened chest', messageKey: 'openedChest' };
     case 'beginLoot':
       return nextState?.phase === 'loot_resolution' &&
         previousState?.phase !== 'loot_resolution'
-        ? 'Started loot'
-        : 'Took loot';
+        ? { message: 'Started loot', messageKey: 'startedLoot' }
+        : { message: 'Took loot', messageKey: 'tookLoot' };
     case 'takeLoot':
-      return 'Took loot';
+      return { message: 'Took loot', messageKey: 'tookLoot' };
     case 'leaveLoot':
-      return 'Left loot on tile';
+      return { message: 'Left loot on tile', messageKey: 'leftLoot' };
     case 'swapLoot':
-      return 'Swapped loot';
+      return { message: 'Swapped loot', messageKey: 'swappedLoot' };
     case 'useHealingSpell':
-      return 'Used healing spell';
+      return { message: 'Used healing spell', messageKey: 'usedHealingSpell' };
     case 'swapWitchPosition': {
       const targetPlayer = previousState?.players.find(
         (player) => player.id === action.targetPlayerId,
       );
 
       return targetPlayer
-        ? `Swapped with ${heroDisplayNames[targetPlayer.heroId]} to ${targetPlayer.position.boardX},${targetPlayer.position.boardY}`
-        : 'Swapped witch position';
+        ? {
+            message: `Swapped with ${heroDisplayNames[targetPlayer.heroId]} to ${targetPlayer.position.boardX},${targetPlayer.position.boardY}`,
+            messageKey: 'swappedWitchTo',
+            messageParams: {
+              heroId: targetPlayer.heroId,
+              x: targetPlayer.position.boardX,
+              y: targetPlayer.position.boardY,
+            },
+          }
+        : { message: 'Swapped witch position', messageKey: 'swappedWitch' };
     }
     case 'endTurn':
-      return 'Ended turn';
+      return { message: 'Ended turn', messageKey: 'endedTurn' };
     case 'startGame':
       return undefined;
     default: {

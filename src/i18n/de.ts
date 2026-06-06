@@ -459,6 +459,71 @@ export const de: Translations = {
   eventLog: {
     title: 'Protokoll',
     system: 'System',
+    actions: {
+      moved: (x: number, y: number) => `Bewegt nach ${x},${y}`,
+      explored: (direction: string) => `Erkundet ${direction}`,
+      rotatedPreview: (direction: string) => `Vorschau gedreht ${direction}`,
+      placedTile: (rotation: number) => `Kachel platziert bei ${rotation} Grad`,
+      startedCombat: 'Kampf begonnen',
+      openedChest: 'Truhe geöffnet',
+      startedLoot: 'Beute begonnen',
+      tookLoot: 'Beute genommen',
+      leftLoot: 'Beute liegen gelassen',
+      swappedLoot: 'Beute getauscht',
+      usedHealingSpell: 'Heilzauber eingesetzt',
+      swappedWitchTo: (heroName: string, x: number, y: number) =>
+        `Mit ${heroName} getauscht nach ${x},${y}`,
+      swappedWitch: 'Hexenposition getauscht',
+      endedTurn: 'Zug beendet',
+    },
+    drewTile: (blueprintId: string) => `${blueprintId} zum Erkunden gezogen`,
+    placedTilePrimary: (blueprintId: string) => `${blueprintId} platziert`,
+    resolvedCombat: (outcome: string) => {
+      const labels: Record<string, string> = {
+        victory: 'Sieg',
+        draw: 'Unentschieden',
+        defeat: 'Niederlage',
+      };
+      return `Kampf gelöst: ${labels[outcome] ?? outcome}`;
+    },
+    resolvedRoomFound: (name: string) => `Raum gelöst: ${name} gefunden`,
+    treasureChest: 'Schatztruhe',
+    takesFirstTurn: (heroName: string) => `${heroName} beginnt den ersten Zug`,
+    combatSummary: (
+      name: string,
+      strength: number,
+      d1: number,
+      d2: number,
+      total: number,
+    ) => `${name} Stärke ${strength} · Würfel ${d1} + ${d2} · gesamt ${total}`,
+    startRolls: 'Startwürfe',
+    tiebreak: (n: number) => `Stechen ${n}`,
+    detail: {
+      fromToVia: (
+        ox: number,
+        oy: number,
+        tx: number,
+        ty: number,
+        direction: string,
+        rotations: string,
+      ) =>
+        `Von ${ox},${oy} nach ${tx},${ty} über ${direction} · erlaubte Drehungen ${rotations}`,
+      placedAtRotation: (tx: number, ty: number, rotation: string) =>
+        `Platziert bei ${tx},${ty} mit Drehung ${rotation}`,
+      skipped: (ids: string) => ` · übersprungen ${ids}`,
+      foundAt: (label: string, x: number, y: number) =>
+        `${label} gefunden bei ${x},${y}`,
+      seeressDrew: (labels: string) => ` · Seherin zog ${labels}`,
+      seeressChose: (n: number) => ` · Seherin wählte Option ${n}`,
+    },
+    breakdown: {
+      weapons: (n: number) => `Waffen +${n}`,
+      flame: (n: number) => `Feuerball +${n}`,
+      seeress: (n: number) => `Seherin +${n}`,
+      witchSacrifice: (n: number) => `Hexenopfer +${n}`,
+      curseTo: (label: string) => `Fluch -> ${label}`,
+      retreatedTo: (x: number, y: number) => `Rückzug nach ${x},${y}`,
+    },
   },
 
   playerPanel: {

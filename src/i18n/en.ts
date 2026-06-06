@@ -454,6 +454,71 @@ export const en = {
   eventLog: {
     title: 'Log',
     system: 'System',
+    actions: {
+      moved: (x: number, y: number) => `Moved to ${x},${y}`,
+      explored: (direction: string) => `Explored ${direction}`,
+      rotatedPreview: (direction: string) => `Rotated preview ${direction}`,
+      placedTile: (rotation: number) => `Placed tile at ${rotation} degrees`,
+      startedCombat: 'Started combat',
+      openedChest: 'Opened chest',
+      startedLoot: 'Started loot',
+      tookLoot: 'Took loot',
+      leftLoot: 'Left loot on tile',
+      swappedLoot: 'Swapped loot',
+      usedHealingSpell: 'Used healing spell',
+      swappedWitchTo: (heroName: string, x: number, y: number) =>
+        `Swapped with ${heroName} to ${x},${y}`,
+      swappedWitch: 'Swapped witch position',
+      endedTurn: 'Ended turn',
+    },
+    drewTile: (blueprintId: string) => `Drew ${blueprintId} for exploration`,
+    placedTilePrimary: (blueprintId: string) => `Placed ${blueprintId}`,
+    resolvedCombat: (outcome: string) => {
+      const labels: Record<string, string> = {
+        victory: 'Victory',
+        draw: 'Draw',
+        defeat: 'Defeat',
+      };
+      return `Resolved combat: ${labels[outcome] ?? outcome}`;
+    },
+    resolvedRoomFound: (name: string) => `Resolved room: found ${name}`,
+    treasureChest: 'Treasure Chest',
+    takesFirstTurn: (heroName: string) => `${heroName} takes the first turn`,
+    combatSummary: (
+      name: string,
+      strength: number,
+      d1: number,
+      d2: number,
+      total: number,
+    ) => `${name} strength ${strength} · dice ${d1} + ${d2} · total ${total}`,
+    startRolls: 'Start rolls',
+    tiebreak: (n: number) => `Tiebreak ${n}`,
+    detail: {
+      fromToVia: (
+        ox: number,
+        oy: number,
+        tx: number,
+        ty: number,
+        direction: string,
+        rotations: string,
+      ) =>
+        `From ${ox},${oy} to ${tx},${ty} via ${direction} · legal rotations ${rotations}`,
+      placedAtRotation: (tx: number, ty: number, rotation: string) =>
+        `Placed at ${tx},${ty} with rotation ${rotation}`,
+      skipped: (ids: string) => ` · skipped ${ids}`,
+      foundAt: (label: string, x: number, y: number) =>
+        `Found ${label} at ${x},${y}`,
+      seeressDrew: (labels: string) => ` · Seeress drew ${labels}`,
+      seeressChose: (n: number) => ` · Seeress chose option ${n}`,
+    },
+    breakdown: {
+      weapons: (n: number) => `weapons +${n}`,
+      flame: (n: number) => `flame +${n}`,
+      seeress: (n: number) => `seeress +${n}`,
+      witchSacrifice: (n: number) => `witch sacrifice +${n}`,
+      curseTo: (label: string) => `curse -> ${label}`,
+      retreatedTo: (x: number, y: number) => `retreated to ${x},${y}`,
+    },
   },
 
   playerPanel: {

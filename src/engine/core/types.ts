@@ -233,6 +233,7 @@ export interface GameEventCombatDetails {
   warlockSacrificeBonus: number;
   oracleBonus: number;
   curseTargetPlayerId?: string;
+  curseTargetPlayerHeroId?: HeroId;
   curseTargetPlayerLabel?: string;
   retreatPosition?: BoardPosition;
 }
@@ -257,6 +258,8 @@ export interface GameEvent {
   id: string;
   type: string;
   message: string;
+  messageKey?: string;
+  messageParams?: Record<string, string | number>;
   turn?: number;
   playerId?: string;
   playerHeroId?: HeroId;

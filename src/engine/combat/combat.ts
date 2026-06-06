@@ -427,6 +427,7 @@ export function selectCurseTarget(
     {
       ...pendingCombatEvent,
       curseTargetPlayerId: target.id,
+      curseTargetPlayerHeroId: target.heroId,
       curseTargetPlayerLabel: createPlayerEventFields(target, state.players)
         .playerLabel,
     },
