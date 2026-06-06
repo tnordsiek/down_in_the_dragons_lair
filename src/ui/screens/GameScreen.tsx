@@ -17,8 +17,10 @@ import { BoardView } from '../components/BoardView';
 import { EndScreen } from '../components/EndScreen';
 import { EventLog } from '../components/EventLog';
 import { FooterMeta } from '../components/FooterMeta';
+import { HotseatHandoffOverlay } from '../components/HotseatHandoffOverlay';
 import { PlayerPanel } from '../components/PlayerPanel';
 import { SettingsMenu } from '../components/SettingsMenu';
+import { playerDisplayName } from '../../data/playerLabels';
 import { heroName } from '../labels';
 import type {
   HealingSpellSelectionState,
@@ -58,6 +60,8 @@ export function GameScreen() {
     useState<WitchSwapSelectionState>({ mode: 'idle' });
   const [dismissedStartOverlayEventId, setDismissedStartOverlayEventId] =
     useState<string | null>(null);
+  const [lastHandoffEventCount, setLastHandoffEventCount] =
+    useState<number>(-1);
   const latestEvent = state?.eventLog[state.eventLog.length - 1];
   const startPlayerEvent =
     latestEvent?.type === 'game_started' &&
@@ -68,12 +72,37 @@ export function GameScreen() {
   const showStartPlayerOverlay =
     startPlayerEvent !== undefined &&
     startPlayerEvent.id !== dismissedStartOverlayEventId;
+
+  const handoffActivePlayer = state?.players[state.activePlayerIndex];
+  const humanPlayerCount =
+    state?.players.filter((player) => player.kind === 'human').length ?? 0;
+  const isHotseatGame = humanPlayerCount > 1;
+  const isTurnStartPhase =
+    state?.phase === 'turn_start' || state?.phase === 'turn_skip';
+  const showHandoffOverlay =
+    state !== undefined &&
+    isHotseatGame &&
+    !showStartPlayerOverlay &&
+    isTurnStartPhase &&
+    handoffActivePlayer?.kind === 'human' &&
+    state.eventLog.length !== lastHandoffEventCount;
+
+  const dismissHandoffOverlay = () => {
+    if (state) {
+      setLastHandoffEventCount(state.eventLog.length);
+    }
+  };
   const startOverlayRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
   const dismissStartOverlay = () => {
     if (startPlayerEvent) {
       setDismissedStartOverlayEventId(startPlayerEvent.id);
+      // The roll-off overlay already announced the starting player, so suppress
+      // the hand-off overlay for that very first turn.
+      if (state) {
+        setLastHandoffEventCount(state.eventLog.length);
+      }
     }
   };
 
@@ -100,11 +129,12 @@ export function GameScreen() {
 
     if (
       state.phase === 'resolve_room_token' &&
-      state.players[state.activePlayerIndex].kind === 'human'
+      state.players[state.activePlayerIndex].kind === 'human' &&
+      !showHandoffOverlay
     ) {
       dispatch({ type: 'resolveRoomToken' });
     }
-  }, [dispatch, state]);
+  }, [dispatch, state, showHandoffOverlay]);
 
   useEffect(() => {
     if (!state) {
@@ -115,7 +145,8 @@ export function GameScreen() {
     const isAiTurn =
       activePlayer.kind === 'ai' &&
       state.phase !== 'game_over' &&
-      !showStartPlayerOverlay;
+      !showStartPlayerOverlay &&
+      !showHandoffOverlay;
 
     if (!isAiTurn) {
       return;
@@ -126,7 +157,7 @@ export function GameScreen() {
     }, 200);
 
     return () => window.clearTimeout(timeoutId);
-  }, [dispatch, showStartPlayerOverlay, state]);
+  }, [dispatch, showStartPlayerOverlay, showHandoffOverlay, state]);
 
   useEffect(() => {
     if (!state) {
@@ -174,6 +205,7 @@ export function GameScreen() {
   useEffect(() => {
     if (!state) {
       setDismissedStartOverlayEventId(null);
+      setLastHandoffEventCount(-1);
     }
   }, [state]);
 
@@ -568,6 +600,18 @@ export function GameScreen() {
           </div>
         </div>
       ) : null}
+      {showHandoffOverlay && handoffActivePlayer ? (
+        <HotseatHandoffOverlay
+          player={handoffActivePlayer}
+          playerNumber={
+            state.players
+              .filter((player) => player.kind === 'human')
+              .indexOf(handoffActivePlayer) + 1
+          }
+          willSkipTurn={state.phase === 'turn_skip'}
+          onReady={dismissHandoffOverlay}
+        />
+      ) : null}
       <div className="shrink-0 border-t border-obsidian-700 px-4 pb-2 pt-2">
         <FooterMeta layout="flow" spread versionLabel="v1.5 fnord GAMES 2026" />
       </div>
@@ -635,13 +679,11 @@ function playerTurnLabel(
   playerId: string,
   state: NonNullable<ReturnType<typeof useSetupStore.getState>['gameState']>,
 ) {
-  const playerIndex = state.players.findIndex(
-    (player) => player.id === playerId,
-  );
+  const player = state.players.find((entry) => entry.id === playerId);
 
-  if (playerIndex === 0) {
-    return 'Human';
+  if (!player) {
+    return playerId;
   }
 
-  return `AI ${playerIndex}`;
+  return playerDisplayName(player, state.players);
 }

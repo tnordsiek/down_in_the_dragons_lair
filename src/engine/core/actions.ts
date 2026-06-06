@@ -37,6 +37,7 @@ export function applyGameAction(
   if (action.type === 'startGame') {
     return createNewGame({
       humanHeroId: action.humanHeroId,
+      additionalHumanHeroIds: action.additionalHumanHeroIds,
       aiCount: action.aiCount,
       seed: action.seed,
       poolScale: action.poolScale,

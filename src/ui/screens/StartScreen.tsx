@@ -3,7 +3,7 @@ import { useId, useState } from 'react';
 import { getAssetUrl, useAsset } from '../../data/assets';
 import { heroDefinitions, heroIds } from '../../data/heroes';
 import type { AiDifficulty, HeroId } from '../../engine/core/types';
-import { useSetupStore } from '../../state/setupStore';
+import { MAX_AI, MAX_PLAYERS, useSetupStore } from '../../state/setupStore';
 import { generateRandomSeed } from '../../utils/randomSeed';
 import { FooterMeta } from '../components/FooterMeta';
 import { SettingsMenu } from '../components/SettingsMenu';
@@ -39,6 +39,11 @@ export function StartScreen() {
   const [advancedSetupVisible, setAdvancedSetupVisible] = useState(false);
   const advancedSetupId = useId();
   const heroId = useSetupStore((state) => state.selectedHeroId);
+  const gameMode = useSetupStore((state) => state.gameMode);
+  const humanCount = useSetupStore((state) => state.humanCount);
+  const selectedHumanHeroIds = useSetupStore(
+    (state) => state.selectedHumanHeroIds,
+  );
   const aiCount = useSetupStore((state) => state.aiCount);
   const opponentSelectionMode = useSetupStore(
     (state) => state.opponentSelectionMode,
@@ -53,6 +58,9 @@ export function StartScreen() {
   const persistenceError = useSetupStore((state) => state.persistenceError);
   const difficulty = useSetupStore((state) => state.difficulty);
   const setSelectedHeroId = useSetupStore((state) => state.setSelectedHeroId);
+  const setGameMode = useSetupStore((state) => state.setGameMode);
+  const setHumanCount = useSetupStore((state) => state.setHumanCount);
+  const setHumanHeroId = useSetupStore((state) => state.setHumanHeroId);
   const setAiCount = useSetupStore((state) => state.setAiCount);
   const setDifficulty = useSetupStore((state) => state.setDifficulty);
   const setOpponentSelectionMode = useSetupStore(
@@ -72,8 +80,16 @@ export function StartScreen() {
   const logoUrl = getAssetUrl(logo.assetId);
   const heroPortraitUrl = getAssetUrl(`${heroId}_portrait`);
   const heroAbilityLines = heroPreviewAbilities[heroId];
-  const availableOpponentHeroIds = heroIds.filter((id) => id !== heroId);
+  const isHotseat = gameMode === 'hotseat';
+  const humanHeroIds = isHotseat ? selectedHumanHeroIds : [heroId];
+  const availableOpponentHeroIds = heroIds.filter(
+    (id) => !humanHeroIds.includes(id),
+  );
   const selectionLimitReached = selectedOpponentHeroIds.length >= aiCount;
+  const maxAiOpponents = Math.min(MAX_AI, MAX_PLAYERS - humanCount);
+  const showAiSection = !isHotseat || aiCount > 0;
+  const hasDuplicateHumanHeroes =
+    new Set(humanHeroIds).size !== humanHeroIds.length;
 
   return (
     <main
@@ -140,6 +156,7 @@ export function StartScreen() {
           </div>
 
           <div className="grid content-start gap-5">
+            {!isHotseat ? (
             <section
               className="w-full rounded-forged border border-stone-700 bg-stone-900/80 p-4 text-left shadow-forged"
               data-asset-id={`${heroId}_portrait`}
@@ -185,6 +202,7 @@ export function StartScreen() {
                 </div>
               </div>
             </section>
+            ) : null}
 
             <div data-asset-id="bg_panel_texture">
               <div
@@ -200,7 +218,95 @@ export function StartScreen() {
                   </p>
                 ) : null}
                 <div className="mt-3 grid gap-3">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div
+                    className="grid grid-cols-2 gap-2"
+                    role="group"
+                    aria-label="Game Mode"
+                  >
+                    <button
+                      type="button"
+                      aria-pressed={!isHotseat}
+                      className={`rounded-forged border px-3 py-2 text-sm font-semibold transition-colors ${
+                        !isHotseat
+                          ? 'border-torch-500 bg-obsidian-950 text-torch-200'
+                          : 'border-obsidian-700 bg-obsidian-950/60 text-parchment-200 hover:border-torch-500'
+                      }`}
+                      onClick={() => setGameMode('solo')}
+                    >
+                      Solo (vs. AI)
+                    </button>
+                    <button
+                      type="button"
+                      aria-pressed={isHotseat}
+                      className={`rounded-forged border px-3 py-2 text-sm font-semibold transition-colors ${
+                        isHotseat
+                          ? 'border-torch-500 bg-obsidian-950 text-torch-200'
+                          : 'border-obsidian-700 bg-obsidian-950/60 text-parchment-200 hover:border-torch-500'
+                      }`}
+                      onClick={() => setGameMode('hotseat')}
+                    >
+                      Hotseat (2-5 players)
+                    </button>
+                  </div>
+
+                  {isHotseat ? (
+                    <>
+                      <label className="grid gap-2 text-sm text-parchment-200">
+                        Human Players
+                        <input
+                          aria-label="Human Players"
+                          className="accent-amber-300"
+                          max={MAX_PLAYERS}
+                          min={2}
+                          type="range"
+                          value={humanCount}
+                          onChange={(event) =>
+                            setHumanCount(Number(event.target.value))
+                          }
+                        />
+                        <span className="font-mono text-stone-100">
+                          {humanCount}
+                        </span>
+                      </label>
+
+                      <fieldset className="grid gap-2 text-sm text-parchment-200">
+                        <legend>Heroes</legend>
+                        {selectedHumanHeroIds.map((slotHeroId, slotIndex) => (
+                          <label
+                            key={slotIndex}
+                            className="grid grid-cols-[auto_1fr] items-center gap-2"
+                          >
+                            <span className="text-parchment-200">
+                              Player {slotIndex + 1}
+                            </span>
+                            <select
+                              aria-label={`Player ${slotIndex + 1} hero`}
+                              className="rounded-forged border border-obsidian-600 bg-obsidian-950 px-3 py-2 text-parchment-50 shadow-carve"
+                              value={slotHeroId}
+                              onChange={(event) =>
+                                setHumanHeroId(
+                                  slotIndex,
+                                  event.target.value as HeroId,
+                                )
+                              }
+                            >
+                              {heroIds
+                                .filter(
+                                  (id) =>
+                                    id === slotHeroId ||
+                                    !selectedHumanHeroIds.includes(id),
+                                )
+                                .map((id) => (
+                                  <option key={id} value={id}>
+                                    {heroDefinitions[id].displayName}
+                                  </option>
+                                ))}
+                            </select>
+                          </label>
+                        ))}
+                      </fieldset>
+                    </>
+                  ) : (
                     <label className="grid gap-2 text-sm text-parchment-200">
                       Hero
                       <select
@@ -217,7 +323,27 @@ export function StartScreen() {
                         ))}
                       </select>
                     </label>
+                  )}
 
+                  {!isHotseat || maxAiOpponents > 0 ? (
+                    <label className="grid gap-2 text-sm text-parchment-200">
+                      AI Opponents
+                      <input
+                        aria-label="AI Opponents"
+                        className="accent-amber-300"
+                        max={isHotseat ? maxAiOpponents : MAX_AI}
+                        min={isHotseat ? 0 : 1}
+                        type="range"
+                        value={aiCount}
+                        onChange={(event) =>
+                          setAiCount(Number(event.target.value))
+                        }
+                      />
+                      <span className="font-mono text-stone-100">{aiCount}</span>
+                    </label>
+                  ) : null}
+
+                  {showAiSection ? (
                     <label className="grid gap-2 text-sm text-parchment-200">
                       Difficulty
                       <select
@@ -232,24 +358,10 @@ export function StartScreen() {
                         <option value="hard">Hard</option>
                       </select>
                     </label>
-                  </div>
+                  ) : null}
 
-                  <label className="grid gap-2 text-sm text-parchment-200">
-                    AI Opponents
-                    <input
-                      aria-label="AI Opponents"
-                      className="accent-amber-300"
-                      max={4}
-                      min={1}
-                      type="range"
-                      value={aiCount}
-                      onChange={(event) =>
-                        setAiCount(Number(event.target.value))
-                      }
-                    />
-                    <span className="font-mono text-stone-100">{aiCount}</span>
-                  </label>
-
+                  {showAiSection ? (
+                  <>
                   <fieldset className="grid gap-2 text-sm text-parchment-200">
                     <legend>Opponent Selection</legend>
                     <label className="flex items-center gap-2">
@@ -315,6 +427,8 @@ export function StartScreen() {
                       </p>
                     </fieldset>
                   ) : null}
+                  </>
+                  ) : null}
 
                   <button
                     aria-controls={advancedSetupId}
@@ -375,9 +489,16 @@ export function StartScreen() {
                     </div>
                   ) : null}
 
+                  {hasDuplicateHumanHeroes ? (
+                    <p className="rounded-carve border border-blood-500/50 bg-blood-900 p-2 text-sm text-blood-200">
+                      Each player must choose a unique hero.
+                    </p>
+                  ) : null}
+
                   <button
-                    className="rounded-forged bg-torch-300 px-4 py-3 font-semibold text-obsidian-950 shadow-forged transition-colors hover:bg-torch-400"
+                    className="rounded-forged bg-torch-300 px-4 py-3 font-semibold text-obsidian-950 shadow-forged transition-colors hover:bg-torch-400 disabled:cursor-not-allowed disabled:opacity-50"
                     data-asset-id="ui_button_primary"
+                    disabled={hasDuplicateHumanHeroes}
                     onClick={startGame}
                   >
                     {hasSavedGame ? 'Start New Game' : 'Start Game'}

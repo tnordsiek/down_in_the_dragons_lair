@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { heroDisplayNames } from '../data/displayNames';
+import { heroIds } from '../data/heroes';
 import { applyGameAction } from '../engine/core/actions';
 import { createPlayerEventFields } from '../engine/core/events';
 import type { AiDifficulty, GameAction, GameState, HeroId } from '../engine/core/types';
@@ -28,10 +29,18 @@ export type PendingAudioCue = {
 
 export type OpponentSelectionMode = 'random' | 'manual';
 
+export type GameMode = 'solo' | 'hotseat';
+
+export const MAX_PLAYERS = 5;
+export const MAX_AI = 4;
+
 let nextPendingAudioCueId = 0;
 
 type SetupState = {
   selectedHeroId: HeroId;
+  gameMode: GameMode;
+  humanCount: number;
+  selectedHumanHeroIds: HeroId[];
   aiCount: number;
   difficulty: AiDifficulty;
   opponentSelectionMode: OpponentSelectionMode;
@@ -49,6 +58,9 @@ type SetupState = {
   persistenceError?: string;
   pendingAudioCues: PendingAudioCue[];
   setSelectedHeroId: (heroId: HeroId) => void;
+  setGameMode: (mode: GameMode) => void;
+  setHumanCount: (humanCount: number) => void;
+  setHumanHeroId: (slotIndex: number, heroId: HeroId) => void;
   setAiCount: (aiCount: number) => void;
   setDifficulty: (difficulty: AiDifficulty) => void;
   setOpponentSelectionMode: (mode: OpponentSelectionMode) => void;
@@ -79,6 +91,9 @@ const initialAudioSettings = loadAudioSettings();
 
 export const useSetupStore = create<SetupState>((set) => ({
   selectedHeroId: 'hero_mage',
+  gameMode: 'solo',
+  humanCount: 2,
+  selectedHumanHeroIds: defaultHumanHeroIds(2),
   aiCount: 1,
   difficulty: 'normal',
   opponentSelectionMode: 'random',
@@ -99,16 +114,94 @@ export const useSetupStore = create<SetupState>((set) => ({
       selectedHeroId,
       selectedOpponentHeroIds: sanitizeSelectedOpponentHeroIds(
         state.selectedOpponentHeroIds,
-        selectedHeroId,
+        [selectedHeroId],
         state.aiCount,
       ),
     })),
+  setGameMode: (gameMode) =>
+    set((state) => {
+      if (gameMode === 'solo') {
+        return {
+          gameMode,
+          aiCount: state.aiCount < 1 ? 1 : state.aiCount,
+          selectedOpponentHeroIds: sanitizeSelectedOpponentHeroIds(
+            state.selectedOpponentHeroIds,
+            [state.selectedHeroId],
+            state.aiCount < 1 ? 1 : state.aiCount,
+          ),
+        };
+      }
+
+      const humanCount =
+        state.humanCount >= 2 && state.humanCount <= MAX_PLAYERS
+          ? state.humanCount
+          : 2;
+      const selectedHumanHeroIds = defaultHumanHeroIds(humanCount);
+      const aiCount = Math.min(state.aiCount, MAX_PLAYERS - humanCount);
+
+      return {
+        gameMode,
+        humanCount,
+        selectedHumanHeroIds,
+        aiCount,
+        selectedOpponentHeroIds: sanitizeSelectedOpponentHeroIds(
+          state.selectedOpponentHeroIds,
+          selectedHumanHeroIds,
+          aiCount,
+        ),
+      };
+    }),
+  setHumanCount: (humanCount) =>
+    set((state) => {
+      const clamped = Math.max(2, Math.min(MAX_PLAYERS, humanCount));
+      const selectedHumanHeroIds = resizeHumanHeroIds(
+        state.selectedHumanHeroIds,
+        clamped,
+      );
+      const aiCount = Math.min(state.aiCount, MAX_PLAYERS - clamped);
+
+      return {
+        humanCount: clamped,
+        selectedHumanHeroIds,
+        aiCount,
+        selectedOpponentHeroIds: sanitizeSelectedOpponentHeroIds(
+          state.selectedOpponentHeroIds,
+          selectedHumanHeroIds,
+          aiCount,
+        ),
+      };
+    }),
+  setHumanHeroId: (slotIndex, heroId) =>
+    set((state) => {
+      if (slotIndex < 0 || slotIndex >= state.selectedHumanHeroIds.length) {
+        return {};
+      }
+
+      const next = [...state.selectedHumanHeroIds];
+      const previousHeroId = next[slotIndex];
+      const duplicateSlot = next.indexOf(heroId);
+
+      next[slotIndex] = heroId;
+      // Keep heroes unique across human slots by swapping the conflicting slot.
+      if (duplicateSlot >= 0 && duplicateSlot !== slotIndex) {
+        next[duplicateSlot] = previousHeroId;
+      }
+
+      return {
+        selectedHumanHeroIds: next,
+        selectedOpponentHeroIds: sanitizeSelectedOpponentHeroIds(
+          state.selectedOpponentHeroIds,
+          next,
+          state.aiCount,
+        ),
+      };
+    }),
   setAiCount: (aiCount) =>
     set((state) => ({
       aiCount,
       selectedOpponentHeroIds: sanitizeSelectedOpponentHeroIds(
         state.selectedOpponentHeroIds,
-        state.selectedHeroId,
+        currentHumanHeroIds(state),
         aiCount,
       ),
     })),
@@ -117,7 +210,7 @@ export const useSetupStore = create<SetupState>((set) => ({
     set({ opponentSelectionMode }),
   toggleSelectedOpponentHeroId: (heroId) =>
     set((state) => {
-      if (heroId === state.selectedHeroId) {
+      if (currentHumanHeroIds(state).includes(heroId)) {
         return {};
       }
 
@@ -205,9 +298,15 @@ export const useSetupStore = create<SetupState>((set) => ({
   closeFeedbackModal: () => set({ feedbackModalOpen: false }),
   startGame: () =>
     set((state) => {
+      const humanHeroIds = currentHumanHeroIds(state);
+      const [firstHumanHeroId, ...additionalHumanHeroIds] = humanHeroIds;
       const gameState = applyGameAction(undefined, {
         type: 'startGame',
-        humanHeroId: state.selectedHeroId,
+        humanHeroId: firstHumanHeroId,
+        additionalHumanHeroIds:
+          additionalHumanHeroIds.length > 0
+            ? additionalHumanHeroIds
+            : undefined,
         aiCount: state.aiCount,
         seed: state.seed,
         poolScale: state.poolScale,
@@ -536,10 +635,44 @@ function createPendingAudioCue(assetId: string): PendingAudioCue {
 
 function sanitizeSelectedOpponentHeroIds(
   selectedOpponentHeroIds: HeroId[],
-  selectedHeroId: HeroId,
+  humanHeroIds: HeroId[],
   aiCount: number,
 ): HeroId[] {
   return selectedOpponentHeroIds
-    .filter((heroId) => heroId !== selectedHeroId)
+    .filter((heroId) => !humanHeroIds.includes(heroId))
     .slice(0, aiCount);
+}
+
+function currentHumanHeroIds(state: {
+  gameMode: GameMode;
+  selectedHeroId: HeroId;
+  selectedHumanHeroIds: HeroId[];
+}): HeroId[] {
+  return state.gameMode === 'hotseat'
+    ? state.selectedHumanHeroIds
+    : [state.selectedHeroId];
+}
+
+/** Returns `count` distinct heroes in canonical order for Hotseat defaults. */
+function defaultHumanHeroIds(count: number): HeroId[] {
+  return heroIds.slice(0, count);
+}
+
+/** Grows/shrinks a human hero slot list to `count`, keeping heroes distinct. */
+function resizeHumanHeroIds(current: HeroId[], count: number): HeroId[] {
+  if (count <= current.length) {
+    return current.slice(0, count);
+  }
+
+  const next = [...current];
+  for (const heroId of heroIds) {
+    if (next.length >= count) {
+      break;
+    }
+    if (!next.includes(heroId)) {
+      next.push(heroId);
+    }
+  }
+
+  return next;
 }

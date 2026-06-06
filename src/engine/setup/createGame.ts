@@ -1,5 +1,5 @@
 import { heroIds } from '../../data/heroes';
-import { playerHeroLabel } from '../../data/playerLabels';
+import { playerHeroLabelFor } from '../../data/playerLabels';
 import { getScaledTileCount, tilePoolCounts } from '../../data/tiles';
 import { createTokenBag } from '../../data/tokens';
 import { createSeededRng, type SeededRng } from '../../utils/rng';
@@ -16,6 +16,8 @@ import type {
 
 export type CreateGameOptions = {
   humanHeroId: HeroId;
+  /** Additional human players for Hotseat mode (first human uses `humanHeroId`). */
+  additionalHumanHeroIds?: HeroId[];
   aiCount: number;
   seed: string;
   poolScale?: number;
@@ -24,19 +26,33 @@ export type CreateGameOptions = {
 };
 
 export function createNewGame(options: CreateGameOptions): GameState {
-  if (options.aiCount < 1 || options.aiCount > 4) {
-    throw new Error('aiCount must be between 1 and 4');
+  const humanHeroIds = [
+    options.humanHeroId,
+    ...(options.additionalHumanHeroIds ?? []),
+  ];
+
+  if (options.aiCount < 0 || options.aiCount > 4) {
+    throw new Error('aiCount must be between 0 and 4');
+  }
+
+  if (humanHeroIds.length < 1 || humanHeroIds.length > 5) {
+    throw new Error('humanHeroIds must contain between 1 and 5 heroes');
+  }
+
+  const totalPlayers = humanHeroIds.length + options.aiCount;
+  if (totalPlayers < 2 || totalPlayers > 5) {
+    throw new Error('Total player count must be between 2 and 5');
   }
 
   const rng = createSeededRng(options.seed);
   const poolScale = options.poolScale ?? 1;
   const assignedHeroIds = assignHeroes(
-    options.humanHeroId,
+    humanHeroIds,
     options.aiCount,
     rng,
     options.selectedAiHeroIds,
   );
-  const players = createPlayers(assignedHeroIds);
+  const players = createPlayers(assignedHeroIds, humanHeroIds.length);
   const startPlayerRoll = rollStartPlayer(players, rng);
   const activePlayerIndex = startPlayerRoll.activePlayerIndex;
   const board: PlacedTile[] = [
@@ -71,13 +87,19 @@ export function createNewGame(options: CreateGameOptions): GameState {
 }
 
 function assignHeroes(
-  humanHeroId: HeroId,
+  humanHeroIds: HeroId[],
   aiCount: number,
   rng: SeededRng,
   selectedAiHeroIds?: HeroId[],
 ): HeroId[] {
-  if (!heroIds.includes(humanHeroId)) {
-    throw new Error(`Unknown human hero: ${humanHeroId}`);
+  for (const heroId of humanHeroIds) {
+    if (!heroIds.includes(heroId)) {
+      throw new Error(`Unknown human hero: ${heroId}`);
+    }
+  }
+
+  if (new Set(humanHeroIds).size !== humanHeroIds.length) {
+    throw new Error('humanHeroIds must be unique');
   }
 
   if (selectedAiHeroIds) {
@@ -95,13 +117,15 @@ function assignHeroes(
         throw new Error(`Unknown AI hero: ${heroId}`);
       }
 
-      if (heroId === humanHeroId) {
-        throw new Error('selectedAiHeroIds must not include the human hero');
+      if (humanHeroIds.includes(heroId)) {
+        throw new Error('selectedAiHeroIds must not include a human hero');
       }
     }
   }
 
-  const remainingHeroes = heroIds.filter((heroId) => heroId !== humanHeroId);
+  const remainingHeroes = heroIds.filter(
+    (heroId) => !humanHeroIds.includes(heroId),
+  );
   const selectedAiHeroes = selectedAiHeroIds ?? [];
   const fillableAiHeroes = remainingHeroes.filter(
     (heroId) => !selectedAiHeroes.includes(heroId),
@@ -112,13 +136,13 @@ function assignHeroes(
   );
   const aiHeroIds = [...selectedAiHeroes, ...randomAiHeroes];
 
-  return [humanHeroId, ...aiHeroIds];
+  return [...humanHeroIds, ...aiHeroIds];
 }
 
-function createPlayers(assignedHeroIds: HeroId[]): Player[] {
+function createPlayers(assignedHeroIds: HeroId[], humanCount: number): Player[] {
   return assignedHeroIds.map((heroId, index) => ({
-    id: index === 0 ? 'player_human' : `player_ai_${index}`,
-    kind: index === 0 ? 'human' : 'ai',
+    id: createPlayerId(index, humanCount),
+    kind: index < humanCount ? 'human' : 'ai',
     heroId,
     hp: 5,
     maxHp: 5,
@@ -132,6 +156,19 @@ function createPlayers(assignedHeroIds: HeroId[]): Player[] {
     skipNextTurn: false,
     position: { boardX: 0, boardY: 0 },
   }));
+}
+
+function createPlayerId(index: number, humanCount: number): string {
+  // Solo mode (single human) keeps the original id scheme for backward
+  // compatibility: 'player_human', 'player_ai_1', 'player_ai_2', ...
+  if (humanCount <= 1) {
+    return index === 0 ? 'player_human' : `player_ai_${index}`;
+  }
+
+  // Hotseat mode: each human and AI gets a 1-based suffix.
+  return index < humanCount
+    ? `player_human_${index + 1}`
+    : `player_ai_${index - humanCount + 1}`;
 }
 
 function rollStartPlayer(
@@ -151,10 +188,7 @@ function rollStartPlayer(
       rolls: rolls.map((entry) => ({
         playerId: players[entry.playerIndex].id,
         playerHeroId: players[entry.playerIndex].heroId,
-        playerLabel: playerHeroLabel(
-          players[entry.playerIndex],
-          entry.playerIndex,
-        ),
+        playerLabel: playerHeroLabelFor(players[entry.playerIndex], players),
         roll: entry.roll,
       })),
     });
@@ -212,10 +246,10 @@ function createInitialEventLog(
     {
       id: 'event-0',
       type: 'game_started',
-      message: `Game started. ${playerHeroLabel(activePlayer, activePlayerIndex)} takes the first turn.`,
+      message: `Game started. ${playerHeroLabelFor(activePlayer, players)} takes the first turn.`,
       playerId: activePlayer.id,
       playerHeroId: activePlayer.heroId,
-      playerLabel: playerHeroLabel(activePlayer, activePlayerIndex),
+      playerLabel: playerHeroLabelFor(activePlayer, players),
       startPlayer,
     },
   ];

@@ -104,9 +104,10 @@ describe('createNewGame', () => {
   });
 
   it('rejects invalid AI counts', () => {
+    // A single human with no AI is only one player and is rejected.
     expect(() =>
       createNewGame({ humanHeroId: 'hero_mage', aiCount: 0, seed: 'seed' }),
-    ).toThrow(/aiCount/);
+    ).toThrow(/player count/i);
     expect(() =>
       createNewGame({ humanHeroId: 'hero_mage', aiCount: 5, seed: 'seed' }),
     ).toThrow(/aiCount/);

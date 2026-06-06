@@ -311,6 +311,12 @@ export interface GameState {
 export type StartGameAction = {
   type: 'startGame';
   humanHeroId: HeroId;
+  /**
+   * Heroes for additional human players (Hotseat mode). The first human player
+   * always uses `humanHeroId`; each entry here adds another human player.
+   * Empty/undefined means a single human player (Solo mode).
+   */
+  additionalHumanHeroIds?: HeroId[];
   aiCount: number;
   seed: string;
   poolScale?: number;

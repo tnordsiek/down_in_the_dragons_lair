@@ -8,6 +8,7 @@ import type {
   Item,
   Player,
 } from '../../engine/core/types';
+import { playerDisplayName } from '../../data/playerLabels';
 import { itemAssetId, itemLabel } from '../items';
 import { heroName } from '../labels';
 import { getHeroPortraitTooltip } from '../tooltips';
@@ -24,6 +25,24 @@ export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
     null,
   );
 
+  const isHotseatGame =
+    state.players.filter((player) => player.kind === 'human').length > 1;
+  const displayedPlayers = useMemo(() => {
+    // Solo keeps the original order; Hotseat surfaces the active player first so
+    // the player taking their turn always sees their own card on top.
+    if (!isHotseatGame) {
+      return state.players;
+    }
+
+    const reordered = [...state.players];
+    const [active] = reordered.splice(state.activePlayerIndex, 1);
+    if (active) {
+      reordered.unshift(active);
+    }
+
+    return reordered;
+  }, [state.players, state.activePlayerIndex, isHotseatGame]);
+
   return (
     <section
       className="rounded-forged border border-obsidian-700 bg-obsidian-800/85 p-4 shadow-forged"
@@ -36,10 +55,10 @@ export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
         className="mt-3 grid grid-cols-1 gap-2"
         data-testid="player-panel-grid"
       >
-        {state.players.map((player, index) => (
+        {displayedPlayers.map((player) => (
           <PlayerCard
             key={player.id}
-            index={index}
+            index={state.players.indexOf(player)}
             onFocusPosition={() => onFocusPosition?.(player.position)}
             onOpenImage={setLightboxImage}
             player={player}
@@ -110,7 +129,7 @@ function PlayerCard({
                   {heroName(player.heroId)}
                 </p>
                 <p className="text-[10px] uppercase tracking-wide text-parchment-200">
-                  {player.kind}
+                  {playerDisplayName(player, state.players)}
                 </p>
               </div>
               <div className="flex flex-col items-start gap-1">

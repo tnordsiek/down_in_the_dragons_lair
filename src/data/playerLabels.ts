@@ -13,6 +13,31 @@ export function playerHeroLabel(player: Player, playerIndex: number): string {
   return `${heroDisplayNames[player.heroId]} (${playerName(playerIndex)})`;
 }
 
+/**
+ * Display name derived from the players array. In Solo games (exactly one human)
+ * this matches {@link playerName} ("Human" / "AI 1"). In Hotseat games (more than
+ * one human) human players are numbered "Player 1" / "Player 2" / ...
+ */
+export function playerDisplayName(player: Player, players: Player[]): string {
+  const humans = players.filter((entry) => entry.kind === 'human');
+
+  if (player.kind === 'human') {
+    if (humans.length <= 1) {
+      return 'Human';
+    }
+
+    return `Player ${humans.indexOf(player) + 1}`;
+  }
+
+  const ais = players.filter((entry) => entry.kind === 'ai');
+
+  return `AI ${ais.indexOf(player) + 1}`;
+}
+
+export function playerHeroLabelFor(player: Player, players: Player[]): string {
+  return `${heroDisplayNames[player.heroId]} (${playerDisplayName(player, players)})`;
+}
+
 export function findPlayerIndexById(
   players: Player[],
   playerId: string,

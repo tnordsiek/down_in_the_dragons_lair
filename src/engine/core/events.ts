@@ -1,4 +1,4 @@
-import { playerHeroLabel } from '../../data/playerLabels';
+import { playerHeroLabelFor } from '../../data/playerLabels';
 import type { GameEvent, GameState, Player } from './types';
 
 type EventDetails = Omit<GameEvent, 'id'>;
@@ -26,6 +26,6 @@ export function createPlayerEventFields(player: Player, players: Player[]) {
     playerId: player.id,
     playerHeroId: player.heroId,
     playerLabel:
-      playerIndex >= 0 ? playerHeroLabel(player, playerIndex) : undefined,
+      playerIndex >= 0 ? playerHeroLabelFor(player, players) : undefined,
   } as const;
 }
