@@ -50,6 +50,7 @@ type BoardViewProps = {
   selectableHealingPositions?: BoardPosition[];
   showZoomControl?: boolean;
   fitToContent?: boolean;
+  onUserPan?: () => void;
 };
 
 export function BoardView({
@@ -65,6 +66,7 @@ export function BoardView({
   selectableHealingPositions = [],
   showZoomControl = true,
   fitToContent = false,
+  onUserPan,
 }: BoardViewProps) {
   const cellSizePx = 72;
   const cellGapPx = 1;
@@ -84,6 +86,8 @@ export function BoardView({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const zoomRef = useRef(zoom);
   const panRef = useRef(pan);
+  const onUserPanRef = useRef(onUserPan);
+  onUserPanRef.current = onUserPan;
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStateRef = useRef<{
@@ -485,6 +489,7 @@ export function BoardView({
       const zoomFactor = event.deltaY < 0 ? 1.1 : 1 / 1.1;
       const nextZoom = clampBoardZoom(zoomRef.current * zoomFactor);
       applyZoom(nextZoom, boardViewport);
+      onUserPanRef.current?.();
     };
 
     boardViewport.addEventListener('wheel', handleWheel, { passive: false });
@@ -694,6 +699,7 @@ export function BoardView({
             x: dragState.originX + event.clientX - dragState.startX,
             y: dragState.originY + event.clientY - dragState.startY,
           });
+          onUserPan?.();
         }}
         onPointerUp={(event) => {
           stopDragging(event.pointerId, event.currentTarget);

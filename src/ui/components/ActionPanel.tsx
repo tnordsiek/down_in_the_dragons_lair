@@ -50,6 +50,8 @@ type ActionPanelProps = {
   onTakeLoot: () => void;
   onOpenChest: () => void;
   onCenterMap: () => void;
+  onCenterHeroine: () => void;
+  isCenteredOnMap: boolean;
   onEndTurn: () => void;
   healingSpellSelection: HealingSpellSelectionState;
   onStartHealingSpellSelection: () => void;
@@ -84,6 +86,8 @@ export function ActionPanel({
   onTakeLoot,
   onOpenChest,
   onCenterMap,
+  onCenterHeroine,
+  isCenteredOnMap,
   onEndTurn,
   healingSpellSelection,
   onStartHealingSpellSelection,
@@ -195,7 +199,9 @@ export function ActionPanel({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={onCenterMap}>{t.actionPanel.centerMap}</Button>
+          <Button onClick={isCenteredOnMap ? onCenterHeroine : onCenterMap}>
+            {isCenteredOnMap ? t.actionPanel.centerHeroine : t.actionPanel.centerMap}
+          </Button>
           <Button
             disabled={isEndTurnBlockedPhase(state.phase)}
             onClick={onEndTurn}

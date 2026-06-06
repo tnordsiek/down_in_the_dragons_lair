@@ -328,6 +328,7 @@ export const de: Translations = {
   actionPanel: {
     actions: 'Aktionen',
     centerMap: 'Karte zentrieren',
+    centerHeroine: 'Heldin zentrieren',
     endTurn: 'Zug beenden',
     inProgress: 'Im Gange',
     noStepsLeft: 'Keine Schritte übrig',

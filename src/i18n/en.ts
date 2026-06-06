@@ -326,6 +326,7 @@ export const en = {
   actionPanel: {
     actions: 'Actions',
     centerMap: 'Center Map',
+    centerHeroine: 'Center Heroine',
     endTurn: 'End Turn',
     inProgress: 'In progress',
     noStepsLeft: 'No steps left',

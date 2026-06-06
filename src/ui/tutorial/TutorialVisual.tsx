@@ -47,6 +47,8 @@ const actionPanelHandlers = {
   onTakeLoot: noop,
   onOpenChest: noop,
   onCenterMap: noop,
+  onCenterHeroine: noop,
+  isCenteredOnMap: false,
   onEndTurn: noop,
   onStartHealingSpellSelection: noop,
   onCancelHealingSpellSelection: noop,

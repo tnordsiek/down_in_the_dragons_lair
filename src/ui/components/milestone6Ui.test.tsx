@@ -54,6 +54,8 @@ const noopActions = {
   onTakeLoot: vi.fn(),
   onOpenChest: vi.fn(),
   onCenterMap: vi.fn(),
+  onCenterHeroine: vi.fn(),
+  isCenteredOnMap: false,
   onEndTurn: vi.fn(),
 };
 
@@ -4242,6 +4244,8 @@ describe('Milestone 6 UI', () => {
         onCancelHealingSpellSelection={vi.fn()}
         onChooseSeeressRoomToken={vi.fn()}
         onCenterMap={vi.fn()}
+        onCenterHeroine={vi.fn()}
+        isCenteredOnMap={false}
         onDeclineValkyrieReroll={vi.fn()}
         onDeclineWitchSacrifice={vi.fn()}
         onEndTurn={vi.fn()}
@@ -4826,6 +4830,8 @@ function HealingSpellHarness({ initialState }: { initialState: GameState }) {
           setHealingSpellSelection({ mode: 'idle' })
         }
         onCenterMap={vi.fn()}
+        onCenterHeroine={vi.fn()}
+        isCenteredOnMap={false}
         onEndTurn={vi.fn()}
         onExplore={vi.fn()}
         onLeaveLoot={vi.fn()}

@@ -55,6 +55,7 @@ export function GameScreen() {
     position: { boardX: 0, boardY: 0 },
     resetZoom: true,
   });
+  const [isCenteredOnMap, setIsCenteredOnMap] = useState(false);
   const [healingSpellSelection, setHealingSpellSelection] =
     useState<HealingSpellSelectionState>({ mode: 'idle' });
   const [witchSwapSelection, setWitchSwapSelection] =
@@ -350,6 +351,13 @@ export function GameScreen() {
       resetZoom,
     }));
   };
+  const activePlayer = state?.players[state.activePlayerIndex];
+  const focusHeroine = () => {
+    if (activePlayer) {
+      focusMap(activePlayer.position, true);
+    }
+    setIsCenteredOnMap(false);
+  };
 
   return (
     <main className="relative flex h-[100dvh] flex-col text-parchment-50">
@@ -411,6 +419,7 @@ export function GameScreen() {
             onMovePath={handleMovePath}
             onRotatePendingTile={handleRotatePendingTile}
             selectableHealingPositions={selectableHealingPositions}
+            onUserPan={() => setIsCenteredOnMap(false)}
           />
         </div>
         <aside className="grid min-h-0 content-start gap-4 overflow-y-auto overscroll-y-contain lg:h-full lg:w-[400px] lg:justify-self-end lg:pr-1">
@@ -441,7 +450,9 @@ export function GameScreen() {
             onSwapLoot={handleSwapLoot}
             onTakeLoot={handleTakeLoot}
             onOpenChest={handleOpenChest}
-            onCenterMap={() => focusMap({ boardX: 0, boardY: 0 }, true)}
+            onCenterMap={() => { focusMap({ boardX: 0, boardY: 0 }, true); setIsCenteredOnMap(true); }}
+            onCenterHeroine={focusHeroine}
+            isCenteredOnMap={isCenteredOnMap}
             onEndTurn={handleEndTurn}
             witchSwapSelection={witchSwapSelection}
             onStartWitchSwapSelection={handleStartWitchSwapSelection}
