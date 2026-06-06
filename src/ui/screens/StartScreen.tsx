@@ -335,79 +335,6 @@ export function StartScreen() {
                     </label>
                   ) : null}
 
-                  {showAiSection ? (
-                  <>
-                  <fieldset className="grid gap-2 text-sm text-parchment-200">
-                    <legend>{t.startScreen.opponentSelection}</legend>
-                    <label className="flex items-center gap-2">
-                      <input
-                        checked={opponentSelectionMode === 'random'}
-                        className="accent-amber-300"
-                        name="opponent-selection-mode"
-                        type="radio"
-                        onChange={() => setOpponentSelectionMode('random')}
-                      />
-                      <span>{t.startScreen.randomOpponents}</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        checked={opponentSelectionMode === 'manual'}
-                        className="accent-amber-300"
-                        name="opponent-selection-mode"
-                        type="radio"
-                        onChange={() => setOpponentSelectionMode('manual')}
-                      />
-                      <span>{t.startScreen.chooseOpponents}</span>
-                    </label>
-                  </fieldset>
-
-                  {opponentSelectionMode === 'manual' ? (
-                    <fieldset className="grid gap-2 text-sm text-parchment-200">
-                      <legend>
-                        {t.startScreen.opponents(
-                          selectedOpponentHeroIds.length,
-                          aiCount,
-                        )}
-                      </legend>
-                      <div className="grid gap-2">
-                        {availableOpponentHeroIds.map((id) => {
-                          const checked = selectedOpponentHeroIds.includes(id);
-                          const disabled = !checked && selectionLimitReached;
-                          const heroDisplayName = t.displayNames.heroes[id];
-
-                          return (
-                            <label
-                              key={id}
-                              className={`flex items-center justify-between gap-3 rounded-forged border px-3 py-2 ${
-                                disabled
-                                  ? 'border-obsidian-800 bg-obsidian-950/60 text-stone-500'
-                                  : 'border-obsidian-700 bg-obsidian-950 text-parchment-100'
-                              }`}
-                            >
-                              <span>{heroDisplayName}</span>
-                              <input
-                                aria-label={heroDisplayName}
-                                checked={checked}
-                                className="accent-amber-300"
-                                data-testid={`opponent-checkbox-${id}`}
-                                disabled={disabled}
-                                type="checkbox"
-                                onChange={() =>
-                                  toggleSelectedOpponentHeroId(id)
-                                }
-                              />
-                            </label>
-                          );
-                        })}
-                      </div>
-                      <p className="text-xs text-stone-400">
-                        {t.startScreen.opponentsHint}
-                      </p>
-                    </fieldset>
-                  ) : null}
-                  </>
-                  ) : null}
-
                   <button
                     aria-controls={advancedSetupId}
                     aria-expanded={advancedSetupVisible}
@@ -424,6 +351,86 @@ export function StartScreen() {
 
                   {advancedSetupVisible ? (
                     <div className="grid gap-3" id={advancedSetupId}>
+                      {showAiSection ? (
+                        <>
+                          <fieldset className="grid gap-2 text-sm text-parchment-200">
+                            <legend>{t.startScreen.opponentSelection}</legend>
+                            <label className="flex items-center gap-2">
+                              <input
+                                checked={opponentSelectionMode === 'random'}
+                                className="accent-amber-300"
+                                name="opponent-selection-mode"
+                                type="radio"
+                                onChange={() =>
+                                  setOpponentSelectionMode('random')
+                                }
+                              />
+                              <span>{t.startScreen.randomOpponents}</span>
+                            </label>
+                            <label className="flex items-center gap-2">
+                              <input
+                                checked={opponentSelectionMode === 'manual'}
+                                className="accent-amber-300"
+                                name="opponent-selection-mode"
+                                type="radio"
+                                onChange={() =>
+                                  setOpponentSelectionMode('manual')
+                                }
+                              />
+                              <span>{t.startScreen.chooseOpponents}</span>
+                            </label>
+                          </fieldset>
+
+                          {opponentSelectionMode === 'manual' ? (
+                            <fieldset className="grid gap-2 text-sm text-parchment-200">
+                              <legend>
+                                {t.startScreen.opponents(
+                                  selectedOpponentHeroIds.length,
+                                  aiCount,
+                                )}
+                              </legend>
+                              <div className="grid gap-2">
+                                {availableOpponentHeroIds.map((id) => {
+                                  const checked =
+                                    selectedOpponentHeroIds.includes(id);
+                                  const disabled =
+                                    !checked && selectionLimitReached;
+                                  const heroDisplayName =
+                                    t.displayNames.heroes[id];
+
+                                  return (
+                                    <label
+                                      key={id}
+                                      className={`flex items-center justify-between gap-3 rounded-forged border px-3 py-2 ${
+                                        disabled
+                                          ? 'border-obsidian-800 bg-obsidian-950/60 text-stone-500'
+                                          : 'border-obsidian-700 bg-obsidian-950 text-parchment-100'
+                                      }`}
+                                    >
+                                      <span>{heroDisplayName}</span>
+                                      <input
+                                        aria-label={heroDisplayName}
+                                        checked={checked}
+                                        className="accent-amber-300"
+                                        data-testid={`opponent-checkbox-${id}`}
+                                        disabled={disabled}
+                                        type="checkbox"
+                                        onChange={() =>
+                                          toggleSelectedOpponentHeroId(id)
+                                        }
+                                      />
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                              <p className="text-xs text-stone-400">
+                                {t.startScreen.opponentsHint}
+                              </p>
+                            </fieldset>
+                          ) : null}
+                        </>
+                      ) : null}
+
                       <label className="grid gap-2 text-sm text-parchment-200">
                         {t.startScreen.tokenAndTileFactor}
                         <input

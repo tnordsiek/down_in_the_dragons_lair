@@ -69,17 +69,26 @@ describe('App', () => {
     ).toBeInTheDocument();
     expect(screen.getByLabelText('Hero')).toBeInTheDocument();
     expect(
+      screen.getByRole('button', { name: 'Show Advanced Setup' }),
+    ).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('radio', { name: 'Random Opponents' })).toBeNull();
+    expect(screen.queryByRole('radio', { name: 'Choose Opponents' })).toBeNull();
+    expect(screen.queryByLabelText('Token and Tile Factor')).toBeNull();
+    expect(screen.queryByText('1.0x')).toBeNull();
+    expect(screen.queryByText(/Opponents \(0\/1\)/)).toBeNull();
+
+    act(() => {
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Show Advanced Setup' }),
+      );
+    });
+
+    expect(
       screen.getByRole('radio', { name: 'Random Opponents' }),
     ).toBeChecked();
     expect(
       screen.getByRole('radio', { name: 'Choose Opponents' }),
     ).not.toBeChecked();
-    expect(
-      screen.getByRole('button', { name: 'Show Advanced Setup' }),
-    ).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByLabelText('Token and Tile Factor')).toBeNull();
-    expect(screen.queryByText('1.0x')).toBeNull();
-    expect(screen.queryByText(/Opponents \(0\/1\)/)).toBeNull();
     const startHeader = screen
       .getByRole('button', { name: 'Open settings menu' })
       .closest('header');
@@ -338,6 +347,11 @@ describe('App', () => {
     render(<App />);
 
     act(() => {
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Show Advanced Setup' }),
+      );
+    });
+    act(() => {
       fireEvent.click(screen.getByRole('radio', { name: 'Choose Opponents' }));
     });
 
@@ -371,6 +385,11 @@ describe('App', () => {
       fireEvent.change(screen.getByLabelText('AI Opponents'), {
         target: { value: '2' },
       });
+    });
+    act(() => {
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Show Advanced Setup' }),
+      );
     });
     act(() => {
       fireEvent.click(screen.getByRole('radio', { name: 'Choose Opponents' }));
