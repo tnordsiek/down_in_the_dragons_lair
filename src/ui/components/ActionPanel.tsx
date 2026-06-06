@@ -208,7 +208,7 @@ export function ActionPanel({
       {state.phase === 'choose_pending_tile_rotation' && state.pendingTile ? (
         <div className="mt-4 grid gap-2">
           <h3 className="text-sm text-parchment-200">
-            {state.pendingTile.blueprintId}
+            {t.displayNames.tiles[state.pendingTile.blueprintId]}
           </h3>
           <p className="text-sm text-parchment-200">
             {t.actionPanel.placeTileHint}

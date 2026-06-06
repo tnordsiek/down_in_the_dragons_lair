@@ -29,6 +29,19 @@ export const de: Translations = {
       2: 'Schwert +2',
       3: 'Streitaxt +3',
     },
+    tiles: {
+      start_cross_healing: 'Starthalle',
+      tunnel_straight: 'Gerader Tunnel',
+      tunnel_corner: 'Tunnelecke',
+      tunnel_t_junction: 'Tunnelabzweig',
+      tunnel_cross: 'Tunnelkreuzung',
+      room_straight: 'Gerader Raum',
+      room_corner: 'Eckraum',
+      room_t_junction: 'Abzweigraum',
+      room_cross: 'Kreuzraum',
+      healing_corner: 'Heilungsecke',
+      teleport_straight: 'Teleportgang',
+    },
   },
 
   sideLabels: {

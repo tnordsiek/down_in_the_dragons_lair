@@ -29,6 +29,19 @@ export const en = {
       2: 'Sword +2',
       3: 'Battleaxe +3',
     } as Record<number, string>,
+    tiles: {
+      start_cross_healing: 'Starting Chamber',
+      tunnel_straight: 'Straight Tunnel',
+      tunnel_corner: 'Tunnel Corner',
+      tunnel_t_junction: 'Tunnel Junction',
+      tunnel_cross: 'Tunnel Crossing',
+      room_straight: 'Straight Room',
+      room_corner: 'Corner Room',
+      room_t_junction: 'Junction Room',
+      room_cross: 'Crossroads Room',
+      healing_corner: 'Healing Corner',
+      teleport_straight: 'Teleport Passage',
+    } as Record<string, string>,
   },
 
   sideLabels: {

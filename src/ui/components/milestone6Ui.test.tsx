@@ -109,7 +109,7 @@ describe('Milestone 6 UI', () => {
 
     render(<ActionPanel state={state} {...noopActions} />);
 
-    expect(screen.getByText('room_corner')).toBeInTheDocument();
+    expect(screen.getByText('Corner Room')).toBeInTheDocument();
     expect(
       screen.getByText(
         'Rotate the preview tile on the board, then confirm placement in the center of the tile.',

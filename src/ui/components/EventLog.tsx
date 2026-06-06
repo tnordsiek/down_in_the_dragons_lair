@@ -198,11 +198,15 @@ function formatUiAction(event: GameEvent, t: Translations): string {
 
 function renderPrimaryText(event: GameEvent, t: Translations): string {
   if (event.type === 'tile_drawn' && event.exploration) {
-    return t.eventLog.drewTile(event.exploration.blueprintId);
+    return t.eventLog.drewTile(
+      t.displayNames.tiles[event.exploration.blueprintId],
+    );
   }
 
   if (event.type === 'tile_placed' && event.exploration) {
-    return t.eventLog.placedTilePrimary(event.exploration.blueprintId);
+    return t.eventLog.placedTilePrimary(
+      t.displayNames.tiles[event.exploration.blueprintId],
+    );
   }
 
   if (event.type === 'room_resolved' && event.room) {
@@ -233,7 +237,11 @@ function renderExplorationDetails(event: GameEvent, t: Translations): string {
   const skippedSuffix =
     exploration.skippedBlueprintIds &&
     exploration.skippedBlueprintIds.length > 0
-      ? t.eventLog.detail.skipped(exploration.skippedBlueprintIds.join(', '))
+      ? t.eventLog.detail.skipped(
+          exploration.skippedBlueprintIds
+            .map((blueprintId) => t.displayNames.tiles[blueprintId])
+            .join(', '),
+        )
       : '';
 
   if (event.type === 'tile_drawn') {
