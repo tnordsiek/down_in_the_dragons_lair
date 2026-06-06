@@ -1,33 +1,40 @@
 import { monsterDefinitions } from '../data/monsters';
 import type { Item, MonsterId } from '../engine/core/types';
-import { itemLabel } from './items';
+import type { Translations } from '../i18n/en';
 
-export function getMonsterTileTooltip(monsterId: MonsterId): string {
+export function getMonsterTileTooltip(
+  monsterId: MonsterId,
+  t: Translations,
+): string {
   const monster = monsterDefinitions[monsterId];
 
-  return `${monster.displayName}: Strength ${monster.strength}`;
+  return t.tooltips.monsterStrength(
+    t.displayNames.monsters[monsterId],
+    monster.strength,
+  );
 }
 
-export function getChestTileTooltip(): string {
-  return 'Treasure Chest: Opens with a key';
+export function getChestTileTooltip(t: Translations): string {
+  return t.tooltips.treasureChest;
 }
 
-export function getItemTileTooltip(item: Item): string {
+export function getItemTileTooltip(item: Item, t: Translations): string {
   if (item.type === 'weapon') {
-    return `${itemLabel(item)}: Combat bonus +${item.bonus}`;
+    const label = t.displayNames.weapons[item.bonus];
+    return t.tooltips.weaponBonus(label, item.bonus);
   }
 
   if (item.type === 'spell') {
     if (item.spellKind === 'flame') {
-      return 'Fireball Spell: Adds +1 combat strength';
+      return t.tooltips.fireballSpell;
     }
 
-    return 'Healing Spell: Teleports a hero to a discovered healing tile';
+    return t.tooltips.healingSpell;
   }
 
-  return 'Key: Opens a treasure chest';
+  return t.tooltips.key;
 }
 
-export function getHeroPortraitTooltip(): string {
-  return 'Right-click to center the map on this hero. Left-click to enlarge the portrait and read the hero description.';
+export function getHeroPortraitTooltip(t: Translations): string {
+  return t.tooltips.heroPortrait;
 }

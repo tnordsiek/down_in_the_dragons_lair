@@ -2,15 +2,17 @@ import { useState } from 'react';
 
 import { useAsset } from '../../data/assets';
 import { useSetupStore } from '../../state/setupStore';
+import { useTranslation } from '../../i18n/useTranslation';
 import { FooterMeta } from '../components/FooterMeta';
 import { TutorialVisual } from '../tutorial/TutorialVisual';
-import { tutorialSteps } from '../tutorialSteps';
 
 export function TutorialScreen() {
+  const t = useTranslation();
   const exitTutorial = useSetupStore((state) => state.exitTutorial);
   const background = useAsset('bg_start_screen');
   const [currentStep, setCurrentStep] = useState(0);
 
+  const tutorialSteps = t.tutorialSteps;
   const stepCount = tutorialSteps.length;
   const step = tutorialSteps[currentStep];
   const isFirstStep = currentStep === 0;
@@ -28,14 +30,14 @@ export function TutorialScreen() {
       <section className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-6 py-6 sm:px-8">
         <header className="flex items-center justify-between gap-4 border-b border-obsidian-700 pb-3 shadow-[0_2px_0_rgba(196,132,42,0.2)]">
           <h1 className="font-display text-2xl text-amber-100 sm:text-3xl">
-            How to Play
+            {t.tutorialScreen.title}
           </h1>
           <button
             className="rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200"
             data-asset-id="ui_button_secondary"
             onClick={exitTutorial}
           >
-            Exit Tutorial
+            {t.tutorialScreen.exitTutorial}
           </button>
         </header>
 
@@ -44,7 +46,7 @@ export function TutorialScreen() {
             className="text-xs uppercase tracking-[0.2em] text-parchment-200"
             aria-live="polite"
           >
-            Step {currentStep + 1} of {stepCount}
+            {t.tutorialScreen.stepOf(currentStep + 1, stepCount)}
           </p>
 
           <section className="mt-3 flex-1 rounded-forged border border-stone-700 bg-stone-900/80 p-5 shadow-forged">
@@ -89,7 +91,7 @@ export function TutorialScreen() {
               disabled={isFirstStep}
               onClick={goBack}
             >
-              Back
+              {t.tutorialScreen.back}
             </button>
             {isLastStep ? (
               <button
@@ -97,7 +99,7 @@ export function TutorialScreen() {
                 data-asset-id="ui_button_primary"
                 onClick={exitTutorial}
               >
-                Back to Start
+                {t.tutorialScreen.backToStart}
               </button>
             ) : (
               <button
@@ -105,7 +107,7 @@ export function TutorialScreen() {
                 data-asset-id="ui_button_primary"
                 onClick={goNext}
               >
-                Next
+                {t.tutorialScreen.next}
               </button>
             )}
           </div>

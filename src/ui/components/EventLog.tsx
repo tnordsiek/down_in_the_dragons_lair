@@ -1,5 +1,6 @@
 import type { GameState, TokenId } from '../../engine/core/types';
 import { heroName, monsterName } from '../labels';
+import { useTranslation } from '../../i18n/useTranslation';
 
 type EventLogProps = {
   state: GameState;
@@ -7,6 +8,7 @@ type EventLogProps = {
 };
 
 export function EventLog({ state, lastError }: EventLogProps) {
+  const t = useTranslation();
   const visibleEvents = state.eventLog.slice(-20).reverse();
 
   return (
@@ -15,7 +17,7 @@ export function EventLog({ state, lastError }: EventLogProps) {
       data-asset-id="ui_icon_log"
     >
       <h2 className="text-sm font-semibold uppercase tracking-wide text-torch-200">
-        Log
+        {t.eventLog.title}
       </h2>
       {lastError ? (
         <p className="mt-3 rounded-carve border border-blood-500/50 bg-blood-900 p-2 text-sm text-blood-200">
@@ -29,7 +31,7 @@ export function EventLog({ state, lastError }: EventLogProps) {
             className="border-b border-obsidian-700 pb-2 last:border-b-0 last:pb-0"
           >
             <p className="text-xs uppercase tracking-wide text-torch-500">
-              {event.playerLabel ?? event.playerId ?? 'System'}
+              {event.playerLabel ?? event.playerId ?? t.eventLog.system}
             </p>
             <p className="text-parchment-100">{renderPrimaryText(event)}</p>
             {event.exploration ? (

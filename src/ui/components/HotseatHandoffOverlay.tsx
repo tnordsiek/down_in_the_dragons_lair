@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 
 import { getAssetUrl } from '../../data/assets';
-import { heroDefinitions } from '../../data/heroes';
 import type { Player } from '../../engine/core/types';
+import { useTranslation } from '../../i18n/useTranslation';
 
 type HotseatHandoffOverlayProps = {
   player: Player;
@@ -23,9 +23,10 @@ export function HotseatHandoffOverlay({
   willSkipTurn,
   onReady,
 }: HotseatHandoffOverlayProps) {
+  const t = useTranslation();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const portraitUrl = getAssetUrl(`${player.heroId}_portrait`);
-  const heroDisplayName = heroDefinitions[player.heroId].displayName;
+  const heroDisplayName = t.displayNames.heroes[player.heroId];
 
   useEffect(() => {
     buttonRef.current?.focus();
@@ -41,13 +42,13 @@ export function HotseatHandoffOverlay({
     >
       <div className="w-full max-w-md rounded-forged border border-torch-500/40 bg-obsidian-900/95 p-8 shadow-forged">
         <p className="text-xs uppercase tracking-[0.3em] text-torch-300">
-          Pass the device
+          {t.hotseatHandoff.passDevice}
         </p>
         <h2
           id="hotseat-handoff-title"
           className="mt-3 font-display text-3xl font-semibold text-parchment-50"
         >
-          Player {playerNumber}
+          {t.hotseatHandoff.playerN(playerNumber)}
         </h2>
         {portraitUrl ? (
           <img
@@ -59,7 +60,7 @@ export function HotseatHandoffOverlay({
         <p className="mt-4 text-lg text-parchment-100">{heroDisplayName}</p>
         {willSkipTurn ? (
           <p className="mt-2 text-sm text-blood-200">
-            This hero is unconscious and will skip this turn.
+            {t.hotseatHandoff.skipTurn}
           </p>
         ) : null}
         <button
@@ -69,7 +70,7 @@ export function HotseatHandoffOverlay({
           type="button"
           onClick={onReady}
         >
-          Start turn
+          {t.hotseatHandoff.startTurn}
         </button>
       </div>
     </div>

@@ -1,41 +1,16 @@
 import { useId, useState } from 'react';
 
 import { getAssetUrl, useAsset } from '../../data/assets';
-import { heroDefinitions, heroIds } from '../../data/heroes';
+import { heroIds } from '../../data/heroes';
 import type { AiDifficulty, HeroId } from '../../engine/core/types';
 import { MAX_AI, MAX_PLAYERS, useSetupStore } from '../../state/setupStore';
+import { useTranslation } from '../../i18n/useTranslation';
 import { generateRandomSeed } from '../../utils/randomSeed';
 import { FooterMeta } from '../components/FooterMeta';
 import { SettingsMenu } from '../components/SettingsMenu';
 
-const heroPreviewAbilities: Record<HeroId, [string, string]> = {
-  hero_mage: [
-    'Fireball spells are not consumed.',
-    'May move through walls on discovered tiles.',
-  ],
-  hero_valkyrie: [
-    'May reroll both combat dice once after a draw or defeat.',
-    'Losing the last HP sends the Valkyrie to a healing tile.',
-  ],
-  hero_witch: [
-    'May sacrifice 1 HP for +1 combat strength in a fight.',
-    'May swap position with another player at turn start.',
-  ],
-  hero_rogue: [
-    'Combat draws count as wins.',
-    'May ignore monsters while moving.',
-  ],
-  hero_blade: [
-    'Rerolls every die showing 1 until none remain.',
-    'A final rolled 6 keeps the turn open for remaining movement and actions.',
-  ],
-  hero_seeress: [
-    'Draws two room tokens and chooses one.',
-    'Gains +1 combat strength in a fight after the first step is spent.',
-  ],
-};
-
 export function StartScreen() {
+  const t = useTranslation();
   const [advancedSetupVisible, setAdvancedSetupVisible] = useState(false);
   const advancedSetupId = useId();
   const heroId = useSetupStore((state) => state.selectedHeroId);
@@ -79,7 +54,7 @@ export function StartScreen() {
   const logo = useAsset('ui_logo_wordmark');
   const logoUrl = getAssetUrl(logo.assetId);
   const heroPortraitUrl = getAssetUrl(`${heroId}_portrait`);
-  const heroAbilityLines = heroPreviewAbilities[heroId];
+  const heroAbilityLines = t.heroAbilities[heroId];
   const isHotseat = gameMode === 'hotseat';
   const humanHeroIds = isHotseat ? selectedHumanHeroIds : [heroId];
   const availableOpponentHeroIds = heroIds.filter(
@@ -102,7 +77,7 @@ export function StartScreen() {
             <SettingsMenu />
           </div>
           <p className="justify-self-center text-center font-display text-[1.5rem] leading-9 text-parchment-100">
-            Choose a hero, set the opposition, and enter the dungeon...
+            {t.startScreen.tagline}
           </p>
           <div className="justify-self-end">
             <button
@@ -110,7 +85,7 @@ export function StartScreen() {
               data-asset-id="ui_button_secondary"
               onClick={startTutorial}
             >
-              How to Play
+              {t.startScreen.howToPlay}
             </button>
           </div>
         </header>
@@ -133,7 +108,7 @@ export function StartScreen() {
             {hasSavedGame ? (
               <div className="mt-5 w-full rounded-forged border border-stone-700 bg-stone-900/80 p-4 text-left shadow-forged">
                 <p className="font-display text-lg font-semibold text-amber-100">
-                  Saved game available
+                  {t.startScreen.savedGame}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
@@ -141,14 +116,14 @@ export function StartScreen() {
                     data-asset-id="ui_button_primary"
                     onClick={resumeSavedGame}
                   >
-                    Resume Game
+                    {t.startScreen.resumeGame}
                   </button>
                   <button
                     className="rounded-forged border border-obsidian-600 px-3 py-2 text-sm text-parchment-50 transition-colors hover:border-torch-500 hover:text-torch-200"
                     data-asset-id="ui_button_secondary"
                     onClick={clearSavedGame}
                   >
-                    Discard Save
+                    {t.startScreen.discardSave}
                   </button>
                 </div>
               </div>
@@ -164,24 +139,24 @@ export function StartScreen() {
               <div className="grid gap-3 sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)] sm:items-start">
                 <div className="mx-auto flex w-full flex-col items-center justify-center gap-2 sm:mx-0">
                   <p className="font-display text-lg font-semibold text-amber-100">
-                    Chosen Hero
+                    {t.startScreen.chosenHero}
                   </p>
                   {heroPortraitUrl ? (
                     <img
                       className="max-h-40 w-full object-contain"
                       src={heroPortraitUrl}
-                      alt={heroDefinitions[heroId].displayName}
+                      alt={t.displayNames.heroes[heroId]}
                     />
                   ) : (
                     <span className="text-5xl font-display text-amber-100">
-                      {heroDefinitions[heroId].displayName.slice(0, 1)}
+                      {t.displayNames.heroes[heroId].slice(0, 1)}
                     </span>
                   )}
                 </div>
                 <div>
                   <div className="grid gap-1">
                     <h2 className="font-display text-lg font-semibold text-amber-100">
-                      {heroDefinitions[heroId].displayName}
+                      {t.displayNames.heroes[heroId]}
                     </h2>
                   </div>
                   <div className="mt-3 grid gap-2">
@@ -191,7 +166,7 @@ export function StartScreen() {
                         key={ability}
                       >
                         <p className="text-[10px] uppercase tracking-[0.14em] text-torch-500">
-                          Ability {index + 1}
+                          {t.startScreen.abilityLabel(index + 1)}
                         </p>
                         <p className="mt-0.5 text-sm leading-5 text-parchment-100">
                           {ability}
@@ -210,7 +185,7 @@ export function StartScreen() {
                 data-asset-id="ui_modal_frame"
               >
                 <h2 className="font-display text-base font-semibold text-amber-100">
-                  Game Setup
+                  {t.startScreen.gameSetup}
                 </h2>
                 {lastError || persistenceError ? (
                   <p className="mt-3 rounded-carve border border-blood-500/50 bg-blood-900 p-2 text-sm text-blood-200">
@@ -221,7 +196,7 @@ export function StartScreen() {
                   <div
                     className="grid grid-cols-2 gap-2"
                     role="group"
-                    aria-label="Game Mode"
+                    aria-label={t.startScreen.gameMode}
                   >
                     <button
                       type="button"
@@ -233,7 +208,7 @@ export function StartScreen() {
                       }`}
                       onClick={() => setGameMode('solo')}
                     >
-                      Solo (vs. AI)
+                      {t.startScreen.solo}
                     </button>
                     <button
                       type="button"
@@ -245,16 +220,16 @@ export function StartScreen() {
                       }`}
                       onClick={() => setGameMode('hotseat')}
                     >
-                      Hotseat (2-5 players)
+                      {t.startScreen.hotseat}
                     </button>
                   </div>
 
                   {isHotseat ? (
                     <>
                       <label className="grid gap-2 text-sm text-parchment-200">
-                        Human Players
+                        {t.startScreen.humanPlayers}
                         <input
-                          aria-label="Human Players"
+                          aria-label={t.startScreen.humanPlayers}
                           className="accent-amber-300"
                           max={MAX_PLAYERS}
                           min={2}
@@ -270,17 +245,17 @@ export function StartScreen() {
                       </label>
 
                       <fieldset className="grid gap-2 text-sm text-parchment-200">
-                        <legend>Heroes</legend>
+                        <legend>{t.startScreen.heroes}</legend>
                         {selectedHumanHeroIds.map((slotHeroId, slotIndex) => (
                           <label
                             key={slotIndex}
                             className="grid grid-cols-[auto_1fr] items-center gap-2"
                           >
                             <span className="text-parchment-200">
-                              Player {slotIndex + 1}
+                              {t.startScreen.playerN(slotIndex + 1)}
                             </span>
                             <select
-                              aria-label={`Player ${slotIndex + 1} hero`}
+                              aria-label={t.startScreen.playerNHero(slotIndex + 1)}
                               className="rounded-forged border border-obsidian-600 bg-obsidian-950 px-3 py-2 text-parchment-50 shadow-carve"
                               value={slotHeroId}
                               onChange={(event) =>
@@ -298,7 +273,7 @@ export function StartScreen() {
                                 )
                                 .map((id) => (
                                   <option key={id} value={id}>
-                                    {heroDefinitions[id].displayName}
+                                    {t.displayNames.heroes[id]}
                                   </option>
                                 ))}
                             </select>
@@ -308,7 +283,7 @@ export function StartScreen() {
                     </>
                   ) : (
                     <label className="grid gap-2 text-sm text-parchment-200">
-                      Hero
+                      {t.startScreen.hero}
                       <select
                         className="rounded-forged border border-obsidian-600 bg-obsidian-950 px-3 py-2 text-parchment-50 shadow-carve"
                         value={heroId}
@@ -318,7 +293,7 @@ export function StartScreen() {
                       >
                         {heroIds.map((id) => (
                           <option key={id} value={id}>
-                            {heroDefinitions[id].displayName}
+                            {t.displayNames.heroes[id]}
                           </option>
                         ))}
                       </select>
@@ -327,9 +302,9 @@ export function StartScreen() {
 
                   {!isHotseat || maxAiOpponents > 0 ? (
                     <label className="grid gap-2 text-sm text-parchment-200">
-                      AI Opponents
+                      {t.startScreen.aiOpponents}
                       <input
-                        aria-label="AI Opponents"
+                        aria-label={t.startScreen.aiOpponents}
                         className="accent-amber-300"
                         max={isHotseat ? maxAiOpponents : MAX_AI}
                         min={isHotseat ? 0 : 1}
@@ -345,7 +320,7 @@ export function StartScreen() {
 
                   {showAiSection ? (
                     <label className="grid gap-2 text-sm text-parchment-200">
-                      Difficulty
+                      {t.startScreen.difficulty}
                       <select
                         className="rounded-forged border border-obsidian-600 bg-obsidian-950 px-3 py-2 text-parchment-50 shadow-carve"
                         value={difficulty}
@@ -353,9 +328,9 @@ export function StartScreen() {
                           setDifficulty(event.target.value as AiDifficulty)
                         }
                       >
-                        <option value="easy">Easy</option>
-                        <option value="normal">Normal</option>
-                        <option value="hard">Hard</option>
+                        <option value="easy">{t.settingsMenu.easy}</option>
+                        <option value="normal">{t.settingsMenu.normal}</option>
+                        <option value="hard">{t.settingsMenu.hard}</option>
                       </select>
                     </label>
                   ) : null}
@@ -363,7 +338,7 @@ export function StartScreen() {
                   {showAiSection ? (
                   <>
                   <fieldset className="grid gap-2 text-sm text-parchment-200">
-                    <legend>Opponent Selection</legend>
+                    <legend>{t.startScreen.opponentSelection}</legend>
                     <label className="flex items-center gap-2">
                       <input
                         checked={opponentSelectionMode === 'random'}
@@ -372,7 +347,7 @@ export function StartScreen() {
                         type="radio"
                         onChange={() => setOpponentSelectionMode('random')}
                       />
-                      <span>Random Opponents</span>
+                      <span>{t.startScreen.randomOpponents}</span>
                     </label>
                     <label className="flex items-center gap-2">
                       <input
@@ -382,19 +357,23 @@ export function StartScreen() {
                         type="radio"
                         onChange={() => setOpponentSelectionMode('manual')}
                       />
-                      <span>Choose Opponents</span>
+                      <span>{t.startScreen.chooseOpponents}</span>
                     </label>
                   </fieldset>
 
                   {opponentSelectionMode === 'manual' ? (
                     <fieldset className="grid gap-2 text-sm text-parchment-200">
                       <legend>
-                        Opponents ({selectedOpponentHeroIds.length}/{aiCount})
+                        {t.startScreen.opponents(
+                          selectedOpponentHeroIds.length,
+                          aiCount,
+                        )}
                       </legend>
                       <div className="grid gap-2">
                         {availableOpponentHeroIds.map((id) => {
                           const checked = selectedOpponentHeroIds.includes(id);
                           const disabled = !checked && selectionLimitReached;
+                          const heroDisplayName = t.displayNames.heroes[id];
 
                           return (
                             <label
@@ -405,9 +384,9 @@ export function StartScreen() {
                                   : 'border-obsidian-700 bg-obsidian-950 text-parchment-100'
                               }`}
                             >
-                              <span>{heroDefinitions[id].displayName}</span>
+                              <span>{heroDisplayName}</span>
                               <input
-                                aria-label={heroDefinitions[id].displayName}
+                                aria-label={heroDisplayName}
                                 checked={checked}
                                 className="accent-amber-300"
                                 data-testid={`opponent-checkbox-${id}`}
@@ -422,8 +401,7 @@ export function StartScreen() {
                         })}
                       </div>
                       <p className="text-xs text-stone-400">
-                        Any unselected opponents will be filled at random from
-                        the remaining heroes.
+                        {t.startScreen.opponentsHint}
                       </p>
                     </fieldset>
                   ) : null}
@@ -440,16 +418,16 @@ export function StartScreen() {
                     }
                   >
                     {advancedSetupVisible
-                      ? 'Hide Advanced Setup'
-                      : 'Show Advanced Setup'}
+                      ? t.startScreen.hideAdvancedSetup
+                      : t.startScreen.showAdvancedSetup}
                   </button>
 
                   {advancedSetupVisible ? (
                     <div className="grid gap-3" id={advancedSetupId}>
                       <label className="grid gap-2 text-sm text-parchment-200">
-                        Token and Tile Factor
+                        {t.startScreen.tokenAndTileFactor}
                         <input
-                          aria-label="Token and Tile Factor"
+                          aria-label={t.startScreen.tokenAndTileFactor}
                           className="accent-amber-300"
                           min={1}
                           max={5}
@@ -464,13 +442,12 @@ export function StartScreen() {
                           {poolScale.toFixed(1)}x
                         </span>
                         <span className="text-xs text-stone-400">
-                          Counts are rounded up. The dragon always remains
-                          unique.
+                          {t.startScreen.poolScaleHint}
                         </span>
                       </label>
 
                       <label className="grid gap-2 text-sm text-parchment-200">
-                        Seed
+                        {t.startScreen.seed}
                         <div className="flex items-center gap-2">
                           <input
                             className="min-w-0 flex-1 rounded-forged border border-obsidian-600 bg-obsidian-950 px-3 py-2 font-mono text-parchment-50 shadow-carve"
@@ -482,7 +459,7 @@ export function StartScreen() {
                             type="button"
                             onClick={() => setSeed(generateRandomSeed())}
                           >
-                            Randomize
+                            {t.startScreen.randomize}
                           </button>
                         </div>
                       </label>
@@ -491,7 +468,7 @@ export function StartScreen() {
 
                   {hasDuplicateHumanHeroes ? (
                     <p className="rounded-carve border border-blood-500/50 bg-blood-900 p-2 text-sm text-blood-200">
-                      Each player must choose a unique hero.
+                      {t.startScreen.duplicateHeroError}
                     </p>
                   ) : null}
 
@@ -501,7 +478,9 @@ export function StartScreen() {
                     disabled={hasDuplicateHumanHeroes}
                     onClick={startGame}
                   >
-                    {hasSavedGame ? 'Start New Game' : 'Start Game'}
+                    {hasSavedGame
+                      ? t.startScreen.startNewGame
+                      : t.startScreen.startGame}
                   </button>
                 </div>
               </div>
@@ -511,9 +490,9 @@ export function StartScreen() {
 
         <div className="flex flex-col gap-3 text-left text-xs text-stone-400 md:flex-row md:items-end md:justify-between">
           <div className="leading-5">
-            <p>Code powered by Codex & Claude</p>
-            <p>Graphics powered by Nano Banana</p>
-            <p>Concept and AI Direction by fnord GAMES (2026)</p>
+            <p>{t.startScreen.attributionCode}</p>
+            <p>{t.startScreen.attributionGraphics}</p>
+            <p>{t.startScreen.attributionConcept}</p>
           </div>
           <FooterMeta align="right" layout="flow" />
         </div>

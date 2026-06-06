@@ -5,6 +5,11 @@ import { heroIds } from '../data/heroes';
 import { applyGameAction } from '../engine/core/actions';
 import { createPlayerEventFields } from '../engine/core/events';
 import type { AiDifficulty, GameAction, GameState, HeroId } from '../engine/core/types';
+import type { Locale } from '../i18n/types';
+import {
+  loadLocaleSettings,
+  saveLocaleSettings,
+} from '../i18n/localeSettings';
 import {
   getLegalExplorationDirections,
   getLegalKnownMoves,
@@ -50,6 +55,7 @@ type SetupState = {
   musicEnabled: boolean;
   sfxEnabled: boolean;
   movementPointsEnabled: boolean;
+  locale: Locale;
   tutorialActive: boolean;
   feedbackModalOpen: boolean;
   gameState?: GameState;
@@ -70,6 +76,7 @@ type SetupState = {
   toggleMusicEnabled: () => void;
   toggleSfxEnabled: () => void;
   toggleMovementPointsEnabled: () => void;
+  setLocale: (locale: Locale) => void;
   clearPendingAudioCues: () => void;
   startTutorial: () => void;
   exitTutorial: () => void;
@@ -88,6 +95,7 @@ const initialGameState =
 const initialPersistenceError =
   persistedGameState?.ok === false ? persistedGameState.error : undefined;
 const initialAudioSettings = loadAudioSettings();
+const initialLocaleSettings = loadLocaleSettings();
 
 export const useSetupStore = create<SetupState>((set) => ({
   selectedHeroId: 'hero_mage',
@@ -103,6 +111,7 @@ export const useSetupStore = create<SetupState>((set) => ({
   musicEnabled: initialAudioSettings.musicEnabled,
   sfxEnabled: initialAudioSettings.sfxEnabled,
   movementPointsEnabled: initialAudioSettings.movementPointsEnabled,
+  locale: initialLocaleSettings.locale,
   tutorialActive: false,
   feedbackModalOpen: false,
   gameState: initialGameState,
@@ -275,6 +284,15 @@ export const useSetupStore = create<SetupState>((set) => ({
 
       return {
         movementPointsEnabled,
+        pendingAudioCues: [createPendingAudioCue('sfx_button_click')],
+      };
+    }),
+  setLocale: (locale) =>
+    set(() => {
+      saveLocaleSettings({ locale });
+
+      return {
+        locale,
         pendingAudioCues: [createPendingAudioCue('sfx_button_click')],
       };
     }),

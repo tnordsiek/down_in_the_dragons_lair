@@ -8,10 +8,9 @@ import type {
   Item,
   Player,
 } from '../../engine/core/types';
-import { playerDisplayName } from '../../data/playerLabels';
-import { itemAssetId, itemLabel } from '../items';
-import { heroName } from '../labels';
-import { getHeroPortraitTooltip } from '../tooltips';
+import { itemAssetId } from '../items';
+import { useTranslation } from '../../i18n/useTranslation';
+import type { Translations } from '../../i18n/en';
 import { ImageLightbox, type LightboxImage } from './ImageLightbox';
 
 type PlayerPanelProps = {
@@ -20,6 +19,7 @@ type PlayerPanelProps = {
 };
 
 export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
+  const t = useTranslation();
   const panel = useAsset('ui_panel_frame');
   const [lightboxImage, setLightboxImage] = useState<LightboxImage | null>(
     null,
@@ -49,7 +49,7 @@ export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
       data-asset-id={panel.assetId}
     >
       <h2 className="text-sm font-semibold uppercase tracking-wide text-torch-200">
-        Players
+        {t.playerPanel.title}
       </h2>
       <div
         className="mt-3 grid grid-cols-1 gap-2"
@@ -63,6 +63,7 @@ export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
             onOpenImage={setLightboxImage}
             player={player}
             state={state}
+            t={t}
           />
         ))}
       </div>
@@ -74,18 +75,35 @@ export function PlayerPanel({ onFocusPosition, state }: PlayerPanelProps) {
   );
 }
 
+function translatedPlayerDisplayName(
+  player: Player,
+  players: Player[],
+  t: Translations,
+): string {
+  const humans = players.filter((p) => p.kind === 'human');
+  if (player.kind === 'human') {
+    return humans.length <= 1
+      ? t.playerLabels.human
+      : t.playerLabels.playerN(humans.indexOf(player) + 1);
+  }
+  const ais = players.filter((p) => p.kind === 'ai');
+  return t.playerLabels.aiN(ais.indexOf(player) + 1);
+}
+
 function PlayerCard({
   index,
   onFocusPosition,
   onOpenImage,
   player,
   state,
+  t,
 }: {
   index: number;
   onFocusPosition?: () => void;
   onOpenImage: (image: LightboxImage) => void;
   player: Player;
   state: GameState;
+  t: Translations;
 }) {
   const isActive = index === state.activePlayerIndex;
   const weaponBonus = useMemo(
@@ -96,7 +114,7 @@ function PlayerCard({
     (spell) => spell.spellKind === 'flame',
   ).length;
   const hasMageFlameBonus = player.heroId === 'hero_mage' && !player.isCursed;
-  const heroInfo = getHeroAbilityInfo(player.heroId);
+  const heroInfo = t.playerPanel.heroAbilities[player.heroId];
 
   return (
     <article
@@ -122,25 +140,26 @@ function PlayerCard({
               heroInfo={heroInfo}
               onOpenImage={onOpenImage}
               onFocusPosition={onFocusPosition}
+              t={t}
             />
             <div className="grid content-start gap-1">
               <div className="min-w-0">
                 <p className="text-sm font-semibold leading-tight text-parchment-50">
-                  {heroName(player.heroId)}
+                  {t.displayNames.heroes[player.heroId]}
                 </p>
                 <p className="text-[10px] uppercase tracking-wide text-parchment-200">
-                  {playerDisplayName(player, state.players)}
+                  {translatedPlayerDisplayName(player, state.players, t)}
                 </p>
               </div>
               <div className="flex flex-col items-start gap-1">
                 <MetricChip
-                  label={`HP ${player.hp}/${player.maxHp}`}
-                  title={`Health: ${player.hp} of ${player.maxHp}`}
+                  label={t.playerPanel.hp(player.hp, player.maxHp)}
+                  title={t.playerPanel.healthTitle(player.hp, player.maxHp)}
                 />
                 {isActive ? (
                   <MetricChip
-                    label="Active"
-                    title="Current active player"
+                    label={t.playerPanel.active}
+                    title={t.playerPanel.activeTitle}
                     tone="amber"
                   />
                 ) : null}
@@ -149,17 +168,19 @@ function PlayerCard({
           </div>
           <div className="flex flex-wrap gap-1">
             <BonusBadge
-              label={`ATK +${weaponBonus}`}
-              title={`Current weapon bonus: +${weaponBonus}`}
+              label={t.playerPanel.atk(weaponBonus)}
+              title={t.playerPanel.atkTitle(weaponBonus)}
             />
             <BonusBadge
               label={
-                hasMageFlameBonus ? 'Fireball ∞' : `Fireball ${flameSpellCount}`
+                hasMageFlameBonus
+                  ? t.playerPanel.fireballInfinite
+                  : t.playerPanel.fireballCount(flameSpellCount)
               }
               title={
                 hasMageFlameBonus
-                  ? 'Mage: fireball spells are not consumed'
-                  : `Available fireball spells: ${flameSpellCount}`
+                  ? t.playerPanel.fireballInfiniteTitle
+                  : t.playerPanel.fireballCountTitle(flameSpellCount)
               }
             />
           </div>
@@ -178,12 +199,13 @@ function PlayerCard({
                       key={`${player.id}-key`}
                       item={{ type: 'key' }}
                       onOpenImage={onOpenImage}
+                      t={t}
                     />,
                   ]
                 : []
             }
-            label={`Key ${player.inventory.keyCount}`}
-            title={`Keys carried: ${player.inventory.keyCount}`}
+            label={t.playerPanel.keyLabel(player.inventory.keyCount)}
+            title={t.playerPanel.keyTitle(player.inventory.keyCount)}
           />
           <InventoryRow
             emptyLabel="-"
@@ -192,10 +214,11 @@ function PlayerCard({
                 key={`${player.id}-weapon-${weaponIndex}`}
                 item={weapon}
                 onOpenImage={onOpenImage}
+                t={t}
               />
             ))}
-            label="Weapons"
-            title={`Weapons carried: ${player.inventory.weapons.length}`}
+            label={t.playerPanel.weapons}
+            title={t.playerPanel.weaponsTitle(player.inventory.weapons.length)}
           />
           <InventoryRow
             emptyLabel="-"
@@ -204,31 +227,32 @@ function PlayerCard({
                 key={`${player.id}-spell-${spellIndex}`}
                 item={spell}
                 onOpenImage={onOpenImage}
+                t={t}
               />
             ))}
-            label="Spells"
-            title={`Spells carried: ${player.inventory.spells.length}`}
+            label={t.playerPanel.spells}
+            title={t.playerPanel.spellsTitle(player.inventory.spells.length)}
           />
           <div className="flex flex-wrap items-center gap-1 pt-0.5">
             <MetricChip
-              label={`${player.treasurePoints} pts`}
-              title={`Treasure points: ${player.treasurePoints}`}
+              label={t.playerPanel.pts(player.treasurePoints)}
+              title={t.playerPanel.ptsTitle(player.treasurePoints)}
               tone="amber"
             />
             {player.isCursed ? (
               <StatusBadge
                 assetId="status_curse"
-                label="cursed"
+                label={t.playerPanel.cursed}
                 onOpenImage={onOpenImage}
-                title="Cursed: hero abilities are inactive"
+                title={t.playerPanel.cursedTitle}
               />
             ) : null}
             {player.skipNextTurn ? (
               <StatusBadge
                 assetId="status_unconscious"
-                label="unconscious"
+                label={t.playerPanel.unconscious}
                 onOpenImage={onOpenImage}
-                title="Unconscious: this player skips the next turn"
+                title={t.playerPanel.unconsciousTitle}
               />
             ) : null}
           </div>
@@ -238,41 +262,26 @@ function PlayerCard({
   );
 }
 
-function getHeroAbilityInfo(heroId: HeroId): string {
-  switch (heroId) {
-    case 'hero_mage':
-      return 'Fireball spells are not consumed. The Mage may move through walls on discovered tiles.';
-    case 'hero_valkyrie':
-      return 'May reroll both combat dice once after a draw or defeat. Losing the last HP sends the Valkyrie to a healing tile.';
-    case 'hero_witch':
-      return 'May sacrifice 1 HP for +1 combat strength in a fight. May swap position with another player at turn start.';
-    case 'hero_rogue':
-      return 'Combat draws count as wins. The Rogue may ignore monsters while moving.';
-    case 'hero_blade':
-      return 'After a combat roll, rerolls every die showing 1 until none remain. Each combat with a final rolled 6 keeps the turn open for remaining movement and follow-up actions.';
-    case 'hero_seeress':
-      return 'Draws two room tokens and chooses one. Gains +1 combat strength in a fight after the first step is spent.';
-  }
-}
-
 function HeroPortrait({
   heroId,
   heroInfo,
   onOpenImage,
   onFocusPosition,
+  t,
 }: {
   heroId: HeroId;
   heroInfo: string;
   onOpenImage: (image: LightboxImage) => void;
   onFocusPosition?: () => void;
+  t: Translations;
 }) {
   const assetId = `${heroId}_portrait`;
   const assetUrl = getAssetUrl(assetId);
-  const label = heroName(heroId);
+  const label = t.displayNames.heroes[heroId];
 
   return (
     <button
-      aria-label={`${label} portrait actions`}
+      aria-label={t.playerPanel.enlargePortrait(label)}
       className="flex h-20 w-20 shrink-0 items-center justify-center rounded-carve border border-obsidian-700 bg-obsidian-900 font-mono text-sm text-amber-100 shadow-carve"
       data-asset-id={assetId}
       onClick={(event) => {
@@ -291,7 +300,7 @@ function HeroPortrait({
         event.stopPropagation();
         onFocusPosition?.();
       }}
-      title={getHeroPortraitTooltip()}
+      title={t.tooltips.heroPortrait}
       type="button"
     >
       {assetUrl ? (
@@ -371,20 +380,32 @@ function BonusBadge({ label, title }: { label: string; title: string }) {
   );
 }
 
+function translatedItemLabel(item: Item, t: Translations): string {
+  if (item.type === 'weapon') {
+    return t.displayNames.weapons[item.bonus];
+  }
+  if (item.type === 'spell') {
+    return `${t.displayNames.spells[item.spellKind]} ${t.items.spellSuffix}`;
+  }
+  return t.items.key;
+}
+
 function ItemIcon({
   item,
   onOpenImage,
+  t,
 }: {
   item: Item;
   onOpenImage: (image: LightboxImage) => void;
+  t: Translations;
 }) {
   const assetId = itemAssetId(item);
-  const label = itemLabel(item);
+  const label = translatedItemLabel(item, t);
   const assetUrl = getAssetUrl(assetId);
 
   return assetUrl ? (
     <button
-      aria-label={`Enlarge ${label}`}
+      aria-label={t.playerPanel.enlargeItem(label)}
       className="rounded-sm"
       onClick={(event) => {
         event.stopPropagation();

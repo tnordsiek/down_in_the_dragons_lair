@@ -21,13 +21,14 @@ import { HotseatHandoffOverlay } from '../components/HotseatHandoffOverlay';
 import { PlayerPanel } from '../components/PlayerPanel';
 import { SettingsMenu } from '../components/SettingsMenu';
 import { playerDisplayName } from '../../data/playerLabels';
-import { heroName } from '../labels';
+import { useTranslation } from '../../i18n/useTranslation';
 import type {
   HealingSpellSelectionState,
   WitchSwapSelectionState,
 } from '../selectionState';
 
 export function GameScreen() {
+  const t = useTranslation();
   const state = useSetupStore((store) => store.gameState);
   const lastError = useSetupStore((store) => store.lastError);
   const dispatch = useSetupStore((store) => store.dispatch);
@@ -489,17 +490,19 @@ export function GameScreen() {
               <div className="flex flex-col gap-2 border-b border-obsidian-700 pb-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.3em] text-torch-300">
-                    Starting Player Roll-Off
+                    {t.gameScreen.startPlayerRollOff}
                   </p>
                   <h2
                     id="start-overlay-title"
                     className="mt-2 font-display text-2xl font-semibold text-parchment-50"
                   >
-                    {heroName(overlayStartPlayerHeroId)} begins the game
+                    {t.gameScreen.beginsTheGame(
+                      t.displayNames.heroes[overlayStartPlayerHeroId],
+                    )}
                   </h2>
                 </div>
                 <p className="text-sm text-parchment-200">
-                  Click anywhere to begin
+                  {t.gameScreen.clickToContinue}
                 </p>
               </div>
               <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.9fr)]">
@@ -515,20 +518,26 @@ export function GameScreen() {
                       >
                         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-torch-200">
                           {round.roundType === 'initial'
-                            ? 'Initial Roll'
-                            : `Tiebreak ${roundIndex}`}
+                            ? t.gameScreen.initialRoll
+                            : t.gameScreen.tiebreak(roundIndex)}
                         </h3>
                         <table className="w-full border-collapse text-sm text-parchment-100">
                           <caption className="sr-only">
                             {round.roundType === 'initial'
-                              ? 'Initial roll results'
-                              : `Tiebreak ${roundIndex} roll results`}
+                              ? t.gameScreen.initialRollResults
+                              : t.gameScreen.tiebreakResults(roundIndex)}
                           </caption>
                           <thead>
                             <tr className="border-b border-obsidian-700 text-left text-xs uppercase tracking-wide text-parchment-200">
-                              <th className="px-3 py-2 font-medium">Player</th>
-                              <th className="px-3 py-2 font-medium">Hero</th>
-                              <th className="px-3 py-2 font-medium">Roll</th>
+                              <th className="px-3 py-2 font-medium">
+                                {t.gameScreen.player}
+                              </th>
+                              <th className="px-3 py-2 font-medium">
+                                {t.gameScreen.hero}
+                              </th>
+                              <th className="px-3 py-2 font-medium">
+                                {t.gameScreen.roll}
+                              </th>
                             </tr>
                           </thead>
                           <tbody>
@@ -545,7 +554,7 @@ export function GameScreen() {
                                   {playerTurnLabel(entry.playerId, state)}
                                 </td>
                                 <td className="px-3 py-2">
-                                  {heroName(entry.playerHeroId)}
+                                  {t.displayNames.heroes[entry.playerHeroId]}
                                 </td>
                                 <td className="px-3 py-2 font-semibold">
                                   {entry.roll}
@@ -560,15 +569,23 @@ export function GameScreen() {
                 </div>
                 <div>
                   <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-torch-200">
-                    Turn Order
+                    {t.gameScreen.turnOrder}
                   </h3>
                   <table className="w-full border-collapse text-sm text-parchment-100">
-                    <caption className="sr-only">Turn order</caption>
+                    <caption className="sr-only">
+                      {t.gameScreen.turnOrderCaption}
+                    </caption>
                     <thead>
                       <tr className="border-b border-obsidian-700 text-left text-xs uppercase tracking-wide text-parchment-200">
-                        <th className="px-3 py-2 font-medium">#</th>
-                        <th className="px-3 py-2 font-medium">Player</th>
-                        <th className="px-3 py-2 font-medium">Hero</th>
+                        <th className="px-3 py-2 font-medium">
+                          {t.gameScreen.rankColumn}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t.gameScreen.player}
+                        </th>
+                        <th className="px-3 py-2 font-medium">
+                          {t.gameScreen.hero}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -588,7 +605,7 @@ export function GameScreen() {
                             {playerTurnLabel(player.id, state)}
                           </td>
                           <td className="px-3 py-2">
-                            {heroName(player.heroId)}
+                            {t.displayNames.heroes[player.heroId]}
                           </td>
                         </tr>
                       ))}

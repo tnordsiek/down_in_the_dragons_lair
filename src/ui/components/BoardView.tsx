@@ -19,8 +19,8 @@ import {
 import { getReachableKnownMovePaths } from '../../engine/movement/reachable';
 import { adjacentPosition } from '../../engine/movement/topology';
 import { useSetupStore } from '../../state/setupStore';
-import { itemAssetId, itemLabel } from '../items';
-import { heroName, monsterName } from '../labels';
+import { itemAssetId } from '../items';
+import { useTranslation } from '../../i18n/useTranslation';
 import {
   getChestTileTooltip,
   getItemTileTooltip,
@@ -940,14 +940,17 @@ function TileGraphic({
 }
 
 function RoomToken({ token }: { token: Token }) {
+  const t = useTranslation();
   const assetId = `token_${token.id}`;
   const assetUrl = getAssetUrl(assetId);
   const label =
-    token.kind === 'monster' ? monsterName(token.id) : 'Treasure chest';
+    token.kind === 'monster'
+      ? t.displayNames.monsters[token.id]
+      : t.boardView.treasureChest;
   const tooltip =
     token.kind === 'monster'
-      ? getMonsterTileTooltip(token.id)
-      : getChestTileTooltip();
+      ? getMonsterTileTooltip(token.id, t)
+      : getChestTileTooltip(t);
   const sizePx = 58;
 
   return (
@@ -973,9 +976,10 @@ function HeroToken({
   heroId: HeroId;
   sizePx?: number;
 }) {
+  const t = useTranslation();
   const assetId = `${heroId}_token`;
   const assetUrl = getAssetUrl(assetId);
-  const label = heroName(heroId);
+  const label = t.displayNames.heroes[heroId];
 
   return (
     <span
@@ -1043,10 +1047,16 @@ function HeroTokenStack({
 }
 
 function LooseItemToken({ item }: { item: Item }) {
+  const t = useTranslation();
   const assetId = itemAssetId(item);
   const assetUrl = getAssetUrl(assetId);
-  const label = itemLabel(item);
-  const tooltip = getItemTileTooltip(item);
+  const label =
+    item.type === 'weapon'
+      ? t.displayNames.weapons[item.bonus]
+      : item.type === 'spell'
+        ? `${t.displayNames.spells[item.spellKind]} ${t.items.spellSuffix}`
+        : t.items.key;
+  const tooltip = getItemTileTooltip(item, t);
   const sizePx = 32;
 
   return (

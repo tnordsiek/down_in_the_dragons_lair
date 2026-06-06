@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 
 import { buildFeedbackMailto } from '../../feedback/buildFeedbackMailto';
 import { useSetupStore } from '../../state/setupStore';
+import { useTranslation } from '../../i18n/useTranslation';
 import { Button } from '../primitives';
 
 const fieldClassName =
   'rounded-forged border border-obsidian-600 bg-obsidian-950 px-3 py-2 text-parchment-50 shadow-carve';
 
 export function FeedbackModal() {
+  const t = useTranslation();
   const open = useSetupStore((state) => state.feedbackModalOpen);
   const closeFeedbackModal = useSetupStore((state) => state.closeFeedbackModal);
   const gameState = useSetupStore((state) => state.gameState);
@@ -63,7 +65,7 @@ export function FeedbackModal() {
       aria-labelledby="feedback-modal-title"
     >
       <button
-        aria-label="Close feedback form"
+        aria-label={t.feedbackModal.closeForm}
         className="absolute inset-0 cursor-default bg-transparent"
         onClick={handleClose}
         type="button"
@@ -73,35 +75,33 @@ export function FeedbackModal() {
           id="feedback-modal-title"
           className="font-display text-2xl text-amber-100"
         >
-          Feedback &amp; Bug Report
+          {t.feedbackModal.title}
         </h2>
         <p className="mt-2 text-sm text-parchment-200">
-          Found a bug or have an idea? Write a short note below. Pressing
-          &ldquo;Open e-mail&rdquo; prepares a message in your e-mail app
-          &mdash; nothing is sent until you send it yourself.
+          {t.feedbackModal.description}
         </p>
 
         <div className="mt-4 grid gap-4">
           <label className="grid gap-2 text-sm text-parchment-200">
-            Your message
+            {t.feedbackModal.messageLabel}
             <textarea
               ref={textareaRef}
               className={fieldClassName}
               rows={5}
               value={message}
               onChange={(event) => setMessage(event.target.value)}
-              placeholder="Describe the bug or share your feedback..."
+              placeholder={t.feedbackModal.messagePlaceholder}
             />
           </label>
 
           <label className="grid gap-2 text-sm text-parchment-200">
-            Your e-mail (optional, for replies)
+            {t.feedbackModal.emailLabel}
             <input
               className={`${fieldClassName} font-mono`}
               type="email"
               value={replyEmail}
               onChange={(event) => setReplyEmail(event.target.value)}
-              placeholder="you@example.com"
+              placeholder={t.feedbackModal.emailPlaceholder}
             />
           </label>
 
@@ -116,14 +116,10 @@ export function FeedbackModal() {
                     setIncludeDiagnostics(event.target.checked)
                   }
                 />
-                <span>Include technical game diagnostics for analysis</span>
+                <span>{t.feedbackModal.diagnosticsLabel}</span>
               </label>
               <p className="text-xs leading-5 text-parchment-300">
-                Optional and entirely voluntary. If checked, a short technical
-                snapshot of your current game is added to the message: app
-                version, random seed, current phase, players and their heroes,
-                and the most recent in-game events. No personal data is
-                collected. Leave it unchecked to send only your message.
+                {t.feedbackModal.diagnosticsNote}
               </p>
             </div>
           ) : null}
@@ -131,7 +127,7 @@ export function FeedbackModal() {
 
         <div className="mt-5 flex items-center justify-end gap-2">
           <Button variant="secondary" onClick={handleClose}>
-            Cancel
+            {t.feedbackModal.cancel}
           </Button>
           <a
             aria-disabled={!canSend}
@@ -147,7 +143,7 @@ export function FeedbackModal() {
               handleClose();
             }}
           >
-            Open e-mail
+            {t.feedbackModal.openEmail}
           </a>
         </div>
       </section>

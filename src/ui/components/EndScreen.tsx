@@ -1,14 +1,35 @@
 import { useEffect, useRef } from 'react';
 
-import type { GameState } from '../../engine/core/types';
-import { formatTreasurePoints, playerHeroLabel } from '../labels';
+import type { GameState, Player } from '../../engine/core/types';
+import { formatTreasurePoints } from '../labels';
+import { useTranslation } from '../../i18n/useTranslation';
 
 type EndScreenProps = {
   state: GameState;
   onNewGame: () => void;
 };
 
+function translatedPlayerHeroLabel(
+  player: Player,
+  players: Player[],
+  t: ReturnType<typeof useTranslation>,
+): string {
+  const humans = players.filter((p) => p.kind === 'human');
+  let typeLabel: string;
+  if (player.kind === 'human') {
+    typeLabel =
+      humans.length <= 1
+        ? t.playerLabels.human
+        : t.playerLabels.playerN(humans.indexOf(player) + 1);
+  } else {
+    const ais = players.filter((p) => p.kind === 'ai');
+    typeLabel = t.playerLabels.aiN(ais.indexOf(player) + 1);
+  }
+  return `${t.displayNames.heroes[player.heroId]} (${typeLabel})`;
+}
+
 export function EndScreen({ state, onNewGame }: EndScreenProps) {
+  const t = useTranslation();
   const newGameButtonRef = useRef<HTMLButtonElement>(null);
   const hasVictory = state.victory !== undefined;
 
@@ -26,24 +47,17 @@ export function EndScreen({ state, onNewGame }: EndScreenProps) {
     .slice()
     .sort((left, right) => right.treasurePoints - left.treasurePoints);
   const winnerIds = new Set(state.victory.winnerPlayerIds);
-  const rankedEntries = rankedPlayers.map((player) => {
-    const playerIndex = state.players.findIndex(
-      (entry) => entry.id === player.id,
-    );
-
-    return {
-      isWinner: winnerIds.has(player.id),
-      label: playerHeroLabel(player, playerIndex),
-      player,
-    };
-  });
+  const rankedEntries = rankedPlayers.map((player) => ({
+    isWinner: winnerIds.has(player.id),
+    label: translatedPlayerHeroLabel(player, state.players, t),
+    player,
+  }));
   const dragonSlayer = state.players.find(
     (player) => player.id === state.victory?.defeatedDragonByPlayerId,
   );
   const winnerLabels = state.players
-    .map((player, index) => ({ player, index }))
-    .filter(({ player }) => winnerIds.has(player.id))
-    .map(({ player, index }) => playerHeroLabel(player, index));
+    .filter((player) => winnerIds.has(player.id))
+    .map((player) => translatedPlayerHeroLabel(player, state.players, t));
   const humanWon = state.players.some(
     (player) => player.kind === 'human' && winnerIds.has(player.id),
   );
@@ -64,33 +78,30 @@ export function EndScreen({ state, onNewGame }: EndScreenProps) {
             id="end-screen-title"
             className="font-display text-3xl text-amber-100"
           >
-            {humanWon ? 'Victory!' : 'Game Over'}
+            {humanWon ? t.endScreen.victory : t.endScreen.gameOver}
           </h2>
           <div className="mt-4 grid gap-3 text-sm text-parchment-100">
             <div className="rounded-carve border border-jade-600/60 bg-jade-900/40 p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-jade-200">
-                {winnerLabels.length > 1 ? 'Shared Victory' : 'Winner'}
+                {winnerLabels.length > 1
+                  ? t.endScreen.sharedVictory
+                  : t.endScreen.winner}
               </p>
               <p className="mt-1 text-base font-semibold text-jade-200">
-                {winnerLabels.join(' and ')}
+                {winnerLabels.join(` ${t.endScreen.and} `)}
               </p>
             </div>
             <div className="rounded-carve border border-obsidian-700 bg-obsidian-950/70 p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-torch-300">
-                Dragon Slayer
+                {t.endScreen.dragonSlayer}
               </p>
               <p className="mt-1 text-base font-semibold text-parchment-50">
                 {dragonSlayer
-                  ? playerHeroLabel(
-                      dragonSlayer,
-                      state.players.findIndex(
-                        (player) => player.id === dragonSlayer.id,
-                      ),
-                    )
+                  ? translatedPlayerHeroLabel(dragonSlayer, state.players, t)
                   : state.victory.defeatedDragonByPlayerId}
               </p>
               <p className="mt-1 text-xs text-parchment-200">
-                Dragon treasure worth 1.5 points is included in the final score.
+                {t.endScreen.dragonTreasureNote}
               </p>
             </div>
           </div>
@@ -107,7 +118,8 @@ export function EndScreen({ state, onNewGame }: EndScreenProps) {
               >
                 <span>{label}</span>
                 <span className="font-mono">
-                  {formatTreasurePoints(player.treasurePoints)} pts
+                  {formatTreasurePoints(player.treasurePoints)}{' '}
+                  {t.endScreen.pts}
                 </span>
               </div>
             ))}
@@ -118,7 +130,7 @@ export function EndScreen({ state, onNewGame }: EndScreenProps) {
             data-asset-id="ui_button_primary"
             onClick={onNewGame}
           >
-            New Game
+            {t.endScreen.newGame}
           </button>
         </div>
       </section>

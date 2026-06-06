@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { useSetupStore } from '../../state/setupStore';
+import { useTranslation } from '../../i18n/useTranslation';
 import type { LegalContent } from '../../legal/types';
 
 type FooterMetaProps = {
@@ -12,11 +13,6 @@ type FooterMetaProps = {
 };
 
 type LegalSectionId = 'imprint' | 'privacy';
-
-const legalSectionLabels: Record<LegalSectionId, string> = {
-  imprint: 'Imprint',
-  privacy: 'Privacy Policy',
-};
 
 const legalContentLoaders: Record<LegalSectionId, () => Promise<LegalContent>> =
   {
@@ -32,6 +28,7 @@ export function FooterMeta({
   spread = false,
   versionLabel = 'v1.5',
 }: FooterMetaProps) {
+  const t = useTranslation();
   const [activeSection, setActiveSection] = useState<LegalSectionId | null>(
     null,
   );
@@ -45,6 +42,11 @@ export function FooterMeta({
     useState<LegalSectionId | null>(null);
   const isLeftAligned = align === 'left';
   const openFeedbackModal = useSetupStore((state) => state.openFeedbackModal);
+
+  const legalSectionLabels: Record<LegalSectionId, string> = {
+    imprint: t.footerMeta.imprint,
+    privacy: t.footerMeta.privacyPolicy,
+  };
 
   const handleToggleSection = async (section: LegalSectionId) => {
     if (activeSection === section) {
@@ -106,7 +108,7 @@ export function FooterMeta({
     <div className={containerClassName}>
       {activeSection ? (
         <button
-          aria-label={`Close ${legalSectionLabels[activeSection]}`}
+          aria-label={t.footerMeta.closeSection(legalSectionLabels[activeSection])}
           className="fixed inset-0 cursor-default bg-transparent"
           onClick={closePanel}
           type="button"
@@ -121,9 +123,9 @@ export function FooterMeta({
             <p className="mb-2 font-display text-sm font-semibold text-amber-100">
               {legalSectionLabels[activeSection]}
             </p>
-            {showLoading ? <p>Loading legal notice...</p> : null}
+            {showLoading ? <p>{t.footerMeta.loading}</p> : null}
             {showLoadError ? (
-              <p>Unable to load this legal notice right now.</p>
+              <p>{t.footerMeta.loadError}</p>
             ) : null}
             {activeContent ? (
               <LegalContentPanel content={activeContent} />
@@ -150,7 +152,7 @@ export function FooterMeta({
             onClick={openFeedbackModal}
             type="button"
           >
-            Bug Report
+            {t.footerMeta.bugReport}
           </button>
         </div>
       </div>
