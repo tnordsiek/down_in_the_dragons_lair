@@ -129,8 +129,10 @@ Zustand is the state management library used by the app. It stores the live, cha
 In this project, Zustand is the layer that remembers things such as:
 
 - which hero the player selected,
+- whether the game is in solo or hotseat mode and how many human players take part,
 - whether a game is currently running,
 - what the latest `GameState` is,
+- which language (locale) is currently selected,
 - whether sound is enabled,
 - whether a save file exists,
 - whether the feedback dialog is open,
@@ -299,6 +301,8 @@ This lets the project:
 - reload it later,
 - remove invalid saved data if it can no longer be read safely.
 
+A few smaller preferences are persisted separately under their own local-storage keys, such as the selected language, which is stored and restored by `src/i18n/localeSettings.ts`.
+
 ### Audio
 
 Audio is handled by a combination of:
@@ -346,6 +350,7 @@ flowchart TD
     SRC --> DATA["data"]
     SRC --> AUDIO["audio"]
     SRC --> FEEDBACK["feedback"]
+    SRC --> I18N["i18n"]
     SRC --> LEGAL["legal"]
     SRC --> UTILS["utils"]
     SRC --> TEST["test"]
@@ -360,12 +365,14 @@ This section explains how major game activities move through the system.
 ### 1. Starting a Game
 
 1. The player opens the start screen.
-2. The player chooses a hero, difficulty, and AI setup.
+2. The player chooses a game mode (solo against the AI, or hotseat with several humans on one device), a hero, difficulty, and AI setup.
 3. The store calls the game-start action.
 4. The engine creates a new `GameState`.
 5. The new state is saved in the store.
 6. The game screen appears.
 7. The game state is also saved to browser storage so it can be resumed later.
+
+In hotseat mode, when it becomes another human player's turn, a handoff overlay temporarily hides the board so the next player can take over privately before the board is revealed again.
 
 ### 2. Taking a Player Action
 
@@ -445,6 +452,9 @@ Important files include:
 - `tsconfig.json`, `tsconfig.app.json`, `tsconfig.node.json`: TypeScript configuration.
 - `index.html`: HTML entry page for the app.
 - `assets.manifest.json`: structured description of game assets.
+- `site.webmanifest`: web app manifest that lets the game be installed as a Progressive Web App (PWA), with name, icons, and display mode.
+
+The `public` folder also holds the favicon and app-icon set (`favicon.ico`, the `favicon-16x16`/`favicon-32x32` PNGs, the `apple-touch-icon`, and the `android-chrome` icons) referenced from `index.html` and the web manifest.
 
 ### `docs`
 
@@ -511,7 +521,7 @@ This folder contains the visible interface. It is the largest "player-facing" so
 Subareas include:
 
 - `screens`: top-level screens such as start, tutorial, and game.
-- `components`: larger reusable UI building blocks such as the board view, action panel, event log, settings menu, and feedback modal.
+- `components`: larger reusable UI building blocks such as the board view, action panel, event log, settings menu, feedback modal, the hotseat handoff overlay, and an image lightbox for enlarging pictures.
 - `primitives`: smaller reusable building blocks such as buttons, chips, panels, and headings.
 - `tutorial`: tutorial-specific display pieces and fixtures.
 
@@ -579,6 +589,7 @@ Examples:
 - tile pool definitions,
 - token bag content,
 - display names,
+- context-aware player labels (for example "Human" and "AI 2" in solo play, or "Player 1" and "Player 2" in hotseat play),
 - asset metadata access.
 
 This is the nearest thing the project has to a "content database," except it is stored as source files rather than in a separate external database.
@@ -597,6 +608,19 @@ Examples:
 - feedback email assembly,
 - compact diagnostics summary generation.
 
+#### `src/i18n`
+
+This folder contains the internationalization (i18n) system that makes the game available in more than one language. The project currently ships English and German.
+
+Responsibilities here:
+
+- the full set of translated strings per language (`en.ts`, `de.ts`),
+- shared translation types,
+- a `useTranslation` hook that gives components the strings for the currently selected language,
+- loading and persisting the language choice in browser local storage (`localeSettings.ts`).
+
+The active language lives in the store, so changing the language updates the whole interface, and the choice is remembered on the next visit.
+
 #### `src/legal`
 
 This folder stores website and project legal information, such as:
@@ -605,6 +629,8 @@ This folder stores website and project legal information, such as:
 - imprint content,
 - contact details,
 - related legal types.
+
+This content is now provided per language: each legal page has an English version and a German variant (for example `imprintContent.ts` alongside `imprintContent.de.ts`), so the correct text is shown for the selected language.
 
 #### `src/utils`
 
@@ -905,6 +931,10 @@ The code that enforces the game rules and updates the game state.
 ### Event Log
 
 A structured history of important actions and outcomes recorded during the game.
+
+### Locale
+
+The selected language and regional setting for the interface text. In this project, the locale is either English or German and is remembered between visits.
 
 ### Loot
 

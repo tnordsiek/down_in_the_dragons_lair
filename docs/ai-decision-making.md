@@ -63,6 +63,8 @@ Healing score = 12 - distance to healing
 
 The closer the healing location, the higher the score. If no healing location is known, this mode is ignored.
 
+> **Note on healing tiles:** Standing on a healing tile normally restores the player at the end of the turn. There is one exception enforced by the engine: if the player landed on the healing tile by being pushed back from a **lost combat** (a forced retreat), the end-of-turn healing is blocked. This is tracked via `state.healingEndTurnSource === 'combat_retreat_blocked'` and handled in `src/engine/rules/healing.ts`. The AI cannot heal "for free" by losing a fight next to a healing space.
+
 #### Normal movement scoring
 
 Without healing pressure, the score is built from multiple factors:
@@ -247,7 +249,7 @@ The following issues were identified during analysis. They are documented, but i
 | 2 | **Seeress always selects token index 0** | `resolve_room_token_seeress_choice` | No evaluation of which of the two tokens is better |
 | 3 | **Witch position swap has a hardcoded score** | `scoreMovementAction` (`exploreTileBonus - 1 = 8`) | Not context-sensitive; ignores both players' current state |
 | 4 | **Healing route uses Manhattan instead of BFS distance** | `distanceToNearestHealing` | Less precise than pathfinding for monsters and objectives |
-| 5 | **No player tracking** | entire `heuristicAgent.ts` | AI completely ignores the positions and strength of other players |
+| 5 | **Almost no player tracking** (partially addressed) | `heuristicAgent.ts` | The AI still ignores other players' positions and strength almost everywhere. The one exception is the dragon endgame: `shouldForceDragonEndgame` now compares its own dragon win chance against the best win chance among all players, so it only forces the final fight when it is the best-equipped contender. |
 
 ---
 
@@ -332,4 +334,5 @@ Validated by [`src/ai/difficultyBalance.test.ts`](../src/ai/difficultyBalance.te
 | [`src/ai/legalActions.ts`](../src/ai/legalActions.ts) | Legal actions for each phase |
 | [`src/ai/autoplay.ts`](../src/ai/autoplay.ts) | Execution of full turns/games (difficulty-aware) |
 | [`src/ai/difficultyBalance.test.ts`](../src/ai/difficultyBalance.test.ts) | Empirical balance validation |
-| [`src/engine/core/types.ts`](../src/engine/core/types.ts) | `AiDifficulty` type and `GameState.difficulty` field |
+| [`src/engine/core/types.ts`](../src/engine/core/types.ts) | `AiDifficulty` type, `GameState.difficulty` field, and the `HealingEndTurnSource` type |
+| [`src/engine/rules/healing.ts`](../src/engine/rules/healing.ts) | End-of-turn healing rule, including the blocked retreat-after-lost-combat case |
