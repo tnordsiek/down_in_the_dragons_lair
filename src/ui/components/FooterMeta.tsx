@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useSetupStore } from '../../state/setupStore';
 import { useTranslation } from '../../i18n/useTranslation';
+import type { Locale } from '../../i18n/types';
 import type { LegalContent } from '../../legal/types';
 
 type FooterMetaProps = {
@@ -14,32 +15,41 @@ type FooterMetaProps = {
 
 type LegalSectionId = 'imprint' | 'privacy';
 
-const legalContentLoaders: Record<LegalSectionId, () => Promise<LegalContent>> =
-  {
-    imprint: async () =>
+const legalContentLoaders: Record<
+  LegalSectionId,
+  Record<Locale, () => Promise<LegalContent>>
+> = {
+  imprint: {
+    en: async () =>
       (await import('../../legal/imprintContent')).imprintContent,
-    privacy: async () =>
+    de: async () =>
+      (await import('../../legal/imprintContent.de')).imprintContentDe,
+  },
+  privacy: {
+    en: async () =>
       (await import('../../legal/privacyPolicyContent')).privacyPolicyContent,
-  };
+    de: async () =>
+      (await import('../../legal/privacyPolicyContent.de'))
+        .privacyPolicyContentDe,
+  },
+};
 
 export function FooterMeta({
   align = 'right',
   layout = 'absolute',
   spread = false,
-  versionLabel = 'v1.5',
+  versionLabel = 'v1.6',
 }: FooterMetaProps) {
   const t = useTranslation();
+  const locale = useSetupStore((state) => state.locale);
   const [activeSection, setActiveSection] = useState<LegalSectionId | null>(
     null,
   );
   const [loadedContent, setLoadedContent] = useState<
-    Partial<Record<LegalSectionId, LegalContent>>
+    Partial<Record<string, LegalContent>>
   >({});
-  const [loadingSection, setLoadingSection] = useState<LegalSectionId | null>(
-    null,
-  );
-  const [loadErrorSection, setLoadErrorSection] =
-    useState<LegalSectionId | null>(null);
+  const [loadingKey, setLoadingKey] = useState<string | null>(null);
+  const [loadErrorKey, setLoadErrorKey] = useState<string | null>(null);
   const isLeftAligned = align === 'left';
   const openFeedbackModal = useSetupStore((state) => state.openFeedbackModal);
 
@@ -48,46 +58,55 @@ export function FooterMeta({
     privacy: t.footerMeta.privacyPolicy,
   };
 
-  const handleToggleSection = async (section: LegalSectionId) => {
-    if (activeSection === section) {
-      setActiveSection(null);
-      setLoadingSection(null);
-      setLoadErrorSection(null);
+  const cacheKey = (section: LegalSectionId, sectionLocale: Locale) =>
+    `${section}:${sectionLocale}`;
+
+  const loadSection = useCallback(
+    async (section: LegalSectionId, sectionLocale: Locale) => {
+      const key = cacheKey(section, sectionLocale);
+
+      setLoadErrorKey((current) => (current === key ? null : current));
+      setLoadingKey(key);
+
+      try {
+        const content = await legalContentLoaders[section][sectionLocale]();
+        setLoadedContent((current) => ({ ...current, [key]: content }));
+      } catch {
+        setLoadErrorKey(key);
+      } finally {
+        setLoadingKey((current) => (current === key ? null : current));
+      }
+    },
+    [],
+  );
+
+  // Fetch the active section's content for the current locale on open and on
+  // language switch (so a toggle while the panel is open swaps the language).
+  useEffect(() => {
+    if (!activeSection) {
       return;
     }
 
-    setActiveSection(section);
-    setLoadErrorSection(null);
-
-    if (loadedContent[section] || loadingSection === section) {
+    const key = cacheKey(activeSection, locale);
+    if (loadedContent[key] || loadingKey === key) {
       return;
     }
 
-    setLoadingSection(section);
+    void loadSection(activeSection, locale);
+  }, [activeSection, locale, loadedContent, loadingKey, loadSection]);
 
-    try {
-      const content = await legalContentLoaders[section]();
-      setLoadedContent((current) => ({ ...current, [section]: content }));
-    } catch {
-      setLoadErrorSection(section);
-    } finally {
-      setLoadingSection((current) => (current === section ? null : current));
-    }
+  const handleToggleSection = (section: LegalSectionId) => {
+    setActiveSection((current) => (current === section ? null : section));
   };
 
   const closePanel = () => {
     setActiveSection(null);
-    setLoadingSection(null);
-    setLoadErrorSection(null);
   };
 
-  const activeContent = activeSection
-    ? loadedContent[activeSection]
-    : undefined;
-  const showLoading =
-    activeSection !== null && loadingSection === activeSection;
-  const showLoadError =
-    activeSection !== null && loadErrorSection === activeSection;
+  const activeKey = activeSection ? cacheKey(activeSection, locale) : null;
+  const activeContent = activeKey ? loadedContent[activeKey] : undefined;
+  const showLoading = activeKey !== null && loadingKey === activeKey;
+  const showLoadError = activeKey !== null && loadErrorKey === activeKey;
   const isFlowLayout = layout === 'flow';
   const panelClassName = isLeftAligned
     ? 'fixed bottom-8 left-1/2 -translate-x-1/2 sm:absolute sm:bottom-8 sm:left-0 sm:translate-x-0'

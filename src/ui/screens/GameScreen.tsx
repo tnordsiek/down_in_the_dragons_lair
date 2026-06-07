@@ -641,7 +641,7 @@ export function GameScreen() {
         />
       ) : null}
       <div className="shrink-0 border-t border-obsidian-700 px-4 pb-2 pt-2">
-        <FooterMeta layout="flow" spread versionLabel="v1.5 fnord GAMES 2026" />
+        <FooterMeta layout="flow" spread versionLabel="v1.6 fnord GAMES 2026" />
       </div>
     </main>
   );

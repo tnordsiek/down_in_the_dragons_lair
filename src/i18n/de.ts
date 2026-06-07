@@ -169,6 +169,7 @@ export const de: Translations = {
     back: 'Zurück',
     backToStart: 'Zurück zum Start',
     next: 'Weiter',
+    combatDiceCaption: '2W6 + Waffen muss die Stärke des Monsters übertreffen',
   },
 
   tutorialSteps: [
@@ -176,7 +177,7 @@ export const de: Translations = {
       id: 'overview',
       title: 'Ziel & Überblick',
       intro:
-        'Down in the Dragon’s Lair ist ein rundenbasierter Dungeon-Crawler für dich und bis zu vier KI-Gegner. Du erkundest den Kerker Kachel für Kachel, kämpfst gegen Monster und sammelst Schätze.',
+        'Down in the Dragon’s Lair ist ein rundenbasierter Dungeon-Crawler. Du erkundest den Kerker Kachel für Kachel, kämpfst gegen Monster und sammelst Schätze — solo gegen die KI oder lokal mit Freunden.',
       bullets: [
         'Das Spiel endet, sobald der uralte Drache besiegt ist.',
         'Wenn es endet, gewinnt der Held mit den meisten Schatzpunkten — nicht unbedingt der Drachentöter.',
@@ -204,7 +205,7 @@ export const de: Translations = {
       bullets: [
         'Wände und unentdeckte Ränder blockieren die Bewegung.',
         'Einige Kacheln enthalten Portale, die dir Teleportation auf dem Spielfeld ermöglichen.',
-        'Benutze "Karte zentrieren", um die Ansicht jederzeit auf deinen Helden zu fokussieren.',
+        'Benutze "Karte zentrieren" / "Heldin zentrieren", um die Ansicht jederzeit auf deinen Helden zu fokussieren.',
       ],
       visual: 'movement',
     },
@@ -286,7 +287,7 @@ export const de: Translations = {
         'Du bist nicht dauerhaft mit deinen Wunden geschlagen. Der Kerker und deine Zauber können verlorene LP wiederherstellen (bis zu deinem Maximum von 5).',
       bullets: [
         'Das Stehen auf einem Heilungsfeld stellt LP automatisch zu Beginn deines Zuges wieder her.',
-        'Ein Heilzauber in deinem Inventar kann verwendet werden, um einen gewählten Helden auf ein Heilungsfeld zu teleportieren.',
+        'Ein Heilzauber teleportiert einen gewählten Helden auf ein entdecktes Heilungsfeld und stellt seine LP wieder her.',
       ],
       visual: 'healing',
     },
@@ -312,6 +313,19 @@ export const de: Translations = {
         'Es gibt keinen dauerhaften Tod — auf 0 LP zu fallen kostet dich nur einen Zug.',
       ],
       visual: 'scoreboard',
+    },
+    {
+      id: 'players-difficulty',
+      title: 'Spieler & Schwierigkeit',
+      intro:
+        'Jetzt, da du weißt, wie man spielt, richte dein Spiel auf dem Startbildschirm ein. Wähle ein schnelles Solospiel gegen die KI oder ein lokales Hotseat-Spiel für mehrere Personen.',
+      bullets: [
+        'Solo: du gegen 1–4 KI-Gegner.',
+        'Hotseat: 2–5 Spieler teilen sich ein Gerät und wählen je einen eigenen Helden (KI-Gegner können zusätzlich dabei sein).',
+        'Die KI-Schwierigkeit (Einfach, Normal, Schwer) bestimmt, wie vorsichtig oder aggressiv die Gegner spielen — einstellbar im Setup oder im Spielmenü.',
+        'Wechsle die Sprache (Englisch / Deutsch) jederzeit im Einstellungsmenü.',
+      ],
+      visual: 'turn-order',
     },
     {
       id: 'ready',

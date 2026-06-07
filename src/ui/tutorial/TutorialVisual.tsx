@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 
 import { getAssetUrl } from '../../data/assets';
 import type { BoardPosition, GameState } from '../../engine/core/types';
+import { useTranslation } from '../../i18n/useTranslation';
 import { ActionPanel } from '../components/ActionPanel';
 import { BoardView } from '../components/BoardView';
 import { PlayerPanel } from '../components/PlayerPanel';
@@ -94,7 +95,7 @@ function BoardVisual({ config }: { config: BoardVisualConfig }) {
   );
 
   return (
-    <div className="pointer-events-none relative h-[58vh] min-h-72 overflow-hidden rounded-forged border border-obsidian-700 bg-stone-950 shadow-forged lg:h-[26rem] lg:min-h-0">
+    <div className="pointer-events-none relative h-[58vh] min-h-72 overflow-hidden rounded-forged border border-obsidian-700 bg-obsidian-950 shadow-forged lg:h-[26rem] lg:min-h-0">
       <BoardView
         state={config.state}
         cameraRequest={cameraRequest}
@@ -106,6 +107,8 @@ function BoardVisual({ config }: { config: BoardVisualConfig }) {
 }
 
 function CombatDiceVisual() {
+  const t = useTranslation();
+
   return (
     <div className="grid gap-3 rounded-forged border border-obsidian-700 bg-obsidian-800/85 p-4 shadow-forged">
       <div
@@ -127,7 +130,7 @@ function CombatDiceVisual() {
           ) : (
             <span
               key={`${index}-${die}`}
-              className="flex h-20 w-20 items-center justify-center rounded-carve border border-obsidian-600 font-mono text-2xl text-amber-100 shadow-carve"
+              className="flex h-20 w-20 items-center justify-center rounded-carve border border-obsidian-600 font-mono text-2xl text-torch-200 shadow-carve"
             >
               {die}
             </span>
@@ -135,7 +138,7 @@ function CombatDiceVisual() {
         })}
       </div>
       <p className="text-center font-mono text-sm text-parchment-200">
-        2d6 + weapons must beat the monster’s strength
+        {t.tutorialScreen.combatDiceCaption}
       </p>
     </div>
   );

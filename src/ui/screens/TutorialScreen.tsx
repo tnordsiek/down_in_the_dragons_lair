@@ -29,7 +29,7 @@ export function TutorialScreen() {
     >
       <section className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-6 py-6 sm:px-8">
         <header className="flex items-center justify-between gap-4 border-b border-obsidian-700 pb-3 shadow-[0_2px_0_rgba(196,132,42,0.2)]">
-          <h1 className="font-display text-2xl text-amber-100 sm:text-3xl">
+          <h1 className="font-display text-2xl text-torch-200 sm:text-3xl">
             {t.tutorialScreen.title}
           </h1>
           <button
@@ -49,8 +49,8 @@ export function TutorialScreen() {
             {t.tutorialScreen.stepOf(currentStep + 1, stepCount)}
           </p>
 
-          <section className="mt-3 flex-1 rounded-forged border border-stone-700 bg-stone-900/80 p-5 shadow-forged">
-            <h2 className="font-display text-xl font-semibold text-amber-100">
+          <section className="mt-3 flex-1 rounded-forged border border-obsidian-700 bg-obsidian-900/80 p-5 shadow-forged">
+            <h2 className="font-display text-xl font-semibold text-torch-200">
               {step.title}
             </h2>
             <div

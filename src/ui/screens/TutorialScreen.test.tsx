@@ -11,8 +11,12 @@ import {
 } from 'vitest';
 
 import { App } from '../../app/App';
+import { en } from '../../i18n/en';
 import { useSetupStore } from '../../state/setupStore';
-import { tutorialSteps } from '../tutorialSteps';
+
+// The screen renders the active locale's steps; tests run with the default
+// 'en' locale, so assert against the English bundle.
+const tutorialSteps = en.tutorialSteps;
 
 function resetSetupStore() {
   act(() => {

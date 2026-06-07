@@ -167,6 +167,7 @@ export const en = {
     back: 'Back',
     backToStart: 'Back to Start',
     next: 'Next',
+    combatDiceCaption: '2d6 + weapons must beat the monster’s strength',
   },
 
   tutorialSteps: [
@@ -174,7 +175,7 @@ export const en = {
       id: 'overview',
       title: 'Goal & Overview',
       intro:
-        'Down in the Dragon’s Lair is a turn-based dungeon crawl for you and up to four AI opponents. You explore the dungeon tile by tile, fight monsters, and collect treasure.',
+        'Down in the Dragon’s Lair is a turn-based dungeon crawl. You explore the dungeon tile by tile, fight monsters, and collect treasure — solo against the AI or locally with friends.',
       bullets: [
         'The game ends the moment the ancient Dragon is defeated.',
         'When it ends, the hero holding the most treasure points wins — not necessarily the dragon slayer.',
@@ -202,7 +203,7 @@ export const en = {
       bullets: [
         'Walls and undiscovered edges block movement.',
         'Some tiles contain portals that let you teleport across the board.',
-        'Use “Center Map” to recentre the view on your hero at any time.',
+        'Use “Center Map” / “Center Heroine” to recentre the view on your hero at any time.',
       ],
       visual: 'movement',
     },
@@ -284,7 +285,7 @@ export const en = {
         'You are not stuck with your wounds. The dungeon and your spells can restore lost HP (up to your maximum of 5).',
       bullets: [
         'Standing on a healing tile restores HP automatically at the start of your turn.',
-        'A healing spell in your inventory can be used to heal a chosen hero on a healing tile.',
+        'A healing spell teleports a chosen hero to a discovered healing tile and restores their HP.',
       ],
       visual: 'healing',
     },
@@ -310,6 +311,19 @@ export const en = {
         'There is no permanent death — falling to 0 HP only costs you a turn.',
       ],
       visual: 'scoreboard',
+    },
+    {
+      id: 'players-difficulty',
+      title: 'Players & Difficulty',
+      intro:
+        'Now that you know how to play, set up your game on the start screen. Choose a quick solo game against the AI, or a local hotseat game for several players.',
+      bullets: [
+        'Solo: you against 1–4 AI opponents.',
+        'Hotseat: 2–5 players share one device, each picking their own hero (you can still add AI opponents).',
+        'AI difficulty (Easy, Normal, Hard) sets how cautiously or aggressively opponents play — change it in setup or the in-game menu.',
+        'Switch the language (English / German) any time from the Settings menu.',
+      ],
+      visual: 'turn-order',
     },
     {
       id: 'ready',
