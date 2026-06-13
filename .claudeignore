@@ -13,19 +13,23 @@ test-results/
 
 # Binary Assets — Claude kann PNGs/OGGs nicht sinnvoll lesen oder editieren
 public/assets/sounds/
-public/assets/tiles/*.png
-public/assets/monsters/*.png
-public/assets/heroes/*.png
-public/assets/items/*.png
-public/assets/status/*.png
-public/assets/ui/*.png
+public/assets/**/*.png
 
 # Git-Interna
 .git/
 
+# Generierte Artefakte — kein Quellcode, kein Mehrwert für Claude
+package-lock.json
+assets.manifest.json
+*.tsbuildinfo
+
+# Claude-Konfiguration — Permissions-Allowlist, kein relevanter Code
+.claude/settings.local.json
+
 # Log-Dateien
 *.log
 npm-debug.log*
+.vite-dev*.log
 
 # Temporäre Dateien
 *.tmp
