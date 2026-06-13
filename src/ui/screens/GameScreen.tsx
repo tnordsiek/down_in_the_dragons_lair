@@ -93,6 +93,9 @@ export function GameScreen() {
     if (state) {
       setLastHandoffEventCount(state.eventLog.length);
     }
+    // Center the map on the now-active player so the new hotseat player starts
+    // with their heroine in view rather than the previous player's camera.
+    focusHeroine();
   };
   const startOverlayRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
