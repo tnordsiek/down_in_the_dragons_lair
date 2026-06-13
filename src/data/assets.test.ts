@@ -80,23 +80,23 @@ describe('asset manifest runtime mapping', () => {
     expect(getAsset('sfx_tile_place').category).toBe('audio');
   });
 
-  it('maps final hero and monster png assets to public URLs', () => {
+  it('maps final hero and monster webp assets to public URLs', () => {
     expect(getAssetUrl('hero_mage_token')).toBe(
-      '/assets/heroes/token_hero_mage.png',
+      '/assets/heroes/token_hero_mage.webp',
     );
     expect(getAssetUrl('token_skeleton_key_guardian')).toBe(
-      '/assets/monsters/token_skeleton_key_guardian.png',
+      '/assets/monsters/token_skeleton_key_guardian.webp',
     );
     expect(getAssetUrl('token_treasure_chest')).toBe(
-      '/assets/monsters/token_treasure_chest.png',
+      '/assets/monsters/token_treasure_chest.webp',
     );
-    expect(getAssetUrl('item_weapon_1')).toBe('/assets/items/item_knife_1.png');
-    expect(getAssetUrl('status_curse')).toBe('/assets/status/status_curse.png');
+    expect(getAssetUrl('item_weapon_1')).toBe('/assets/items/item_knife_1.webp');
+    expect(getAssetUrl('status_curse')).toBe('/assets/status/status_curse.webp');
     expect(getAssetUrl('tile_tunnel_cross')).toBe(
-      '/assets/tiles/tile_tunnel_cross.png',
+      '/assets/tiles/tile_tunnel_cross.webp',
     );
-    expect(getAssetUrl('ui_logo_header')).toBe('/assets/ui/ui_logo_header.png');
-    expect(getAssetUrl('ui_dice_06')).toBe('/assets/ui/ui_dice_06.png');
+    expect(getAssetUrl('ui_logo_header')).toBe('/assets/ui/ui_logo_header.webp');
+    expect(getAssetUrl('ui_dice_06')).toBe('/assets/ui/ui_dice_06.webp');
     expect(getAssetUrl('music_game_loop')).toBe(
       '/assets/sounds/music_game_loop.ogg',
     );

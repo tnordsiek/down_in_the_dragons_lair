@@ -203,7 +203,7 @@ describe('Milestone 6 UI', () => {
 
     expect(
       screen.getByRole('img', { name: 'room_corner preview' }),
-    ).toHaveAttribute('src', '/assets/tiles/tile_room_corner.png');
+    ).toHaveAttribute('src', '/assets/tiles/tile_room_corner.webp');
     expect(
       screen.getByRole('img', { name: 'room_corner preview' }),
     ).toHaveAttribute('style', expect.stringContaining('rotate(0deg)'));
@@ -433,23 +433,23 @@ describe('Milestone 6 UI', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Key' })).toHaveAttribute(
       'src',
-      '/assets/items/item_key.png',
+      '/assets/items/item_key.webp',
     );
     expect(screen.getByRole('img', { name: 'Sword +2' })).toHaveAttribute(
       'src',
-      '/assets/items/item_sword_2.png',
+      '/assets/items/item_sword_2.webp',
     );
     expect(screen.getByRole('img', { name: 'Fireball spell' })).toHaveAttribute(
       'src',
-      '/assets/items/item_spell_flame.png',
+      '/assets/items/item_spell_flame.webp',
     );
     expect(screen.getByRole('img', { name: 'cursed' })).toHaveAttribute(
       'src',
-      '/assets/status/status_curse.png',
+      '/assets/status/status_curse.webp',
     );
     expect(screen.getByRole('img', { name: 'unconscious' })).toHaveAttribute(
       'src',
-      '/assets/status/status_unconscious.png',
+      '/assets/status/status_unconscious.webp',
     );
   });
 
@@ -878,7 +878,7 @@ describe('Milestone 6 UI', () => {
     );
     expect(
       screen.getByRole('img', { name: 'Combat die 1: 6' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_06.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_06.webp');
     expect(screen.getByRole('img', { name: 'Combat die 1: 6' })).toHaveClass(
       'max-h-[50px]',
       'w-auto',
@@ -887,7 +887,7 @@ describe('Milestone 6 UI', () => {
     );
     expect(
       screen.getByRole('img', { name: 'Combat die 2: 4' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_04.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_04.webp');
     expect(
       screen.getByRole('img', { name: "Down in the Dragon's Lair" }),
     ).toHaveClass('max-h-[50px]', 'lg:max-h-[108px]');
@@ -943,10 +943,10 @@ describe('Milestone 6 UI', () => {
 
     expect(
       screen.getByRole('img', { name: 'Combat die 1: 1' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_01.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_01.webp');
     expect(
       screen.getByRole('img', { name: 'Combat die 2: 4' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_04.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_04.webp');
   });
 
   it('updates the header dice after a partial blade reroll', () => {
@@ -999,10 +999,10 @@ describe('Milestone 6 UI', () => {
 
     expect(
       screen.getByRole('img', { name: 'Combat die 1: 1' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_01.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_01.webp');
     expect(
       screen.getByRole('img', { name: 'Combat die 2: 6' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_06.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_06.webp');
   });
 
   it('shows valkyrie reroll dice in the header while the reroll choice is pending', () => {
@@ -1054,10 +1054,10 @@ describe('Milestone 6 UI', () => {
 
     expect(
       screen.getByRole('img', { name: 'Combat die 1: 2' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.webp');
     expect(
       screen.getByRole('img', { name: 'Combat die 2: 3' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.webp');
   });
 
   it('shows witch sacrifice dice in the header while the sacrifice choice is pending', () => {
@@ -1109,10 +1109,10 @@ describe('Milestone 6 UI', () => {
 
     expect(
       screen.getByRole('img', { name: 'Combat die 1: 2' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.webp');
     expect(
       screen.getByRole('img', { name: 'Combat die 2: 3' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.webp');
   });
 
   it('shows flame spell prompt dice in the header while flame spell choice is pending', () => {
@@ -1164,10 +1164,10 @@ describe('Milestone 6 UI', () => {
 
     expect(
       screen.getByRole('img', { name: 'Combat die 1: 2' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.webp');
     expect(
       screen.getByRole('img', { name: 'Combat die 2: 3' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.webp');
   });
 
   it('disables End Turn during unresolved combat prompts but keeps it available before optional rogue combat', () => {
@@ -1359,10 +1359,10 @@ describe('Milestone 6 UI', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('img', { name: 'Combat die 1: 1' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_01.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_01.webp');
     expect(
       screen.getByRole('img', { name: 'Combat die 2: 4' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_04.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_04.webp');
   });
 
   it('keeps offering the blade reroll in the real GameScreen flow after a partial reroll', () => {
@@ -1409,10 +1409,10 @@ describe('Milestone 6 UI', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('img', { name: 'Combat die 1: 1' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_01.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_01.webp');
     expect(
       screen.getByRole('img', { name: 'Combat die 2: 6' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_06.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_06.webp');
   });
 
   it('shows valkyrie pending dice in the real GameScreen flow after a rolled draw', () => {
@@ -1453,10 +1453,10 @@ describe('Milestone 6 UI', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('img', { name: 'Combat die 1: 2' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.webp');
     expect(
       screen.getByRole('img', { name: 'Combat die 2: 3' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.webp');
   });
 
   it('shows witch pending dice in the real GameScreen flow after a rolled draw', () => {
@@ -1497,10 +1497,10 @@ describe('Milestone 6 UI', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('img', { name: 'Combat die 1: 2' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.webp');
     expect(
       screen.getByRole('img', { name: 'Combat die 2: 3' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.webp');
   });
 
   it('shows flame spell pending dice in the real GameScreen flow after a rolled draw', () => {
@@ -1546,10 +1546,10 @@ describe('Milestone 6 UI', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('img', { name: 'Combat die 1: 2' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_02.webp');
     expect(
       screen.getByRole('img', { name: 'Combat die 2: 3' }),
-    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.png');
+    ).toHaveAttribute('src', '/assets/ui/ui_dice_03.webp');
   });
 
   it('renders mapped hero and monster images on the board', () => {
@@ -1567,17 +1567,17 @@ describe('Milestone 6 UI', () => {
 
     expect(
       screen.getByRole('img', { name: 'start_cross_healing' }),
-    ).toHaveAttribute('src', '/assets/tiles/tile_start_cross_healing.png');
+    ).toHaveAttribute('src', '/assets/tiles/tile_start_cross_healing.webp');
     expect(
       screen.getByRole('img', { name: 'start_cross_healing' }),
     ).toHaveAttribute('style', expect.stringContaining('rotate(90deg)'));
     expect(screen.getByRole('img', { name: 'Mage' })).toHaveAttribute(
       'src',
-      '/assets/heroes/token_hero_mage.png',
+      '/assets/heroes/token_hero_mage.webp',
     );
     expect(screen.getByRole('img', { name: 'Kitchen Rat' })).toHaveAttribute(
       'src',
-      '/assets/monsters/token_kitchen_rat.png',
+      '/assets/monsters/token_kitchen_rat.webp',
     );
     const monsterToken = screen
       .getByRole('img', { name: 'Kitchen Rat' })
@@ -1604,7 +1604,7 @@ describe('Milestone 6 UI', () => {
 
     expect(screen.getByRole('img', { name: 'Treasure chest' })).toHaveAttribute(
       'src',
-      '/assets/monsters/token_treasure_chest.png',
+      '/assets/monsters/token_treasure_chest.webp',
     );
     expect(
       screen
@@ -1778,7 +1778,7 @@ describe('Milestone 6 UI', () => {
 
     expect(itemImage).toHaveAttribute(
       'src',
-      '/assets/items/item_sword_2.png',
+      '/assets/items/item_sword_2.webp',
     );
     expect(itemToken).toHaveAttribute('title', 'Sword +2: Combat bonus +2');
     expect(itemToken).toHaveAttribute(

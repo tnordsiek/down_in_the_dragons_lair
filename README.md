@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="public/assets/ui/ui_logo_header.png" alt="Down in the Dragon's Lair" width="700">
+  <img src="public/assets/ui/ui_logo_header.webp" alt="Down in the Dragon's Lair" width="700">
 </h1>
 
 ## Game
@@ -26,5 +26,5 @@ Graphics powered by Nano Banana
 Concept and AI Direction by fnord GAMES (2026)
 
 <p align="center">
-  <img src="public/assets/ui/ui_logo_wordmark.png" alt="Down in the Dragon's Lair emblem" width="160">
+  <img src="public/assets/ui/ui_logo_wordmark.webp" alt="Down in the Dragon's Lair emblem" width="160">
 </p>
