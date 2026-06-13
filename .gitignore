@@ -72,9 +72,6 @@ desktop.ini
 # === Claude Code / KI-Tool-Caches ===
 .claude/.codex/jobs/
 
-# === Generierte Artefakte (Root) ===
-assets.manifest.json
-
 # === Lokale Asset-Workfiles ===
 assets/source/
 assets/tmp/
