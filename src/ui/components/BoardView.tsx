@@ -12,12 +12,11 @@ import type {
   TileSide,
   Token,
 } from '../../engine/core/types';
+import { getLegalKnownMoves } from '../../engine/movement/movement';
 import {
-  getLegalExplorationDirections,
-  getLegalKnownMoves,
-} from '../../engine/movement/movement';
-import { getReachableKnownMovePaths } from '../../engine/movement/reachable';
-import { adjacentPosition } from '../../engine/movement/topology';
+  getReachableExplorationTargets,
+  getReachableKnownMovePaths,
+} from '../../engine/movement/reachable';
 import { useSetupStore } from '../../state/setupStore';
 import { itemAssetId } from '../items';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -129,19 +128,15 @@ export function BoardView({
   const legalMoveTargets = new Map<string, KnownMove>(
     getLegalKnownMoves(state).map((move) => [positionKey(move.target), move]),
   );
-  const legalExplorationTargets = useMemo(
+  const reachableExplorationTargets = useMemo(
     () =>
-      new Map<string, TileSide>(
-        getLegalExplorationDirections(state).map((direction) => {
-          const targetPosition = adjacentPosition(
-            activePlayer.position,
-            direction,
-          );
-
-          return [positionKey(targetPosition), direction];
-        }),
+      new Map<string, { path: KnownMove[]; direction: TileSide }>(
+        getReachableExplorationTargets(state).map((t) => [
+          positionKey(t.position),
+          { path: t.path, direction: t.direction },
+        ]),
       ),
-    [activePlayer.position, state],
+    [state],
   );
   const healingSelectionTargets = new Set(
     selectableHealingPositions.map(positionKey),
@@ -163,14 +158,14 @@ export function BoardView({
       });
     }
 
-    for (const move of legalExplorationTargets.keys()) {
+    for (const move of reachableExplorationTargets.keys()) {
       const [boardX, boardY] = move.split(',').map(Number);
 
       positions.set(move, { boardX, boardY });
     }
 
     return positions;
-  }, [legalExplorationTargets, state]);
+  }, [reachableExplorationTargets, state]);
 
   const visibleXValues = Array.from(
     visiblePositions.values(),
@@ -220,8 +215,12 @@ export function BoardView({
     const cellKey = positionKey(cellPosition);
     const movePath = reachableMoveTargets.get(cellKey);
     const moveTarget = legalMoveTargets.get(cellKey);
-    const explorationDirection = legalExplorationTargets.get(cellKey);
+    const explorationTarget = reachableExplorationTargets.get(cellKey);
     const moveCost = movePath?.length;
+    const exploreCost =
+      explorationTarget !== undefined
+        ? explorationTarget.path.length + 1
+        : undefined;
     const isSelectableHealingTarget =
       cell.tile !== undefined && healingSelectionTargets.has(cellKey);
     const isClickableMoveTarget =
@@ -234,7 +233,7 @@ export function BoardView({
       selectableHealingPositions.length === 0 &&
       cell.tile === undefined &&
       cell.pendingTile === undefined &&
-      explorationDirection !== undefined;
+      explorationTarget !== undefined;
 
     return (
       <div
@@ -360,11 +359,27 @@ export function BoardView({
             className="relative h-full w-full border border-dashed border-stone-500 bg-stone-900/80 shadow-[inset_0_0_0_1px_rgba(168,162,158,0.35)] transition-colors hover:border-torch-500 hover:bg-stone-800/85"
             data-testid={`explore-target-${cell.boardX}-${cell.boardY}`}
             data-asset-id="sfx_tile_place"
-            onClick={() => onExplore?.(explorationDirection)}
+            onClick={() => {
+              if (!explorationTarget) return;
+              if (explorationTarget.path.length === 0) {
+                onExplore?.(explorationTarget.direction);
+              } else {
+                onMovePath?.(explorationTarget.path.map((m) => m.target));
+              }
+            }}
             onMouseDown={preventButtonFocus}
             onPointerDown={(event) => event.stopPropagation()}
             type="button"
           >
+            {movementPointsEnabled ? (
+              <span
+                aria-hidden="true"
+                className="absolute left-1 top-1 rounded-sm border border-torch-500/30 bg-obsidian-950/80 px-1 py-px text-[0.6rem] font-semibold leading-none text-torch-200"
+                data-testid={`explore-cost-${cell.boardX}-${cell.boardY}`}
+              >
+                {exploreCost}
+              </span>
+            ) : null}
             <span className="sr-only">
               Explore to {cell.boardX},{cell.boardY}
             </span>

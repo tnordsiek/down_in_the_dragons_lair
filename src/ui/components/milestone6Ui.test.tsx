@@ -1642,7 +1642,7 @@ describe('Milestone 6 UI', () => {
     expect(grid).not.toHaveClass('grid', 'gap-px', 'bg-stone-500');
     expect(grid).toHaveAttribute(
       'style',
-      expect.stringContaining('width: 218px;'),
+      expect.stringContaining('width: 291px;'),
     );
     expect(occupiedCell).toHaveClass(
       'absolute',
