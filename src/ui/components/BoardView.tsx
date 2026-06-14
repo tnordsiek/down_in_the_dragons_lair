@@ -29,6 +29,7 @@ import {
 const minBoardZoom = 0.6;
 const maxBoardZoom = 4;
 const boardZoomStep = 0.1;
+const DRAG_THRESHOLD_PX = 6;
 const minZoomSliderHeightPx = 192;
 const maxZoomSliderHeightPx = 480;
 
@@ -96,6 +97,7 @@ export function BoardView({
     startY: number;
     originX: number;
     originY: number;
+    active: boolean;
   } | null>(null);
 
   const boardLayoutSignature = state.board
@@ -299,7 +301,6 @@ export function BoardView({
                 data-testid={`healing-target-${cell.boardX}-${cell.boardY}`}
                 onClick={() => onSelectHealingTile?.(cellPosition)}
                 onMouseDown={preventButtonFocus}
-                onPointerDown={(event) => event.stopPropagation()}
                 type="button"
               >
                 <span className="sr-only">
@@ -329,7 +330,6 @@ export function BoardView({
                   onMove?.(moveTarget?.target ?? movePath[0].target);
                 }}
                 onMouseDown={preventButtonFocus}
-                onPointerDown={(event) => event.stopPropagation()}
                 type="button"
               >
                 {movementPointsEnabled ? (
@@ -348,7 +348,7 @@ export function BoardView({
             ) : null}
             {cell.pendingTile && !cell.tile ? null : (
               <HeroTokenStack
-                activePlayerId={state.players[state.activePlayerIndex].id}
+                activePlayerId={activePlayer.id}
                 players={cell.players}
               />
             )}
@@ -369,7 +369,6 @@ export function BoardView({
               }
             }}
             onMouseDown={preventButtonFocus}
-            onPointerDown={(event) => event.stopPropagation()}
             type="button"
           >
             {movementPointsEnabled ? (
@@ -687,7 +686,6 @@ export function BoardView({
             return;
           }
 
-          event.preventDefault();
           dragStateRef.current = {
             pointerId: event.pointerId,
             pointerType: event.pointerType,
@@ -695,9 +693,8 @@ export function BoardView({
             startY: event.clientY,
             originX: pan.x,
             originY: pan.y,
+            active: false,
           };
-          setIsDragging(true);
-          event.currentTarget.setPointerCapture?.(event.pointerId);
         }}
         onPointerMove={(event) => {
           const dragState = dragStateRef.current;
@@ -709,6 +706,18 @@ export function BoardView({
           if (!isActiveBoardDragPointer(event, dragState.pointerType)) {
             stopDragging(event.pointerId, event.currentTarget);
             return;
+          }
+
+          if (!dragState.active) {
+            const dx = event.clientX - dragState.startX;
+            const dy = event.clientY - dragState.startY;
+            if (Math.sqrt(dx * dx + dy * dy) < DRAG_THRESHOLD_PX) {
+              return;
+            }
+            dragState.active = true;
+            setIsDragging(true);
+            event.currentTarget.setPointerCapture?.(event.pointerId);
+            event.preventDefault();
           }
 
           setPan({
