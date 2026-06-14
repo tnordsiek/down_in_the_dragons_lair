@@ -365,6 +365,7 @@ export function BoardView({
                 onExplore?.(explorationTarget.direction);
               } else {
                 onMovePath?.(explorationTarget.path.map((m) => m.target));
+                onExplore?.(explorationTarget.direction);
               }
             }}
             onMouseDown={preventButtonFocus}

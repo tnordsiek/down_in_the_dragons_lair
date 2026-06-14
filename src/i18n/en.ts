@@ -459,6 +459,7 @@ export const en = {
     portal: 'Portal',
     noKnownPortalTarget: 'No known portal target',
     explore: 'Explore',
+    tileStackEmpty: 'All tiles have been drawn — no more exploration possible.',
     combatOutcomes: {
       victory: 'victory',
       draw: 'draw',

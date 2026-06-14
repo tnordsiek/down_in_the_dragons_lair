@@ -16,7 +16,7 @@ import {
   getCombatOutcomeForPlayer,
 } from '../../engine/combat/combat';
 import { hasActiveHeroAbility } from '../../engine/rules/abilities';
-import { isEndTurnBlockedPhase } from '../../engine/turns/turns';
+import { isEndTurnBlockedPhase, isMainTurnActionPhase } from '../../engine/turns/turns';
 import { getUiLegalActions } from '../../state/setupStore';
 import { useTranslation } from '../../i18n/useTranslation';
 import { Button } from '../primitives';
@@ -767,6 +767,17 @@ export function ActionPanel({
                 </button>
               ))}
             </div>
+          </div>
+        ) : null}
+
+        {state.tileStack.length === 0 && isMainTurnActionPhase(state.phase) ? (
+          <div>
+            <h3 className="text-xs uppercase tracking-wide text-torch-300">
+              {t.actionPanel.explore}
+            </h3>
+            <p className="mt-2 text-sm text-parchment-200">
+              {t.actionPanel.tileStackEmpty}
+            </p>
           </div>
         ) : null}
       </div>

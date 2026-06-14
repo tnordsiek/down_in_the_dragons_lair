@@ -464,6 +464,7 @@ export const de: Translations = {
     portal: 'Portal',
     noKnownPortalTarget: 'Kein bekanntes Portalziel',
     explore: 'Erkunden',
+    tileStackEmpty: 'Alle Kacheln wurden gezogen – kein Erkunden mehr möglich.',
     combatOutcomes: {
       victory: 'Sieg',
       draw: 'Unentschieden',
