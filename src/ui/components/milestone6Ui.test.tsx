@@ -4234,6 +4234,66 @@ describe('Milestone 6 UI', () => {
     );
   });
 
+  it('keeps the current zoom when a hotseat handoff centers on the next human player', () => {
+    const state = createUiState({
+      board: [
+        ...baseBoard(),
+        {
+          tileInstanceId: 'tile-east',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+      activePlayerIndex: 1,
+      eventLog: [],
+      phase: 'turn_start',
+      players: createUiState().players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              kind: 'human',
+              position: { boardX: 0, boardY: 0 },
+            }
+          : {
+              ...player,
+              kind: 'human',
+              position: { boardX: 1, boardY: 0 },
+            },
+      ),
+    });
+
+    useSetupStore.setState({
+      gameState: state,
+      hasSavedGame: false,
+      lastError: undefined,
+    });
+
+    render(<GameScreen />);
+
+    const board = screen.getByLabelText('Dungeon board');
+    const transformLayer = screen.getByTestId('board-transform-layer');
+    setupBoardGeometry(board, transformLayer);
+    fireEvent(window, new Event('resize'));
+
+    fireEvent.wheel(board, { deltaY: -100 });
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('scale(1.1)'),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start turn' }));
+
+    expectCenteredOnBoard(getBoardCell('1,0'), board);
+    expect(transformLayer).toHaveAttribute(
+      'style',
+      expect.stringContaining('scale(1.1)'),
+    );
+  });
+
   it('places Center Map to the left of End Turn with matching button styling', () => {
     const state = createUiState();
 

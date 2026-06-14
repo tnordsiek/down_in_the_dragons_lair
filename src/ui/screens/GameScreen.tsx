@@ -95,7 +95,7 @@ export function GameScreen() {
     }
     // Center the map on the now-active player so the new hotseat player starts
     // with their heroine in view rather than the previous player's camera.
-    focusHeroine();
+    focusHeroineWithoutZoomReset();
   };
   const startOverlayRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
@@ -355,11 +355,14 @@ export function GameScreen() {
     }));
   };
   const activePlayer = state?.players[state.activePlayerIndex];
-  const focusHeroine = () => {
+  const focusHeroine = (resetZoom = true) => {
     if (activePlayer) {
-      focusMap(activePlayer.position, true);
+      focusMap(activePlayer.position, resetZoom);
     }
     setIsCenteredOnMap(false);
+  };
+  const focusHeroineWithoutZoomReset = () => {
+    focusHeroine(false);
   };
 
   return (
