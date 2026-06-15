@@ -1584,9 +1584,10 @@ describe('Milestone 6 UI', () => {
       .closest('[data-asset-id="token_kitchen_rat"]');
 
     expect(monsterToken).toHaveAttribute('title', 'Kitchen Rat: Strength 5');
+    // Hero is on the same tile as the monster, so shared layout applies (30px each)
     expect(monsterToken).toHaveAttribute(
       'style',
-      expect.stringContaining('height: 58px; width: 58px;'),
+      expect.stringContaining('height: 32px; width: 32px;'),
     );
   });
 
@@ -1612,7 +1613,8 @@ describe('Milestone 6 UI', () => {
         .closest('[data-asset-id="token_treasure_chest"]'),
     ).toHaveAttribute(
       'style',
-      expect.stringContaining('height: 58px; width: 58px;'),
+      // Hero is on the same tile as the chest, so shared layout applies (30px each)
+      expect.stringContaining('height: 32px; width: 32px;'),
     );
   });
 

@@ -223,6 +223,7 @@ export function BoardView({
       explorationTarget !== undefined
         ? explorationTarget.path.length + 1
         : undefined;
+    const hasSharedTile = cell.players.length > 0 && Boolean(cell.tile?.roomToken);
     const isSelectableHealingTarget =
       cell.tile !== undefined && healingSelectionTargets.has(cellKey);
     const isClickableMoveTarget =
@@ -288,9 +289,6 @@ export function BoardView({
                 zoom={zoom}
               />
             ) : null}
-            {cell.tile?.roomToken ? (
-              <RoomToken token={cell.tile.roomToken} />
-            ) : null}
             {cell.tile?.looseItems[0] ? (
               <LooseItemToken item={cell.tile.looseItems[0]} />
             ) : null}
@@ -346,11 +344,22 @@ export function BoardView({
                 </span>
               </button>
             ) : null}
-            {cell.pendingTile && !cell.tile ? null : (
-              <HeroTokenStack
+            {hasSharedTile && cell.tile?.roomToken ? (
+              <SharedTileLayout
                 activePlayerId={activePlayer.id}
                 players={cell.players}
+                token={cell.tile.roomToken}
               />
+            ) : cell.pendingTile && !cell.tile ? null : (
+              <>
+                {cell.tile?.roomToken ? (
+                  <RoomToken token={cell.tile.roomToken} />
+                ) : null}
+                <HeroTokenStack
+                  activePlayerId={activePlayer.id}
+                  players={cell.players}
+                />
+              </>
             )}
           </div>
         ) : isClickableExplorationTarget ? (
@@ -996,6 +1005,52 @@ function RoomToken({ token }: { token: Token }) {
       ) : (
         token.id
       )}
+    </div>
+  );
+}
+
+function SharedTileLayout({
+  activePlayerId,
+  players,
+  token,
+}: {
+  activePlayerId: string;
+  players: GameState['players'];
+  token: Token;
+}) {
+  const t = useTranslation();
+  const orderedPlayers = [
+    ...players.filter((p) => p.id !== activePlayerId),
+    ...players.filter((p) => p.id === activePlayerId),
+  ];
+  const topPlayer = orderedPlayers[orderedPlayers.length - 1];
+  const assetId = `token_${token.id}`;
+  const assetUrl = getAssetUrl(assetId);
+  const label =
+    token.kind === 'monster'
+      ? t.displayNames.monsters[token.id]
+      : t.boardView.treasureChest;
+  const tooltip =
+    token.kind === 'monster'
+      ? getMonsterTileTooltip(token.id, t)
+      : getChestTileTooltip(t);
+  const sizePx = 32;
+
+  return (
+    <div className="absolute inset-0 z-[2] flex items-center justify-between px-1">
+      <HeroToken heroId={topPlayer.heroId} sizePx={sizePx} />
+      <div
+        className="flex items-center justify-center rounded-full border border-torch-500/40 bg-obsidian-950/80 font-mono text-torch-200 shadow-forged"
+        data-asset-id={assetId}
+        style={{ height: `${sizePx}px`, width: `${sizePx}px` }}
+        title={tooltip}
+      >
+        {assetUrl ? (
+          <img className="h-full w-full object-contain" src={assetUrl} alt={label} />
+        ) : (
+          token.id
+        )}
+      </div>
     </div>
   );
 }
