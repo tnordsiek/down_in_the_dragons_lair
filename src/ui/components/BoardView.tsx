@@ -224,12 +224,14 @@ export function BoardView({
         ? explorationTarget.path.length + 1
         : undefined;
     const hasSharedTile = cell.players.length > 0 && Boolean(cell.tile?.roomToken);
+    const activePlayerOnTile = cell.players.some((p) => p.id === activePlayer.id);
     const isSelectableHealingTarget =
       cell.tile !== undefined && healingSelectionTargets.has(cellKey);
     const isClickableMoveTarget =
       selectableHealingPositions.length === 0 &&
       cell.tile !== undefined &&
-      movePath !== undefined;
+      movePath !== undefined &&
+      !activePlayerOnTile;
     const isExtendedMoveTarget =
       isClickableMoveTarget && movePath !== undefined && movePath.length > 1;
     const isClickableExplorationTarget =
