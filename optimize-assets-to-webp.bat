@@ -21,13 +21,13 @@ set "FAILED=0"
 set "PROCESSED=0"
 
 call :convertGroup "public\assets\tiles" "tile_*.png" "512x512>" "90"
-call :convertGroup "public\assets\heroes" "token_*.png" "512x512>" "88"
-call :convertGroup "public\assets\monsters" "token_*.png" "512x512>" "88"
-call :convertGroup "public\assets\items" "*.png" "256x256>" "86"
-call :convertGroup "public\assets\status" "*.png" "256x256>" "86"
-call :convertGroup "public\assets\ui" "ui_dice_0*.png" "320x320>" "88"
-call :convertGroup "public\assets\ui" "ui_logo_wordmark.png" "768x768>" "90"
-call :convertGroup "public\assets\ui" "ui_logo_header.png" "1200x1200>" "90"
+REMcall :convertGroup "public\assets\heroes" "token_*.png" "512x512>" "88"
+REMcall :convertGroup "public\assets\monsters" "token_*.png" "512x512>" "88"
+REMcall :convertGroup "public\assets\items" "*.png" "256x256>" "86"
+REMcall :convertGroup "public\assets\status" "*.png" "256x256>" "86"
+REMcall :convertGroup "public\assets\ui" "ui_dice_0*.png" "320x320>" "88"
+REMcall :convertGroup "public\assets\ui" "ui_logo_wordmark.png" "768x768>" "90"
+REMcall :convertGroup "public\assets\ui" "ui_logo_header.png" "1200x1200>" "90"
 
 if not "%FAILED%"=="0" (
   echo [ERROR] Mindestens eine Konvertierung ist fehlgeschlagen.
