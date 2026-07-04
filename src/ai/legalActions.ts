@@ -30,7 +30,7 @@ export function getLegalAiActions(state: GameState): GameAction[] {
 
   const activePlayer = state.players[state.activePlayerIndex];
 
-  if (activePlayer.skipNextTurn) {
+  if (activePlayer.skipNextTurn && !isEndTurnBlockedPhase(state.phase)) {
     return [{ type: 'endTurn' }];
   }
 

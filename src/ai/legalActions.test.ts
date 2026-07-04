@@ -512,6 +512,38 @@ describe('AI legal actions', () => {
       }),
     ).toEqual([{ type: 'endTurn' }]);
   });
+
+  it('offers loot actions instead of end turn when unconscious with pending loot', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'skip-turn-pending-loot-seed',
+    });
+
+    const actions = getLegalAiActions({
+      ...state,
+      phase: 'loot_resolution',
+      activePlayerIndex: 0,
+      pendingLoot: {
+        source: 'combat_reward',
+        position: state.players[0].position,
+        item: { type: 'weapon', bonus: 1 },
+      },
+      players: state.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              hp: 0,
+              skipNextTurn: true,
+            }
+          : player,
+      ),
+    });
+
+    expect(actions.some((action) => action.type === 'endTurn')).toBe(false);
+    expect(actions).toContainEqual({ type: 'takeLoot' });
+    expect(actions).toContainEqual({ type: 'leaveLoot' });
+  });
 });
 
 function createPortalState(): GameState {

@@ -30,6 +30,39 @@ describe('heuristic AI', () => {
     }
   });
 
+  it('resolves pending loot instead of ending the turn when unconscious', () => {
+    const state = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'heuristic-skip-turn-pending-loot-seed',
+    });
+
+    const unconsciousState: GameState = {
+      ...state,
+      phase: 'loot_resolution',
+      activePlayerIndex: 0,
+      pendingLoot: {
+        source: 'combat_reward',
+        position: state.players[0].position,
+        item: { type: 'weapon', bonus: 1 },
+      },
+      players: state.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              hp: 0,
+              skipNextTurn: true,
+            }
+          : player,
+      ),
+    };
+
+    const action = chooseHeuristicAiAction(unconsciousState);
+
+    expect(action.type).not.toBe('endTurn');
+    expect(() => applyGameAction(unconsciousState, action)).not.toThrow();
+  });
+
   it('plays reproducibly with the same seed', () => {
     const first = playActions(
       createNewGame({

@@ -23,6 +23,7 @@ import { getDiscoveredHealingPositions } from '../engine/rules/abilities';
 import { hasActiveHeroAbility } from '../engine/rules/abilities';
 import { isHealingPosition } from '../engine/rules/healing';
 import { canStoreItem } from '../engine/rules/inventory';
+import { isEndTurnBlockedPhase } from '../engine/turns/turns';
 import { aiHeuristicConfig, type AiHeuristicConfig } from './config';
 import { getActionTargetPosition, getLegalAiActions } from './legalActions';
 
@@ -71,7 +72,7 @@ export function chooseHeuristicAiAction(
 
   const activePlayer = state.players[state.activePlayerIndex];
 
-  if (activePlayer.skipNextTurn) {
+  if (activePlayer.skipNextTurn && !isEndTurnBlockedPhase(state.phase)) {
     return requireAction(legalActions, 'endTurn');
   }
 
