@@ -1,5 +1,6 @@
 import { chooseHeuristicAiAction } from '../ai/heuristicAgent';
 import { getLegalAiActions } from '../ai/legalActions';
+import { createStaleActionTracker } from '../ai/simulationDiagnostics';
 import { applyGameAction } from '../engine/core/actions';
 import type { GameState, HeroId } from '../engine/core/types';
 import { createNewGame } from '../engine/setup/createGame';
@@ -56,11 +57,19 @@ export function traceAutoplay(
 
   const sampledStates: GameState[] = [current];
   let actionCount = 0;
+  const staleTracker = createStaleActionTracker();
 
   while (current.phase !== 'game_over' && actionCount < maxActions) {
     const legalActions = getLegalAiActions(current);
-    const action = chooseHeuristicAiAction(current, legalActions);
-    current = applyGameAction(current, action);
+    const action = chooseHeuristicAiAction(
+      current,
+      legalActions,
+      undefined,
+      staleTracker.staleActionCount,
+    );
+    const next = applyGameAction(current, action);
+    staleTracker.record(current, next, action);
+    current = next;
     actionCount += 1;
 
     if (actionCount % sampleEvery === 0) {

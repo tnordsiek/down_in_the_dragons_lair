@@ -25,6 +25,44 @@ Graphics powered by Nano Banana
 
 Concept and AI Direction by fnord GAMES (2026)
 
+## Simulation Batch Runs
+For local balancing checks, the repository now includes a terminal-based batch
+simulation runner without GUI:
+
+```powershell
+npm run simulate -- --config=scripts/template.csv --raw=scripts/example-output-raw.csv --summary=scripts/example-output-summary.csv
+```
+
+- `scripts/template.csv` defines one scenario per row via
+  `scenarioId,games,baseSeed,difficulty,poolScale,heroes`
+- `heroes` is an ordered `|`-separated hero list such as
+  `hero_mage|hero_blade|hero_rogue`
+- `scripts/run-simulation-example.bat` contains the same preconfigured Windows
+  example command
+- `scripts/example-output-raw.csv` and `scripts/example-output-summary.csv`
+  show representative output produced by the runner
+
+For a derived balancing-oriented scorecard and ranking CSV, run:
+
+```powershell
+npm run analyze:sim -- --summary=scripts/example-output-summary.csv --raw=scripts/example-output-raw.csv --out=scripts/example-analysis-summary.csv
+```
+
+- `scripts/example-analysis-summary.csv` adds per-scenario hero rankings,
+  a `balanceScore`, and raw-derived detail signals such as median treasure,
+  low-HP rate, and best/worst seeds
+
+For a local HTML report with scorecards, rankings, heatmap cells, and compact
+seed/risk visuals, run:
+
+```powershell
+npm run report:sim -- --analysis=scripts/example-analysis-summary.csv --out=scripts/example-analysis-report.html
+```
+
+- `scripts/run-simulation-example.bat` now executes the full
+  `simulate -> analyze -> report` pipeline with shared file paths
+- `scripts/example-analysis-report.html` is the browser-friendly report target
+
 <p align="center">
   <img src="public/assets/ui/ui_logo_wordmark.webp" alt="Down in the Dragon's Lair emblem" width="160">
 </p>

@@ -1,0 +1,3 @@
+scenarioId,games,baseSeed,difficulty,poolScale,heroes
+all_heroes_anchor_blade,12,stress-a,normal,1,hero_mage|hero_valkyrie|hero_witch|hero_rogue|hero_blade
+all_heroes_anchor_seeress,12,stress-b,normal,1,hero_mage|hero_valkyrie|hero_witch|hero_rogue|hero_seeress

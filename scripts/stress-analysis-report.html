@@ -1,0 +1,1983 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Simulation Diagnostics Report</title>
+    <style>
+      :root {
+        --bg: #efe9dd;
+        --panel: rgba(255, 251, 244, 0.9);
+        --ink: #251b14;
+        --muted: #6f6255;
+        --line: #d8c8b6;
+        --accent: #91471f;
+        --warning: #b34e22;
+        --good: #2d8659;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 28px;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(145, 71, 31, 0.18), transparent 26%),
+          linear-gradient(180deg, #f7f1e8 0%, var(--bg) 100%);
+      }
+      main { max-width: 1320px; margin: 0 auto; }
+      h1, h2, h3 { margin: 0; }
+      h1 { font-size: 2.3rem; margin-bottom: 8px; }
+      .intro { color: var(--muted); margin-bottom: 28px; }
+      .scenario {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 18px 48px rgba(38, 25, 14, 0.08);
+      }
+      .scenario-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+      }
+      .scenario-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .chip {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 0.86rem;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.7);
+      }
+      .panel-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 18px;
+      }
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.72);
+        padding: 16px;
+      }
+      .panel h3 {
+        font-size: 1rem;
+        margin-bottom: 12px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.92rem;
+      }
+      th, td {
+        padding: 10px 10px;
+        border-bottom: 1px solid rgba(216, 200, 182, 0.7);
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        color: var(--muted);
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      tr:last-child td { border-bottom: 0; }
+      .problem-card {
+        border: 1px solid rgba(179, 78, 34, 0.24);
+        border-radius: 16px;
+        padding: 14px;
+        background: rgba(255, 248, 244, 0.82);
+        margin-bottom: 12px;
+      }
+      .problem-card:last-child { margin-bottom: 0; }
+      .problem-head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+      .problem-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .problem-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 16px;
+      }
+      .label {
+        color: var(--muted);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 4px;
+      }
+      .value { line-height: 1.45; }
+      .seed {
+        font-family: Consolas, monospace;
+        font-size: 0.86rem;
+      }
+      .severity {
+        font-weight: 700;
+        color: var(--warning);
+      }
+      .ok-note {
+        color: var(--good);
+        font-weight: 600;
+      }
+      @media (max-width: 980px) {
+        body { padding: 16px; }
+        .panel-grid { grid-template-columns: 1fr; }
+        .problem-grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Simulation Diagnostics Report</h1>
+      <p class="intro">Probleme werden mit Seed, Evidenz, vermutetem Codebereich und Testhinweis so dargestellt, dass sie direkt reproduzierbar und fixbar sind.</p>
+      <section class="scenario">
+    <div class="scenario-header">
+      <div>
+        <h2>all_heroes_anchor_blade</h2>
+      </div>
+      <div class="scenario-meta">
+        <span class="chip">Difficulty: normal</span>
+        <span class="chip">PoolScale: 1</span>
+        <span class="chip">Players: 5</span>
+        <span class="chip">Games: 12</span>
+      </div>
+    </div>
+    <div class="panel-grid">
+      <div class="panel">
+        <h3>Heldinnen-Scorecard</h3>
+        <table>
+    <thead>
+      <tr>
+        <th>Hero</th>
+        <th>Balance</th>
+        <th>Win</th>
+        <th>Dragon</th>
+        <th>Timeout</th>
+        <th>Treasure</th>
+        <th>Low HP</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+            <td>hero_blade</td>
+            <td>0.6234</td>
+            <td>42%</td>
+            <td>33%</td>
+            <td>0%</td>
+            <td>3.1667</td>
+            <td>33%</td>
+          </tr><tr>
+            <td>hero_valkyrie</td>
+            <td>0.5243</td>
+            <td>33%</td>
+            <td>25%</td>
+            <td>0%</td>
+            <td>2.3750</td>
+            <td>33%</td>
+          </tr><tr>
+            <td>hero_mage</td>
+            <td>0.5152</td>
+            <td>25%</td>
+            <td>25%</td>
+            <td>0%</td>
+            <td>2.8750</td>
+            <td>17%</td>
+          </tr><tr>
+            <td>hero_rogue</td>
+            <td>0.4448</td>
+            <td>17%</td>
+            <td>8%</td>
+            <td>0%</td>
+            <td>2.2083</td>
+            <td>0%</td>
+          </tr><tr>
+            <td>hero_witch</td>
+            <td>0.2167</td>
+            <td>0%</td>
+            <td>8%</td>
+            <td>0%</td>
+            <td>1.3750</td>
+            <td>58%</td>
+          </tr>
+    </tbody>
+  </table>
+      </div>
+      <div class="panel">
+        <h3>Kurzfazit</h3>
+        <table>
+    <tbody>
+      <tr>
+        <td><strong>Staerkste Heldin</strong></td>
+        <td>hero_blade (0.6234)</td>
+      </tr>
+      <tr>
+        <td><strong>Hoechste Timeout-Rate</strong></td>
+        <td>hero_mage (0%)</td>
+      </tr>
+      <tr>
+        <td><strong>Top-Prioritaet</strong></td>
+        <td>Hexen-Tausch liefert keinen Positionsgewinn bei hero_witch</td>
+      </tr>
+    </tbody>
+  </table>
+      </div>
+      <div class="panel" style="grid-column: 1 / -1;">
+        <h3>Problems To Fix</h3>
+        <article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Hexen-Tausch liefert keinen Positionsgewinn</strong>
+            <div class="value">hero_witch · witchSwapLowValue</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.9666</span>
+            <span class="chip">Issue Rate 67%</span>
+            <span class="chip">Delta +53%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_witch verwendet in 67% der beobachteten Partien einen Hexen-Tausch ohne messbaren Positionsgewinn.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Der Hexen-Tausch sollte nur gewaehlt werden, wenn er messbaren Fortschritt oder Sicherheit bringt.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#3</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 29 · Max Actions Without Progress 42</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Seed-basierter Hexen-Tauschtest plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin verpasst naheliegende Heilung</strong>
+            <div class="value">hero_mage · healingMisses</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.9500</span>
+            <span class="chip">Issue Rate 100%</span>
+            <span class="chip">Delta +25%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_mage verpasst in 100% der beobachteten Partien naheliegende Heilung.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Kritisch verletzte oder verfluchte Heldinnen sollten Heilzauber oder Heilfelder priorisieren.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#2</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 197 · Max Actions Without Progress 42</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Unit-/Szenariotest fuer Heilentscheidung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin verpasst naheliegende Heilung</strong>
+            <div class="value">hero_witch · healingMisses</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.8084</span>
+            <span class="chip">Issue Rate 92%</span>
+            <span class="chip">Delta +17%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_witch verpasst in 92% der beobachteten Partien naheliegende Heilung.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Kritisch verletzte oder verfluchte Heldinnen sollten Heilzauber oder Heilfelder priorisieren.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#11</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 214 · Max Actions Without Progress 42</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Unit-/Szenariotest fuer Heilentscheidung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin faellt in Rueckwaerts-Schleifen</strong>
+            <div class="value">hero_rogue · backtrackLoops</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.6833</span>
+            <span class="chip">Issue Rate 67%</span>
+            <span class="chip">Delta +38%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_rogue faellt in 67% der beobachteten Partien in Rueckwaertsbewegungen zurueck.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Rueckwaertsbewegungen sollten nur bei klarem Zielnutzen gegenueber Alternativen gewaehlt werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#2</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 19 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Seed-basierter Bewegungstest plus Batch-Regression auf sinkende backtrackLoops</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin ignoriert erreichbare Ziele</strong>
+            <div class="value">hero_mage · objectiveBypass</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.5833</span>
+            <span class="chip">Issue Rate 100%</span>
+            <span class="chip">Delta +3%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_mage ignoriert in 100% der beobachteten Partien erreichbare Ziele.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Erreichbare Heilung, Truhen oder der finale Drache sollten nicht systematisch umgangen werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#3</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 116 · Max Actions Without Progress 42</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest fuer Zielpriorisierung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin ignoriert erreichbare Ziele</strong>
+            <div class="value">hero_valkyrie · objectiveBypass</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.5833</span>
+            <span class="chip">Issue Rate 100%</span>
+            <span class="chip">Delta +3%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_valkyrie ignoriert in 100% der beobachteten Partien erreichbare Ziele.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Erreichbare Heilung, Truhen oder der finale Drache sollten nicht systematisch umgangen werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#11</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 74 · Max Actions Without Progress 42</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest fuer Zielpriorisierung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin ignoriert erreichbare Ziele</strong>
+            <div class="value">hero_witch · objectiveBypass</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.5833</span>
+            <span class="chip">Issue Rate 100%</span>
+            <span class="chip">Delta +3%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_witch ignoriert in 100% der beobachteten Partien erreichbare Ziele.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Erreichbare Heilung, Truhen oder der finale Drache sollten nicht systematisch umgangen werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#10</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 80 · Max Actions Without Progress 42</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest fuer Zielpriorisierung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin verpasst naheliegende Heilung</strong>
+            <div class="value">hero_valkyrie · healingMisses</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.5250</span>
+            <span class="chip">Issue Rate 75%</span>
+            <span class="chip">Delta +0%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_valkyrie verpasst in 75% der beobachteten Partien naheliegende Heilung.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Kritisch verletzte oder verfluchte Heldinnen sollten Heilzauber oder Heilfelder priorisieren.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#6</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 95 · Max Actions Without Progress 42</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Unit-/Szenariotest fuer Heilentscheidung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin verpasst naheliegende Heilung</strong>
+            <div class="value">hero_blade · healingMisses</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.5250</span>
+            <span class="chip">Issue Rate 75%</span>
+            <span class="chip">Delta +0%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_blade verpasst in 75% der beobachteten Partien naheliegende Heilung.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Kritisch verletzte oder verfluchte Heldinnen sollten Heilzauber oder Heilfelder priorisieren.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#10</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 87 · Max Actions Without Progress 42</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Unit-/Szenariotest fuer Heilentscheidung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin ignoriert erreichbare Ziele</strong>
+            <div class="value">hero_rogue · objectiveBypass</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.4542</span>
+            <span class="chip">Issue Rate 92%</span>
+            <span class="chip">Delta -5%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_rogue ignoriert in 92% der beobachteten Partien erreichbare Ziele.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Erreichbare Heilung, Truhen oder der finale Drache sollten nicht systematisch umgangen werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#3</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 55 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest fuer Zielpriorisierung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin ignoriert erreichbare Ziele</strong>
+            <div class="value">hero_blade · objectiveBypass</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.4542</span>
+            <span class="chip">Issue Rate 92%</span>
+            <span class="chip">Delta -5%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_blade ignoriert in 92% der beobachteten Partien erreichbare Ziele.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Erreichbare Heilung, Truhen oder der finale Drache sollten nicht systematisch umgangen werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#11</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 109 · Max Actions Without Progress 42</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest fuer Zielpriorisierung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin beendet Zuege ohne Fortschritt</strong>
+            <div class="value">hero_mage · stalledTurns</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.4167</span>
+            <span class="chip">Issue Rate 100%</span>
+            <span class="chip">Delta +2%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_mage beendet in 100% der beobachteten Partien Zuege trotz verfuegbarer Fortschrittsoptionen.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Die AI sollte bei verfuegbaren Fortschrittsoptionen nicht ohne Not den Zug beenden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#3</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 129 · Max Actions Without Progress 42</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest plus Batch-Regression auf sinkende stalledTurns-Rate</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin beendet Zuege ohne Fortschritt</strong>
+            <div class="value">hero_valkyrie · stalledTurns</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.4167</span>
+            <span class="chip">Issue Rate 100%</span>
+            <span class="chip">Delta +2%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_valkyrie beendet in 100% der beobachteten Partien Zuege trotz verfuegbarer Fortschrittsoptionen.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Die AI sollte bei verfuegbaren Fortschrittsoptionen nicht ohne Not den Zug beenden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#6</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 116 · Max Actions Without Progress 42</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest plus Batch-Regression auf sinkende stalledTurns-Rate</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin beendet Zuege ohne Fortschritt</strong>
+            <div class="value">hero_witch · stalledTurns</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.4167</span>
+            <span class="chip">Issue Rate 100%</span>
+            <span class="chip">Delta +2%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_witch beendet in 100% der beobachteten Partien Zuege trotz verfuegbarer Fortschrittsoptionen.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Die AI sollte bei verfuegbaren Fortschrittsoptionen nicht ohne Not den Zug beenden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#11</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 166 · Max Actions Without Progress 42</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest plus Batch-Regression auf sinkende stalledTurns-Rate</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin beendet Zuege ohne Fortschritt</strong>
+            <div class="value">hero_rogue · stalledTurns</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.4167</span>
+            <span class="chip">Issue Rate 100%</span>
+            <span class="chip">Delta +2%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_rogue beendet in 100% der beobachteten Partien Zuege trotz verfuegbarer Fortschrittsoptionen.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Die AI sollte bei verfuegbaren Fortschrittsoptionen nicht ohne Not den Zug beenden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#10</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 160 · Max Actions Without Progress 42</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest plus Batch-Regression auf sinkende stalledTurns-Rate</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin faellt in Rueckwaerts-Schleifen</strong>
+            <div class="value">hero_blade · backtrackLoops</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.3208</span>
+            <span class="chip">Issue Rate 42%</span>
+            <span class="chip">Delta +13%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_blade faellt in 42% der beobachteten Partien in Rueckwaertsbewegungen zurueck.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Rueckwaertsbewegungen sollten nur bei klarem Zielnutzen gegenueber Alternativen gewaehlt werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#1</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 6 · Max Actions Without Progress 42</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Seed-basierter Bewegungstest plus Batch-Regression auf sinkende backtrackLoops</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin beendet Zuege ohne Fortschritt</strong>
+            <div class="value">hero_blade · stalledTurns</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.3000</span>
+            <span class="chip">Issue Rate 92%</span>
+            <span class="chip">Delta -7%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_blade beendet in 92% der beobachteten Partien Zuege trotz verfuegbarer Fortschrittsoptionen.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Die AI sollte bei verfuegbaren Fortschrittsoptionen nicht ohne Not den Zug beenden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#10</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 107 · Max Actions Without Progress 42</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest plus Batch-Regression auf sinkende stalledTurns-Rate</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin startet vermeidbare Risikokaempfe</strong>
+            <div class="value">hero_rogue · avoidableRiskFights</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.2583</span>
+            <span class="chip">Issue Rate 17%</span>
+            <span class="chip">Delta +13%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_rogue startet in 17% der beobachteten Partien optionale Kaempfe unterhalb der Risiko-Schwelle.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Optionale Kaempfe unterhalb der Risiko-Schwelle sollten nur in klaren Sonderfaellen gestartet werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#3</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 3 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Combat-Entscheidungstest mit Seed plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin faellt in Rueckwaerts-Schleifen</strong>
+            <div class="value">hero_mage · backtrackLoops</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0</span>
+            <span class="chip">Issue Rate 8%</span>
+            <span class="chip">Delta -20%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_mage faellt in 8% der beobachteten Partien in Rueckwaertsbewegungen zurueck.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Rueckwaertsbewegungen sollten nur bei klarem Zielnutzen gegenueber Alternativen gewaehlt werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#11</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 1 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Seed-basierter Bewegungstest plus Batch-Regression auf sinkende backtrackLoops</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin faellt in Rueckwaerts-Schleifen</strong>
+            <div class="value">hero_valkyrie · backtrackLoops</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0</span>
+            <span class="chip">Issue Rate 8%</span>
+            <span class="chip">Delta -20%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_valkyrie faellt in 8% der beobachteten Partien in Rueckwaertsbewegungen zurueck.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Rueckwaertsbewegungen sollten nur bei klarem Zielnutzen gegenueber Alternativen gewaehlt werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#10</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 1 · Max Actions Without Progress 9</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Seed-basierter Bewegungstest plus Batch-Regression auf sinkende backtrackLoops</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin faellt in Rueckwaerts-Schleifen</strong>
+            <div class="value">hero_witch · backtrackLoops</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0</span>
+            <span class="chip">Issue Rate 17%</span>
+            <span class="chip">Delta -12%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_witch faellt in 17% der beobachteten Partien in Rueckwaertsbewegungen zurueck.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Rueckwaertsbewegungen sollten nur bei klarem Zielnutzen gegenueber Alternativen gewaehlt werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#1</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 2 · Max Actions Without Progress 42</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Seed-basierter Bewegungstest plus Batch-Regression auf sinkende backtrackLoops</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin verpasst naheliegende Heilung</strong>
+            <div class="value">hero_rogue · healingMisses</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0</span>
+            <span class="chip">Issue Rate 33%</span>
+            <span class="chip">Delta -42%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_rogue verpasst in 33% der beobachteten Partien naheliegende Heilung.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Kritisch verletzte oder verfluchte Heldinnen sollten Heilzauber oder Heilfelder priorisieren.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-a#4</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 87 · Max Actions Without Progress 14</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Unit-/Szenariotest fuer Heilentscheidung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article>
+      </div>
+    </div>
+  </section>
+<section class="scenario">
+    <div class="scenario-header">
+      <div>
+        <h2>all_heroes_anchor_seeress</h2>
+      </div>
+      <div class="scenario-meta">
+        <span class="chip">Difficulty: normal</span>
+        <span class="chip">PoolScale: 1</span>
+        <span class="chip">Players: 5</span>
+        <span class="chip">Games: 12</span>
+      </div>
+    </div>
+    <div class="panel-grid">
+      <div class="panel">
+        <h3>Heldinnen-Scorecard</h3>
+        <table>
+    <thead>
+      <tr>
+        <th>Hero</th>
+        <th>Balance</th>
+        <th>Win</th>
+        <th>Dragon</th>
+        <th>Timeout</th>
+        <th>Treasure</th>
+        <th>Low HP</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+            <td>hero_valkyrie</td>
+            <td>0.6689</td>
+            <td>50%</td>
+            <td>58%</td>
+            <td>0%</td>
+            <td>3.5417</td>
+            <td>42%</td>
+          </tr><tr>
+            <td>hero_seeress</td>
+            <td>0.4466</td>
+            <td>33%</td>
+            <td>17%</td>
+            <td>0%</td>
+            <td>2.3333</td>
+            <td>25%</td>
+          </tr><tr>
+            <td>hero_mage</td>
+            <td>0.3367</td>
+            <td>8%</td>
+            <td>8%</td>
+            <td>0%</td>
+            <td>1.7083</td>
+            <td>17%</td>
+          </tr><tr>
+            <td>hero_rogue</td>
+            <td>0.3102</td>
+            <td>0%</td>
+            <td>0%</td>
+            <td>0%</td>
+            <td>1.8333</td>
+            <td>17%</td>
+          </tr><tr>
+            <td>hero_witch</td>
+            <td>0.3087</td>
+            <td>17%</td>
+            <td>17%</td>
+            <td>0%</td>
+            <td>1.9167</td>
+            <td>50%</td>
+          </tr>
+    </tbody>
+  </table>
+      </div>
+      <div class="panel">
+        <h3>Kurzfazit</h3>
+        <table>
+    <tbody>
+      <tr>
+        <td><strong>Staerkste Heldin</strong></td>
+        <td>hero_valkyrie (0.6689)</td>
+      </tr>
+      <tr>
+        <td><strong>Hoechste Timeout-Rate</strong></td>
+        <td>hero_mage (0%)</td>
+      </tr>
+      <tr>
+        <td><strong>Top-Prioritaet</strong></td>
+        <td>Hexen-Tausch liefert keinen Positionsgewinn bei hero_witch</td>
+      </tr>
+    </tbody>
+  </table>
+      </div>
+      <div class="panel" style="grid-column: 1 / -1;">
+        <h3>Problems To Fix</h3>
+        <article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Hexen-Tausch liefert keinen Positionsgewinn</strong>
+            <div class="value">hero_witch · witchSwapLowValue</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 1.3291</span>
+            <span class="chip">Issue Rate 92%</span>
+            <span class="chip">Delta +73%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_witch verwendet in 92% der beobachteten Partien einen Hexen-Tausch ohne messbaren Positionsgewinn.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Der Hexen-Tausch sollte nur gewaehlt werden, wenn er messbaren Fortschritt oder Sicherheit bringt.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#5</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 45 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Seed-basierter Hexen-Tauschtest plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin verpasst naheliegende Heilung</strong>
+            <div class="value">hero_witch · healingMisses</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.8667</span>
+            <span class="chip">Issue Rate 100%</span>
+            <span class="chip">Delta +17%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_witch verpasst in 100% der beobachteten Partien naheliegende Heilung.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Kritisch verletzte oder verfluchte Heldinnen sollten Heilzauber oder Heilfelder priorisieren.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#12</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 172 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Unit-/Szenariotest fuer Heilentscheidung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin verpasst naheliegende Heilung</strong>
+            <div class="value">hero_mage · healingMisses</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.7250</span>
+            <span class="chip">Issue Rate 92%</span>
+            <span class="chip">Delta +8%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_mage verpasst in 92% der beobachteten Partien naheliegende Heilung.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Kritisch verletzte oder verfluchte Heldinnen sollten Heilzauber oder Heilfelder priorisieren.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#2</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 194 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Unit-/Szenariotest fuer Heilentscheidung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin verpasst naheliegende Heilung</strong>
+            <div class="value">hero_seeress · healingMisses</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.7250</span>
+            <span class="chip">Issue Rate 92%</span>
+            <span class="chip">Delta +8%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_seeress verpasst in 92% der beobachteten Partien naheliegende Heilung.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Kritisch verletzte oder verfluchte Heldinnen sollten Heilzauber oder Heilfelder priorisieren.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#3</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 197 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Unit-/Szenariotest fuer Heilentscheidung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin ignoriert erreichbare Ziele</strong>
+            <div class="value">hero_mage · objectiveBypass</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.5667</span>
+            <span class="chip">Issue Rate 100%</span>
+            <span class="chip">Delta +2%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_mage ignoriert in 100% der beobachteten Partien erreichbare Ziele.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Erreichbare Heilung, Truhen oder der finale Drache sollten nicht systematisch umgangen werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#5</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 113 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest fuer Zielpriorisierung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin ignoriert erreichbare Ziele</strong>
+            <div class="value">hero_valkyrie · objectiveBypass</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.5667</span>
+            <span class="chip">Issue Rate 100%</span>
+            <span class="chip">Delta +2%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_valkyrie ignoriert in 100% der beobachteten Partien erreichbare Ziele.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Erreichbare Heilung, Truhen oder der finale Drache sollten nicht systematisch umgangen werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#5</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 87 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest fuer Zielpriorisierung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin ignoriert erreichbare Ziele</strong>
+            <div class="value">hero_witch · objectiveBypass</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.5667</span>
+            <span class="chip">Issue Rate 100%</span>
+            <span class="chip">Delta +2%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_witch ignoriert in 100% der beobachteten Partien erreichbare Ziele.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Erreichbare Heilung, Truhen oder der finale Drache sollten nicht systematisch umgangen werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#4</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 53 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest fuer Zielpriorisierung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin ignoriert erreichbare Ziele</strong>
+            <div class="value">hero_rogue · objectiveBypass</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.5667</span>
+            <span class="chip">Issue Rate 100%</span>
+            <span class="chip">Delta +2%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_rogue ignoriert in 100% der beobachteten Partien erreichbare Ziele.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Erreichbare Heilung, Truhen oder der finale Drache sollten nicht systematisch umgangen werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#10</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 62 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest fuer Zielpriorisierung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin verpasst naheliegende Heilung</strong>
+            <div class="value">hero_valkyrie · healingMisses</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.4417</span>
+            <span class="chip">Issue Rate 75%</span>
+            <span class="chip">Delta -8%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_valkyrie verpasst in 75% der beobachteten Partien naheliegende Heilung.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Kritisch verletzte oder verfluchte Heldinnen sollten Heilzauber oder Heilfelder priorisieren.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#5</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 124 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Unit-/Szenariotest fuer Heilentscheidung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin ignoriert erreichbare Ziele</strong>
+            <div class="value">hero_seeress · objectiveBypass</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.4375</span>
+            <span class="chip">Issue Rate 92%</span>
+            <span class="chip">Delta -7%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_seeress ignoriert in 92% der beobachteten Partien erreichbare Ziele.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Erreichbare Heilung, Truhen oder der finale Drache sollten nicht systematisch umgangen werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#7</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 99 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest fuer Zielpriorisierung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin beendet Zuege ohne Fortschritt</strong>
+            <div class="value">hero_mage · stalledTurns</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.4167</span>
+            <span class="chip">Issue Rate 100%</span>
+            <span class="chip">Delta +2%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_mage beendet in 100% der beobachteten Partien Zuege trotz verfuegbarer Fortschrittsoptionen.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Die AI sollte bei verfuegbaren Fortschrittsoptionen nicht ohne Not den Zug beenden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#2</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 112 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest plus Batch-Regression auf sinkende stalledTurns-Rate</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin beendet Zuege ohne Fortschritt</strong>
+            <div class="value">hero_valkyrie · stalledTurns</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.4167</span>
+            <span class="chip">Issue Rate 100%</span>
+            <span class="chip">Delta +2%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_valkyrie beendet in 100% der beobachteten Partien Zuege trotz verfuegbarer Fortschrittsoptionen.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Die AI sollte bei verfuegbaren Fortschrittsoptionen nicht ohne Not den Zug beenden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#5</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 85 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest plus Batch-Regression auf sinkende stalledTurns-Rate</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin beendet Zuege ohne Fortschritt</strong>
+            <div class="value">hero_rogue · stalledTurns</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.4167</span>
+            <span class="chip">Issue Rate 100%</span>
+            <span class="chip">Delta +2%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_rogue beendet in 100% der beobachteten Partien Zuege trotz verfuegbarer Fortschrittsoptionen.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Die AI sollte bei verfuegbaren Fortschrittsoptionen nicht ohne Not den Zug beenden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#3</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 133 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest plus Batch-Regression auf sinkende stalledTurns-Rate</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin beendet Zuege ohne Fortschritt</strong>
+            <div class="value">hero_seeress · stalledTurns</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.4167</span>
+            <span class="chip">Issue Rate 100%</span>
+            <span class="chip">Delta +2%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_seeress beendet in 100% der beobachteten Partien Zuege trotz verfuegbarer Fortschrittsoptionen.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Die AI sollte bei verfuegbaren Fortschrittsoptionen nicht ohne Not den Zug beenden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#3</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 124 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest plus Batch-Regression auf sinkende stalledTurns-Rate</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin faellt in Rueckwaerts-Schleifen</strong>
+            <div class="value">hero_rogue · backtrackLoops</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.3708</span>
+            <span class="chip">Issue Rate 42%</span>
+            <span class="chip">Delta +18%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_rogue faellt in 42% der beobachteten Partien in Rueckwaertsbewegungen zurueck.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Rueckwaertsbewegungen sollten nur bei klarem Zielnutzen gegenueber Alternativen gewaehlt werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#2</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 9 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Seed-basierter Bewegungstest plus Batch-Regression auf sinkende backtrackLoops</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin beendet Zuege ohne Fortschritt</strong>
+            <div class="value">hero_witch · stalledTurns</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.3000</span>
+            <span class="chip">Issue Rate 92%</span>
+            <span class="chip">Delta -7%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_witch beendet in 92% der beobachteten Partien Zuege trotz verfuegbarer Fortschrittsoptionen.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Die AI sollte bei verfuegbaren Fortschrittsoptionen nicht ohne Not den Zug beenden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#12</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 130 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Szenariotest plus Batch-Regression auf sinkende stalledTurns-Rate</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin faellt in Rueckwaerts-Schleifen</strong>
+            <div class="value">hero_witch · backtrackLoops</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.2500</span>
+            <span class="chip">Issue Rate 33%</span>
+            <span class="chip">Delta +10%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_witch faellt in 33% der beobachteten Partien in Rueckwaertsbewegungen zurueck.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Rueckwaertsbewegungen sollten nur bei klarem Zielnutzen gegenueber Alternativen gewaehlt werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#2</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 5 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Seed-basierter Bewegungstest plus Batch-Regression auf sinkende backtrackLoops</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin verpasst naheliegende Heilung</strong>
+            <div class="value">hero_rogue · healingMisses</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.1583</span>
+            <span class="chip">Issue Rate 58%</span>
+            <span class="chip">Delta -25%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_rogue verpasst in 58% der beobachteten Partien naheliegende Heilung.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Kritisch verletzte oder verfluchte Heldinnen sollten Heilzauber oder Heilfelder priorisieren.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#10</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 58 · Max Actions Without Progress 40</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Unit-/Szenariotest fuer Heilentscheidung plus Batch-Regression</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin faellt in Rueckwaerts-Schleifen</strong>
+            <div class="value">hero_valkyrie · backtrackLoops</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.1292</span>
+            <span class="chip">Issue Rate 25%</span>
+            <span class="chip">Delta +2%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_valkyrie faellt in 25% der beobachteten Partien in Rueckwaertsbewegungen zurueck.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Rueckwaertsbewegungen sollten nur bei klarem Zielnutzen gegenueber Alternativen gewaehlt werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#4</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 3 · Max Actions Without Progress 22</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Seed-basierter Bewegungstest plus Batch-Regression auf sinkende backtrackLoops</div>
+          </div>
+          
+        </div>
+      </article><article class="problem-card">
+        <div class="problem-head">
+          <div>
+            <strong>Heldin faellt in Rueckwaerts-Schleifen</strong>
+            <div class="value">hero_seeress · backtrackLoops</div>
+          </div>
+          <div class="problem-meta">
+            <span class="chip severity">Severity 0.0083</span>
+            <span class="chip">Issue Rate 17%</span>
+            <span class="chip">Delta -7%</span>
+          </div>
+        </div>
+        <div class="problem-grid">
+          <div>
+            <div class="label">Observed Behavior</div>
+            <div class="value">hero_seeress faellt in 17% der beobachteten Partien in Rueckwaertsbewegungen zurueck.</div>
+          </div>
+          <div>
+            <div class="label">Expected Behavior</div>
+            <div class="value">Rueckwaertsbewegungen sollten nur bei klarem Zielnutzen gegenueber Alternativen gewaehlt werden.</div>
+          </div>
+          <div>
+            <div class="label">Repro Seed</div>
+            <div class="value seed">stress-b#6</div>
+          </div>
+          <div>
+            <div class="label">Likely Code Area</div>
+            <div class="value">src/ai/heuristicAgent.ts</div>
+          </div>
+          <div>
+            <div class="label">Evidence</div>
+            <div class="value">Issue Count 2 · Max Actions Without Progress 6</div>
+          </div>
+          <div>
+            <div class="label">Suggested Test</div>
+            <div class="value">Seed-basierter Bewegungstest plus Batch-Regression auf sinkende backtrackLoops</div>
+          </div>
+          
+        </div>
+      </article>
+      </div>
+    </div>
+  </section>
+    </main>
+  </body>
+</html>

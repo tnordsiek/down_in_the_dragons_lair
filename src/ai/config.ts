@@ -14,6 +14,7 @@ export interface AiHeuristicConfig {
   readonly dragonObjectiveBonus: number;
   readonly backtrackPenalty: number;
   readonly mistakeRate: number;
+  readonly staleActionThreshold: number;
 }
 
 export const aiHeuristicConfig: AiHeuristicConfig = {
@@ -30,6 +31,7 @@ export const aiHeuristicConfig: AiHeuristicConfig = {
   dragonObjectiveBonus: 20,
   backtrackPenalty: -2,
   mistakeRate: 0,
+  staleActionThreshold: 40,
 };
 
 export const easyAiConfig: AiHeuristicConfig = {
@@ -46,6 +48,7 @@ export const easyAiConfig: AiHeuristicConfig = {
   dragonObjectiveBonus: 12,
   backtrackPenalty: -1,
   mistakeRate: 0.2,
+  staleActionThreshold: 40,
 };
 
 export const normalAiConfig: AiHeuristicConfig = aiHeuristicConfig;
@@ -64,6 +67,7 @@ export const hardAiConfig: AiHeuristicConfig = {
   dragonObjectiveBonus: 25,
   backtrackPenalty: -3,
   mistakeRate: 0,
+  staleActionThreshold: 40,
 };
 
 export function getDifficultyConfig(difficulty: AiDifficulty): AiHeuristicConfig {

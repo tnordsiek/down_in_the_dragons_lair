@@ -3,6 +3,7 @@ import type { GameState } from '../engine/core/types';
 import { getDifficultyConfig } from './config';
 import { chooseHeuristicAiAction } from './heuristicAgent';
 import { getLegalAiActions } from './legalActions';
+import { createStaleActionTracker } from './simulationDiagnostics';
 
 export type AiStepResult = {
   state: GameState;
@@ -16,6 +17,7 @@ export function playAiControlledTurn(
   let current = state;
   const startingPlayerId = state.players[state.activePlayerIndex]?.id;
   let actionCount = 0;
+  const staleTracker = createStaleActionTracker();
 
   while (
     current.phase !== 'game_over' &&
@@ -23,8 +25,15 @@ export function playAiControlledTurn(
     actionCount < maxActions
   ) {
     const config = getDifficultyConfig(current.difficulty);
-    const action = chooseHeuristicAiAction(current, getLegalAiActions(current), config);
-    current = applyGameAction(current, action);
+    const action = chooseHeuristicAiAction(
+      current,
+      getLegalAiActions(current),
+      config,
+      staleTracker.staleActionCount,
+    );
+    const next = applyGameAction(current, action);
+    staleTracker.record(current, next, action);
+    current = next;
     actionCount += 1;
   }
 
@@ -41,11 +50,19 @@ export function playAiGameToEnd(
 ): AiStepResult {
   let current = state;
   let actionCount = 0;
+  const staleTracker = createStaleActionTracker();
 
   while (current.phase !== 'game_over' && actionCount < maxActions) {
     const config = getDifficultyConfig(current.difficulty);
-    const action = chooseHeuristicAiAction(current, getLegalAiActions(current), config);
-    current = applyGameAction(current, action);
+    const action = chooseHeuristicAiAction(
+      current,
+      getLegalAiActions(current),
+      config,
+      staleTracker.staleActionCount,
+    );
+    const next = applyGameAction(current, action);
+    staleTracker.record(current, next, action);
+    current = next;
     actionCount += 1;
   }
 

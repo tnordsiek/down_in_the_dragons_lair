@@ -45,11 +45,21 @@ export const heuristicAiAgent: AiAgent = {
 export function chooseHeuristicAiAction(
   state: GameState,
   legalActions = getLegalAiActions(state),
-  config: AiHeuristicConfig = aiHeuristicConfig,
+  baseConfig: AiHeuristicConfig = aiHeuristicConfig,
+  staleActionCount = 0,
 ): GameAction {
   if (legalActions.length === 0) {
     throw new Error('AI has no legal actions');
   }
+
+  const isDesperate = staleActionCount >= baseConfig.staleActionThreshold;
+  const config: AiHeuristicConfig = isDesperate
+    ? {
+        ...baseConfig,
+        minimumRepeatCombatWinChance: 0,
+        minimumDragonWinChance: 0,
+      }
+    : baseConfig;
 
   if (config.mistakeRate > 0) {
     const rng = restoreSeededRng(state.rng);
@@ -123,24 +133,26 @@ export function chooseHeuristicAiAction(
     return groundLootAction;
   }
 
-  const stalledEndTurnAction = chooseStalledEndTurnAction(
-    state,
-    legalActions,
-    config,
-  );
+  if (!isDesperate) {
+    const stalledEndTurnAction = chooseStalledEndTurnAction(
+      state,
+      legalActions,
+      config,
+    );
 
-  if (stalledEndTurnAction) {
-    return stalledEndTurnAction;
-  }
+    if (stalledEndTurnAction) {
+      return stalledEndTurnAction;
+    }
 
-  const healingEndTurnAction = chooseHealingEndTurnAction(
-    state,
-    legalActions,
-    config,
-  );
+    const healingEndTurnAction = chooseHealingEndTurnAction(
+      state,
+      legalActions,
+      config,
+    );
 
-  if (healingEndTurnAction) {
-    return healingEndTurnAction;
+    if (healingEndTurnAction) {
+      return healingEndTurnAction;
+    }
   }
 
   const forcedDragonEndgameAction = chooseForcedDragonEndgameAction(
@@ -153,7 +165,12 @@ export function chooseHeuristicAiAction(
     return forcedDragonEndgameAction;
   }
 
-  const movementAction = chooseMovementAction(state, legalActions, config);
+  const movementAction = chooseMovementAction(
+    state,
+    legalActions,
+    config,
+    isDesperate,
+  );
 
   if (movementAction) {
     return movementAction;
@@ -176,20 +193,16 @@ function chooseHealingSpellAction(
   }
 
   const activePlayer = state.players[state.activePlayerIndex];
-  const candidates = state.players
-    .filter(
-      (player) =>
-        player.id === activePlayer.id &&
-        (player.hp <= config.criticalHp || player.isCursed),
-    )
-    .sort((left, right) => left.hp - right.hp);
-  const target = candidates[0];
+  const needsHealingNow =
+    activePlayer.hp <= config.criticalHp ||
+    activePlayer.isCursed ||
+    activePlayer.hp < config.preferHealingBelowHp;
 
-  return target
+  return needsHealingNow
     ? healingActions.find(
         (action) =>
           action.type === 'useHealingSpell' &&
-          action.targetPlayerId === target.id,
+          action.targetPlayerId === activePlayer.id,
       )
     : undefined;
 }
@@ -269,10 +282,11 @@ function hasObjectiveProgressMove(
   config: AiHeuristicConfig,
 ): boolean {
   const activePlayer = state.players[state.activePlayerIndex];
+  const objectiveTiles = getObjectiveTiles(state, activePlayer, config);
   const currentObjectiveDistance = distanceToNearestObjective(
     state,
     activePlayer.position,
-    activePlayer,
+    objectiveTiles,
     config,
   );
 
@@ -286,7 +300,7 @@ function hasObjectiveProgressMove(
       const targetObjectiveDistance = distanceToNearestObjective(
         state,
         action.target,
-        activePlayer,
+        objectiveTiles,
         config,
       );
 
@@ -345,7 +359,7 @@ function chooseCombatAction(
   config: AiHeuristicConfig,
 ): GameAction {
   if (state.phase === 'combat_valkyrie_reroll') {
-    return requireAction(legalActions, 'useValkyrieReroll');
+    return chooseValkyrieRerollAction(state, legalActions, config);
   }
 
   if (state.phase === 'combat_blade_reroll') {
@@ -451,6 +465,41 @@ function chooseCombatAction(
   }
 
   return combatAction;
+}
+
+function chooseValkyrieRerollAction(
+  state: GameState,
+  legalActions: GameAction[],
+  config: AiHeuristicConfig,
+): GameAction {
+  if (!state.combat) {
+    return requireAction(legalActions, 'useValkyrieReroll');
+  }
+
+  const activePlayer = state.players[state.activePlayerIndex];
+  const monster = monsterDefinitions[state.combat.monsterId];
+  const automaticFlameBonus = getAutomaticFlameSpellCount(activePlayer);
+  const winChance = estimateCombatWinChance(
+    activePlayer,
+    monster.strength,
+    automaticFlameBonus,
+  );
+  const minimumWinChance =
+    monster.id === 'dragon'
+      ? config.minimumDragonWinChance
+      : config.minimumRepeatCombatWinChance;
+
+  if (winChance < minimumWinChance) {
+    const declineAction = legalActions.find(
+      (action) => action.type === 'declineValkyrieReroll',
+    );
+
+    if (declineAction) {
+      return declineAction;
+    }
+  }
+
+  return requireAction(legalActions, 'useValkyrieReroll');
 }
 
 function chooseWitchSacrificeAction(
@@ -641,6 +690,7 @@ function chooseMovementAction(
   state: GameState,
   legalActions: GameAction[],
   config: AiHeuristicConfig,
+  isDesperate = false,
 ): GameAction | undefined {
   const movementActions = legalActions.filter(
     (action) =>
@@ -653,12 +703,14 @@ function chooseMovementAction(
     return undefined;
   }
 
+  const activePlayer = state.players[state.activePlayerIndex];
+  const objectiveTiles = getObjectiveTiles(state, activePlayer, config);
   const sortedActions = movementActions
     .slice()
     .sort(
       (left, right) =>
-        scoreMovementAction(state, right, config) -
-          scoreMovementAction(state, left, config) ||
+        scoreMovementAction(state, right, config, objectiveTiles, isDesperate) -
+          scoreMovementAction(state, left, config, objectiveTiles, isDesperate) ||
         actionOrder(left) - actionOrder(right),
     );
   const bestAction = sortedActions[0];
@@ -809,6 +861,8 @@ function scoreMovementAction(
   state: GameState,
   action: GameAction,
   config: AiHeuristicConfig,
+  objectiveTiles: GameState['board'],
+  isDesperate: boolean,
 ): number {
   const activePlayer = state.players[state.activePlayerIndex];
   const targetPosition = getActionTargetPosition(state, action);
@@ -821,7 +875,7 @@ function scoreMovementAction(
     return 0;
   }
 
-  const healingNeeded = needsHealing(activePlayer, config);
+  const healingNeeded = needsHealing(activePlayer, config) && !isDesperate;
 
   if (healingNeeded) {
     const healingDistance = distanceToNearestHealing(state, targetPosition);
@@ -847,13 +901,13 @@ function scoreMovementAction(
   const currentObjectiveDistance = distanceToNearestObjective(
     state,
     activePlayer.position,
-    activePlayer,
+    objectiveTiles,
     config,
   );
   const targetObjectiveDistance = distanceToNearestObjective(
     state,
     targetPosition,
-    activePlayer,
+    objectiveTiles,
     config,
   );
   let score = 0;
@@ -883,13 +937,19 @@ function scoreMovementAction(
   if (targetTile?.roomToken?.kind === 'monster') {
     const monster = monsterDefinitions[targetTile.roomToken.id];
     const winChance = estimateCombatWinChance(activePlayer, monster.strength);
+    const minimumDesirableWinChance = isDesperate
+      ? 0
+      : Math.max(
+          0.5,
+          monster.id === 'dragon'
+            ? config.minimumDragonWinChance
+            : config.minimumRepeatCombatWinChance,
+        );
 
     score +=
-      winChance >= 0.5 ? config.exploreRoomBonus : config.knownMonsterPenalty;
-
-    if (monster.id === 'dragon' && winChance < config.minimumDragonWinChance) {
-      score += config.knownMonsterPenalty;
-    }
+      winChance >= minimumDesirableWinChance
+        ? config.exploreRoomBonus
+        : config.knownMonsterPenalty;
   }
 
   if (healingNeeded && isHealingTarget(state, targetPosition)) {
@@ -948,10 +1008,9 @@ function hasUnexploredExit(
 function distanceToNearestObjective(
   state: GameState,
   position: BoardPosition,
-  player: Player,
+  objectiveTiles: GameState['board'],
   config: AiHeuristicConfig,
 ): number | undefined {
-  const objectiveTiles = getObjectiveTiles(state, player, config);
   const distances = objectiveTiles.flatMap((tile) => {
     const distance = shortestKnownPathDistance(state, position, tile);
 
@@ -967,7 +1026,7 @@ function getObjectiveTiles(
   config: AiHeuristicConfig,
 ): GameState['board'] {
   const allObjectiveTiles = state.board.filter((tile) =>
-    isObjectiveTile(tile, player),
+    isObjectiveTile(tile, player, config),
   );
   const shouldDelayDragonObjective =
     state.tileStack.length === 0 &&
@@ -995,6 +1054,7 @@ function getObjectiveTiles(
 function isObjectiveTile(
   tile: GameState['board'][number],
   player: Player,
+  config: AiHeuristicConfig,
 ): boolean {
   if (tile.roomToken?.id === 'treasure_chest') {
     return player.inventory.keyCount > 0;
@@ -1008,7 +1068,19 @@ function isObjectiveTile(
     return false;
   }
 
-  return true;
+  const monster = monsterDefinitions[tile.roomToken.id];
+  const automaticFlameBonus = getAutomaticFlameSpellCount(player);
+  const winChance = estimateCombatWinChance(
+    player,
+    monster.strength,
+    automaticFlameBonus,
+  );
+  const minimumWinChance =
+    monster.id === 'dragon'
+      ? config.minimumDragonWinChance
+      : config.minimumRepeatCombatWinChance;
+
+  return winChance >= minimumWinChance;
 }
 
 function objectivePriority(
@@ -1034,7 +1106,8 @@ function shouldForceDragonEndgame(
   }
 
   const otherObjectiveTiles = state.board.filter(
-    (tile) => tile.roomToken?.id !== 'dragon' && isObjectiveTile(tile, player),
+    (tile) =>
+      tile.roomToken?.id !== 'dragon' && isObjectiveTile(tile, player, config),
   );
 
   if (otherObjectiveTiles.length > 0) {
