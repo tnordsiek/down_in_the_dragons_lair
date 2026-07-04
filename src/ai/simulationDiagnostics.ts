@@ -13,6 +13,7 @@ import {
   getDiscoveredHealingPositions,
   hasActiveHeroAbility,
 } from '../engine/rules/abilities';
+import { isHealingPosition } from '../engine/rules/healing';
 import type { AiHeuristicConfig } from './config';
 import { estimateCombatWinChance } from './heuristicAgent';
 
@@ -169,7 +170,7 @@ export function detectSimulationIssues(
     issues.push('backtrackLoops');
   }
 
-  if (isHealingMiss(state, action, activePlayer, config)) {
+  if (isHealingMiss(state, action, legalActions, activePlayer, config)) {
     issues.push('healingMisses');
   }
 
@@ -379,6 +380,7 @@ function isBacktrackMove(
 function isHealingMiss(
   state: GameState,
   action: GameAction,
+  legalActions: readonly GameAction[],
   activePlayer: Player,
   config: AiHeuristicConfig,
 ): boolean {
@@ -396,12 +398,43 @@ function isHealingMiss(
     return false;
   }
 
-  const hasHealingSpell = activePlayer.inventory.spells.some(
-    (spell) => spell.spellKind === 'healing',
+  const healSelfAvailable = legalActions.some(
+    (candidate) =>
+      candidate.type === 'useHealingSpell' &&
+      candidate.targetPlayerId === activePlayer.id,
   );
-  const knownHealing = getDiscoveredHealingPositions(state).length > 0;
+  if (healSelfAvailable) {
+    return true;
+  }
 
-  return hasHealingSpell || knownHealing;
+  if (isHealingPosition(state, activePlayer)) {
+    return (
+      action.type !== 'endTurn' &&
+      state.healingEndTurnSource !== 'combat_retreat_blocked'
+    );
+  }
+
+  const currentHealingDistance = distanceToNearestHealing(
+    state,
+    activePlayer.position,
+  );
+  if (currentHealingDistance === undefined) {
+    return false;
+  }
+
+  const isCloserToHealing = (position: BoardPosition): boolean => {
+    const distance = distanceToNearestHealing(state, position);
+    return distance !== undefined && distance < currentHealingDistance;
+  };
+
+  const closerMoveAvailable = legalActions.some(
+    (candidate) => candidate.type === 'movePlayer' && isCloserToHealing(candidate.target),
+  );
+  if (!closerMoveAvailable) {
+    return false;
+  }
+
+  return action.type !== 'movePlayer' || !isCloserToHealing(action.target);
 }
 
 function isAvoidableRiskFight(

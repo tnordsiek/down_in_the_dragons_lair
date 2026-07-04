@@ -222,7 +222,7 @@ describe('heuristic AI', () => {
     );
   });
 
-  it('ends the turn when healing is needed but no legal move gets closer to a healing tile', () => {
+  it('keeps trying to reach a known healing tile instead of giving up while no discovered path connects to it', () => {
     const base = createNewGame({
       humanHeroId: 'hero_mage',
       aiCount: 1,
@@ -275,12 +275,59 @@ describe('heuristic AI', () => {
       ],
     };
 
-    expect(getLegalAiActions(state)).toEqual(
-      expect.arrayContaining([
-        { type: 'movePlayer', target: { boardX: 0, boardY: -3 } },
-        { type: 'endTurn' },
-      ]),
+    // The healing tile at (0, 0) is known but no discovered path connects it to the
+    // player's position yet (the (0, -1) tile between them has not been placed), so
+    // the real path distance is undefined rather than merely "farther". Giving up
+    // (ending the turn) would be worse than continuing to move/explore in search of
+    // a route, since further exploration could still reveal a connecting path.
+    expect(['movePlayer', 'declareExplorationDirection']).toContain(
+      chooseHeuristicAiAction(state).type,
     );
+  });
+
+  it('ends the turn when healing is needed but no movement steps remain', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-no-healing-steps',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'turn_start',
+      activePlayerIndex: 0,
+      remainingSteps: 0,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              hp: 3,
+              isCursed: true,
+              position: { boardX: 0, boardY: -1 },
+            }
+          : player,
+      ),
+      board: [
+        {
+          tileInstanceId: 'tile-healing',
+          blueprintId: 'start_cross_healing',
+          rotation: 0,
+          boardX: 0,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-current',
+          blueprintId: 'tunnel_straight',
+          rotation: 0,
+          boardX: 0,
+          boardY: -1,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    };
+
     expect(chooseHeuristicAiAction(state)).toEqual({ type: 'endTurn' });
   });
 
@@ -731,6 +778,115 @@ describe('heuristic AI', () => {
 
     expect(chooseHeuristicAiAction(decliningState)).toEqual({
       type: 'declineWitchSacrifice',
+    });
+  });
+
+  it('uses the witch swap to reach a chest another hero is standing on', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-witch-swap-chest',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'turn_start',
+      activePlayerIndex: 0,
+      remainingSteps: 0,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_witch',
+              position: { boardX: 0, boardY: 0 },
+              inventory: { ...player.inventory, keyCount: 1 },
+            }
+          : { ...player, position: { boardX: 0, boardY: -1 } },
+      ),
+      board: [
+        {
+          tileInstanceId: 'tile-witch',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 0,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-chest',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 0,
+          boardY: -1,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'treasure_chest', kind: 'chest' },
+        },
+      ],
+    };
+
+    expect(chooseHeuristicAiAction(state)).toEqual({
+      type: 'swapWitchPosition',
+      targetPlayerId: state.players[1].id,
+    });
+  });
+
+  it('does not use the witch swap when it brings no positional gain', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-witch-swap-low-value',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'turn_start',
+      activePlayerIndex: 0,
+      remainingSteps: 4,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_witch',
+              position: { boardX: 0, boardY: 0 },
+              inventory: { ...player.inventory, keyCount: 1 },
+            }
+          : { ...player, position: { boardX: -1, boardY: 0 } },
+      ),
+      board: [
+        {
+          tileInstanceId: 'tile-witch',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 0,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-other',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: -1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-chest',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 0,
+          boardY: -1,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'treasure_chest', kind: 'chest' },
+        },
+      ],
+    };
+
+    expect(chooseHeuristicAiAction(state)).toEqual({
+      type: 'movePlayer',
+      target: { boardX: 0, boardY: -1 },
     });
   });
 

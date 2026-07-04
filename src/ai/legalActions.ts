@@ -214,19 +214,21 @@ export function getActionTargetPosition(
   state: GameState,
   action: GameAction,
 ): BoardPosition | undefined {
-  if (
-    action.type !== 'movePlayer' &&
-    action.type !== 'declareExplorationDirection'
-  ) {
-    return undefined;
-  }
-
   if (action.type === 'movePlayer') {
     return action.target;
   }
 
-  return adjacentPosition(
-    state.players[state.activePlayerIndex].position,
-    action.direction,
-  );
+  if (action.type === 'declareExplorationDirection') {
+    return adjacentPosition(
+      state.players[state.activePlayerIndex].position,
+      action.direction,
+    );
+  }
+
+  if (action.type === 'swapWitchPosition') {
+    return state.players.find((player) => player.id === action.targetPlayerId)
+      ?.position;
+  }
+
+  return undefined;
 }

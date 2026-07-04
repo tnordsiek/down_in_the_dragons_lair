@@ -867,10 +867,6 @@ function scoreMovementAction(
   const activePlayer = state.players[state.activePlayerIndex];
   const targetPosition = getActionTargetPosition(state, action);
 
-  if (action.type === 'swapWitchPosition') {
-    return config.exploreTileBonus - 1;
-  }
-
   if (!targetPosition) {
     return 0;
   }
@@ -913,6 +909,7 @@ function scoreMovementAction(
   let score = 0;
 
   if (
+    action.type !== 'swapWitchPosition' &&
     state.tileStack.length > 0 &&
     currentFrontierDistance !== undefined &&
     targetFrontierDistance !== undefined
@@ -1215,10 +1212,12 @@ function distanceToNearestHealing(
   state: GameState,
   position: BoardPosition,
 ): number | undefined {
-  const distances = getDiscoveredHealingPositions(state).map(
-    (healingPosition) =>
-      Math.abs(healingPosition.boardX - position.boardX) +
-      Math.abs(healingPosition.boardY - position.boardY),
+  const distances = getDiscoveredHealingPositions(state).flatMap(
+    (healingPosition) => {
+      const distance = shortestKnownPathDistance(state, position, healingPosition);
+
+      return distance === undefined ? [] : [distance];
+    },
   );
 
   return distances.length > 0 ? Math.min(...distances) : undefined;
