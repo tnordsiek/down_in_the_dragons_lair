@@ -952,6 +952,9 @@ interface SummaryWithDetails extends SummaryInputRow {
 }
 
 function stripDetailRows(row: SummaryWithDetails): Omit<SummaryWithDetails, 'detailRows'> {
-  const { detailRows: _detailRows, ...rest } = row;
+  const rest: Omit<SummaryWithDetails, 'detailRows'> & { detailRows?: RawHeroRow[] } = {
+    ...row,
+  };
+  delete rest.detailRows;
   return rest;
 }
