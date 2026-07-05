@@ -24,8 +24,8 @@ import {
   type AiHeuristicConfig,
 } from './config';
 import {
-  estimateCombatWinChance,
   getEffectiveAiHeuristicConfig,
+  estimateMonsterCombatWinChance,
 } from './heuristicAgent';
 
 export const simulationIssueTypes = [
@@ -660,7 +660,7 @@ function collectEndgameObjectiveTargets(
     }
 
     const monster = monsterDefinitions[tile.roomToken.id];
-    const winChance = estimateCombatWinChance(activePlayer, monster.strength);
+    const winChance = estimateMonsterCombatWinChance(activePlayer, monster.id);
     const threshold =
       monster.id === 'dragon'
         ? config.minimumDragonWinChance
@@ -835,7 +835,7 @@ function createExplorationOpportunity(
         ? config.minimumDragonWinChance
         : config.minimumRepeatCombatWinChance;
 
-    return estimateCombatWinChance(activePlayer, monster.strength) >= threshold;
+    return estimateMonsterCombatWinChance(activePlayer, monster.id) >= threshold;
   });
 
   const reachableExplorationTargets = getReachableExplorationTargets(state);
@@ -1064,9 +1064,9 @@ function isWinningDragonWindow(
   activePlayer: Player,
   config: AiHeuristicConfig,
 ): boolean {
-  const dragonWinChance = estimateCombatWinChance(
+  const dragonWinChance = estimateMonsterCombatWinChance(
     activePlayer,
-    monsterDefinitions.dragon.strength,
+    monsterDefinitions.dragon.id,
   );
   if (dragonWinChance < config.minimumDragonWinChance) {
     return false;
@@ -1177,7 +1177,7 @@ function isAvoidableRiskFight(
   }
 
   const monster = monsterDefinitions[state.combat.monsterId];
-  const winChance = estimateCombatWinChance(activePlayer, monster.strength);
+  const winChance = estimateMonsterCombatWinChance(activePlayer, monster.id);
   const threshold =
     monster.id === 'dragon'
       ? config.minimumDragonWinChance

@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 
-import { chooseHeuristicAiAction } from '../../ai/heuristicAgent';
-import { getLegalAiActions } from '../../ai/legalActions';
+import { chooseDifficultyAwareHeuristicAiAction } from '../../ai/difficultyAwareAction';
 import { getAssetUrl, useAsset } from '../../data/assets';
 import type {
   BoardPosition,
@@ -158,7 +157,7 @@ export function GameScreen() {
     }
 
     const timeoutId = window.setTimeout(() => {
-      dispatch(chooseHeuristicAiAction(state, getLegalAiActions(state)));
+      dispatch(chooseDifficultyAwareHeuristicAiAction(state));
     }, 200);
 
     return () => window.clearTimeout(timeoutId);

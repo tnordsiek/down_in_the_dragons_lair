@@ -98,6 +98,20 @@ function getMinimumCombatWinChance(
     : config.minimumRepeatCombatWinChance;
 }
 
+export function estimateMonsterCombatWinChance(
+  player: Player,
+  monsterId: MonsterId,
+): number {
+  const monster = monsterDefinitions[monsterId];
+  const automaticFlameBonus = getAutomaticFlameSpellCount(player);
+
+  return estimateCombatWinChance(
+    player,
+    monster.strength,
+    automaticFlameBonus,
+  );
+}
+
 export function chooseHeuristicAiAction(
   state: GameState,
   legalActions = getLegalAiActions(state),
@@ -461,11 +475,9 @@ function chooseCombatAction(
 
     const activePlayer = state.players[state.activePlayerIndex];
     const monster = monsterDefinitions[state.combat.monsterId];
-    const automaticFlameBonus = getAutomaticFlameSpellCount(activePlayer);
-    const winChance = estimateCombatWinChance(
+    const winChance = estimateMonsterCombatWinChance(
       activePlayer,
-      monster.strength,
-      automaticFlameBonus,
+      monster.id,
     );
     const minimumWinChance = getMinimumCombatWinChance(monster.id, config);
 
@@ -502,11 +514,9 @@ function chooseCombatAction(
 
   const activePlayer = state.players[state.activePlayerIndex];
   const monster = monsterDefinitions[state.combat.monsterId];
-  const automaticFlameBonus = getAutomaticFlameSpellCount(activePlayer);
-  const winChance = estimateCombatWinChance(
+  const winChance = estimateMonsterCombatWinChance(
     activePlayer,
-    monster.strength,
-    automaticFlameBonus,
+    monster.id,
   );
 
   if (state.phase === 'optional_post_combat') {
@@ -537,11 +547,9 @@ function chooseValkyrieRerollAction(
 
   const activePlayer = state.players[state.activePlayerIndex];
   const monster = monsterDefinitions[state.combat.monsterId];
-  const automaticFlameBonus = getAutomaticFlameSpellCount(activePlayer);
-  const winChance = estimateCombatWinChance(
+  const winChance = estimateMonsterCombatWinChance(
     activePlayer,
-    monster.strength,
-    automaticFlameBonus,
+    monster.id,
   );
   const minimumWinChance = getMinimumCombatWinChance(monster.id, config);
 
@@ -1197,7 +1205,7 @@ function createMonsterObjective(
     }
 
     const monster = monsterDefinitions[monsterId];
-    const winChance = estimateCombatWinChance(activePlayer, monster.strength);
+    const winChance = estimateMonsterCombatWinChance(activePlayer, monster.id);
 
     if (winChance >= getMinimumCombatWinChance(monster.id, config)) {
       return {
@@ -1214,7 +1222,7 @@ function createMonsterObjective(
       }
 
       const monster = monsterDefinitions[tile.roomToken.id];
-      const winChance = estimateCombatWinChance(activePlayer, monster.strength);
+      const winChance = estimateMonsterCombatWinChance(activePlayer, monster.id);
 
       return winChance >= getMinimumCombatWinChance(monster.id, config);
     })
@@ -1552,7 +1560,7 @@ function scoreMovementAction(
 
   if (targetTile?.roomToken?.kind === 'monster') {
     const monster = monsterDefinitions[targetTile.roomToken.id];
-    const winChance = estimateCombatWinChance(activePlayer, monster.strength);
+    const winChance = estimateMonsterCombatWinChance(activePlayer, monster.id);
     const minimumDesirableWinChance = isDesperate
       ? getMinimumCombatWinChance(monster.id, config)
       : Math.max(
@@ -1774,12 +1782,7 @@ function isObjectiveTile(
   }
 
   const monster = monsterDefinitions[tile.roomToken.id];
-  const automaticFlameBonus = getAutomaticFlameSpellCount(player);
-  const winChance = estimateCombatWinChance(
-    player,
-    monster.strength,
-    automaticFlameBonus,
-  );
+  const winChance = estimateMonsterCombatWinChance(player, monster.id);
   const minimumWinChance = getMinimumCombatWinChance(monster.id, config);
 
   return winChance >= minimumWinChance;

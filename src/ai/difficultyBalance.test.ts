@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { GameState, PlacedTile } from '../engine/core/types';
 import { createNewGame } from '../engine/setup/createGame';
 import { createTestState } from '../test/gameStateFactory';
 import { playAiGameToEnd } from './autoplay';
+import * as configModule from './config';
 import {
   aiHeuristicConfig,
   easyAiConfig,
@@ -11,6 +12,7 @@ import {
   hardAiConfig,
   normalAiConfig,
 } from './config';
+import { chooseDifficultyAwareHeuristicAiAction } from './difficultyAwareAction';
 import { chooseHeuristicAiAction, estimateCombatWinChance } from './heuristicAgent';
 import { getLegalAiActions } from './legalActions';
 
@@ -61,6 +63,32 @@ describe('difficulty config presets', () => {
 
   it('normalAiConfig is identical to the base aiHeuristicConfig', () => {
     expect(normalAiConfig).toBe(aiHeuristicConfig);
+  });
+});
+
+describe('difficulty-aware live AI wiring', () => {
+  it('uses the current game difficulty when selecting a live AI action', () => {
+    const getDifficultyConfigSpy = vi.spyOn(configModule, 'getDifficultyConfig');
+    const easyState = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'live-ai-easy',
+      difficulty: 'easy',
+    });
+    const hardState = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'live-ai-hard',
+      difficulty: 'hard',
+    });
+
+    chooseDifficultyAwareHeuristicAiAction(easyState);
+    chooseDifficultyAwareHeuristicAiAction(hardState);
+
+    expect(getDifficultyConfigSpy).toHaveBeenCalledWith('easy');
+    expect(getDifficultyConfigSpy).toHaveBeenCalledWith('hard');
+
+    getDifficultyConfigSpy.mockRestore();
   });
 });
 
