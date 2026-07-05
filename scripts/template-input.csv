@@ -1,6 +1,0 @@
-scenarioId,games,baseSeed,difficulty,poolScale,heroes
-duel_mage_blade,10,s1,normal,0.5,hero_mage|hero_blade
-duel_mage_rogue,10,s2,easy,0.5,hero_mage|hero_rogue
-duel_valkyrie_blade,10,s5,hard,0.5,hero_valkyrie|hero_blade
-all_heroes_anchor_blade,0,stress-a,normal,1,hero_mage|hero_valkyrie|hero_witch|hero_rogue|hero_blade
-all_heroes_anchor_seeress,0,stress-b,normal,1,hero_mage|hero_valkyrie|hero_witch|hero_rogue|hero_seeress
