@@ -26,6 +26,7 @@ describe('simulation analysis', () => {
 
     expect(rows.some((row) => row.issueType === 'nonTerminatingGame')).toBe(true);
     expect(rows.some((row) => row.issueType === 'seeressChoiceBlind')).toBe(true);
+    expect(rows.some((row) => row.issueType === 'missedChestWithKey')).toBe(true);
     expect(rows.some((row) => row.issueType === 'none')).toBe(true);
 
     const timeoutRow = rows.find(
@@ -49,9 +50,14 @@ describe('simulation analysis', () => {
     const analysisCsv = serializeAnalysisSummary(rows);
 
     expect(analysisCsv).toContain('issueType,problemTitle,issueCount,issueRate');
+    expect(analysisCsv).toContain('avgMissedHealingPriority');
+    expect(analysisCsv).toContain('avgLegacyObjectiveBypass');
     expect(analysisCsv).toContain('likelyCodeArea');
+    expect(analysisCsv).toContain('strategicPriority');
+    expect(analysisCsv).toContain('expectedObjectiveType');
     expect(analysisCsv).toContain('lastPhaseBeforeAbort');
     expect(analysisCsv).toContain('seeressChoiceBlind');
+    expect(analysisCsv).toContain('missedChestWithKey');
     expect(analysisCsv).toContain('nonTerminatingGame');
     expect(analysisCsv).toContain('s2#1');
   });
@@ -73,9 +79,9 @@ describe('simulation analysis', () => {
 
 function createRawResults(): RawSimulationResult[] {
   const mageNormalOne = createEmptySimulationDiagnostics();
-  mageNormalOne.healingMisses = 1;
+  mageNormalOne.missedHealingPriority = 1;
   const mageNormalTwo = createEmptySimulationDiagnostics();
-  mageNormalTwo.healingMisses = 1;
+  mageNormalTwo.missedHealingPriority = 1;
   mageNormalTwo.stalledTurns = 1;
   const bladeNormalOne = createEmptySimulationDiagnostics();
   const bladeNormalTwo = createEmptySimulationDiagnostics();
@@ -85,7 +91,7 @@ function createRawResults(): RawSimulationResult[] {
   mageEasyTimeout.backtrackLoops = 2;
   const mageEasyClean = createEmptySimulationDiagnostics();
   const rogueEasy = createEmptySimulationDiagnostics();
-  rogueEasy.objectiveBypass = 1;
+  rogueEasy.missedChestWithKey = 1;
 
   const seeressIssue = createEmptySimulationDiagnostics();
   seeressIssue.seeressChoiceBlind = 1;

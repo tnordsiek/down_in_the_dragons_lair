@@ -535,9 +535,9 @@ function summarizeSimulationResults(
         ),
         avgStalledTurns: averageIssue(playerResults, 'stalledTurns'),
         avgBacktrackLoops: averageIssue(playerResults, 'backtrackLoops'),
-        avgHealingMisses: averageIssue(playerResults, 'healingMisses'),
+        avgHealingMisses: averageIssue(playerResults, 'missedHealingPriority'),
         avgAvoidableRiskFights: averageIssue(playerResults, 'avoidableRiskFights'),
-        avgObjectiveBypass: averageIssue(playerResults, 'objectiveBypass'),
+        avgObjectiveBypass: 0,
         avgSeeressChoiceBlind: averageIssue(playerResults, 'seeressChoiceBlind'),
         avgWitchSwapLowValue: averageIssue(playerResults, 'witchSwapLowValue'),
       };

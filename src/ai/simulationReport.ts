@@ -70,9 +70,9 @@ export function parseAnalysisSummaryCsv(csvText: string): AnalysisCsvRow[] {
     'avgMaxActionsWithoutProgress',
     'avgStalledTurns',
     'avgBacktrackLoops',
-    'avgHealingMisses',
+    'avgMissedHealingPriority',
     'avgAvoidableRiskFights',
-    'avgObjectiveBypass',
+    'avgLegacyObjectiveBypass',
     'avgSeeressChoiceBlind',
     'avgWitchSwapLowValue',
     'rankWinRate',
@@ -102,6 +102,12 @@ export function parseAnalysisSummaryCsv(csvText: string): AnalysisCsvRow[] {
     'observedBehavior',
     'recommendedTest',
     'problemKind',
+    'strategicPriority',
+    'debugPhase',
+    'observedActionType',
+    'expectedObjectiveType',
+    'debugAlternative',
+    'debugDistanceContext',
     'lastPhaseBeforeAbort',
     'lastActionTypeBeforeAbort',
     'maxObservedActionsWithoutProgress',
@@ -145,12 +151,18 @@ export function parseAnalysisSummaryCsv(csvText: string): AnalysisCsvRow[] {
     ),
     avgStalledTurns: parseNumber(record.avgStalledTurns, 'avgStalledTurns'),
     avgBacktrackLoops: parseNumber(record.avgBacktrackLoops, 'avgBacktrackLoops'),
-    avgHealingMisses: parseNumber(record.avgHealingMisses, 'avgHealingMisses'),
+    avgHealingMisses: parseNumber(
+      record.avgMissedHealingPriority,
+      'avgMissedHealingPriority',
+    ),
     avgAvoidableRiskFights: parseNumber(
       record.avgAvoidableRiskFights,
       'avgAvoidableRiskFights',
     ),
-    avgObjectiveBypass: parseNumber(record.avgObjectiveBypass, 'avgObjectiveBypass'),
+    avgObjectiveBypass: parseNumber(
+      record.avgLegacyObjectiveBypass,
+      'avgLegacyObjectiveBypass',
+    ),
     avgSeeressChoiceBlind: parseNumber(
       record.avgSeeressChoiceBlind,
       'avgSeeressChoiceBlind',
@@ -192,6 +204,12 @@ export function parseAnalysisSummaryCsv(csvText: string): AnalysisCsvRow[] {
     observedBehavior: record.observedBehavior,
     recommendedTest: record.recommendedTest,
     problemKind: record.problemKind as AnalysisSummaryRow['problemKind'],
+    strategicPriority: parseNumber(record.strategicPriority, 'strategicPriority'),
+    debugPhase: record.debugPhase,
+    observedActionType: record.observedActionType,
+    expectedObjectiveType: record.expectedObjectiveType,
+    debugAlternative: record.debugAlternative,
+    debugDistanceContext: record.debugDistanceContext,
     lastPhaseBeforeAbort: record.lastPhaseBeforeAbort,
     lastActionTypeBeforeAbort: record.lastActionTypeBeforeAbort,
     maxObservedActionsWithoutProgress: parseNumber(
@@ -360,7 +378,7 @@ export function renderSimulationReport(rows: readonly AnalysisCsvRow[]): string 
     </main>
   </body>
 </html>
-`;
+`.replaceAll('Â·', '&middot;');
 }
 
 export async function writeSimulationReport(
@@ -378,7 +396,7 @@ function renderScenarioSection(
   const heroRows = uniqueHeroRows(rows);
   const problemRows = rows
     .filter((row) => row.issueType !== 'none')
-    .sort((left, right) => right.severityScore - left.severityScore);
+    .sort(compareProblemPriority);
   const metaRow = heroRows[0];
 
   return `<section class="scenario">
@@ -475,7 +493,7 @@ function renderSummary(
         <td><strong>Top-Prioritaet</strong></td>
         <td>${
           topProblem
-            ? `${escapeHtml(topProblem.problemTitle)} bei ${escapeHtml(topProblem.heroId)}`
+            ? `${escapeHtml(topProblem.problemTitle)} bei ${escapeHtml(topProblem.heroId)} (${escapeHtml(topProblem.expectedObjectiveType)})`
             : '<span class="ok-note">Keine priorisierten Probleme erkannt</span>'
         }</td>
       </tr>
@@ -497,6 +515,7 @@ function renderProblems(rows: readonly AnalysisCsvRow[]): string {
             <div class="value">${escapeHtml(row.heroId)} · ${escapeHtml(row.issueType)}</div>
           </div>
           <div class="problem-meta">
+            <span class="chip">Strategic Priority ${row.strategicPriority}</span>
             <span class="chip severity">Severity ${formatNumber(row.severityScore)}</span>
             <span class="chip">Issue Rate ${formatPercent(row.issueRate)}</span>
             <span class="chip">Delta ${formatSignedPercent(row.comparisonDelta)}</span>
@@ -527,6 +546,30 @@ function renderProblems(rows: readonly AnalysisCsvRow[]): string {
             <div class="label">Suggested Test</div>
             <div class="value">${escapeHtml(row.recommendedTest)}</div>
           </div>
+          <div>
+            <div class="label">Decision Phase</div>
+            <div class="value">${escapeHtml(row.debugPhase || '-')}</div>
+          </div>
+          <div>
+            <div class="label">Observed Action</div>
+            <div class="value">${escapeHtml(row.observedActionType || '-')}</div>
+          </div>
+          <div>
+            <div class="label">Expected Objective</div>
+            <div class="value">${escapeHtml(row.expectedObjectiveType || '-')}</div>
+          </div>
+          <div>
+            <div class="label">Expected Alternative</div>
+            <div class="value">${escapeHtml(row.debugAlternative || '-')}</div>
+          </div>
+          ${
+            row.debugDistanceContext
+              ? `<div>
+                  <div class="label">Movement Semantics</div>
+                  <div class="value">${escapeHtml(row.debugDistanceContext)}</div>
+                </div>`
+              : ''
+          }
           ${
             row.problemKind === 'termination'
               ? `<div>
@@ -555,6 +598,17 @@ function uniqueHeroRows(rows: readonly AnalysisCsvRow[]): AnalysisCsvRow[] {
   }
 
   return [...byHero.values()].sort((left, right) => left.heroSlot - right.heroSlot);
+}
+
+function compareProblemPriority(
+  left: AnalysisCsvRow,
+  right: AnalysisCsvRow,
+): number {
+  if (right.strategicPriority !== left.strategicPriority) {
+    return right.strategicPriority - left.strategicPriority;
+  }
+
+  return right.severityScore - left.severityScore;
 }
 
 function groupByScenario(rows: readonly AnalysisCsvRow[]): Map<string, AnalysisCsvRow[]> {

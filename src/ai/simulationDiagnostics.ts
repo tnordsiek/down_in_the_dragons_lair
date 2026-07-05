@@ -1,4 +1,5 @@
 import { monsterDefinitions } from '../data/monsters';
+import { tileBlueprints } from '../data/tiles';
 import { getTileAt } from '../engine/core/board';
 import type {
   BoardPosition,
@@ -6,23 +7,30 @@ import type {
   GamePhase,
   GameState,
   HeroId,
+  Item,
   Player,
 } from '../engine/core/types';
+import { getReachableExplorationTargets, getReachableKnownMovePaths } from '../engine/movement/reachable';
+import { moveActivePlayer } from '../engine/movement/performMove';
 import { adjacentPosition, canTilesConnect } from '../engine/movement/topology';
 import {
   getDiscoveredHealingPositions,
   hasActiveHeroAbility,
 } from '../engine/rules/abilities';
 import { isHealingPosition } from '../engine/rules/healing';
+import { canOpenChest } from '../engine/rules/chests';
 import type { AiHeuristicConfig } from './config';
 import { estimateCombatWinChance } from './heuristicAgent';
 
 export const simulationIssueTypes = [
   'stalledTurns',
   'backtrackLoops',
-  'healingMisses',
+  'missedHealingPriority',
+  'missedChestWithKey',
+  'missedUpgradeLoot',
+  'missedExplorationProgress',
+  'missedWinningDragonWindow',
   'avoidableRiskFights',
-  'objectiveBypass',
   'seeressChoiceBlind',
   'witchSwapLowValue',
   'nonTerminatingGame',
@@ -78,15 +86,55 @@ export const simulationIssueMetadata: Record<
       'Seed-basierter Bewegungstest plus Batch-Regression auf sinkende backtrackLoops',
     severityWeight: 0.45,
   },
-  healingMisses: {
-    title: 'Heldin verpasst naheliegende Heilung',
+  missedHealingPriority: {
+    title: 'Heldin ignoriert vorrangige Heilung',
     suggestedArea: 'healing',
     likelyCodeArea: 'src/ai/heuristicAgent.ts',
     expectedBehavior:
-      'Kritisch verletzte oder verfluchte Heldinnen sollten Heilzauber oder Heilfelder priorisieren.',
+      'Kritisch verletzte oder verfluchte Heldinnen sollten verfuegbare Heilung vor anderen Zielen priorisieren.',
     recommendedTest:
       'Unit-/Szenariotest fuer Heilentscheidung plus Batch-Regression',
     severityWeight: 0.7,
+  },
+  missedChestWithKey: {
+    title: 'Heldin laesst Schatztruhe trotz Schluessel liegen',
+    suggestedArea: 'movement',
+    likelyCodeArea: 'src/ai/heuristicAgent.ts',
+    expectedBehavior:
+      'Eine erreichbare Schatztruhe sollte mit vorhandenem Schluessel vor Exploration als Fallback-Ziel und vor niedriger priorisierten Bewegungsoptionen gewaehlt werden.',
+    recommendedTest:
+      'Szenariotest fuer Truhen-Priorisierung mit Schluessel plus Batch-Regression',
+    severityWeight: 0.7,
+  },
+  missedUpgradeLoot: {
+    title: 'Heldin verpasst nuetzliches Upgrade-Loot',
+    suggestedArea: 'movement',
+    likelyCodeArea: 'src/ai/heuristicAgent.ts',
+    expectedBehavior:
+      'Verbessernde Waffen oder Zauber sollten verfolgt werden, wenn sie die Heldin wirklich verbessern und das Rennen dorthin noch plausibel ist.',
+    recommendedTest:
+      'Szenariotest fuer Upgrade-Loot-Rennen plus Batch-Regression',
+    severityWeight: 0.62,
+  },
+  missedExplorationProgress: {
+    title: 'Heldin verpasst sicheren Fortschritt',
+    suggestedArea: 'movement',
+    likelyCodeArea: 'src/ai/heuristicAgent.ts',
+    expectedBehavior:
+      'Ohne dringenderes strategisches Ziel sollte die AI Exploration nur als Fallback nutzen und dabei sichere neue Tiles aufdecken. Schlagbare Monster werden als eigenes Ziel bewertet.',
+    recommendedTest:
+      'Explorations-/Monsterfortschrittstest plus Batch-Regression',
+    severityWeight: 0.48,
+  },
+  missedWinningDragonWindow: {
+    title: 'Heldin verpasst spielentscheidendes Drachenfenster',
+    suggestedArea: 'combat',
+    likelyCodeArea: 'src/ai/heuristicAgent.ts',
+    expectedBehavior:
+      'Ein erreichbarer Drachensieg sollte priorisiert werden, wenn die Siegchance gut genug ist und +1.5 Punkte den Endscore mindestens sichern.',
+    recommendedTest:
+      'Endgame-Szenariotest fuer Drachenfenster plus Batch-Regression',
+    severityWeight: 0.88,
   },
   avoidableRiskFights: {
     title: 'Heldin startet vermeidbare Risikokaempfe',
@@ -97,16 +145,6 @@ export const simulationIssueMetadata: Record<
     recommendedTest:
       'Combat-Entscheidungstest mit Seed plus Batch-Regression',
     severityWeight: 0.75,
-  },
-  objectiveBypass: {
-    title: 'Heldin ignoriert erreichbare Ziele',
-    suggestedArea: 'movement',
-    likelyCodeArea: 'src/ai/heuristicAgent.ts',
-    expectedBehavior:
-      'Erreichbare Heilung, Truhen oder der finale Drache sollten nicht systematisch umgangen werden.',
-    recommendedTest:
-      'Szenariotest fuer Zielpriorisierung plus Batch-Regression',
-    severityWeight: 0.55,
   },
   seeressChoiceBlind: {
     title: 'Seherin waehlt Token blind',
@@ -123,7 +161,7 @@ export const simulationIssueMetadata: Record<
     suggestedArea: 'hero_ability',
     likelyCodeArea: 'src/ai/heuristicAgent.ts',
     expectedBehavior:
-      'Der Hexen-Tausch sollte nur gewaehlt werden, wenn er messbaren Fortschritt oder Sicherheit bringt.',
+      'Der Hexen-Tausch sollte nur gewaehlt werden, wenn er messbaren Fortschritt oder Sicherheit gegenueber normaler Bewegung bringt.',
     recommendedTest:
       'Seed-basierter Hexen-Tauschtest plus Batch-Regression',
     severityWeight: 0.65,
@@ -144,9 +182,12 @@ export function createEmptySimulationDiagnostics(): SimulationPlayerDiagnostics 
   return {
     stalledTurns: 0,
     backtrackLoops: 0,
-    healingMisses: 0,
+    missedHealingPriority: 0,
+    missedChestWithKey: 0,
+    missedUpgradeLoot: 0,
+    missedExplorationProgress: 0,
+    missedWinningDragonWindow: 0,
     avoidableRiskFights: 0,
-    objectiveBypass: 0,
     seeressChoiceBlind: 0,
     witchSwapLowValue: 0,
     nonTerminatingGame: 0,
@@ -170,16 +211,19 @@ export function detectSimulationIssues(
     issues.push('backtrackLoops');
   }
 
-  if (isHealingMiss(state, action, legalActions, activePlayer, config)) {
-    issues.push('healingMisses');
+  const priorityIssue = detectPriorityGoalIssue(
+    state,
+    action,
+    legalActions,
+    activePlayer,
+    config,
+  );
+  if (priorityIssue) {
+    issues.push(priorityIssue);
   }
 
   if (isAvoidableRiskFight(state, action, activePlayer, config)) {
     issues.push('avoidableRiskFights');
-  }
-
-  if (isObjectiveBypass(state, action, legalActions, activePlayer)) {
-    issues.push('objectiveBypass');
   }
 
   if (
@@ -377,25 +421,112 @@ function isBacktrackMove(
   );
 }
 
-function isHealingMiss(
+type PriorityIssueType = Extract<
+  SimulationIssueType,
+  | 'missedHealingPriority'
+  | 'missedChestWithKey'
+  | 'missedUpgradeLoot'
+  | 'missedExplorationProgress'
+  | 'missedWinningDragonWindow'
+>;
+
+type ReachableTarget = {
+  position: BoardPosition;
+};
+
+type PriorityOpportunity = {
+  issueType: PriorityIssueType;
+  isSatisfied: () => boolean;
+};
+
+function detectPriorityGoalIssue(
   state: GameState,
   action: GameAction,
   legalActions: readonly GameAction[],
   activePlayer: Player,
   config: AiHeuristicConfig,
-): boolean {
-  if (action.type === 'useHealingSpell') {
-    return false;
+): PriorityIssueType | undefined {
+  const opportunity = getHighestPriorityOpportunity(
+    state,
+    action,
+    legalActions,
+    activePlayer,
+    config,
+  );
+
+  if (!opportunity || opportunity.isSatisfied()) {
+    return undefined;
   }
 
-  if (state.phase !== 'turn_start' && state.phase !== 'await_move') {
-    return false;
+  return opportunity.issueType;
+}
+
+function getHighestPriorityOpportunity(
+  state: GameState,
+  action: GameAction,
+  legalActions: readonly GameAction[],
+  activePlayer: Player,
+  config: AiHeuristicConfig,
+): PriorityOpportunity | undefined {
+  const fullyExplored = state.tileStack.length === 0;
+
+  const healingOpportunity = createHealingOpportunity(
+    state,
+    action,
+    legalActions,
+    activePlayer,
+    config,
+  );
+  if (healingOpportunity) {
+    return healingOpportunity;
   }
 
+  const chestOpportunity = createChestOpportunity(
+    state,
+    action,
+    activePlayer,
+  );
+  if (chestOpportunity) {
+    return chestOpportunity;
+  }
+
+  const lootOpportunity = createUpgradeLootOpportunity(
+    state,
+    action,
+    activePlayer,
+  );
+  if (lootOpportunity) {
+    return lootOpportunity;
+  }
+
+  const dragonOpportunity = createWinningDragonOpportunity(
+    state,
+    action,
+    activePlayer,
+    config,
+  );
+  if (dragonOpportunity) {
+    return dragonOpportunity;
+  }
+
+  if (fullyExplored) {
+    return undefined;
+  }
+
+  return createExplorationOpportunity(state, action, activePlayer, config);
+}
+
+function createHealingOpportunity(
+  state: GameState,
+  action: GameAction,
+  legalActions: readonly GameAction[],
+  activePlayer: Player,
+  config: AiHeuristicConfig,
+): PriorityOpportunity | undefined {
   const needsUrgentHealing =
     activePlayer.hp <= config.criticalHp || activePlayer.isCursed;
   if (!needsUrgentHealing) {
-    return false;
+    return undefined;
   }
 
   const healSelfAvailable = legalActions.some(
@@ -404,37 +535,504 @@ function isHealingMiss(
       candidate.targetPlayerId === activePlayer.id,
   );
   if (healSelfAvailable) {
-    return true;
+    return {
+      issueType: 'missedHealingPriority',
+      isSatisfied: () =>
+        action.type === 'useHealingSpell' &&
+        action.targetPlayerId === activePlayer.id,
+    };
   }
 
-  if (isHealingPosition(state, activePlayer)) {
+  if (
+    isHealingPosition(state, activePlayer) &&
+    state.healingEndTurnSource !== 'combat_retreat_blocked'
+  ) {
+    return {
+      issueType: 'missedHealingPriority',
+      isSatisfied: () => action.type === 'endTurn',
+    };
+  }
+
+  if (
+    isHealingPosition(state, activePlayer) &&
+    state.healingEndTurnSource === 'combat_retreat_blocked'
+  ) {
+    return undefined;
+  }
+
+  const reachableHealingTargets = collectReachableTargets(state).filter((target) =>
+    isHealingTarget(state, target.position),
+  );
+  if (reachableHealingTargets.length === 0) {
+    return undefined;
+  }
+
+  return {
+    issueType: 'missedHealingPriority',
+    isSatisfied: () =>
+      actionAdvancesToAnyTarget(state, action, reachableHealingTargets) ||
+      actionUsesWitchSwapToAnyTarget(state, action, reachableHealingTargets),
+  };
+}
+
+function createChestOpportunity(
+  state: GameState,
+  action: GameAction,
+  activePlayer: Player,
+): PriorityOpportunity | undefined {
+  if (activePlayer.inventory.keyCount === 0) {
+    return undefined;
+  }
+
+  if (canOpenChest(state)) {
+    return {
+      issueType: 'missedChestWithKey',
+      isSatisfied: () => action.type === 'openChest',
+    };
+  }
+
+  const reachableChestTargets = collectReachableTargets(state).filter((target) => {
+    const tile = getTileAt(state.board, target.position);
+    return tile?.roomToken?.id === 'treasure_chest';
+  });
+
+  if (reachableChestTargets.length === 0) {
+    return undefined;
+  }
+
+  return {
+    issueType: 'missedChestWithKey',
+    isSatisfied: () =>
+      actionAdvancesToAnyTarget(state, action, reachableChestTargets) ||
+      actionUsesWitchSwapToAnyTarget(state, action, reachableChestTargets),
+  };
+}
+
+function createUpgradeLootOpportunity(
+  state: GameState,
+  action: GameAction,
+  activePlayer: Player,
+): PriorityOpportunity | undefined {
+  const currentTile = getTileAt(state.board, activePlayer.position);
+  const currentItem = currentTile?.looseItems[0];
+  if (currentItem && isMeaningfulUpgradeItem(activePlayer, currentItem)) {
+    return {
+      issueType: 'missedUpgradeLoot',
+      isSatisfied: () => action.type === 'beginLoot',
+    };
+  }
+
+  const reachableLootTargets = collectReachableTargets(state).filter((target) => {
+    const tile = getTileAt(state.board, target.position);
+    const item = tile?.looseItems[0];
     return (
-      action.type !== 'endTurn' &&
-      state.healingEndTurnSource !== 'combat_retreat_blocked'
+      !!item &&
+      isMeaningfulUpgradeItem(activePlayer, item) &&
+      isLootRacePlausible(state, activePlayer, target.position)
+    );
+  });
+
+  if (reachableLootTargets.length === 0) {
+    return undefined;
+  }
+
+  return {
+    issueType: 'missedUpgradeLoot',
+    isSatisfied: () =>
+      actionAdvancesToAnyTarget(state, action, reachableLootTargets) ||
+      actionUsesWitchSwapToAnyTarget(state, action, reachableLootTargets),
+  };
+}
+
+function createWinningDragonOpportunity(
+  state: GameState,
+  action: GameAction,
+  activePlayer: Player,
+  config: AiHeuristicConfig,
+): PriorityOpportunity | undefined {
+  if (!isWinningDragonWindow(state, activePlayer, config)) {
+    return undefined;
+  }
+
+  if (
+    state.combat?.monsterId === 'dragon' &&
+    (state.phase === 'combat' || state.phase === 'optional_post_combat')
+  ) {
+    return {
+      issueType: 'missedWinningDragonWindow',
+      isSatisfied: () => action.type === 'resolveCombat',
+    };
+  }
+
+  if (
+    state.combat?.monsterId === 'dragon' &&
+    state.phase === 'optional_monster_combat'
+  ) {
+    return {
+      issueType: 'missedWinningDragonWindow',
+      isSatisfied: () => action.type === 'startOptionalCombat',
+    };
+  }
+
+  const reachableDragonTargets = collectReachableTargets(state).filter((target) => {
+    const tile = getTileAt(state.board, target.position);
+    return tile?.roomToken?.id === 'dragon';
+  });
+  if (reachableDragonTargets.length === 0) {
+    return undefined;
+  }
+
+  return {
+    issueType: 'missedWinningDragonWindow',
+    isSatisfied: () =>
+      actionAdvancesToAnyTarget(state, action, reachableDragonTargets) ||
+      actionUsesWitchSwapToAnyTarget(state, action, reachableDragonTargets),
+  };
+}
+
+function createExplorationOpportunity(
+  state: GameState,
+  action: GameAction,
+  activePlayer: Player,
+  config: AiHeuristicConfig,
+): PriorityOpportunity | undefined {
+  const reachableMonsterTargets = collectReachableTargets(state).filter((target) => {
+    const tile = getTileAt(state.board, target.position);
+    if (tile?.roomToken?.kind !== 'monster') {
+      return false;
+    }
+
+    const monster = monsterDefinitions[tile.roomToken.id];
+    const threshold =
+      monster.id === 'dragon'
+        ? config.minimumDragonWinChance
+        : config.minimumRepeatCombatWinChance;
+
+    return estimateCombatWinChance(activePlayer, monster.strength) >= threshold;
+  });
+
+  const reachableExplorationTargets = getReachableExplorationTargets(state);
+  if (
+    reachableMonsterTargets.length === 0 &&
+    reachableExplorationTargets.length === 0
+  ) {
+    return undefined;
+  }
+
+  return {
+    issueType: 'missedExplorationProgress',
+    isSatisfied: () =>
+      actionAdvancesToAnyTarget(state, action, reachableMonsterTargets) ||
+      actionUsesWitchSwapToAnyTarget(state, action, reachableMonsterTargets) ||
+      actionAdvancesToAnyExplorationTarget(action, reachableExplorationTargets),
+  };
+}
+
+function collectReachableTargets(state: GameState): ReachableTarget[] {
+  const reachablePositions = [
+    state.players[state.activePlayerIndex].position,
+    ...getReachableKnownMovePaths(state).map((entry) => entry.position),
+  ];
+
+  const uniquePositions = reachablePositions.filter(
+    (position, index, positions) =>
+      positions.findIndex((candidate) => positionsEqual(candidate, position)) === index,
+  );
+
+  return uniquePositions.map((position) => ({
+    position,
+  }));
+}
+
+function actionAdvancesToAnyTarget(
+  state: GameState,
+  action: GameAction,
+  targets: readonly ReachableTarget[],
+): boolean {
+  if (action.type !== 'movePlayer') {
+    return false;
+  }
+
+  let nextState: GameState;
+  try {
+    nextState = moveActivePlayer(state, action.target);
+  } catch {
+    return false;
+  }
+  const nextPosition = nextState.players[nextState.activePlayerIndex]?.position;
+
+  return targets.some((target) => {
+    if (nextPosition && positionsEqual(nextPosition, target.position)) {
+      return true;
+    }
+
+    return getReachableKnownMovePaths(nextState).some((entry) =>
+      positionsEqual(entry.position, target.position),
+    );
+  });
+}
+
+function actionUsesWitchSwapToAnyTarget(
+  state: GameState,
+  action: GameAction,
+  targets: readonly ReachableTarget[],
+): boolean {
+  if (action.type !== 'swapWitchPosition') {
+    return false;
+  }
+
+  const targetPlayer = state.players.find(
+    (player) => player.id === action.targetPlayerId,
+  );
+  if (!targetPlayer) {
+    return false;
+  }
+
+  return targets.some((target) => positionsEqual(target.position, targetPlayer.position));
+}
+
+function actionAdvancesToAnyExplorationTarget(
+  action: GameAction,
+  targets: ReturnType<typeof getReachableExplorationTargets>,
+): boolean {
+  if (action.type === 'declareExplorationDirection') {
+    return targets.some(
+      (target) =>
+        target.path.length === 0 && target.direction === action.direction,
     );
   }
 
-  const currentHealingDistance = distanceToNearestHealing(
-    state,
-    activePlayer.position,
-  );
-  if (currentHealingDistance === undefined) {
+  if (action.type !== 'movePlayer') {
     return false;
   }
 
-  const isCloserToHealing = (position: BoardPosition): boolean => {
-    const distance = distanceToNearestHealing(state, position);
-    return distance !== undefined && distance < currentHealingDistance;
+  return targets.some(
+    (target) =>
+      target.path[0] !== undefined &&
+      positionsEqual(target.path[0].target, action.target),
+  );
+}
+
+function isMeaningfulUpgradeItem(player: Player, item: Item): boolean {
+  if (item.type === 'key') {
+    return false;
+  }
+
+  if (item.type === 'weapon') {
+    if (player.inventory.weapons.length < 2) {
+      return true;
+    }
+
+    const weakestWeaponBonus = Math.min(
+      ...player.inventory.weapons.map((weapon) => weapon.bonus),
+    );
+    return item.bonus > weakestWeaponBonus;
+  }
+
+  if (player.inventory.spells.length < 3) {
+    return true;
+  }
+
+  const priority = item.spellKind === 'flame' ? 2 : 1;
+  const lowestPriority = Math.min(
+    ...player.inventory.spells.map((spell) => (spell.spellKind === 'flame' ? 2 : 1)),
+  );
+
+  return priority > lowestPriority;
+}
+
+function isLootRacePlausible(
+  state: GameState,
+  activePlayer: Player,
+  targetPosition: BoardPosition,
+): boolean {
+  const activeArrival = estimateArrivalWindow(state, activePlayer, targetPosition);
+  if (!activeArrival) {
+    return false;
+  }
+
+  for (const player of state.players) {
+    if (player.id === activePlayer.id) {
+      continue;
+    }
+
+    const competitorArrival = estimateArrivalWindow(
+      state,
+      player,
+      targetPosition,
+    );
+    if (
+      competitorArrival &&
+      compareArrivalWindows(competitorArrival, activeArrival) < 0
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+type ArrivalWindow = {
+  completionTurnOffset: number;
+  stepsUsedOnArrivalTurn: number;
+};
+
+function estimateArrivalWindow(
+  state: GameState,
+  player: Player,
+  target: BoardPosition,
+): ArrivalWindow | undefined {
+  const distance = shortestStrategicDistance(state, player, target);
+  if (distance === undefined) {
+    return undefined;
+  }
+
+  const turnOffsetToFirstTurn = getTurnOffsetFromActive(state, player.id);
+  const stepsPerTurn = 4;
+  const firstTurnBudget =
+    player.id === state.players[state.activePlayerIndex]?.id
+      ? state.remainingSteps
+      : stepsPerTurn;
+
+  if (distance <= firstTurnBudget) {
+    return {
+      completionTurnOffset: turnOffsetToFirstTurn,
+      stepsUsedOnArrivalTurn: distance,
+    };
+  }
+
+  const remainingDistance = distance - firstTurnBudget;
+  const additionalTurnsNeeded = Math.ceil(remainingDistance / stepsPerTurn);
+
+  return {
+    completionTurnOffset:
+      turnOffsetToFirstTurn + additionalTurnsNeeded * state.players.length,
+    stepsUsedOnArrivalTurn:
+      ((remainingDistance - 1) % stepsPerTurn) + 1,
   };
+}
 
-  const closerMoveAvailable = legalActions.some(
-    (candidate) => candidate.type === 'movePlayer' && isCloserToHealing(candidate.target),
+function getTurnOffsetFromActive(state: GameState, playerId: string): number {
+  const playerIndex = state.players.findIndex((player) => player.id === playerId);
+  if (playerIndex === -1) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return (
+    (playerIndex - state.activePlayerIndex + state.players.length) %
+    state.players.length
   );
-  if (!closerMoveAvailable) {
+}
+
+function compareArrivalWindows(left: ArrivalWindow, right: ArrivalWindow): number {
+  if (left.completionTurnOffset !== right.completionTurnOffset) {
+    return left.completionTurnOffset - right.completionTurnOffset;
+  }
+
+  return left.stepsUsedOnArrivalTurn - right.stepsUsedOnArrivalTurn;
+}
+
+function isWinningDragonWindow(
+  state: GameState,
+  activePlayer: Player,
+  config: AiHeuristicConfig,
+): boolean {
+  const dragonWinChance = estimateCombatWinChance(
+    activePlayer,
+    monsterDefinitions.dragon.strength,
+  );
+  if (dragonWinChance < config.minimumDragonWinChance) {
     return false;
   }
 
-  return action.type !== 'movePlayer' || !isCloserToHealing(action.target);
+  const projectedScore = activePlayer.treasurePoints + 1.5;
+  const highestOtherScore = Math.max(
+    0,
+    ...state.players
+      .filter((player) => player.id !== activePlayer.id)
+      .map((player) => player.treasurePoints),
+  );
+
+  return projectedScore >= highestOtherScore;
+}
+
+function shortestStrategicDistance(
+  state: GameState,
+  player: Player,
+  target: BoardPosition,
+): number | undefined {
+  const startTile = getTileAt(state.board, player.position);
+  if (!startTile) {
+    return undefined;
+  }
+
+  const teleportTiles = state.board.filter(
+    (tile) => tile.discovered && tileBlueprints[tile.blueprintId].category === 'teleport',
+  );
+  const targetKey = positionKey(target);
+  const visited = new Set([positionKey(player.position)]);
+  let frontier = [{ position: player.position, distance: 0 }];
+
+  while (frontier.length > 0) {
+    const nextFrontier: typeof frontier = [];
+
+    for (const entry of frontier) {
+      if (positionKey(entry.position) === targetKey) {
+        return entry.distance;
+      }
+
+      const originTile = getTileAt(state.board, entry.position);
+      if (!originTile) {
+        continue;
+      }
+
+      for (const direction of ['A', 'B', 'C', 'D'] as const) {
+        const nextPosition = adjacentPosition(entry.position, direction);
+        const key = positionKey(nextPosition);
+        const targetTile = getTileAt(state.board, nextPosition);
+
+        if (!targetTile || visited.has(key)) {
+          continue;
+        }
+
+        const canMoveToTarget =
+          hasActiveHeroAbility(player, 'hero_mage') ||
+          canTilesConnect(originTile, targetTile, direction);
+        if (!canMoveToTarget) {
+          continue;
+        }
+
+        visited.add(key);
+        nextFrontier.push({
+          position: nextPosition,
+          distance: entry.distance + 1,
+        });
+      }
+
+      if (tileBlueprints[originTile.blueprintId].category === 'teleport') {
+        for (const tile of teleportTiles) {
+          const key = positionKey(tile);
+          if (visited.has(key) || positionsEqual(tile, entry.position)) {
+            continue;
+          }
+
+          visited.add(key);
+          nextFrontier.push({
+            position: { boardX: tile.boardX, boardY: tile.boardY },
+            distance: entry.distance + 1,
+          });
+        }
+      }
+    }
+
+    frontier = nextFrontier;
+  }
+
+  return undefined;
+}
+
+function positionsEqual(left: BoardPosition, right: BoardPosition): boolean {
+  return left.boardX === right.boardX && left.boardY === right.boardY;
 }
 
 function isAvoidableRiskFight(
@@ -459,60 +1057,6 @@ function isAvoidableRiskFight(
       : config.minimumRepeatCombatWinChance;
 
   return winChance < threshold;
-}
-
-function isObjectiveBypass(
-  state: GameState,
-  action: GameAction,
-  legalActions: readonly GameAction[],
-  activePlayer: Player,
-): boolean {
-  const objectiveMoveExists = legalActions.some(
-    (candidate) =>
-      candidate.type === 'movePlayer' &&
-      isObjectiveTarget(state, candidate.target, activePlayer),
-  );
-  const objectiveExploreExists = legalActions.some(
-    (candidate) => candidate.type === 'declareExplorationDirection',
-  );
-
-  if (!objectiveMoveExists && !objectiveExploreExists) {
-    return false;
-  }
-
-  if (action.type === 'movePlayer') {
-    return !isObjectiveTarget(state, action.target, activePlayer);
-  }
-
-  return action.type === 'endTurn' || action.type === 'swapWitchPosition';
-}
-
-function isObjectiveTarget(
-  state: GameState,
-  position: Player['position'],
-  activePlayer: Player,
-): boolean {
-  const tile = getTileAt(state.board, position);
-  if (!tile) {
-    return false;
-  }
-
-  if (
-    tile.roomToken?.id === 'treasure_chest' &&
-    activePlayer.inventory.keyCount > 0
-  ) {
-    return true;
-  }
-
-  if (tile.roomToken?.id === 'dragon') {
-    return true;
-  }
-
-  return getDiscoveredHealingPositions(state).some(
-    (healingPosition) =>
-      healingPosition.boardX === position.boardX &&
-      healingPosition.boardY === position.boardY,
-  );
 }
 
 function isBlindSeeressChoice(
@@ -611,6 +1155,12 @@ function distanceToNearestHealing(
   );
 
   return distances.length > 0 ? Math.min(...distances) : undefined;
+}
+
+function isHealingTarget(state: GameState, position: BoardPosition): boolean {
+  return getDiscoveredHealingPositions(state).some((healingPosition) =>
+    positionsEqual(healingPosition, position),
+  );
 }
 
 function needsHealing(player: Player, config: AiHeuristicConfig): boolean {

@@ -48,8 +48,14 @@ describe('simulation report', () => {
     expect(html).toContain('Problems To Fix');
     expect(html).toContain('Partie terminiert nicht');
     expect(html).toContain('Seherin waehlt Token blind');
+    expect(html).not.toContain('objectiveBypass');
+    expect(html).toContain('Strategic Priority');
+    expect(html).toContain('Expected Objective');
+    expect(html).toContain('Expected Alternative');
+    expect(html).toContain('Top-Prioritaet');
     expect(html).toContain('s2#1');
     expect(html).toContain('Last Phase Before Abort');
+    expect(html).not.toContain('Â·');
   });
 
   it('renders deterministic html for identical analysis input', () => {

@@ -5,7 +5,7 @@ import { createNewGame } from '../engine/setup/createGame';
 import { aiHeuristicConfig } from './config';
 import { detectSimulationIssues } from './simulationDiagnostics';
 
-describe('detectSimulationIssues healingMisses', () => {
+describe('detectSimulationIssues missedHealingPriority', () => {
   function criticalState(overrides: Partial<GameState> = {}): GameState {
     const base = createNewGame({
       humanHeroId: 'hero_mage',
@@ -34,7 +34,7 @@ describe('detectSimulationIssues healingMisses', () => {
       action,
       legalActions,
       aiHeuristicConfig,
-    ).includes('healingMisses');
+    ).includes('missedHealingPriority');
   }
 
   it('flags a miss when an available self-heal spell is not cast', () => {
@@ -245,5 +245,304 @@ describe('detectSimulationIssues healingMisses', () => {
     const legalActions: GameAction[] = [{ type: 'endTurn' }];
 
     expect(detect(state, { type: 'endTurn' }, legalActions)).toBe(false);
+  });
+});
+
+describe('detectSimulationIssues priority goals', () => {
+  it('flags missedChestWithKey when a reachable chest is ignored despite a key', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'diagnostics-chest-priority',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'turn_start',
+      activePlayerIndex: 0,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              inventory: { ...player.inventory, keyCount: 1 },
+            }
+          : player,
+      ),
+      board: [
+        {
+          ...base.board[0],
+        },
+        {
+          tileInstanceId: 'tile-chest',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'treasure_chest', kind: 'chest' },
+        },
+      ],
+    };
+    const legalActions: GameAction[] = [
+      { type: 'movePlayer', target: { boardX: 1, boardY: 0 } },
+      { type: 'endTurn' },
+    ];
+
+    expect(
+      detectSimulationIssues(state, { type: 'endTurn' }, legalActions, aiHeuristicConfig),
+    ).toContain('missedChestWithKey');
+  });
+
+  it('does not flag missedChestWithKey when one of multiple equally valid first steps is chosen', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'diagnostics-chest-alternate-step',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'turn_start',
+      activePlayerIndex: 0,
+      remainingSteps: 2,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              inventory: { ...player.inventory, keyCount: 1 },
+            }
+          : player,
+      ),
+      board: [
+        {
+          ...base.board[0],
+        },
+        {
+          tileInstanceId: 'tile-east',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-south',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 0,
+          boardY: 1,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-chest',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 1,
+          boardY: 1,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'treasure_chest', kind: 'chest' },
+        },
+      ],
+    };
+    const legalActions: GameAction[] = [
+      { type: 'movePlayer', target: { boardX: 1, boardY: 0 } },
+      { type: 'movePlayer', target: { boardX: 0, boardY: 1 } },
+      { type: 'endTurn' },
+    ];
+
+    expect(
+      detectSimulationIssues(
+        state,
+        { type: 'movePlayer', target: { boardX: 0, boardY: 1 } },
+        legalActions,
+        aiHeuristicConfig,
+      ),
+    ).not.toContain('missedChestWithKey');
+  });
+
+  it('flags missedUpgradeLoot only when the item improves the active hero', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'diagnostics-upgrade-loot',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'turn_start',
+      activePlayerIndex: 0,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              inventory: {
+                ...player.inventory,
+                weapons: [{ type: 'weapon', bonus: 1 }, { type: 'weapon', bonus: 1 }],
+              },
+            }
+          : player,
+      ),
+      board: [
+        {
+          ...base.board[0],
+        },
+        {
+          tileInstanceId: 'tile-loot',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [{ type: 'weapon', bonus: 2 }],
+        },
+      ],
+    };
+    const legalActions: GameAction[] = [
+      { type: 'movePlayer', target: { boardX: 1, boardY: 0 } },
+      { type: 'endTurn' },
+    ];
+
+    expect(
+      detectSimulationIssues(state, { type: 'endTurn' }, legalActions, aiHeuristicConfig),
+    ).toContain('missedUpgradeLoot');
+  });
+
+  it('treats upgrade loot as still contestable when the active hero can arrive this turn before a closer rival acts', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 2,
+      seed: 'diagnostics-loot-turn-order',
+      selectedAiHeroIds: ['hero_blade', 'hero_rogue'],
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'turn_start',
+      activePlayerIndex: 0,
+      remainingSteps: 3,
+      players: base.players.map((player, index) => {
+        if (index === 0) {
+          return {
+            ...player,
+            inventory: {
+              ...player.inventory,
+              weapons: [{ type: 'weapon', bonus: 1 }, { type: 'weapon', bonus: 1 }],
+            },
+            position: { boardX: 0, boardY: 0 },
+          };
+        }
+
+        if (index === 1) {
+          return {
+            ...player,
+            position: { boardX: 2, boardY: 1 },
+          };
+        }
+
+        return player;
+      }),
+      board: [
+        {
+          ...base.board[0],
+          boardX: 0,
+          boardY: 0,
+        },
+        {
+          tileInstanceId: 'tile-1',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-2',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 2,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-loot',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 3,
+          boardY: 0,
+          discovered: true,
+          looseItems: [{ type: 'weapon', bonus: 2 }],
+        },
+        {
+          tileInstanceId: 'tile-rival',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 2,
+          boardY: 1,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    };
+    const legalActions: GameAction[] = [
+      { type: 'movePlayer', target: { boardX: 1, boardY: 0 } },
+      { type: 'endTurn' },
+    ];
+
+    expect(
+      detectSimulationIssues(state, { type: 'endTurn' }, legalActions, aiHeuristicConfig),
+    ).toContain('missedUpgradeLoot');
+  });
+
+  it('flags missedWinningDragonWindow only when the dragon would secure the score', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_blade',
+      aiCount: 1,
+      seed: 'diagnostics-dragon-window',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'optional_monster_combat',
+      activePlayerIndex: 0,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_blade',
+              treasurePoints: 2,
+              inventory: {
+                ...player.inventory,
+                weapons: [{ type: 'weapon', bonus: 3 }, { type: 'weapon', bonus: 3 }],
+              },
+            }
+          : {
+              ...player,
+              treasurePoints: 3,
+            },
+      ),
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'dragon',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: -1, boardY: 0 },
+      },
+    };
+    const legalActions: GameAction[] = [
+      { type: 'startOptionalCombat' },
+      { type: 'endTurn' },
+    ];
+
+    expect(
+      detectSimulationIssues(
+        state,
+        { type: 'endTurn' },
+        legalActions,
+        {
+          ...aiHeuristicConfig,
+          minimumDragonWinChance: 0.15,
+        },
+      ),
+    ).toContain('missedWinningDragonWindow');
   });
 });

@@ -318,6 +318,50 @@ describe('heuristic AI', () => {
     );
   });
 
+  it('prefers direct exploration over a preparatory move when the explore objective is already legal', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-direct-explore-priority',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'turn_start',
+      activePlayerIndex: 0,
+      remainingSteps: 4,
+      board: [
+        {
+          ...base.board[0],
+          blueprintId: 'start_cross_healing',
+        },
+        {
+          tileInstanceId: 'tile-east',
+          blueprintId: 'tunnel_straight',
+          rotation: 90,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    };
+
+    const legalActions = getLegalAiActions(state);
+
+    expect(legalActions).toContainEqual({
+      type: 'declareExplorationDirection',
+      direction: 'A',
+    });
+    expect(legalActions).toContainEqual({
+      type: 'movePlayer',
+      target: { boardX: 1, boardY: 0 },
+    });
+    expect(chooseHeuristicAiAction(state, legalActions)).toEqual({
+      type: 'declareExplorationDirection',
+      direction: 'A',
+    });
+  });
+
   it('ends the turn when healing is needed but no movement steps remain', () => {
     const base = createNewGame({
       humanHeroId: 'hero_mage',
@@ -362,6 +406,185 @@ describe('heuristic AI', () => {
     };
 
     expect(chooseHeuristicAiAction(state)).toEqual({ type: 'endTurn' });
+  });
+
+  it('prioritizes healing over opening a reachable chest', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-heal-before-chest',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'turn_start',
+      activePlayerIndex: 0,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              hp: 2,
+              isCursed: true,
+              inventory: {
+                ...player.inventory,
+                keyCount: 1,
+                spells: [{ type: 'spell', spellKind: 'healing' }],
+              },
+            }
+          : player,
+      ),
+      board: [
+        {
+          ...base.board[0],
+          roomToken: { id: 'treasure_chest', kind: 'chest' },
+        },
+      ],
+    };
+
+    expect(chooseHeuristicAiAction(state)).toEqual({
+      type: 'useHealingSpell',
+      targetPlayerId: state.players[0].id,
+      healingPosition: { boardX: 0, boardY: 0 },
+    });
+  });
+
+  it('prioritizes a known chest with key over a known monster path', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-chest-before-monster',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'turn_start',
+      activePlayerIndex: 0,
+      remainingSteps: 1,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              inventory: { ...player.inventory, keyCount: 1 },
+            }
+          : player,
+      ),
+      board: [
+        {
+          ...base.board[0],
+        },
+        {
+          tileInstanceId: 'tile-chest',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'treasure_chest', kind: 'chest' },
+        },
+        {
+          tileInstanceId: 'tile-monster',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 0,
+          boardY: -1,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'kitchen_rat', kind: 'monster' },
+        },
+      ],
+    };
+
+    expect(chooseHeuristicAiAction(state)).toEqual({
+      type: 'movePlayer',
+      target: { boardX: 1, boardY: 0 },
+    });
+  });
+
+  it('does not prioritize the dragon when the win would not secure the score', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_blade',
+      aiCount: 1,
+      seed: 'ai-dragon-no-score-lock',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'optional_monster_combat',
+      activePlayerIndex: 0,
+      tileStack: [],
+      tokenBag: [],
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_blade',
+              treasurePoints: 2,
+              inventory: {
+                ...player.inventory,
+                weapons: [{ type: 'weapon', bonus: 3 }, { type: 'weapon', bonus: 3 }],
+              },
+            }
+          : {
+              ...player,
+              treasurePoints: 5,
+            },
+      ),
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'dragon',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+      },
+    };
+
+    expect(chooseHeuristicAiAction(state)).toEqual({ type: 'endTurn' });
+  });
+
+  it('uses a portal move to pursue a known chest objective', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-portal-chest',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'await_move',
+      activePlayerIndex: 0,
+      remainingSteps: 2,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              inventory: { ...player.inventory, keyCount: 1 },
+              position: { boardX: 0, boardY: 0 },
+            }
+          : player,
+      ),
+      board: [
+        {
+          tileInstanceId: 'tile-portal-origin',
+          blueprintId: 'teleport_straight',
+          rotation: 90,
+          boardX: 0,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-portal-target',
+          blueprintId: 'teleport_straight',
+          rotation: 90,
+          boardX: 2,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'treasure_chest', kind: 'chest' },
+        },
+      ],
+    };
+
+    expect(chooseHeuristicAiAction(state)).toEqual({
+      type: 'movePlayer',
+      target: { boardX: 2, boardY: 0 },
+    });
   });
 
   it('prefers a non-dragon objective when the dragon win chance is below the combat threshold', () => {

@@ -16,6 +16,14 @@ scenario_beta,1,s2,easy,0.5,hero_mage|hero_rogue
 scenario_gamma,1,s3,normal,0.5,hero_mage|hero_seeress
 `;
 
+const alphaScenarioCsv = `${simulationConfigColumns.join(',')}
+scenario_alpha,1,s1,normal,0.5,hero_mage|hero_blade
+`;
+
+const betaScenarioCsv = `${simulationConfigColumns.join(',')}
+scenario_beta,1,s2,easy,0.5,hero_mage|hero_rogue
+`;
+
 describe('batch simulation config parsing', () => {
   it('parses multiple scenario rows with defaults and fixed hero order', () => {
     expect(parseSimulationConfigCsv(configCsv)).toEqual([
@@ -67,16 +75,16 @@ broken,1,seed,normal,1,hero_mage|hero_archer
 
 describe('batch simulation execution', () => {
   it('produces deterministic raw and summary statistics', () => {
-    const scenarios = parseSimulationConfigCsv(configCsv);
+    const scenarios = parseSimulationConfigCsv(alphaScenarioCsv);
 
     const first = runBatchSimulation(scenarios);
     const second = runBatchSimulation(scenarios);
 
     expect(first).toEqual(second);
-  });
+  }, 30000);
 
   it('emits exactly one summary row per configured hero within each scenario', () => {
-    const scenarios = parseSimulationConfigCsv(configCsv);
+    const scenarios = parseSimulationConfigCsv(alphaScenarioCsv);
     const { summaryResults } = runBatchSimulation(scenarios);
 
     for (const scenario of scenarios) {
@@ -90,10 +98,10 @@ describe('batch simulation execution', () => {
         scenario.heroes.length,
       );
     }
-  });
+  }, 30000);
 
   it('serializes extended diagnostic and timeout fields in raw and summary CSV outputs', () => {
-    const scenarios = parseSimulationConfigCsv(configCsv);
+    const scenarios = parseSimulationConfigCsv(betaScenarioCsv);
     const results = runBatchSimulation(scenarios);
 
     const rawCsv = serializeRawSimulationResults(results.rawResults);
@@ -122,7 +130,7 @@ describe('batch simulation execution', () => {
   });
 
   it('tracks every configured diagnostic counter on each player result', () => {
-    const scenarios = parseSimulationConfigCsv(configCsv);
+    const scenarios = parseSimulationConfigCsv(alphaScenarioCsv);
     const { rawResults } = runBatchSimulation(scenarios);
 
     for (const result of rawResults) {

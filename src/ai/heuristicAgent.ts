@@ -1,9 +1,11 @@
 import { monsterDefinitions } from '../data/monsters';
+import { tileBlueprints } from '../data/tiles';
 import { getTileAt } from '../engine/core/board';
 import type {
   BoardPosition,
   GameAction,
   GameState,
+  Item,
   Player,
   Rotation,
 } from '../engine/core/types';
@@ -19,6 +21,10 @@ import {
   canExit,
   canTilesConnect,
 } from '../engine/movement/topology';
+import {
+  getReachableExplorationTargets,
+  getReachableKnownMovePaths,
+} from '../engine/movement/reachable';
 import { getDiscoveredHealingPositions } from '../engine/rules/abilities';
 import { hasActiveHeroAbility } from '../engine/rules/abilities';
 import { isHealingPosition } from '../engine/rules/healing';
@@ -36,6 +42,23 @@ export interface AiDecisionContext {
 export interface AiAgent {
   chooseAction(ctx: AiDecisionContext): GameAction;
 }
+
+type StrategicObjectiveType =
+  | 'heal'
+  | 'chest'
+  | 'upgradeLoot'
+  | 'winningDragon'
+  | 'monster'
+  | 'explore';
+
+type StrategicObjective = {
+  type: StrategicObjectiveType;
+  targetPositions?: BoardPosition[];
+  explorationTargets?: ReturnType<typeof getReachableExplorationTargets>;
+};
+
+const strategicDistanceCache = new WeakMap<GameState, Map<string, number | null>>();
+const arrivalWindowCache = new WeakMap<GameState, Map<string, ArrivalWindow | null>>();
 
 export const heuristicAiAgent: AiAgent = {
   chooseAction(ctx) {
@@ -76,26 +99,7 @@ export function chooseHeuristicAiAction(
     return requireAction(legalActions, 'endTurn');
   }
 
-  const openChestAction = legalActions.find(
-    (action) => action.type === 'openChest',
-  );
-
-  if (openChestAction) {
-    return openChestAction;
-  }
-
-  const healingSpellAction = chooseHealingSpellAction(
-    state,
-    legalActions,
-    config,
-  );
-
-  if (healingSpellAction) {
-    return healingSpellAction;
-  }
-
   if (
-    state.phase === 'optional_monster_combat' ||
     state.phase === 'combat' ||
     state.phase === 'optional_post_combat' ||
     state.phase === 'combat_curse_target' ||
@@ -134,6 +138,22 @@ export function chooseHeuristicAiAction(
     return groundLootAction;
   }
 
+  const strategicObjective = selectStrategicObjective(
+    state,
+    legalActions,
+    config,
+  );
+  const objectiveAction = chooseActionForObjective(
+    state,
+    legalActions,
+    strategicObjective,
+    config,
+  );
+
+  if (objectiveAction) {
+    return objectiveAction;
+  }
+
   if (!isDesperate) {
     const stalledEndTurnAction = chooseStalledEndTurnAction(
       state,
@@ -156,20 +176,11 @@ export function chooseHeuristicAiAction(
     }
   }
 
-  const forcedDragonEndgameAction = chooseForcedDragonEndgameAction(
-    state,
-    legalActions,
-    config,
-  );
-
-  if (forcedDragonEndgameAction) {
-    return forcedDragonEndgameAction;
-  }
-
   const movementAction = chooseMovementAction(
     state,
     legalActions,
     config,
+    strategicObjective,
     isDesperate,
   );
 
@@ -312,48 +323,6 @@ function hasObjectiveProgressMove(
     });
 }
 
-function chooseForcedDragonEndgameAction(
-  state: GameState,
-  legalActions: GameAction[],
-  config: AiHeuristicConfig,
-): GameAction | undefined {
-  const activePlayer = state.players[state.activePlayerIndex];
-
-  if (!shouldForceDragonEndgame(state, activePlayer, config)) {
-    return undefined;
-  }
-
-  const dragonTile = state.board.find((tile) => tile.roomToken?.id === 'dragon');
-
-  if (!dragonTile) {
-    return undefined;
-  }
-
-  const moveActions = legalActions.filter(
-    (action) => action.type === 'movePlayer',
-  );
-  const directDragonMove = moveActions.find(
-    (action) =>
-      action.target.boardX === dragonTile.boardX &&
-      action.target.boardY === dragonTile.boardY,
-  );
-
-  if (directDragonMove) {
-    return directDragonMove;
-  }
-
-  return moveActions
-    .slice()
-    .sort((left, right) => {
-      const leftDistance =
-        shortestKnownPathDistance(state, left.target, dragonTile) ?? Number.POSITIVE_INFINITY;
-      const rightDistance =
-        shortestKnownPathDistance(state, right.target, dragonTile) ?? Number.POSITIVE_INFINITY;
-
-      return leftDistance - rightDistance || actionOrder(left) - actionOrder(right);
-    })[0];
-}
-
 function chooseCombatAction(
   state: GameState,
   legalActions: GameAction[],
@@ -424,7 +393,12 @@ function chooseCombatAction(
       return startCombatAction;
     }
 
-    const movementAction = chooseMovementAction(state, legalActions, config);
+    const movementAction = chooseMovementAction(
+      state,
+      legalActions,
+      config,
+      undefined,
+    );
 
     if (movementAction) {
       return movementAction;
@@ -621,7 +595,26 @@ function chooseCurseTargetPlayerId(
 
   return state.players
     .filter((player) => player.id !== activePlayer.id)
-    .sort((left, right) => right.treasurePoints - left.treasurePoints)[0]?.id;
+    .sort((left, right) => {
+      if (right.treasurePoints !== left.treasurePoints) {
+        return right.treasurePoints - left.treasurePoints;
+      }
+
+      const rightDragonChance = estimateCombatWinChance(
+        right,
+        monsterDefinitions.dragon.strength,
+      );
+      const leftDragonChance = estimateCombatWinChance(
+        left,
+        monsterDefinitions.dragon.strength,
+      );
+
+      if (rightDragonChance !== leftDragonChance) {
+        return rightDragonChance - leftDragonChance;
+      }
+
+      return totalCombatBonus(right) - totalCombatBonus(left);
+    })[0]?.id;
 }
 
 export function estimateCombatWinChance(
@@ -691,6 +684,7 @@ function chooseMovementAction(
   state: GameState,
   legalActions: GameAction[],
   config: AiHeuristicConfig,
+  objective: StrategicObjective | undefined,
   isDesperate = false,
 ): GameAction | undefined {
   const movementActions = legalActions.filter(
@@ -704,14 +698,12 @@ function chooseMovementAction(
     return undefined;
   }
 
-  const activePlayer = state.players[state.activePlayerIndex];
-  const objectiveTiles = getObjectiveTiles(state, activePlayer, config);
   const sortedActions = movementActions
     .slice()
     .sort(
       (left, right) =>
-        scoreMovementAction(state, right, config, objectiveTiles, isDesperate) -
-          scoreMovementAction(state, left, config, objectiveTiles, isDesperate) ||
+        scoreMovementAction(state, right, config, objective, isDesperate) -
+          scoreMovementAction(state, left, config, objective, isDesperate) ||
         actionOrder(left) - actionOrder(right),
     );
   const bestAction = sortedActions[0];
@@ -858,18 +850,487 @@ function chooseLootAction(
   return requireAction(legalActions, 'leaveLoot');
 }
 
+function selectStrategicObjective(
+  state: GameState,
+  legalActions: GameAction[],
+  config: AiHeuristicConfig,
+): StrategicObjective | undefined {
+  const activePlayer = state.players[state.activePlayerIndex];
+  const fullyExplored = state.tileStack.length === 0 && state.tokenBag.length === 0;
+
+  return (
+    createHealingObjective(state, legalActions, activePlayer, config) ??
+    createChestObjective(state, legalActions, activePlayer) ??
+    createUpgradeLootObjective(state, legalActions, activePlayer) ??
+    createWinningDragonObjective(state, legalActions, activePlayer, config) ??
+    (fullyExplored
+      ? undefined
+      : createMonsterObjective(state, legalActions, activePlayer, config)) ??
+    (fullyExplored
+      ? undefined
+      : createExplorationObjective(state))
+  );
+}
+
+function chooseActionForObjective(
+  state: GameState,
+  legalActions: GameAction[],
+  objective: StrategicObjective | undefined,
+  config: AiHeuristicConfig,
+): GameAction | undefined {
+  if (!objective) {
+    return undefined;
+  }
+
+  const activePlayer = state.players[state.activePlayerIndex];
+
+  switch (objective.type) {
+    case 'heal': {
+      const healingSpellAction = chooseHealingSpellAction(
+        state,
+        legalActions,
+        config,
+      );
+      if (healingSpellAction) {
+        return healingSpellAction;
+      }
+
+      if (
+        isHealingPosition(state, activePlayer) &&
+        canReceiveHealingFromEndTurn(state)
+      ) {
+        return legalActions.find((action) => action.type === 'endTurn');
+      }
+
+      return chooseObjectiveSwapAction(state, legalActions, objective);
+    }
+    case 'chest':
+      return (
+        legalActions.find((action) => action.type === 'openChest') ??
+        chooseObjectiveSwapAction(state, legalActions, objective)
+      );
+    case 'upgradeLoot':
+      return (
+        chooseGroundLootAction(state, legalActions) ??
+        chooseObjectiveSwapAction(state, legalActions, objective)
+      );
+    case 'winningDragon':
+      if (
+        state.phase === 'optional_monster_combat' &&
+        state.combat?.monsterId === 'dragon'
+      ) {
+        return legalActions.find((action) => action.type === 'startOptionalCombat');
+      }
+
+      return chooseObjectiveSwapAction(state, legalActions, objective);
+    case 'monster':
+      if (
+        state.phase === 'optional_monster_combat' &&
+        state.combat &&
+        state.combat.monsterId !== 'dragon'
+      ) {
+        return legalActions.find((action) => action.type === 'startOptionalCombat');
+      }
+
+      return chooseObjectiveSwapAction(state, legalActions, objective);
+    case 'explore':
+      return undefined;
+  }
+}
+
+function createHealingObjective(
+  state: GameState,
+  legalActions: GameAction[],
+  activePlayer: Player,
+  config: AiHeuristicConfig,
+): StrategicObjective | undefined {
+  if (!needsHealing(activePlayer, config)) {
+    return undefined;
+  }
+
+  const healingSpellAction = chooseHealingSpellAction(state, legalActions, config);
+  if (healingSpellAction) {
+    return {
+      type: 'heal',
+      targetPositions: [activePlayer.position],
+    };
+  }
+
+  if (isHealingPosition(state, activePlayer) && canReceiveHealingFromEndTurn(state)) {
+    return {
+      type: 'heal',
+      targetPositions: [activePlayer.position],
+    };
+  }
+
+  const reachableHealingTargets = collectReachableKnownPositions(state).filter(
+    (position) => isHealingTarget(state, position),
+  );
+
+  return reachableHealingTargets.length > 0
+    ? {
+        type: 'heal',
+        targetPositions: reachableHealingTargets,
+      }
+    : undefined;
+}
+
+function createChestObjective(
+  state: GameState,
+  legalActions: GameAction[],
+  activePlayer: Player,
+): StrategicObjective | undefined {
+  if (activePlayer.inventory.keyCount === 0) {
+    return undefined;
+  }
+
+  if (legalActions.some((action) => action.type === 'openChest')) {
+    return {
+      type: 'chest',
+      targetPositions: [activePlayer.position],
+    };
+  }
+
+  const reachableChestTargets = collectReachableKnownPositions(state).filter((position) => {
+    const tile = getTileAt(state.board, position);
+    return tile?.roomToken?.id === 'treasure_chest';
+  });
+
+  return reachableChestTargets.length > 0
+    ? {
+        type: 'chest',
+        targetPositions: reachableChestTargets,
+      }
+    : undefined;
+}
+
+function createUpgradeLootObjective(
+  state: GameState,
+  legalActions: GameAction[],
+  activePlayer: Player,
+): StrategicObjective | undefined {
+  if (chooseGroundLootAction(state, legalActions)) {
+    return {
+      type: 'upgradeLoot',
+      targetPositions: [activePlayer.position],
+    };
+  }
+
+  const reachableLootTargets = collectReachableKnownPositions(state).filter((position) => {
+    const tile = getTileAt(state.board, position);
+    const item = tile?.looseItems[0];
+
+    return (
+      !!item &&
+      isMeaningfulUpgradeItem(activePlayer, item) &&
+      isLootRacePlausible(state, activePlayer, position)
+    );
+  });
+
+  return reachableLootTargets.length > 0
+    ? {
+        type: 'upgradeLoot',
+        targetPositions: reachableLootTargets,
+      }
+    : undefined;
+}
+
+function createWinningDragonObjective(
+  state: GameState,
+  legalActions: GameAction[],
+  activePlayer: Player,
+  config: AiHeuristicConfig,
+): StrategicObjective | undefined {
+  const forcedDragonEndgame = shouldForceDragonEndgame(state, activePlayer, config);
+  if (!isWinningDragonWindow(state, activePlayer, config) && !forcedDragonEndgame) {
+    return undefined;
+  }
+
+  if (
+    state.phase === 'optional_monster_combat' &&
+    state.combat?.monsterId === 'dragon' &&
+    legalActions.some((action) => action.type === 'startOptionalCombat')
+  ) {
+    return {
+      type: 'winningDragon',
+      targetPositions: [activePlayer.position],
+    };
+  }
+
+  const reachableDragonTargets = collectReachableKnownPositions(state).filter((position) => {
+    const tile = getTileAt(state.board, position);
+    return tile?.roomToken?.id === 'dragon';
+  });
+
+  return reachableDragonTargets.length > 0
+    ? {
+        type: 'winningDragon',
+        targetPositions: reachableDragonTargets,
+      }
+    : undefined;
+}
+
+function createMonsterObjective(
+  state: GameState,
+  legalActions: GameAction[],
+  activePlayer: Player,
+  config: AiHeuristicConfig,
+): StrategicObjective | undefined {
+  if (
+    state.phase === 'optional_monster_combat' &&
+    state.combat?.monsterId !== 'dragon' &&
+    legalActions.some((action) => action.type === 'startOptionalCombat')
+  ) {
+    const monsterId = state.combat?.monsterId;
+    if (!monsterId) {
+      return undefined;
+    }
+
+    const monster = monsterDefinitions[monsterId];
+    const winChance = estimateCombatWinChance(activePlayer, monster.strength);
+
+    if (winChance >= config.minimumRepeatCombatWinChance) {
+      return {
+        type: 'monster',
+        targetPositions: [activePlayer.position],
+      };
+    }
+  }
+
+  const reachableMonsterTargets = collectReachableKnownPositions(state).filter((position) => {
+    const tile = getTileAt(state.board, position);
+    if (tile?.roomToken?.kind !== 'monster' || tile.roomToken.id === 'dragon') {
+      return false;
+    }
+
+    const monster = monsterDefinitions[tile.roomToken.id];
+    const winChance = estimateCombatWinChance(activePlayer, monster.strength);
+
+    return winChance >= config.minimumRepeatCombatWinChance;
+  });
+
+  return reachableMonsterTargets.length > 0
+    ? {
+        type: 'monster',
+        targetPositions: reachableMonsterTargets,
+      }
+    : undefined;
+}
+
+function createExplorationObjective(
+  state: GameState,
+): StrategicObjective | undefined {
+  const explorationTargets = getReachableExplorationTargets(state);
+
+  return explorationTargets.length > 0
+    ? {
+        type: 'explore',
+        explorationTargets,
+      }
+    : undefined;
+}
+
+function chooseObjectiveSwapAction(
+  state: GameState,
+  legalActions: GameAction[],
+  objective: StrategicObjective,
+): GameAction | undefined {
+  if (!objective.targetPositions) {
+    return undefined;
+  }
+
+  const swapActions = legalActions.filter(
+    (action) => action.type === 'swapWitchPosition',
+  );
+
+  return swapActions.find((action) => {
+    const targetPosition = getActionTargetPosition(state, action);
+
+    return (
+      !!targetPosition &&
+      objective.targetPositions!.some((position) =>
+        positionsEqual(position, targetPosition),
+      )
+    );
+  });
+}
+
+function isMeaningfulUpgradeItem(player: Player, item: Item): boolean {
+  if (item.type === 'key') {
+    return false;
+  }
+
+  if (item.type === 'weapon') {
+    if (player.inventory.weapons.length < 2) {
+      return true;
+    }
+
+    const weakestWeaponBonus = Math.min(
+      ...player.inventory.weapons.map((weapon) => weapon.bonus),
+    );
+
+    return item.bonus > weakestWeaponBonus;
+  }
+
+  if (player.inventory.spells.length < 3) {
+    return true;
+  }
+
+  const priority = item.spellKind === 'flame' ? 2 : 1;
+  const lowestPriority = Math.min(
+    ...player.inventory.spells.map((spell) => (spell.spellKind === 'flame' ? 2 : 1)),
+  );
+
+  return priority > lowestPriority;
+}
+
+function isLootRacePlausible(
+  state: GameState,
+  activePlayer: Player,
+  targetPosition: BoardPosition,
+): boolean {
+  const activeArrival = estimateArrivalWindow(state, activePlayer, targetPosition);
+  if (!activeArrival) {
+    return false;
+  }
+
+  for (const player of state.players) {
+    if (player.id === activePlayer.id) {
+      continue;
+    }
+
+    const competitorArrival = estimateArrivalWindow(state, player, targetPosition);
+    if (
+      competitorArrival &&
+      compareArrivalWindows(competitorArrival, activeArrival) < 0
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+type ArrivalWindow = {
+  completionTurnOffset: number;
+  stepsUsedOnArrivalTurn: number;
+};
+
+function estimateArrivalWindow(
+  state: GameState,
+  player: Player,
+  target: BoardPosition,
+): ArrivalWindow | undefined {
+  const cacheKey = `${player.id}|${positionKey(target)}`;
+  const cachedArrivalWindow = arrivalWindowCache.get(state)?.get(cacheKey);
+  if (cachedArrivalWindow !== undefined) {
+    return cachedArrivalWindow ?? undefined;
+  }
+
+  const distance = shortestStrategicDistance(state, player, target);
+  if (distance === undefined) {
+    getOrCreateArrivalWindowCache(state).set(cacheKey, null);
+    return undefined;
+  }
+
+  const turnOffsetToFirstTurn = getTurnOffsetFromActive(state, player.id);
+  const stepsPerTurn = 4;
+  const firstTurnBudget =
+    player.id === state.players[state.activePlayerIndex]?.id
+      ? state.remainingSteps
+      : stepsPerTurn;
+
+  if (distance <= firstTurnBudget) {
+    const arrivalWindow = {
+      completionTurnOffset: turnOffsetToFirstTurn,
+      stepsUsedOnArrivalTurn: distance,
+    };
+    getOrCreateArrivalWindowCache(state).set(cacheKey, arrivalWindow);
+
+    return arrivalWindow;
+  }
+
+  const remainingDistance = distance - firstTurnBudget;
+  const additionalTurnsNeeded = Math.ceil(remainingDistance / stepsPerTurn);
+
+  const arrivalWindow = {
+    completionTurnOffset:
+      turnOffsetToFirstTurn + additionalTurnsNeeded * state.players.length,
+    stepsUsedOnArrivalTurn:
+      ((remainingDistance - 1) % stepsPerTurn) + 1,
+  };
+  getOrCreateArrivalWindowCache(state).set(cacheKey, arrivalWindow);
+
+  return arrivalWindow;
+}
+
+function getTurnOffsetFromActive(state: GameState, playerId: string): number {
+  const playerIndex = state.players.findIndex((player) => player.id === playerId);
+  if (playerIndex === -1) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return (
+    (playerIndex - state.activePlayerIndex + state.players.length) %
+    state.players.length
+  );
+}
+
+function compareArrivalWindows(left: ArrivalWindow, right: ArrivalWindow): number {
+  if (left.completionTurnOffset !== right.completionTurnOffset) {
+    return left.completionTurnOffset - right.completionTurnOffset;
+  }
+
+  return left.stepsUsedOnArrivalTurn - right.stepsUsedOnArrivalTurn;
+}
+
+function isWinningDragonWindow(
+  state: GameState,
+  activePlayer: Player,
+  config: AiHeuristicConfig,
+): boolean {
+  const dragonWinChance = estimateCombatWinChance(
+    activePlayer,
+    monsterDefinitions.dragon.strength,
+  );
+  if (dragonWinChance < config.minimumDragonWinChance) {
+    return false;
+  }
+
+  const projectedScore = activePlayer.treasurePoints + 1.5;
+  const highestOtherScore = Math.max(
+    0,
+    ...state.players
+      .filter((player) => player.id !== activePlayer.id)
+      .map((player) => player.treasurePoints),
+  );
+
+  return projectedScore >= highestOtherScore;
+}
+
 function scoreMovementAction(
   state: GameState,
   action: GameAction,
   config: AiHeuristicConfig,
-  objectiveTiles: GameState['board'],
+  objective: StrategicObjective | undefined,
   isDesperate: boolean,
 ): number {
+  const objectiveScore = scoreStrategicObjectiveAction(
+    state,
+    action,
+    objective,
+    config,
+  );
+
+  if (objectiveScore === Number.NEGATIVE_INFINITY) {
+    return objectiveScore;
+  }
+
   const activePlayer = state.players[state.activePlayerIndex];
   const targetPosition = getActionTargetPosition(state, action);
 
   if (!targetPosition) {
-    return 0;
+    return objectiveScore;
   }
 
   const healingNeeded = needsHealing(activePlayer, config) && !isDesperate;
@@ -882,10 +1343,6 @@ function scoreMovementAction(
     }
   }
 
-  if (action.type === 'declareExplorationDirection') {
-    return config.exploreTileBonus;
-  }
-
   const targetTile = getTileAt(state.board, targetPosition);
   const currentFrontierDistance = distanceToNearestFrontier(
     state,
@@ -894,18 +1351,6 @@ function scoreMovementAction(
   const targetFrontierDistance = distanceToNearestFrontier(
     state,
     targetPosition,
-  );
-  const currentObjectiveDistance = distanceToNearestObjective(
-    state,
-    activePlayer.position,
-    objectiveTiles,
-    config,
-  );
-  const targetObjectiveDistance = distanceToNearestObjective(
-    state,
-    targetPosition,
-    objectiveTiles,
-    config,
   );
   let score = 0;
 
@@ -955,20 +1400,6 @@ function scoreMovementAction(
   }
 
   if (
-    currentObjectiveDistance !== undefined &&
-    targetObjectiveDistance !== undefined
-  ) {
-    if (targetObjectiveDistance < currentObjectiveDistance) {
-      score +=
-        config.objectiveProgressBonus +
-        currentObjectiveDistance -
-        targetObjectiveDistance;
-    } else if (targetObjectiveDistance > currentObjectiveDistance) {
-      score -= 1;
-    }
-  }
-
-  if (
     state.lastMoveFrom &&
     targetPosition.boardX === state.lastMoveFrom.boardX &&
     targetPosition.boardY === state.lastMoveFrom.boardY
@@ -976,7 +1407,116 @@ function scoreMovementAction(
     score += config.backtrackPenalty;
   }
 
-  return score;
+  return objectiveScore * 100 + score;
+}
+
+function scoreStrategicObjectiveAction(
+  state: GameState,
+  action: GameAction,
+  objective: StrategicObjective | undefined,
+  config: AiHeuristicConfig,
+): number {
+  if (!objective) {
+    return 0;
+  }
+
+  switch (objective.type) {
+    case 'heal':
+    case 'chest':
+    case 'upgradeLoot':
+    case 'winningDragon':
+    case 'monster':
+      return scorePositionObjectiveAction(state, action, objective, config);
+    case 'explore':
+      return scoreExplorationObjectiveAction(action, objective);
+  }
+}
+
+function scorePositionObjectiveAction(
+  state: GameState,
+  action: GameAction,
+  objective: StrategicObjective,
+  config: AiHeuristicConfig,
+): number {
+  const activePlayer = state.players[state.activePlayerIndex];
+  const targetPositions = objective.targetPositions ?? [];
+
+  if (targetPositions.length === 0) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  if (action.type === 'declareExplorationDirection') {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  const currentDistance = minimumStrategicDistanceToTargets(
+    state,
+    activePlayer,
+    activePlayer.position,
+    targetPositions,
+  );
+  const targetPosition = getActionTargetPosition(state, action);
+  if (!targetPosition) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  if (
+    targetPositions.some((position) => positionsEqual(position, targetPosition))
+  ) {
+    return config.objectiveProgressBonus + 5;
+  }
+
+  if (action.type !== 'movePlayer') {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  const targetDistance = minimumStrategicDistanceToTargets(
+    state,
+    activePlayer,
+    targetPosition,
+    targetPositions,
+  );
+
+  if (currentDistance === undefined || targetDistance === undefined) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  return targetDistance < currentDistance
+    ? config.objectiveProgressBonus + currentDistance - targetDistance
+    : Number.NEGATIVE_INFINITY;
+}
+
+function scoreExplorationObjectiveAction(
+  action: GameAction,
+  objective: StrategicObjective,
+): number {
+  const targets = objective.explorationTargets ?? [];
+
+  if (targets.length === 0) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  if (action.type === 'declareExplorationDirection') {
+    return targets.some(
+      (target) => target.path.length === 0 && target.direction === action.direction,
+    )
+      ? 10
+      : Number.NEGATIVE_INFINITY;
+  }
+
+  if (action.type !== 'movePlayer') {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  const matchingTarget = targets.find(
+    (target) =>
+      target.path[0] !== undefined &&
+      positionsEqual(target.path[0].target, action.target),
+  );
+
+  return matchingTarget
+    ? 10 - matchingTarget.path.length
+    : Number.NEGATIVE_INFINITY;
 }
 
 function distanceToNearestFrontier(
@@ -1154,12 +1694,49 @@ function shortestKnownPathDistance(
   from: BoardPosition,
   target: BoardPosition,
 ): number | undefined {
+  return shortestStrategicDistanceFromPosition(
+    state,
+    state.players[state.activePlayerIndex],
+    from,
+    target,
+  );
+}
+
+function shortestStrategicDistance(
+  state: GameState,
+  player: Player,
+  target: BoardPosition,
+): number | undefined {
+  return shortestStrategicDistanceFromPosition(
+    state,
+    player,
+    player.position,
+    target,
+  );
+}
+
+function shortestStrategicDistanceFromPosition(
+  state: GameState,
+  player: Player,
+  from: BoardPosition,
+  target: BoardPosition,
+): number | undefined {
+  const cacheKey = `${player.id}|${positionKey(from)}|${positionKey(target)}`;
+  const cachedDistance = strategicDistanceCache.get(state)?.get(cacheKey);
+  if (cachedDistance !== undefined) {
+    return cachedDistance ?? undefined;
+  }
+
   const startTile = getTileAt(state.board, from);
 
   if (!startTile) {
+    getOrCreateStrategicDistanceCache(state).set(cacheKey, null);
     return undefined;
   }
 
+  const teleportTiles = state.board.filter(
+    (tile) => tile.discovered && tileBlueprints[tile.blueprintId].category === 'teleport',
+  );
   const targetKey = positionKey(target);
   const visited = new Set([positionKey(from)]);
   let frontier = [{ position: from, distance: 0 }];
@@ -1169,6 +1746,7 @@ function shortestKnownPathDistance(
 
     for (const entry of frontier) {
       if (positionKey(entry.position) === targetKey) {
+        getOrCreateStrategicDistanceCache(state).set(cacheKey, entry.distance);
         return entry.distance;
       }
 
@@ -1186,7 +1764,10 @@ function shortestKnownPathDistance(
         if (
           !targetTile ||
           visited.has(key) ||
-          !canTilesConnect(originTile, targetTile, direction)
+          !(
+            hasActiveHeroAbility(player, 'hero_mage') ||
+            canTilesConnect(originTile, targetTile, direction)
+          )
         ) {
           continue;
         }
@@ -1197,11 +1778,28 @@ function shortestKnownPathDistance(
           distance: entry.distance + 1,
         });
       }
+
+      if (tileBlueprints[originTile.blueprintId].category === 'teleport') {
+        for (const tile of teleportTiles) {
+          const key = positionKey(tile);
+
+          if (visited.has(key) || positionsEqual(tile, entry.position)) {
+            continue;
+          }
+
+          visited.add(key);
+          nextFrontier.push({
+            position: { boardX: tile.boardX, boardY: tile.boardY },
+            distance: entry.distance + 1,
+          });
+        }
+      }
     }
 
     frontier = nextFrontier;
   }
 
+  getOrCreateStrategicDistanceCache(state).set(cacheKey, null);
   return undefined;
 }
 
@@ -1224,6 +1822,34 @@ function distanceToNearestHealing(
   return distances.length > 0 ? Math.min(...distances) : undefined;
 }
 
+function minimumStrategicDistanceToTargets(
+  state: GameState,
+  player: Player,
+  from: BoardPosition,
+  targets: readonly BoardPosition[],
+): number | undefined {
+  const distances = targets.flatMap((target) => {
+    const distance = shortestStrategicDistanceFromPosition(state, player, from, target);
+
+    return distance === undefined ? [] : [distance];
+  });
+
+  return distances.length > 0 ? Math.min(...distances) : undefined;
+}
+
+function collectReachableKnownPositions(state: GameState): BoardPosition[] {
+  const activePosition = state.players[state.activePlayerIndex].position;
+  const reachablePositions = [
+    activePosition,
+    ...getReachableKnownMovePaths(state).map((entry) => entry.position),
+  ];
+
+  return reachablePositions.filter(
+    (position, index, positions) =>
+      positions.findIndex((candidate) => positionsEqual(candidate, position)) === index,
+  );
+}
+
 function isHealingTarget(state: GameState, position: BoardPosition): boolean {
   return getDiscoveredHealingPositions(state).some(
     (healingPosition) =>
@@ -1234,6 +1860,45 @@ function isHealingTarget(state: GameState, position: BoardPosition): boolean {
 
 function canReceiveHealingFromEndTurn(state: GameState): boolean {
   return state.healingEndTurnSource !== 'combat_retreat_blocked';
+}
+
+function positionsEqual(left: BoardPosition, right: BoardPosition): boolean {
+  return left.boardX === right.boardX && left.boardY === right.boardY;
+}
+
+function totalCombatBonus(player: Player): number {
+  return (
+    player.inventory.weapons.reduce((sum, weapon) => sum + weapon.bonus, 0) +
+    player.inventory.spells.filter((spell) => spell.spellKind === 'flame').length
+  );
+}
+
+function getOrCreateStrategicDistanceCache(
+  state: GameState,
+): Map<string, number | null> {
+  const existingCache = strategicDistanceCache.get(state);
+  if (existingCache) {
+    return existingCache;
+  }
+
+  const cache = new Map<string, number | null>();
+  strategicDistanceCache.set(state, cache);
+
+  return cache;
+}
+
+function getOrCreateArrivalWindowCache(
+  state: GameState,
+): Map<string, ArrivalWindow | null> {
+  const existingCache = arrivalWindowCache.get(state);
+  if (existingCache) {
+    return existingCache;
+  }
+
+  const cache = new Map<string, ArrivalWindow | null>();
+  arrivalWindowCache.set(state, cache);
+
+  return cache;
 }
 
 function isBacktrackMove(

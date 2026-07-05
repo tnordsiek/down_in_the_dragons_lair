@@ -110,6 +110,12 @@ export interface AnalysisSummaryRow extends SummaryInputRow {
   observedBehavior: string;
   recommendedTest: string;
   problemKind: 'heuristic' | 'rule' | 'termination' | '';
+  strategicPriority: number;
+  debugPhase: string;
+  observedActionType: string;
+  expectedObjectiveType: string;
+  debugAlternative: string;
+  debugDistanceContext: string;
   lastPhaseBeforeAbort: string;
   lastActionTypeBeforeAbort: string;
   maxObservedActionsWithoutProgress: number;
@@ -509,9 +515,9 @@ export function serializeAnalysisSummary(
     'avgMaxActionsWithoutProgress',
     'avgStalledTurns',
     'avgBacktrackLoops',
-    'avgHealingMisses',
+    'avgMissedHealingPriority',
     'avgAvoidableRiskFights',
-    'avgObjectiveBypass',
+    'avgLegacyObjectiveBypass',
     'avgSeeressChoiceBlind',
     'avgWitchSwapLowValue',
     'rankWinRate',
@@ -541,6 +547,12 @@ export function serializeAnalysisSummary(
     'observedBehavior',
     'recommendedTest',
     'problemKind',
+    'strategicPriority',
+    'debugPhase',
+    'observedActionType',
+    'expectedObjectiveType',
+    'debugAlternative',
+    'debugDistanceContext',
     'lastPhaseBeforeAbort',
     'lastActionTypeBeforeAbort',
     'maxObservedActionsWithoutProgress',
@@ -609,6 +621,12 @@ export function serializeAnalysisSummary(
     row.observedBehavior,
     row.recommendedTest,
     row.problemKind,
+    String(row.strategicPriority),
+    row.debugPhase,
+    row.observedActionType,
+    row.expectedObjectiveType,
+    row.debugAlternative,
+    row.debugDistanceContext,
     row.lastPhaseBeforeAbort,
     row.lastActionTypeBeforeAbort,
     String(row.maxObservedActionsWithoutProgress),
@@ -680,6 +698,12 @@ function buildIssueRowsForHero(
       observedBehavior: buildObservedBehavior(issueType, row.heroId, issueRate, worstDetail),
       recommendedTest: metadata.recommendedTest,
       problemKind: issueType === 'nonTerminatingGame' ? 'termination' : 'heuristic',
+      strategicPriority: getStrategicPriority(issueType),
+      debugPhase: worstDetail?.lastPhase ?? '',
+      observedActionType: worstDetail?.lastActionType ?? '',
+      expectedObjectiveType: getExpectedObjectiveType(issueType),
+      debugAlternative: buildExpectedAlternative(issueType),
+      debugDistanceContext: buildDistanceContext(issueType),
       lastPhaseBeforeAbort:
         timeoutDetails[0]?.lastPhase ??
         (issueType === 'nonTerminatingGame' ? worstDetail?.lastPhase ?? '' : ''),
@@ -716,6 +740,12 @@ function buildIssueRowsForHero(
         'Fuer diese Heldin wurden in den ausgewerteten Seeds keine priorisierten Diagnoseprobleme gefunden.',
       recommendedTest: '',
       problemKind: '',
+      strategicPriority: 0,
+      debugPhase: '',
+      observedActionType: '',
+      expectedObjectiveType: '',
+      debugAlternative: '',
+      debugDistanceContext: '',
       lastPhaseBeforeAbort: '',
       lastActionTypeBeforeAbort: '',
       maxObservedActionsWithoutProgress: Math.max(
@@ -738,18 +768,119 @@ function buildObservedBehavior(
       return `${heroId} beendet in ${rateText} der beobachteten Partien Zuege trotz verfuegbarer Fortschrittsoptionen.`;
     case 'backtrackLoops':
       return `${heroId} faellt in ${rateText} der beobachteten Partien in Rueckwaertsbewegungen zurueck.`;
-    case 'healingMisses':
-      return `${heroId} verpasst in ${rateText} der beobachteten Partien naheliegende Heilung.`;
+    case 'missedHealingPriority':
+      return `${heroId} ignoriert in ${rateText} der beobachteten Partien vorrangige Heiloptionen trotz Gefahr durch niedrige HP oder Fluch.`;
+    case 'missedChestWithKey':
+      return `${heroId} laesst in ${rateText} der beobachteten Partien erreichbare Schatztruhen trotz Schluessel liegen.`;
+    case 'missedUpgradeLoot':
+      return `${heroId} verpasst in ${rateText} der beobachteten Partien verbesserndes Loot trotz plausibler Rennchance.`;
+    case 'missedExplorationProgress':
+      return `${heroId} verzichtet in ${rateText} der beobachteten Partien auf sichere Exploration als niedrigstes Fallback-Ziel.`;
+    case 'missedWinningDragonWindow':
+      return `${heroId} verpasst in ${rateText} der beobachteten Partien ein erreichbares Drachenfenster, das den Endscore sichern wuerde.`;
     case 'avoidableRiskFights':
       return `${heroId} startet in ${rateText} der beobachteten Partien optionale Kaempfe unterhalb der Risiko-Schwelle.`;
-    case 'objectiveBypass':
-      return `${heroId} ignoriert in ${rateText} der beobachteten Partien erreichbare Ziele.`;
     case 'seeressChoiceBlind':
       return `${heroId} waehlt Raum-Token in ${rateText} der beobachteten Partien blind ueber Index 0.`;
     case 'witchSwapLowValue':
       return `${heroId} verwendet in ${rateText} der beobachteten Partien einen Hexen-Tausch ohne messbaren Positionsgewinn.`;
     case 'nonTerminatingGame':
       return `${heroId} terminiert fuer Seed ${worstDetail?.seed ?? ''} nicht; letzter Zustand ${worstDetail?.lastPhase ?? ''} nach ${worstDetail?.actionCount ?? 0} Aktionen.`;
+  }
+}
+
+function getStrategicPriority(issueType: SimulationIssueType): number {
+  switch (issueType) {
+    case 'nonTerminatingGame':
+      return 100;
+    case 'missedHealingPriority':
+      return 95;
+    case 'missedChestWithKey':
+      return 90;
+    case 'missedWinningDragonWindow':
+      return 85;
+    case 'missedUpgradeLoot':
+      return 70;
+    case 'avoidableRiskFights':
+      return 65;
+    case 'seeressChoiceBlind':
+      return 55;
+    case 'witchSwapLowValue':
+      return 50;
+    case 'backtrackLoops':
+      return 40;
+    case 'missedExplorationProgress':
+      return 30;
+    case 'stalledTurns':
+      return 20;
+  }
+}
+
+function getExpectedObjectiveType(issueType: SimulationIssueType): string {
+  switch (issueType) {
+    case 'missedHealingPriority':
+      return 'heal';
+    case 'missedChestWithKey':
+      return 'chest';
+    case 'missedUpgradeLoot':
+      return 'upgradeLoot';
+    case 'missedWinningDragonWindow':
+      return 'winningDragon';
+    case 'missedExplorationProgress':
+      return 'explore';
+    case 'avoidableRiskFights':
+      return 'avoidFight';
+    case 'seeressChoiceBlind':
+      return 'seeressChoice';
+    case 'witchSwapLowValue':
+      return 'highValueSwapOrMove';
+    case 'backtrackLoops':
+      return 'forwardProgress';
+    case 'stalledTurns':
+      return 'continueProgress';
+    case 'nonTerminatingGame':
+      return 'finishGame';
+  }
+}
+
+function buildExpectedAlternative(issueType: SimulationIssueType): string {
+  switch (issueType) {
+    case 'missedHealingPriority':
+      return 'Heilung vor Exploration, Loot oder Kampf priorisieren.';
+    case 'missedChestWithKey':
+      return 'Schatztruhe mit Schluessel vor niedriger priorisierten Zielen ansteuern oder oeffnen.';
+    case 'missedUpgradeLoot':
+      return 'Verbesserndes Loot verfolgen, wenn das Rennen noch realistisch ist.';
+    case 'missedWinningDragonWindow':
+      return 'Drachenfenster fuer den score-sichernden Sieg aktiv nutzen.';
+    case 'missedExplorationProgress':
+      return 'Nur wenn kein hoeheres Ziel greift, sichere neue Tiles als Fallback aufdecken.';
+    case 'avoidableRiskFights':
+      return 'Kampf meiden und stattdessen Fortschritt, Heilung oder bessere Position suchen.';
+    case 'seeressChoiceBlind':
+      return 'Token-Optionen heuristisch vergleichen statt Index 0 zu bevorzugen.';
+    case 'witchSwapLowValue':
+      return 'Nur tauschen, wenn der Tausch gegenueber Bewegung echten Zielgewinn bringt.';
+    case 'backtrackLoops':
+      return 'Vorwaertspfad mit strategischem Nutzen gegenueber Rueckschritt bevorzugen.';
+    case 'stalledTurns':
+      return 'Eine vorhandene Fortschrittsoption statt fruehem Zugende waehlen.';
+    case 'nonTerminatingGame':
+      return 'Einen Fortschrittspfad verfolgen, der die Partie zum Endzustand fuehrt.';
+  }
+}
+
+function buildDistanceContext(issueType: SimulationIssueType): string {
+  switch (issueType) {
+    case 'missedChestWithKey':
+    case 'missedUpgradeLoot':
+    case 'missedWinningDragonWindow':
+    case 'missedExplorationProgress':
+    case 'backtrackLoops':
+    case 'stalledTurns':
+      return 'Strategische Wege beruecksichtigen Portale und Mage-Wandgang; Witch-Tausch wird als eigene Zielerfuellungsaktion bewertet.';
+    default:
+      return '';
   }
 }
 
