@@ -1,338 +1,478 @@
 # AI Decision-Making: Down in the Dragon's Lair
 
-This document explains how the AI makes decisions in the game. The AI is a **heuristic agent** - it follows explicit rules and scoring formulas, not machine learning.
+This document describes how the current AI makes decisions in the shipped game. The AI is a deterministic heuristic agent: it does not learn, it does not train, and it does not use machine learning. It evaluates the current `GameState`, enumerates legal actions, and chooses the highest-priority legal action according to explicit rules.
 
-All AI code lives in `src/ai/`.
+The main entry points are:
 
----
-
-## Overview: What is a heuristic agent?
-
-Instead of using a neural network or learning algorithm, the AI uses a simple process:
-
-1. **What am I allowed to do?** - Determine all legal actions for the current game phase.
-2. **What is best?** - Assign a score to each action based on fixed rules.
-3. **Do the best thing.** - Execute the action with the highest score.
-
-This process is fully deterministic: same game state -> same decision, every time.
+- `chooseHeuristicAiAction(...)` in [`src/ai/heuristicAgent.ts`](../src/ai/heuristicAgent.ts)
+- `AiHeuristicConfig` and `getDifficultyConfig(...)` in [`src/ai/config.ts`](../src/ai/config.ts)
+- `playAiControlledTurn(...)` and `playAiGameToEnd(...)` in [`src/ai/autoplay.ts`](../src/ai/autoplay.ts)
+- legal action generation in [`src/ai/legalActions.ts`](../src/ai/legalActions.ts)
+- simulation diagnostics in [`src/ai/simulationDiagnostics.ts`](../src/ai/simulationDiagnostics.ts)
 
 ---
 
-## The core principle: phase-based decisions
+## Core model
 
-The game runs in **phases**. Depending on the current phase, different actions are available, and the AI uses different decision logic:
+At a high level, the AI does three things:
 
-```mermaid
-flowchart TD
-    Start([AI turn begins]) --> ForceCheck{Forced action?}
-    ForceCheck -- "Turn skipped" --> EndTurn[End turn]
-    ForceCheck -- "Chest available" --> OpenChest[Open chest]
-    ForceCheck -- No --> HealCheck{Healing spell\nactive and needed?}
+1. Build the legal action list for the current phase.
+2. Apply phase-specific priority rules.
+3. Fall back to scored movement or `endTurn` when nothing else has higher priority.
 
-    HealCheck -- Yes --> Heal[Use healing spell]
-    HealCheck -- No --> PhaseSwitch{Current phase?}
+For a fixed `GameState`, AI difficulty, and stale-action counter, the result is deterministic.
 
-    PhaseSwitch -- Combat --> Combat[Combat decision]
-    PhaseSwitch -- Loot pickup --> Loot[Loot decision]
-    PhaseSwitch -- Resolve room token --> RoomToken[Resolve token automatically]
-    PhaseSwitch -- Place tile --> Tile[Rotate and place tile]
-    PhaseSwitch -- Movement/Exploration --> GroundCheck{Item on\nground?}
+### Determinism and Easy-mode randomness
 
-    GroundCheck -- "Yes and worthwhile" --> BeginLoot[Start pickup]
-    GroundCheck -- "No / not worthwhile" --> Move[Movement decision]
-    Move -- "No movement possible" --> EndTurn
-```
+The only deliberate non-optimal behavior is the Easy difficulty `mistakeRate`. Even that is still deterministic because it reads from the seeded game RNG snapshot instead of using external randomness. The same state therefore still produces the same AI action every time.
 
 ---
 
-## The four main decision areas
+## Decision order in `chooseHeuristicAiAction(...)`
 
-### 1. Movement and exploration
+The current decision flow is driven by a strict priority order:
 
-**When:** phase `turn_start`, `await_move`, `optional_monster_combat`
+1. Reject empty legal-action sets with an error.
+2. Derive the effective config for the current stale-action count.
+3. Optionally inject an Easy-mode mistake via `mistakeRate`.
+4. If the active player must skip their turn and `endTurn` is legal, end the turn immediately.
+5. Resolve combat phases via `chooseCombatAction(...)`.
+6. Resolve `loot_resolution` via `chooseLootAction(...)`.
+7. Resolve room tokens automatically.
+8. In the Seeress room-token choice step, always choose option index `0`.
+9. Choose pending-tile placement via `choosePlacementAction(...)`.
+10. If there is valuable ground loot on the current tile, use `chooseGroundLootAction(...)`.
+11. Select a strategic objective and, if possible, choose an action that advances it.
+12. In desperate fully explored states, try a broader healing-spell fallback.
+13. If not desperate, optionally end the turn for healing or to avoid pointless stalling.
+14. Otherwise score movement and exploration via `chooseMovementAction(...)`.
+15. If no better action exists, use `endTurn`.
 
-The AI scores every possible move with a **point value**. The move with the highest score is chosen.
-
-#### Healing first
-
-If the AI has **fewer than 3 hit points** or is **cursed**, its priorities change completely: it looks for the shortest path to a known healing location.
-
-```
-Healing score = 12 - distance to healing
-```
-
-The closer the healing location, the higher the score. If no healing location is known, this mode is ignored.
-
-> **Note on healing tiles:** Standing on a healing tile normally restores the player at the end of the turn. There is one exception enforced by the engine: if the player landed on the healing tile by being pushed back from a **lost combat** (a forced retreat), the end-of-turn healing is blocked. This is tracked via `state.healingEndTurnSource === 'combat_retreat_blocked'` and handled in `src/engine/rules/healing.ts`. The AI cannot heal "for free" by losing a fight next to a healing space.
-
-#### Normal movement scoring
-
-Without healing pressure, the score is built from multiple factors:
-
-| Factor | Value | Explanation |
-|--------|------:|-------------|
-| **Reveal a new tile** | +9 | Exploring the unknown is always attractive |
-| **Enter a room with a beatable monster** | +8 | Worth attacking (>=50% win chance) |
-| **Chest on target tile** (with key) | +10 | Collect treasure |
-| **Chest on target tile** (without key) | +3 | At least remember where it is |
-| **Healing tile as target** (when HP is low) | +12 | Move there directly |
-| **Closer to exploration frontier** | +9 + distance delta | Progressive exploration |
-| **Closer to known objective** (monster, chest) | +6 + distance delta | Pursue objectives |
-| **Dragon as objective** | +20 priority bonus | The dragon is the main objective |
-| **Monster on target tile with <50% win chance** | -6 | Avoid unfavorable fights |
-| **Dragon on target tile with very low win chance** | -12 | Avoid the dragon when too weak |
-| **Return to previous position** | -2 | Avoid back-and-forth movement |
-
-#### How is distance measured?
-
-For known tiles, the AI uses **BFS (breadth-first search)** to find the actual shortest path through corridors. For healing locations, it uses the simpler **Manhattan distance**.
+This ordering matters more than the raw movement score table. For example, chest opening, loot pickup, healing, combat resolution, and several hero steps are handled before generic movement scoring is even considered.
 
 ---
 
-### 2. Combat decisions
+## Legal action generation
 
-**When:** combat phases (`combat`, `combat_*`)
+The AI only chooses from actions returned by `getLegalAiActions(...)`.
 
-#### How does the AI calculate its win chance?
+That function is phase-aware and currently supports:
 
-The AI tries **all 36 possible dice combinations** (2x D6) and counts how many of them lead to victory:
+- healing spell use during main-turn action phases
+- Witch position swaps at `turn_start`
+- chest opening when `canOpenChest(...)` is true
+- pending-tile placement rotations
+- room-token resolution
+- Seeress token choice
+- optional monster combat start
+- combat resolution, rerolls, Witch sacrifice, and flame-spell decisions
+- ground-loot start and loot-resolution choices
+- known movement, exploration declarations, and `endTurn`
 
-```
-Win chance = number of winning dice outcomes / 36
-```
-
-Example: a player with attack value 8 fights a monster with strength 10. The AI checks every combination from (1+1) to (6+6) and computes the exact probability.
-
-#### Thresholds for optional fights
-
-| Situation | Minimum win chance | Source |
-|-----------|--------------------|--------|
-| Normal monster (optional) | 20% | `minimumRepeatCombatWinChance` |
-| Dragon | 35% | `minimumDragonWinChance` |
-
-If the win chance is below the threshold, the AI avoids the fight when possible.
-
-#### Flame spells in combat
-
-The AI uses flame spells conservatively: it looks for the **minimum number** needed to still win, and uses only that many. Exception: the Mage hero never uses flame spells, because that hero ability makes spell use unnecessary. The AI also avoids wasting spells on weak monsters (strength <= 9).
-
-#### Witch sacrifice
-
-If the Witch can offer the "sacrifice" bonus in combat, the AI checks:
-
-1. Does the sacrifice alone lead directly to victory? -> **Make the sacrifice**
-2. Does sacrifice + flame spells lead to victory? -> **Make the sacrifice** (then use spells)
-3. Otherwise -> **Decline the sacrifice**
-
-#### Valkyrie and Blade: automatic rerolls
-
-The Valkyrie **always rerolls** when possible. Blade **always uses** the reroll. Both happen automatically without further evaluation.
+This separation keeps the decision logic simple: the heuristic code assumes its input actions are already legal.
 
 ---
 
-### 3. Loot and items
+## Strategic objectives
 
-**When:** phases `loot_resolution` (pickup) and during movement (items on the ground)
+Before raw movement scoring, the AI tries to identify the best current objective. The objective types are:
 
-#### Should I pick up an item?
+- `heal`
+- `chest`
+- `upgradeLoot`
+- `winningDragon`
+- `monster`
+- `explore`
 
-Before moving, the AI checks whether there is an item on the current tile:
+The AI picks the first applicable objective in priority order. In practice that means healing outranks treasure, treasure outranks upgrade loot, upgrade loot outranks a score-securing dragon kill, and all of those outrank generic exploration.
 
-| Item type | Pick up when... |
-|-----------|-----------------|
-| **Key** | No key in inventory |
-| **Weapon** | Fewer than 2 weapons **or** the new weapon is better than the worst current one |
-| **Spell** | Fewer than 3 spells **or** the new spell has higher priority |
+### 1. Healing objective
 
-**Spell priorities:** Flame Spell (1) > Healing Spell (0)
+Healing is prioritized when the active player needs healing, which currently means:
 
-#### What do I do with the picked-up item?
+- `hp < preferHealingBelowHp`, or
+- the player is cursed
 
-| Situation | Decision |
-|-----------|----------|
-| Key, free slot | Take it |
-| Key, no slot | Leave it |
-| Weapon, free slot | Take it |
-| Weapon, no slot, new > worst in inventory | Replace the worst one |
-| Weapon, no slot, new <= worst | Leave it |
-| Spell, free slot | Take it |
-| Spell, no slot, new priority > lowest in inventory | Replace the lowest-priority spell |
-| Spell, no slot, equal/lower priority | Leave it |
+Urgent healing is even more important when:
 
----
+- `hp <= criticalHp`, or
+- the player is cursed and a direct healing action is available
 
-### 4. Curse target selection
+The AI can satisfy healing in several ways:
 
-**When:** phase `combat_curse_target` (only for the Mummified Priest)
+- cast a healing spell on itself in normal play
+- end the turn on a healing tile, if end-of-turn healing is allowed
+- move toward the nearest discovered healing position
+- in desperate fully explored states, use a broader healing-spell fallback that may target other players if that is the best legal healing action still available
 
-The AI always curses the **player with the most treasure points** - in other words, the current leader. This weakens the strongest competitor.
+The engine blocks one special case: if the player landed on a healing tile because of a forced retreat after a lost combat, end-of-turn healing is disabled via `state.healingEndTurnSource === 'combat_retreat_blocked'`. The AI respects that and does not treat such a tile as a free heal.
 
----
+### 2. Chest objective
 
-## Hero-specific adjustments
+Known treasure chests become strategic objectives only when the player has a key. If a chest is currently openable, `openChest` happens before any movement scoring.
 
-Different heroes have special abilities that affect decision logic:
+### 3. Upgrade-loot objective
 
-| Hero | Ability | Effect on AI |
-|------|---------|--------------|
-| **Blade** | Combat dice reroll | Reroll is always used automatically |
-| **Mage** | Can move through walls | More movement options; no flame spells in combat |
-| **Rogue** | Optional combat before leaving | AI computes win chance and decides whether to fight |
-| **Witch** | Position swap with another player | Swap gets a fixed score (8) and is weighed against movement |
-| **Valkyrie** | Combat dice reroll | Reroll is always used automatically |
-| **Seeress** | Chooses from 2 drawn room tokens | Always selects the first option (index 0) |
+The AI will pursue known loose items when they are meaningful upgrades and the loot race is still plausible.
 
----
+Upgrade rules:
 
-## Configuration and difficulty
+- keys are never treated as upgrade loot
+- a weapon is an upgrade if the player has fewer than 2 weapons, or if it is stronger than the weakest equipped weapon
+- a spell is an upgrade if the player has fewer than 3 spells, or if it improves spell priority
 
-All important numeric values are centralized in [`src/ai/config.ts`](../src/ai/config.ts):
+Current spell priority is:
 
-| Parameter | Value | Meaning | Higher value causes... |
-|-----------|------:|---------|------------------------|
-| `criticalHp` | 2 | HP threshold for using healing spells | AI heals itself more often |
-| `preferHealingBelowHp` | 3 | HP threshold for prioritizing healing routes | AI prioritizes healing earlier |
-| `minimumRepeatCombatWinChance` | 0.2 | Minimum win chance for optional fights | AI takes more risk |
-| `minimumDragonWinChance` | 0.35 | Minimum win chance for dragon combat | AI attacks the dragon earlier / less often |
-| `exploreTileBonus` | 9 | Bonus for exploring new tiles | AI explores more aggressively |
-| `exploreRoomBonus` | 8 | Bonus for entering new rooms | AI enters rooms more often |
-| `knownChestBonus` | 10 | Bonus for known chests (with key) | AI prioritizes treasure more strongly |
-| `knownHealingBonus` | 12 | Bonus for healing tiles | AI seeks healing more often |
-| `knownMonsterPenalty` | -6 | Penalty for unbeatable monsters | AI avoids them more consistently |
-| `objectiveProgressBonus` | 6 | Bonus for progress toward objectives | AI pursues objectives more directly |
-| `dragonObjectiveBonus` | 20 | Priority bonus for the dragon | Dragon is prioritized earlier / later |
-| `backtrackPenalty` | -2 | Penalty for turning back | AI moves back and forth less often |
+- flame spell: priority `2`
+- healing spell: priority `1`
 
----
+The AI also estimates whether another player is likely to reach the loot first. It does this with `estimateArrivalWindow(...)`, which compares turn order, steps available on the current turn, and shortest strategic path length. Loot that another player should clearly win is not treated as meaningful progress in the fully explored endgame.
 
-## Example turn (step by step)
+### 4. Winning-dragon objective
 
-**Scenario:** It is the AI's turn. HP = 4, no curse, no chest in reach. There are 3 legal actions:
+The dragon gets promoted to a dedicated strategic objective when a dragon win would likely secure the score. The current check is:
 
-- `movePlayer` -> tile (2, 1): known empty tile, one step closer to the exploration frontier
-- `movePlayer` -> tile (2, 3): known tile with a monster (strength 12, win chance 19%)
-- `declareExplorationDirection` -> north: reveal a new unknown tile
+- the active player's dragon win chance is at least `minimumDragonWinChance`
+- projected score `treasurePoints + 1.5` is at least the highest other current treasure score
 
-**Step 1 - Forced actions?**  
-No turn skip, no chest. -> Continue.
+When those conditions are true, the AI treats the dragon as a score-closing objective rather than merely another monster.
 
-**Step 2 - Healing spell?**  
-HP = 4, not cursed. The healing threshold is 3. -> No healing spell.
+### 5. Monster objective
 
-**Step 3 - Combat phase?**  
-Current phase is `await_move`. -> Continue to movement decision.
+Known monsters become objectives when the active player's estimated win chance reaches the threshold for that monster:
 
-**Step 4 - Items on the ground?**  
-No item on the current tile. -> Continue.
+- normal monsters use `minimumRepeatCombatWinChance`
+- the dragon uses `minimumDragonWinChance`
 
-**Step 5 - Calculate movement scores:**
+### 6. Exploration objective
 
-| Action | Calculation | Score |
-|--------|-------------|------:|
-| `movePlayer` (2,1) | Closer to exploration frontier: +9 +1 distance gain | **10** |
-| `movePlayer` (2,3) | Monster, win chance 19% < 50%: -6 | **-6** |
-| `declareExplorationDirection` north | New tile: fixed +9 | **9** |
+Exploration is the fallback objective when no higher-value strategic target applies. The AI uses reachable exploration targets returned by `getReachableExplorationTargets(...)` and prefers:
 
-**Result:** `movePlayer` to (2,1) wins with 10 points.
+- direct exploration if a reveal can happen immediately
+- otherwise the shortest path step toward the best reachable exploration frontier
 
 ---
 
+## Pathfinding and distance
+
+The current AI uses BFS-style shortest-path searches over the discovered board. The older Manhattan-distance explanation is no longer accurate.
+
+### What the pathfinder considers
+
+`shortestStrategicDistanceFromPosition(...)` includes:
+
+- normal corridor connectivity
+- Mage movement through walls
+- teleport tiles as one-step links between all discovered teleport rooms
+
+This pathfinder is reused for:
+
+- objective pursuit
+- healing routes
+- chest and monster routing
+- loot-race estimates
+- endgame progress checks
+
+Two caches in `heuristicAgent.ts` memoize repeated distance and arrival-window calculations during a single decision.
+
 ---
 
-## Known weaknesses of the current AI
+## Movement and exploration scoring
 
-The following issues were identified during analysis. They are documented, but intentionally not fixed yet (scope control):
+If no earlier rule produced an action, the AI falls back to `chooseMovementAction(...)`, which scores legal movement and exploration actions.
 
-| # | Weakness | Location | Impact |
-|---|----------|----------|--------|
-| 1 | **Healing spell only heals itself** | `chooseHealingSpellAction` (filter `player.id === activePlayer.id`) | Other players are ignored, even if they are critically low on HP |
-| 2 | **Seeress always selects token index 0** | `resolve_room_token_seeress_choice` | No evaluation of which of the two tokens is better |
-| 3 | **Witch position swap has a hardcoded score** | `scoreMovementAction` (`exploreTileBonus - 1 = 8`) | Not context-sensitive; ignores both players' current state |
-| 4 | **Healing route uses Manhattan instead of BFS distance** | `distanceToNearestHealing` | Less precise than pathfinding for monsters and objectives |
-| 5 | **Almost no player tracking** (partially addressed) | `heuristicAgent.ts` | The AI still ignores other players' positions and strength almost everywhere. The one exception is the dragon endgame: `shouldForceDragonEndgame` now compares its own dragon win chance against the best win chance among all players, so it only forces the final fight when it is the best-equipped contender. |
+The score has two layers:
+
+1. objective advancement score
+2. local tactical score
+
+### Objective advancement layer
+
+If a strategic objective exists, actions that advance it receive a large base advantage. In practice:
+
+- a move or swap that directly reaches the target gets the highest value
+- a move that shortens the strategic distance to the target gets a smaller positive value
+- actions that do not advance the objective are often treated as invalid for that objective
+
+Because this objective score is multiplied before the local tactical score is added, objective pursuit dominates small tactical bonuses.
+
+### Local tactical layer
+
+After objective handling, movement scoring still considers:
+
+- progress toward the exploration frontier
+- chest value on the target tile
+- monster value on the target tile
+- healing-tile value when healing is needed
+- backtrack penalty when returning to `state.lastMoveFrom`
+
+Current config-driven values are:
+
+| Parameter | Normal value | Meaning |
+|-----------|--------------|---------|
+| `exploreTileBonus` | `9` | baseline reward for exploration progress |
+| `exploreRoomBonus` | `8` | reward for entering a favorable monster room |
+| `knownChestBonus` | `10` | reward for reaching a known chest with a key |
+| `knownHealingBonus` | `12` | reward for healing progress / healing target |
+| `knownMonsterPenalty` | `-6` | penalty for low-value monster engagement |
+| `objectiveProgressBonus` | `6` | reward for moving closer to strategic targets |
+| `dragonObjectiveBonus` | `20` | extra objective priority for dragon routing |
+| `backtrackPenalty` | `-2` | discourages immediate move reversal |
+
+### Monster tiles during movement
+
+For a monster on the target tile, the AI distinguishes between desirable and undesirable fights:
+
+- in normal play, non-desperate movement only treats the monster as favorable if win chance is at least `max(0.5, threshold)`
+- otherwise the target receives `knownMonsterPenalty`
+- in desperate mode, the AI lowers its minimum acceptable optional-combat threshold and becomes more willing to take marginal fights
 
 ---
 
-## Difficulty levels
+## Combat decisions
 
-The game supports three difficulty levels: **Easy**, **Normal**, and **Hard**. The difficulty is set when the game starts and stored in `GameState.difficulty`. `autoplay.ts` reads it and passes the matching configuration object into `chooseHeuristicAiAction`.
+Combat uses exact win-chance estimation rather than rough guessing.
 
-### Parameter comparison
+### Win chance calculation
 
-| Parameter | Easy | Normal | Hard | Effect of increasing it |
-|-----------|------|--------|------|--------------------------|
-| `mistakeRate` | **0.2** | 0 | 0 | AI makes random decisions more often |
-| `criticalHp` | 3 | 2 | 2 | Healing spell is used earlier |
-| `preferHealingBelowHp` | **4** | 3 | **4** | Route to healing is prioritized earlier |
-| `minimumRepeatCombatWinChance` | **0.1** | 0.2 | **0.3** | Optional fights are chosen more aggressively / cautiously |
-| `minimumDragonWinChance` | **0.2** | 0.35 | **0.5** | Dragon is attacked earlier / later |
-| `exploreTileBonus` | **7** | 9 | **11** | New tiles are prioritized more / less |
-| `exploreRoomBonus` | **6** | 8 | **10** | Rooms are entered more / less |
-| `knownChestBonus` | **8** | 10 | **12** | Chests are prioritized more / less |
-| `knownHealingBonus` | **14** | 12 | **10** | Healing tiles are prioritized more / less |
-| `knownMonsterPenalty` | **-3** | -6 | **-8** | Impossible monsters are avoided more / less |
-| `objectiveProgressBonus` | **4** | 6 | **8** | Objectives are pursued more directly |
-| `dragonObjectiveBonus` | **12** | 20 | **25** | Dragon is weighted more / less as the main objective |
-| `backtrackPenalty` | **-1** | -2 | **-3** | Back-and-forth movement is penalized more / less |
+`estimateCombatWinChance(...)` evaluates all 36 outcomes of two six-sided dice and counts how many produce victory after applying the current player's bonuses.
 
-### Behavior profiles
+That value is used for:
 
-**Easy** (`mistakeRate: 0.2`)
-- 20% of all decisions are random - the AI ignores scoring logic completely
-- Panics at higher HP values and wastes turns searching for healing
-- Attacks the dragon too early (already at 20% win chance)
-- Barely avoids monsters -> takes more damage
+- optional combat
+- dragon timing
+- movement valuation of monster tiles
+- diagnostics
+- curse-target tie-breaking
 
-**Normal** (current default values)
-- No random mistakes
-- Balanced exploration and combat strategy
-- Fights the dragon at 35% win chance
+### Optional combat
 
-**Hard** (`mistakeRate: 0`)
-- No random mistakes
-- Explores more aggressively and pursues objectives more directly
-- Waits for a 50% win chance against the dragon -> starts the end fight better equipped
-- Avoids impossible fights even more consistently
+In `optional_monster_combat`, the AI starts combat when:
 
-### Error injection (Easy)
+- the win chance is at least the monster's threshold, or
+- the monster is the dragon and `shouldForceDragonEndgame(...)` returns true
 
-The random mistakes on Easy use the seeded RNG from `state.rng`. Because the RNG value is only read (not written back), the mistake injection does not affect the gameplay RNG:
+If the fight is below threshold, the AI prefers movement if it has one, otherwise `endTurn`.
 
-```typescript
-if (config.mistakeRate > 0) {
-  const rng = restoreSeededRng(state.rng);   // read, do not mutate
-  if (rng.next() < config.mistakeRate) {
-    return legalActions[rng.nextInt(legalActions.length)];
-  }
-}
-```
+### Forced-dragon endgame
 
-Same `GameState` -> same random number -> identical behavior in every test run.
+`shouldForceDragonEndgame(...)` is a special endgame escape hatch. It allows the AI to force the final dragon fight even below the normal dragon threshold when all of the following are true:
 
-### Empirical test results
+- the board is fully explored (`tileStack` and `tokenBag` are empty)
+- the dragon is present
+- there are no better non-dragon objective tiles left
+- the active player has a non-zero dragon win chance
+- the active player's dragon win chance is at least as good as every other player's
+- that win chance is still below `minimumDragonWinChance`
 
-Validated by [`src/ai/difficultyBalance.test.ts`](../src/ai/difficultyBalance.test.ts):
+This prevents passive deadlocks where the best remaining contender should take the final gamble.
 
-| Test | Result |
-|------|--------|
-| Easy `mistakeRate` > Normal/Hard | PASS |
-| Hard fights the dragon only at a higher win chance than Easy | PASS |
-| Hard explores more aggressively (`exploreTileBonus` higher) | PASS |
-| Hard avoids impossible fights more consistently (`knownMonsterPenalty` lower) | PASS |
-| `getDifficultyConfig` returns the correct presets | PASS |
-| Dragon endgame succeeds on all 3 difficulty levels | PASS |
-| Hard avoids the dragon when win chance < 50% | PASS |
+### Post-combat repeat decision
+
+During `optional_post_combat`, the AI only continues if the win chance still meets the threshold, unless the dragon endgame override applies.
+
+### Flame spells
+
+During `combat_flame_spells`, the AI:
+
+- never uses flame spells if the hero is the Mage
+- never uses them against weak monsters with strength `<= 9`
+- otherwise chooses the smallest legal flame-spell count that converts the current dice result into a victory
+
+### Valkyrie reroll
+
+During `combat_valkyrie_reroll`, the AI usually rerolls, but it may decline if the estimated fight is still below the relevant minimum win threshold and a decline action is legal.
+
+### Blade reroll
+
+During `combat_blade_reroll`, the AI always uses the Blade reroll when that phase occurs.
+
+### Witch sacrifice
+
+During `combat_witch_sacrifice`, the AI uses the sacrifice if:
+
+- the sacrifice bonus alone produces an immediate victory, or
+- the sacrifice plus one or more flame spells can still convert the result into a victory
+
+Otherwise it declines.
+
+### Curse targeting
+
+Against the `mummified_priest`, the AI curses another player using:
+
+1. highest treasure score
+2. if tied, highest dragon win chance
+3. if still tied, highest total combat bonus
+
+---
+
+## Loot decisions
+
+Ground loot and pending loot are handled separately.
+
+### Ground loot on the current tile
+
+Before strategic objective movement, the AI checks whether the current tile contains meaningful loot and whether `beginLoot` is available.
+
+It starts loot resolution for:
+
+- a key if the player does not already have one
+- a weapon that improves current loadout
+- a spell that improves current spell capacity or priority
+
+### Loot resolution
+
+During `loot_resolution`, the AI prefers:
+
+1. `takeLoot` if the item fits directly
+2. `swapLoot` if a replacement is an upgrade
+3. `leaveLoot` otherwise
+
+This applies to keys, weapons, and spells according to inventory capacity and upgrade value.
+
+---
+
+## Placement logic
+
+When a pending tile must be rotated and placed, `choosePlacementAction(...)` evaluates legal placement rotations rather than choosing arbitrarily.
+
+The exact sorting logic is implementation-specific, but the intent is to prefer placements that improve immediate board value, not just the first legal rotation.
+
+---
+
+## Hero-specific behavior
+
+The heuristic logic has dedicated handling for several hero powers:
+
+| Hero | Current AI behavior |
+|------|---------------------|
+| Blade | always uses Blade reroll when offered |
+| Mage | pathfinding can ignore corridor walls; never spends flame spells in combat |
+| Rogue | optional combat is accepted only when the current threshold is met or special dragon logic applies |
+| Witch | may use `swapWitchPosition` when it advances a strategic target; uses sacrifice only when it can produce a win |
+| Valkyrie | usually rerolls, but can decline when the projected fight remains below threshold |
+| Seeress | still always chooses room-token option index `0` |
+
+The Witch swap is not just a fixed score bonus anymore. It is now evaluated as a legal action that can directly advance healing, chest, loot, monster, or dragon objectives when another player's position is strategically better.
+
+---
+
+## Difficulty presets
+
+Difficulty is stored in `GameState.difficulty`, read by `playAiControlledTurn(...)` / `playAiGameToEnd(...)`, and converted through `getDifficultyConfig(...)`.
+
+The three shipped presets are:
+
+| Parameter | Easy | Normal | Hard |
+|-----------|------|--------|------|
+| `mistakeRate` | `0.2` | `0` | `0` |
+| `criticalHp` | `3` | `2` | `2` |
+| `preferHealingBelowHp` | `4` | `3` | `4` |
+| `minimumRepeatCombatWinChance` | `0.1` | `0.2` | `0.3` |
+| `minimumDragonWinChance` | `0.2` | `0.35` | `0.5` |
+| `exploreRoomBonus` | `6` | `8` | `10` |
+| `exploreTileBonus` | `7` | `9` | `11` |
+| `knownChestBonus` | `8` | `10` | `12` |
+| `knownHealingBonus` | `14` | `12` | `10` |
+| `knownMonsterPenalty` | `-3` | `-6` | `-8` |
+| `objectiveProgressBonus` | `4` | `6` | `8` |
+| `dragonObjectiveBonus` | `12` | `20` | `25` |
+| `backtrackPenalty` | `-1` | `-2` | `-3` |
+| `staleActionThreshold` | `40` | `40` | `40` |
+
+Behaviorally:
+
+- Easy makes deterministic random mistakes more often, seeks healing earlier, and accepts weaker dragon fights.
+- Normal is the baseline shipped tuning.
+- Hard explores more aggressively, avoids bad fights more strongly, and waits for a better dragon window.
+
+---
+
+## Stale-action handling and desperation mode
+
+The AI has explicit anti-stall support.
+
+### Effective config under stagnation
+
+`getEffectiveAiHeuristicConfig(...)` switches the AI into a more desperate state when `staleActionCount >= staleActionThreshold`.
+
+At the moment, the main config change is:
+
+- `minimumRepeatCombatWinChance` is reduced to half its normal value, but never below `0.1`
+
+This makes the AI more willing to take medium-risk optional fights when passive play is no longer producing progress.
+
+### Stale-action tracker
+
+`createStaleActionTracker(...)` in `simulationDiagnostics.ts` tracks whether the game is actually progressing. It does more than just check for repeated immediate backtracking:
+
+- recent-position memory detects short movement loops
+- fully explored games treat empty movement differently, so wandering no longer resets the counter
+- a separate tile-stack-shrink counter catches games that keep producing superficial state churn without actually advancing exploration
+
+The autoplay layer passes the tracker's `staleActionCount` back into `chooseHeuristicAiAction(...)`, which is what enables desperation mode during long games.
+
+---
+
+## Simulation diagnostics
+
+The project contains explicit simulation diagnostics for measuring AI quality in batch runs. These do not directly choose actions during play, but they document the heuristics the project considers important.
+
+The current issue categories are:
+
+- `stalledTurns`
+- `backtrackLoops`
+- `missedHealingPriority`
+- `missedChestWithKey`
+- `missedUpgradeLoot`
+- `missedExplorationProgress`
+- `missedWinningDragonWindow`
+- `avoidableRiskFights`
+- `seeressChoiceBlind`
+- `witchSwapLowValue`
+- `nonTerminatingGame`
+
+These checks are implemented in [`src/ai/simulationDiagnostics.ts`](../src/ai/simulationDiagnostics.ts) and exercised by [`src/ai/simulationDiagnostics.test.ts`](../src/ai/simulationDiagnostics.test.ts).
+
+The batch simulation and report pipeline lives in:
+
+- [`src/ai/batchSimulation.ts`](../src/ai/batchSimulation.ts)
+- [`src/ai/simulationPipeline.ts`](../src/ai/simulationPipeline.ts)
+- [`src/ai/simulationAnalysis.ts`](../src/ai/simulationAnalysis.ts)
+- [`src/ai/simulationReport.ts`](../src/ai/simulationReport.ts)
+
+---
+
+## Known current limitations
+
+The following limitations are still present in the current code:
+
+1. **Seeress token choice is still blind.**
+   - In `resolve_room_token_seeress_choice`, the AI still chooses `choiceIndex === 0` instead of evaluating both token options.
+
+2. **Healing spells are self-focused in normal play.**
+   - The normal healing-spell path only casts on the active player. Broader targeting appears only in the desperate fully explored fallback.
+
+3. **Valkyrie reroll behavior is no longer "always reroll".**
+   - The old documentation was too simple. The current AI may decline when the projected fight is still below threshold, which is intentional but worth noting because it differs from a pure "always reroll" rule.
+
+4. **Witch swap quality remains heuristic, not globally optimal.**
+   - The swap is now objective-aware, but it still uses heuristic progress checks rather than deeper search.
+
+5. **The AI still reasons only shallowly about opponents outside a few specific checks.**
+   - Opponent-aware logic currently exists for loot races, dragon endgame forcing, score-securing dragon windows, and curse targeting. Most other movement and combat choices remain primarily self-focused.
 
 ---
 
 ## File overview
 
-| File | Contents |
-|------|----------|
-| [`src/ai/heuristicAgent.ts`](../src/ai/heuristicAgent.ts) | Full decision-making logic |
-| [`src/ai/config.ts`](../src/ai/config.ts) | All configurable weights and the 3 difficulty presets |
-| [`src/ai/legalActions.ts`](../src/ai/legalActions.ts) | Legal actions for each phase |
-| [`src/ai/autoplay.ts`](../src/ai/autoplay.ts) | Execution of full turns/games (difficulty-aware) |
-| [`src/ai/difficultyBalance.test.ts`](../src/ai/difficultyBalance.test.ts) | Empirical balance validation |
-| [`src/engine/core/types.ts`](../src/engine/core/types.ts) | `AiDifficulty` type, `GameState.difficulty` field, and the `HealingEndTurnSource` type |
-| [`src/engine/rules/healing.ts`](../src/engine/rules/healing.ts) | End-of-turn healing rule, including the blocked retreat-after-lost-combat case |
+| File | Purpose |
+|------|---------|
+| [`src/ai/heuristicAgent.ts`](../src/ai/heuristicAgent.ts) | main heuristic decision logic |
+| [`src/ai/config.ts`](../src/ai/config.ts) | difficulty presets and tunable heuristic values |
+| [`src/ai/legalActions.ts`](../src/ai/legalActions.ts) | legal action generation per phase |
+| [`src/ai/autoplay.ts`](../src/ai/autoplay.ts) | AI turn and full-game execution |
+| [`src/ai/simulationDiagnostics.ts`](../src/ai/simulationDiagnostics.ts) | stall tracking and quality diagnostics |
+| [`src/ai/difficultyBalance.test.ts`](../src/ai/difficultyBalance.test.ts) | difficulty-specific behavior checks |
+| [`src/ai/heuristicAgent.test.ts`](../src/ai/heuristicAgent.test.ts) | decision-level regression coverage |
+| [`src/ai/simulationDiagnostics.test.ts`](../src/ai/simulationDiagnostics.test.ts) | diagnostics and stale-action regression coverage |
