@@ -19,8 +19,14 @@ import {
 } from '../engine/rules/abilities';
 import { isHealingPosition } from '../engine/rules/healing';
 import { canOpenChest } from '../engine/rules/chests';
-import type { AiHeuristicConfig } from './config';
-import { estimateCombatWinChance } from './heuristicAgent';
+import {
+  getDifficultyConfig,
+  type AiHeuristicConfig,
+} from './config';
+import {
+  estimateCombatWinChance,
+  getEffectiveAiHeuristicConfig,
+} from './heuristicAgent';
 
 export const simulationIssueTypes = [
   'stalledTurns',
@@ -199,9 +205,14 @@ export function detectSimulationIssues(
   action: GameAction,
   legalActions: readonly GameAction[],
   config: AiHeuristicConfig,
+  staleActionCount = 0,
 ): SimulationIssueType[] {
   const issues: SimulationIssueType[] = [];
   const activePlayer = state.players[state.activePlayerIndex];
+  const effectiveConfig = getEffectiveAiHeuristicConfig(
+    config,
+    staleActionCount,
+  );
 
   if (isStalledTurn(action, legalActions)) {
     issues.push('stalledTurns');
@@ -216,13 +227,13 @@ export function detectSimulationIssues(
     action,
     legalActions,
     activePlayer,
-    config,
+    effectiveConfig,
   );
   if (priorityIssue) {
     issues.push(priorityIssue);
   }
 
-  if (isAvoidableRiskFight(state, action, activePlayer, config)) {
+  if (isAvoidableRiskFight(state, action, activePlayer, effectiveConfig)) {
     issues.push('avoidableRiskFights');
   }
 
@@ -248,6 +259,13 @@ export function isMeaningfulProgress(
   after: GameState,
   action: GameAction,
 ): boolean {
+  const config = getDifficultyConfig(before.difficulty);
+  const fullyExplored =
+    before.tileStack.length === 0 &&
+    before.tokenBag.length === 0 &&
+    after.tileStack.length === 0 &&
+    after.tokenBag.length === 0;
+
   if (after.phase === 'game_over') {
     return true;
   }
@@ -262,6 +280,13 @@ export function isMeaningfulProgress(
     action.type === 'swapLoot'
   ) {
     return true;
+  }
+
+  if (
+    fullyExplored &&
+    (action.type === 'movePlayer' || action.type === 'swapWitchPosition')
+  ) {
+    return isAdvancingEndgameObjective(before, after, config);
   }
 
   if (action.type === 'movePlayer') {
@@ -336,18 +361,6 @@ export function createStaleActionTracker(
     },
     record(before: GameState, after: GameState, action: GameAction): void {
       let progressed = isMeaningfulProgress(before, after, action);
-      const isFullyExplored =
-        before.tileStack.length === 0 && before.tokenBag.length === 0;
-
-      if (
-        progressed &&
-        isFullyExplored &&
-        (action.type === 'movePlayer' ||
-          action.type === 'declareExplorationDirection' ||
-          action.type === 'swapWitchPosition')
-      ) {
-        progressed = false;
-      }
 
       if (progressed && action.type === 'movePlayer') {
         const activePlayerId = before.players[before.activePlayerIndex]?.id;
@@ -573,6 +586,120 @@ function createHealingOpportunity(
       actionAdvancesToAnyTarget(state, action, reachableHealingTargets) ||
       actionUsesWitchSwapToAnyTarget(state, action, reachableHealingTargets),
   };
+}
+
+function isAdvancingEndgameObjective(
+  before: GameState,
+  after: GameState,
+  config: AiHeuristicConfig,
+): boolean {
+  const beforeActive = before.players[before.activePlayerIndex];
+  const afterActive =
+    after.players.find((player) => player.id === beforeActive.id) ?? beforeActive;
+  const targetPositions = collectEndgameObjectiveTargets(
+    before,
+    beforeActive,
+    config,
+  );
+
+  if (targetPositions.length === 0) {
+    return false;
+  }
+
+  const beforeDistance = minimumStrategicDistanceToTargets(
+    before,
+    beforeActive,
+    beforeActive.position,
+    targetPositions,
+  );
+  const afterDistance = minimumStrategicDistanceToTargets(
+    after,
+    beforeActive,
+    afterActive.position,
+    targetPositions,
+  );
+
+  return (
+    beforeDistance !== undefined &&
+    afterDistance !== undefined &&
+    afterDistance < beforeDistance
+  );
+}
+
+function collectEndgameObjectiveTargets(
+  state: GameState,
+  activePlayer: Player,
+  config: AiHeuristicConfig,
+): BoardPosition[] {
+  const healingTargets = needsHealing(activePlayer, config)
+    ? getDiscoveredHealingPositions(state)
+    : [];
+  const chestTargets =
+    activePlayer.inventory.keyCount > 0
+      ? state.board
+          .filter((tile) => tile.roomToken?.id === 'treasure_chest')
+          .map((tile) => ({ boardX: tile.boardX, boardY: tile.boardY }))
+      : [];
+  const lootTargets = state.board
+    .filter((tile) => {
+      const item = tile.looseItems[0];
+      return (
+        !!item &&
+        isMeaningfulUpgradeItem(activePlayer, item) &&
+        isLootRacePlausible(
+          state,
+          activePlayer,
+          { boardX: tile.boardX, boardY: tile.boardY },
+        )
+      );
+    })
+    .map((tile) => ({ boardX: tile.boardX, boardY: tile.boardY }));
+  const combatTargets = state.board.flatMap((tile) => {
+    if (tile.roomToken?.kind !== 'monster') {
+      return [];
+    }
+
+    const monster = monsterDefinitions[tile.roomToken.id];
+    const winChance = estimateCombatWinChance(activePlayer, monster.strength);
+    const threshold =
+      monster.id === 'dragon'
+        ? config.minimumDragonWinChance
+        : config.minimumRepeatCombatWinChance;
+
+    if (winChance >= threshold) {
+      return [{ boardX: tile.boardX, boardY: tile.boardY }];
+    }
+
+    if (monster.id === 'dragon' && winChance > 0) {
+      return [{ boardX: tile.boardX, boardY: tile.boardY }];
+    }
+
+    return [];
+  });
+
+  return [...healingTargets, ...chestTargets, ...lootTargets, ...combatTargets].filter(
+    (position, index, positions) =>
+      positions.findIndex((candidate) => positionsEqual(candidate, position)) === index,
+  );
+}
+
+function minimumStrategicDistanceToTargets(
+  state: GameState,
+  player: Player,
+  from: BoardPosition,
+  targets: readonly BoardPosition[],
+): number | undefined {
+  const distances = targets.flatMap((target) => {
+    const distance = shortestStrategicDistance(
+      state,
+      { ...player, position: from },
+      target,
+    );
+
+    return distance === undefined ? [] : [distance];
+  });
+
+  return distances.length > 0 ? Math.min(...distances) : undefined;
 }
 
 function createChestOpportunity(

@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
+import { monsterDefinitions } from '../data/monsters';
 import { applyGameAction } from '../engine/core/actions';
 import type { GameState, PlacedTile } from '../engine/core/types';
 import { createNewGame } from '../engine/setup/createGame';
 import { createSeededRng } from '../utils/rng';
 import { playAiGameToEnd } from './autoplay';
 import { aiHeuristicConfig } from './config';
-import { chooseHeuristicAiAction } from './heuristicAgent';
+import {
+  chooseHeuristicAiAction,
+  estimateCombatWinChance,
+  getEffectiveAiHeuristicConfig,
+} from './heuristicAgent';
 import { getLegalAiActions } from './legalActions';
 
 describe('heuristic AI', () => {
@@ -316,6 +321,49 @@ describe('heuristic AI', () => {
     expect(['movePlayer', 'declareExplorationDirection']).toContain(
       chooseHeuristicAiAction(state).type,
     );
+  });
+
+  it('prefers a legal desperate heal target when the most urgent player is not legally targetable', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 2,
+      seed: 'ai-desperate-heal-legal-target',
+      selectedAiHeroIds: ['hero_valkyrie', 'hero_witch'],
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'await_move',
+      activePlayerIndex: 0,
+      remainingSteps: 0,
+      tileStack: [],
+      tokenBag: [],
+      players: base.players.map((player, index) =>
+        index === 0
+          ? { ...player, hp: player.maxHp, isCursed: false }
+          : index === 1
+            ? { ...player, hp: player.maxHp, isCursed: true }
+            : index === 2
+              ? { ...player, hp: player.maxHp - 2, isCursed: false }
+              : player,
+      ),
+    };
+    const legalActions = [
+      {
+        type: 'useHealingSpell' as const,
+        targetPlayerId: state.players[2]!.id,
+        healingPosition: { boardX: 0, boardY: 0 },
+      },
+      { type: 'endTurn' as const },
+    ];
+
+    expect(
+      chooseHeuristicAiAction(
+        state,
+        legalActions,
+        aiHeuristicConfig,
+        aiHeuristicConfig.staleActionThreshold,
+      ),
+    ).toEqual(legalActions[0]);
   });
 
   it('prefers direct exploration over a preparatory move when the explore objective is already legal', () => {
@@ -737,7 +785,14 @@ describe('heuristic AI', () => {
       },
     };
 
-    expect(chooseHeuristicAiAction(state)).toEqual({
+    expect(
+      chooseHeuristicAiAction(
+        state,
+        undefined,
+        aiHeuristicConfig,
+        aiHeuristicConfig.staleActionThreshold,
+      ),
+    ).toEqual({
       type: 'startOptionalCombat',
     });
   });
@@ -792,6 +847,20 @@ describe('heuristic AI', () => {
     expect(result.state.phase).toBe('game_over');
     expect(result.state.victory?.defeatedDragonByPlayerId).toBeDefined();
     expect(result.actionCount).toBeGreaterThan(0);
+  });
+
+  it('finishes the reported stress-a#52 rogue timeout seed', () => {
+    const result = playAiGameToEnd(createStressScenarioState('stress-a#52'), 20000);
+
+    expect(result.state.phase).toBe('game_over');
+    expect(result.actionCount).toBeLessThan(20000);
+  });
+
+  it('finishes the reported stress-a#10 turn-start timeout seed', () => {
+    const result = playAiGameToEnd(createStressScenarioState('stress-a#10'), 20000);
+
+    expect(result.state.phase).toBe('game_over');
+    expect(result.actionCount).toBeLessThan(20000);
   });
 
   it('keeps balancing values centralized and stable', () => {
@@ -966,6 +1035,59 @@ describe('heuristic AI', () => {
       type: 'startOptionalCombat',
     });
 
+    const normalRiskState: GameState = {
+      ...strongState,
+      players: strongState.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              inventory: {
+                ...player.inventory,
+                weapons: [],
+              },
+            }
+          : player,
+      ),
+      combat: {
+        ...strongState.combat!,
+        monsterId: 'skeleton_lord',
+      },
+      board: [
+        {
+          ...strongState.board[0],
+          roomToken: { id: 'skeleton_lord', kind: 'monster' },
+        },
+      ],
+    };
+    const normalRiskWinChance = estimateCombatWinChance(
+      normalRiskState.players[0],
+      monsterDefinitions.skeleton_lord.strength,
+    );
+    const desperateConfig = getEffectiveAiHeuristicConfig(
+      aiHeuristicConfig,
+      aiHeuristicConfig.staleActionThreshold,
+    );
+
+    expect(normalRiskWinChance).toBeLessThan(
+      aiHeuristicConfig.minimumRepeatCombatWinChance,
+    );
+    expect(normalRiskWinChance).toBeGreaterThanOrEqual(
+      desperateConfig.minimumRepeatCombatWinChance,
+    );
+    expect(chooseHeuristicAiAction(normalRiskState)).toEqual({
+      type: 'endTurn',
+    });
+    expect(
+      chooseHeuristicAiAction(
+        normalRiskState,
+        undefined,
+        aiHeuristicConfig,
+        aiHeuristicConfig.staleActionThreshold,
+      ),
+    ).toEqual({
+      type: 'startOptionalCombat',
+    });
+
     const weakState: GameState = {
       ...strongState,
       players: strongState.players.map((player, index) =>
@@ -992,6 +1114,38 @@ describe('heuristic AI', () => {
     };
 
     expect(chooseHeuristicAiAction(weakState)).toEqual({
+      type: 'endTurn',
+    });
+
+    const desperateTooRiskyState: GameState = {
+      ...normalRiskState,
+      combat: {
+        ...normalRiskState.combat!,
+        monsterId: 'soulburner',
+      },
+      board: [
+        {
+          ...normalRiskState.board[0],
+          roomToken: { id: 'soulburner', kind: 'monster' },
+        },
+      ],
+    };
+    const desperateTooRiskyWinChance = estimateCombatWinChance(
+      desperateTooRiskyState.players[0],
+      monsterDefinitions.soulburner.strength,
+    );
+
+    expect(desperateTooRiskyWinChance).toBeLessThan(
+      desperateConfig.minimumRepeatCombatWinChance,
+    );
+    expect(
+      chooseHeuristicAiAction(
+        desperateTooRiskyState,
+        undefined,
+        aiHeuristicConfig,
+        aiHeuristicConfig.staleActionThreshold,
+      ),
+    ).toEqual({
       type: 'endTurn',
     });
   });
@@ -1291,6 +1445,22 @@ function createDragonEndgameState(): GameState {
     },
     rng: createSeededRng('dragon-0').snapshot(),
   };
+}
+
+function createStressScenarioState(seed: string): GameState {
+  return createNewGame({
+    humanHeroId: 'hero_mage',
+    aiCount: 4,
+    seed,
+    difficulty: 'hard',
+    poolScale: 1,
+    selectedAiHeroIds: [
+      'hero_valkyrie',
+      'hero_witch',
+      'hero_rogue',
+      'hero_blade',
+    ],
+  });
 }
 
 function playActions(state: GameState, count: number): GameState {

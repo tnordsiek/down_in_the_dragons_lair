@@ -6,6 +6,7 @@ import type {
   GameAction,
   GameState,
   Item,
+  MonsterId,
   Player,
   Rotation,
 } from '../engine/core/types';
@@ -23,7 +24,6 @@ import {
 } from '../engine/movement/topology';
 import {
   getReachableExplorationTargets,
-  getReachableKnownMovePaths,
 } from '../engine/movement/reachable';
 import { getDiscoveredHealingPositions } from '../engine/rules/abilities';
 import { hasActiveHeroAbility } from '../engine/rules/abilities';
@@ -66,6 +66,38 @@ export const heuristicAiAgent: AiAgent = {
   },
 };
 
+function getDesperateRepeatCombatWinChance(
+  baseConfig: AiHeuristicConfig,
+): number {
+  return Math.max(0.1, baseConfig.minimumRepeatCombatWinChance / 2);
+}
+
+export function getEffectiveAiHeuristicConfig(
+  baseConfig: AiHeuristicConfig,
+  staleActionCount = 0,
+): AiHeuristicConfig {
+  const isDesperate = staleActionCount >= baseConfig.staleActionThreshold;
+
+  if (!isDesperate) {
+    return baseConfig;
+  }
+
+  return {
+    ...baseConfig,
+    minimumRepeatCombatWinChance:
+      getDesperateRepeatCombatWinChance(baseConfig),
+  };
+}
+
+function getMinimumCombatWinChance(
+  monsterId: MonsterId,
+  config: AiHeuristicConfig,
+): number {
+  return monsterId === 'dragon'
+    ? config.minimumDragonWinChance
+    : config.minimumRepeatCombatWinChance;
+}
+
 export function chooseHeuristicAiAction(
   state: GameState,
   legalActions = getLegalAiActions(state),
@@ -77,13 +109,8 @@ export function chooseHeuristicAiAction(
   }
 
   const isDesperate = staleActionCount >= baseConfig.staleActionThreshold;
-  const config: AiHeuristicConfig = isDesperate
-    ? {
-        ...baseConfig,
-        minimumRepeatCombatWinChance: 0,
-        minimumDragonWinChance: 0,
-      }
-    : baseConfig;
+  const fullyExplored = state.tileStack.length === 0 && state.tokenBag.length === 0;
+  const config = getEffectiveAiHeuristicConfig(baseConfig, staleActionCount);
 
   if (config.mistakeRate > 0) {
     const rng = restoreSeededRng(state.rng);
@@ -154,6 +181,17 @@ export function chooseHeuristicAiAction(
     return objectiveAction;
   }
 
+  if (isDesperate && fullyExplored) {
+    const desperateHealingSpellAction = chooseDesperateHealingSpellAction(
+      state,
+      legalActions,
+    );
+
+    if (desperateHealingSpellAction) {
+      return desperateHealingSpellAction;
+    }
+  }
+
   if (!isDesperate) {
     const stalledEndTurnAction = chooseStalledEndTurnAction(
       state,
@@ -217,6 +255,58 @@ function chooseHealingSpellAction(
           action.targetPlayerId === activePlayer.id,
       )
     : undefined;
+}
+
+function chooseDesperateHealingSpellAction(
+  state: GameState,
+  legalActions: GameAction[],
+): GameAction | undefined {
+  const healingActions = legalActions.filter(
+    (action) => action.type === 'useHealingSpell',
+  );
+
+  if (healingActions.length === 0) {
+    return undefined;
+  }
+
+  const candidates = healingActions.flatMap((action) => {
+    const targetPlayer = state.players.find(
+      (player) => player.id === action.targetPlayerId,
+    );
+
+    return targetPlayer ? [{ action, targetPlayer }] : [];
+  });
+
+  const bestCandidate = candidates.sort((left, right) => {
+    if (Number(right.targetPlayer.isCursed) !== Number(left.targetPlayer.isCursed)) {
+      return Number(right.targetPlayer.isCursed) - Number(left.targetPlayer.isCursed);
+    }
+
+    const leftMissingHp = left.targetPlayer.maxHp - left.targetPlayer.hp;
+    const rightMissingHp = right.targetPlayer.maxHp - right.targetPlayer.hp;
+
+    if (rightMissingHp !== leftMissingHp) {
+      return rightMissingHp - leftMissingHp;
+    }
+
+    const leftPlayerIndex = state.players.findIndex(
+      (player) => player.id === left.targetPlayer.id,
+    );
+    const rightPlayerIndex = state.players.findIndex(
+      (player) => player.id === right.targetPlayer.id,
+    );
+
+    if (leftPlayerIndex !== rightPlayerIndex) {
+      return leftPlayerIndex - rightPlayerIndex;
+    }
+
+    return (
+      left.action.healingPosition.boardX - right.action.healingPosition.boardX ||
+      left.action.healingPosition.boardY - right.action.healingPosition.boardY
+    );
+  })[0];
+
+  return bestCandidate?.action;
 }
 
 function chooseHealingEndTurnAction(
@@ -377,10 +467,7 @@ function chooseCombatAction(
       monster.strength,
       automaticFlameBonus,
     );
-    const minimumWinChance =
-      monster.id === 'dragon'
-        ? config.minimumDragonWinChance
-        : config.minimumRepeatCombatWinChance;
+    const minimumWinChance = getMinimumCombatWinChance(monster.id, config);
 
     if (
       monster.id === 'dragon' &&
@@ -423,10 +510,7 @@ function chooseCombatAction(
   );
 
   if (state.phase === 'optional_post_combat') {
-    const minimumWinChance =
-      monster.id === 'dragon'
-        ? config.minimumDragonWinChance
-        : config.minimumRepeatCombatWinChance;
+    const minimumWinChance = getMinimumCombatWinChance(monster.id, config);
 
     if (
       winChance < minimumWinChance &&
@@ -459,10 +543,7 @@ function chooseValkyrieRerollAction(
     monster.strength,
     automaticFlameBonus,
   );
-  const minimumWinChance =
-    monster.id === 'dragon'
-      ? config.minimumDragonWinChance
-      : config.minimumRepeatCombatWinChance;
+  const minimumWinChance = getMinimumCombatWinChance(monster.id, config);
 
   if (winChance < minimumWinChance) {
     const declineAction = legalActions.find(
@@ -698,30 +779,40 @@ function chooseMovementAction(
     return undefined;
   }
 
+  const fullyExplored = state.tileStack.length === 0 && state.tokenBag.length === 0;
   const sortedActions = movementActions
-    .slice()
+    .map((action) => ({
+      action,
+      score: scoreMovementAction(state, action, config, objective, isDesperate),
+    }))
     .sort(
       (left, right) =>
-        scoreMovementAction(state, right, config, objective, isDesperate) -
-          scoreMovementAction(state, left, config, objective, isDesperate) ||
-        actionOrder(left) - actionOrder(right),
+        right.score - left.score || actionOrder(left.action) - actionOrder(right.action),
     );
   const bestAction = sortedActions[0];
 
+  if (!bestAction) {
+    return undefined;
+  }
+
+  if (objective && !Number.isFinite(bestAction.score) && fullyExplored) {
+    return undefined;
+  }
+
   if (
     !state.lastMoveFrom ||
-    bestAction.type !== 'movePlayer' ||
-    !isBacktrackMove(bestAction, state.lastMoveFrom)
+    bestAction.action.type !== 'movePlayer' ||
+    !isBacktrackMove(bestAction.action, state.lastMoveFrom)
   ) {
-    return bestAction;
+    return bestAction.action;
   }
 
   return (
     sortedActions.find(
-      (action) =>
-        action.type !== 'movePlayer' ||
-        !isBacktrackMove(action, state.lastMoveFrom!),
-    ) ?? bestAction
+      (entry) =>
+        entry.action.type !== 'movePlayer' ||
+        !isBacktrackMove(entry.action, state.lastMoveFrom!),
+    )?.action ?? bestAction.action
   );
 }
 
@@ -863,9 +954,7 @@ function selectStrategicObjective(
     createChestObjective(state, legalActions, activePlayer) ??
     createUpgradeLootObjective(state, legalActions, activePlayer) ??
     createWinningDragonObjective(state, legalActions, activePlayer, config) ??
-    (fullyExplored
-      ? undefined
-      : createMonsterObjective(state, legalActions, activePlayer, config)) ??
+    createMonsterObjective(state, legalActions, activePlayer, config) ??
     (fullyExplored
       ? undefined
       : createExplorationObjective(state))
@@ -963,14 +1052,18 @@ function createHealingObjective(
     };
   }
 
-  const reachableHealingTargets = collectReachableKnownPositions(state).filter(
-    (position) => isHealingTarget(state, position),
+  const reachableHealingTargets = getDiscoveredHealingPositions(state);
+  const targetPositions = filterAdvancingObjectiveTargets(
+    state,
+    legalActions,
+    activePlayer,
+    reachableHealingTargets,
   );
 
-  return reachableHealingTargets.length > 0
+  return targetPositions.length > 0
     ? {
         type: 'heal',
-        targetPositions: reachableHealingTargets,
+        targetPositions,
       }
     : undefined;
 }
@@ -991,15 +1084,20 @@ function createChestObjective(
     };
   }
 
-  const reachableChestTargets = collectReachableKnownPositions(state).filter((position) => {
-    const tile = getTileAt(state.board, position);
-    return tile?.roomToken?.id === 'treasure_chest';
-  });
+  const reachableChestTargets = state.board
+    .filter((tile) => tile.roomToken?.id === 'treasure_chest')
+    .map((tile) => ({ boardX: tile.boardX, boardY: tile.boardY }));
+  const targetPositions = filterAdvancingObjectiveTargets(
+    state,
+    legalActions,
+    activePlayer,
+    reachableChestTargets,
+  );
 
-  return reachableChestTargets.length > 0
+  return targetPositions.length > 0
     ? {
         type: 'chest',
-        targetPositions: reachableChestTargets,
+        targetPositions,
       }
     : undefined;
 }
@@ -1016,21 +1114,28 @@ function createUpgradeLootObjective(
     };
   }
 
-  const reachableLootTargets = collectReachableKnownPositions(state).filter((position) => {
-    const tile = getTileAt(state.board, position);
-    const item = tile?.looseItems[0];
+  const reachableLootTargets = state.board
+    .filter((tile) => {
+      const item = tile.looseItems[0];
 
-    return (
-      !!item &&
-      isMeaningfulUpgradeItem(activePlayer, item) &&
-      isLootRacePlausible(state, activePlayer, position)
-    );
-  });
+      return (
+        !!item &&
+        isMeaningfulUpgradeItem(activePlayer, item) &&
+        isLootRacePlausible(state, activePlayer, tile)
+      );
+    })
+    .map((tile) => ({ boardX: tile.boardX, boardY: tile.boardY }));
+  const targetPositions = filterAdvancingObjectiveTargets(
+    state,
+    legalActions,
+    activePlayer,
+    reachableLootTargets,
+  );
 
-  return reachableLootTargets.length > 0
+  return targetPositions.length > 0
     ? {
         type: 'upgradeLoot',
-        targetPositions: reachableLootTargets,
+        targetPositions,
       }
     : undefined;
 }
@@ -1057,15 +1162,20 @@ function createWinningDragonObjective(
     };
   }
 
-  const reachableDragonTargets = collectReachableKnownPositions(state).filter((position) => {
-    const tile = getTileAt(state.board, position);
-    return tile?.roomToken?.id === 'dragon';
-  });
+  const reachableDragonTargets = state.board
+    .filter((tile) => tile.roomToken?.id === 'dragon')
+    .map((tile) => ({ boardX: tile.boardX, boardY: tile.boardY }));
+  const targetPositions = filterAdvancingObjectiveTargets(
+    state,
+    legalActions,
+    activePlayer,
+    reachableDragonTargets,
+  );
 
-  return reachableDragonTargets.length > 0
+  return targetPositions.length > 0
     ? {
         type: 'winningDragon',
-        targetPositions: reachableDragonTargets,
+        targetPositions,
       }
     : undefined;
 }
@@ -1089,7 +1199,7 @@ function createMonsterObjective(
     const monster = monsterDefinitions[monsterId];
     const winChance = estimateCombatWinChance(activePlayer, monster.strength);
 
-    if (winChance >= config.minimumRepeatCombatWinChance) {
+    if (winChance >= getMinimumCombatWinChance(monster.id, config)) {
       return {
         type: 'monster',
         targetPositions: [activePlayer.position],
@@ -1097,22 +1207,29 @@ function createMonsterObjective(
     }
   }
 
-  const reachableMonsterTargets = collectReachableKnownPositions(state).filter((position) => {
-    const tile = getTileAt(state.board, position);
-    if (tile?.roomToken?.kind !== 'monster' || tile.roomToken.id === 'dragon') {
-      return false;
-    }
+  const reachableMonsterTargets = state.board
+    .filter((tile) => {
+      if (tile.roomToken?.kind !== 'monster' || tile.roomToken.id === 'dragon') {
+        return false;
+      }
 
-    const monster = monsterDefinitions[tile.roomToken.id];
-    const winChance = estimateCombatWinChance(activePlayer, monster.strength);
+      const monster = monsterDefinitions[tile.roomToken.id];
+      const winChance = estimateCombatWinChance(activePlayer, monster.strength);
 
-    return winChance >= config.minimumRepeatCombatWinChance;
-  });
+      return winChance >= getMinimumCombatWinChance(monster.id, config);
+    })
+    .map((tile) => ({ boardX: tile.boardX, boardY: tile.boardY }));
+  const targetPositions = filterAdvancingObjectiveTargets(
+    state,
+    legalActions,
+    activePlayer,
+    reachableMonsterTargets,
+  );
 
-  return reachableMonsterTargets.length > 0
+  return targetPositions.length > 0
     ? {
         type: 'monster',
-        targetPositions: reachableMonsterTargets,
+        targetPositions,
       }
     : undefined;
 }
@@ -1152,6 +1269,62 @@ function chooseObjectiveSwapAction(
         positionsEqual(position, targetPosition),
       )
     );
+  });
+}
+
+function filterAdvancingObjectiveTargets(
+  state: GameState,
+  legalActions: GameAction[],
+  activePlayer: Player,
+  targetPositions: readonly BoardPosition[],
+): BoardPosition[] {
+  return targetPositions.filter((targetPosition) =>
+    hasAdvancingObjectiveAction(state, legalActions, activePlayer, targetPosition),
+  );
+}
+
+function hasAdvancingObjectiveAction(
+  state: GameState,
+  legalActions: GameAction[],
+  activePlayer: Player,
+  targetPosition: BoardPosition,
+): boolean {
+  const currentDistance = shortestStrategicDistance(
+    state,
+    activePlayer,
+    targetPosition,
+  );
+
+  if (currentDistance === undefined) {
+    return false;
+  }
+
+  return legalActions.some((action) => {
+    const actionTargetPosition = getActionTargetPosition(state, action);
+
+    if (!actionTargetPosition) {
+      return false;
+    }
+
+    if (positionsEqual(actionTargetPosition, targetPosition)) {
+      return true;
+    }
+
+    if (
+      action.type !== 'movePlayer' &&
+      action.type !== 'swapWitchPosition'
+    ) {
+      return false;
+    }
+
+    const nextDistance = shortestStrategicDistanceFromPosition(
+      state,
+      activePlayer,
+      actionTargetPosition,
+      targetPosition,
+    );
+
+    return nextDistance !== undefined && nextDistance < currentDistance;
   });
 }
 
@@ -1381,12 +1554,10 @@ function scoreMovementAction(
     const monster = monsterDefinitions[targetTile.roomToken.id];
     const winChance = estimateCombatWinChance(activePlayer, monster.strength);
     const minimumDesirableWinChance = isDesperate
-      ? 0
+      ? getMinimumCombatWinChance(monster.id, config)
       : Math.max(
           0.5,
-          monster.id === 'dragon'
-            ? config.minimumDragonWinChance
-            : config.minimumRepeatCombatWinChance,
+          getMinimumCombatWinChance(monster.id, config),
         );
 
     score +=
@@ -1602,10 +1773,6 @@ function isObjectiveTile(
     return false;
   }
 
-  if (hasActiveHeroAbility(player, 'hero_rogue')) {
-    return false;
-  }
-
   const monster = monsterDefinitions[tile.roomToken.id];
   const automaticFlameBonus = getAutomaticFlameSpellCount(player);
   const winChance = estimateCombatWinChance(
@@ -1613,10 +1780,7 @@ function isObjectiveTile(
     monster.strength,
     automaticFlameBonus,
   );
-  const minimumWinChance =
-    monster.id === 'dragon'
-      ? config.minimumDragonWinChance
-      : config.minimumRepeatCombatWinChance;
+  const minimumWinChance = getMinimumCombatWinChance(monster.id, config);
 
   return winChance >= minimumWinChance;
 }
@@ -1835,19 +1999,6 @@ function minimumStrategicDistanceToTargets(
   });
 
   return distances.length > 0 ? Math.min(...distances) : undefined;
-}
-
-function collectReachableKnownPositions(state: GameState): BoardPosition[] {
-  const activePosition = state.players[state.activePlayerIndex].position;
-  const reachablePositions = [
-    activePosition,
-    ...getReachableKnownMovePaths(state).map((entry) => entry.position),
-  ];
-
-  return reachablePositions.filter(
-    (position, index, positions) =>
-      positions.findIndex((candidate) => positionsEqual(candidate, position)) === index,
-  );
 }
 
 function isHealingTarget(state: GameState, position: BoardPosition): boolean {

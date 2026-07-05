@@ -1,8 +1,6 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type { GameState } from '../engine/core/types';
-import { assertStateInvariants } from '../test/invariants';
-import { seededGame, traceAutoplay } from '../test/scenarios';
 
 /**
  * Curated full-game golden — pins the COMPLETE deterministic trajectory of real
@@ -56,13 +54,20 @@ function outcome(config: FinishConfig, state: GameState, actionCount: number) {
 }
 
 describe('curated full-game golden', () => {
+  let assertStateInvariants: typeof import('../test/invariants').assertStateInvariants;
+  let seededGame: typeof import('../test/scenarios').seededGame;
+  let traceAutoplay: typeof import('../test/scenarios').traceAutoplay;
   let finished: {
     config: FinishConfig;
     state: GameState;
     actionCount: number;
   }[] = [];
 
-  beforeAll(() => {
+  beforeAll(async () => {
+    vi.resetModules();
+    ({ assertStateInvariants } = await import('../test/invariants'));
+    ({ seededGame, traceAutoplay } = await import('../test/scenarios'));
+
     finished = CONFIGS.map((config) => {
       const trace = traceAutoplay(seededGame({ ...config, poolScale: 0.5 }), {
         maxActions: 15000,

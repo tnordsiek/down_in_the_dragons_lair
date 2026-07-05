@@ -1,9 +1,19 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
+import { monsterDefinitions } from '../data/monsters';
 import type { GameAction, GameState } from '../engine/core/types';
 import { createNewGame } from '../engine/setup/createGame';
 import { aiHeuristicConfig } from './config';
-import { detectSimulationIssues } from './simulationDiagnostics';
+import * as configModule from './config';
+import {
+  estimateCombatWinChance,
+  getEffectiveAiHeuristicConfig,
+} from './heuristicAgent';
+import {
+  createStaleActionTracker,
+  detectSimulationIssues,
+  isMeaningfulProgress,
+} from './simulationDiagnostics';
 
 describe('detectSimulationIssues missedHealingPriority', () => {
   function criticalState(overrides: Partial<GameState> = {}): GameState {
@@ -490,9 +500,190 @@ describe('detectSimulationIssues priority goals', () => {
       { type: 'endTurn' },
     ];
 
-    expect(
+  expect(
       detectSimulationIssues(state, { type: 'endTurn' }, legalActions, aiHeuristicConfig),
     ).toContain('missedUpgradeLoot');
+  });
+
+  it('flags avoidableRiskFights for a normal low-win optional combat', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'diagnostics-risk-fight-normal',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'optional_monster_combat',
+      activePlayerIndex: 0,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_rogue',
+              inventory: {
+                ...player.inventory,
+                weapons: [],
+              },
+            }
+          : player,
+      ),
+      board: [
+        {
+          ...base.board[0],
+          roomToken: { id: 'skeleton_lord', kind: 'monster' },
+        },
+      ],
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'skeleton_lord',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: 0 },
+      },
+    };
+    const legalActions: GameAction[] = [
+      { type: 'startOptionalCombat' },
+      { type: 'endTurn' },
+    ];
+    const winChance = estimateCombatWinChance(
+      state.players[0],
+      monsterDefinitions.skeleton_lord.strength,
+    );
+
+    expect(winChance).toBeLessThan(
+      aiHeuristicConfig.minimumRepeatCombatWinChance,
+    );
+    expect(
+      detectSimulationIssues(
+        state,
+        { type: 'startOptionalCombat' },
+        legalActions,
+        aiHeuristicConfig,
+      ),
+    ).toContain('avoidableRiskFights');
+  });
+
+  it('does not flag avoidableRiskFights for a desperate combat inside the narrowed escape hatch', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'diagnostics-risk-fight-desperate-allowed',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'optional_monster_combat',
+      activePlayerIndex: 0,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_rogue',
+              inventory: {
+                ...player.inventory,
+                weapons: [],
+              },
+            }
+          : player,
+      ),
+      board: [
+        {
+          ...base.board[0],
+          roomToken: { id: 'skeleton_lord', kind: 'monster' },
+        },
+      ],
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'skeleton_lord',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: 0 },
+      },
+    };
+    const legalActions: GameAction[] = [
+      { type: 'startOptionalCombat' },
+      { type: 'endTurn' },
+    ];
+    const desperateConfig = getEffectiveAiHeuristicConfig(
+      aiHeuristicConfig,
+      aiHeuristicConfig.staleActionThreshold,
+    );
+    const winChance = estimateCombatWinChance(
+      state.players[0],
+      monsterDefinitions.skeleton_lord.strength,
+    );
+
+    expect(winChance).toBeGreaterThanOrEqual(
+      desperateConfig.minimumRepeatCombatWinChance,
+    );
+    expect(
+      detectSimulationIssues(
+        state,
+        { type: 'startOptionalCombat' },
+        legalActions,
+        aiHeuristicConfig,
+        aiHeuristicConfig.staleActionThreshold,
+      ),
+    ).not.toContain('avoidableRiskFights');
+  });
+
+  it('still flags avoidableRiskFights for desperate combats below the narrowed escape hatch', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'diagnostics-risk-fight-desperate-blocked',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'optional_monster_combat',
+      activePlayerIndex: 0,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_rogue',
+              inventory: {
+                ...player.inventory,
+                weapons: [],
+              },
+            }
+          : player,
+      ),
+      board: [
+        {
+          ...base.board[0],
+          roomToken: { id: 'soulburner', kind: 'monster' },
+        },
+      ],
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'soulburner',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: 0 },
+      },
+    };
+    const legalActions: GameAction[] = [
+      { type: 'startOptionalCombat' },
+      { type: 'endTurn' },
+    ];
+    const desperateConfig = getEffectiveAiHeuristicConfig(
+      aiHeuristicConfig,
+      aiHeuristicConfig.staleActionThreshold,
+    );
+    const winChance = estimateCombatWinChance(
+      state.players[0],
+      monsterDefinitions.soulburner.strength,
+    );
+
+    expect(winChance).toBeLessThan(
+      desperateConfig.minimumRepeatCombatWinChance,
+    );
+    expect(
+      detectSimulationIssues(
+        state,
+        { type: 'startOptionalCombat' },
+        legalActions,
+        aiHeuristicConfig,
+        aiHeuristicConfig.staleActionThreshold,
+      ),
+    ).toContain('avoidableRiskFights');
   });
 
   it('flags missedWinningDragonWindow only when the dragon would secure the score', () => {
@@ -544,5 +735,282 @@ describe('detectSimulationIssues priority goals', () => {
         },
       ),
     ).toContain('missedWinningDragonWindow');
+  });
+});
+
+describe('stale action tracking', () => {
+  it('uses the active game difficulty for fully explored dragon progress', () => {
+    const getDifficultyConfigSpy = vi
+      .spyOn(configModule, 'getDifficultyConfig')
+      .mockImplementation((difficulty) => ({
+        ...aiHeuristicConfig,
+        minimumDragonWinChance: difficulty === 'easy' ? 0 : 1,
+        minimumRepeatCombatWinChance: 1,
+      }));
+    const base = createNewGame({
+      humanHeroId: 'hero_blade',
+      aiCount: 1,
+      seed: 'diagnostics-fully-explored-easy-dragon',
+      difficulty: 'easy',
+    });
+    const before: GameState = {
+      ...base,
+      phase: 'await_move',
+      activePlayerIndex: 0,
+      remainingSteps: 1,
+      tileStack: [],
+      tokenBag: [],
+      board: [
+        {
+          ...base.board[0],
+        },
+        {
+          tileInstanceId: 'tile-mid',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-dragon',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 2,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'dragon', kind: 'monster' },
+        },
+      ],
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_blade',
+              inventory: {
+                ...player.inventory,
+                weapons: [{ type: 'weapon', bonus: 2 }, { type: 'weapon', bonus: 1 }],
+                spells: [{ type: 'spell', spellKind: 'flame' }],
+              },
+            }
+          : player,
+      ),
+    };
+    const action: GameAction = {
+      type: 'movePlayer',
+      target: { boardX: 1, boardY: 0 },
+    };
+    const after: GameState = {
+      ...before,
+      remainingSteps: 0,
+      lastMoveFrom: { boardX: 0, boardY: 0 },
+      players: before.players.map((player, index) =>
+        index === 0 ? { ...player, position: { boardX: 1, boardY: 0 } } : player,
+      ),
+    };
+
+    expect(isMeaningfulProgress(before, after, action)).toBe(true);
+
+    getDifficultyConfigSpy.mockRestore();
+  });
+
+  it('counts a fully explored move toward a real endgame objective as progress', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_blade',
+      aiCount: 1,
+      seed: 'diagnostics-fully-explored-progress',
+    });
+    const before: GameState = {
+      ...base,
+      phase: 'await_move',
+      activePlayerIndex: 0,
+      remainingSteps: 1,
+      tileStack: [],
+      tokenBag: [],
+      board: [
+        {
+          ...base.board[0],
+        },
+        {
+          tileInstanceId: 'tile-mid',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-dragon',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 2,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'dragon', kind: 'monster' },
+        },
+      ],
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_blade',
+              inventory: {
+                ...player.inventory,
+                weapons: [{ type: 'weapon', bonus: 3 }, { type: 'weapon', bonus: 3 }],
+              },
+            }
+          : player,
+      ),
+    };
+    const action: GameAction = {
+      type: 'movePlayer',
+      target: { boardX: 1, boardY: 0 },
+    };
+    const after: GameState = {
+      ...before,
+      remainingSteps: 0,
+      lastMoveFrom: { boardX: 0, boardY: 0 },
+      players: before.players.map((player, index) =>
+        index === 0 ? { ...player, position: { boardX: 1, boardY: 0 } } : player,
+      ),
+    };
+    const tracker = createStaleActionTracker();
+
+    expect(isMeaningfulProgress(before, after, action)).toBe(true);
+
+    tracker.record(before, after, action);
+
+    expect(tracker.staleActionCount).toBe(0);
+  });
+
+  it('treats fully explored movement as non-progress so endgame loops go stale', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'diagnostics-fully-explored-stall',
+    });
+    const before: GameState = {
+      ...base,
+      phase: 'await_move',
+      activePlayerIndex: 0,
+      remainingSteps: 1,
+      tileStack: [],
+      tokenBag: [],
+      lastMoveFrom: { boardX: -1, boardY: 0 },
+      board: [
+        {
+          ...base.board[0],
+        },
+        {
+          tileInstanceId: 'tile-next',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    };
+    const action: GameAction = {
+      type: 'movePlayer',
+      target: { boardX: 1, boardY: 0 },
+    };
+    const after: GameState = {
+      ...before,
+      remainingSteps: 0,
+      lastMoveFrom: { boardX: 0, boardY: 0 },
+      players: before.players.map((player, index) =>
+        index === 0 ? { ...player, position: { boardX: 1, boardY: 0 } } : player,
+      ),
+    };
+    const tracker = createStaleActionTracker();
+
+    expect(isMeaningfulProgress(before, after, action)).toBe(false);
+
+    tracker.record(before, after, action);
+
+    expect(tracker.staleActionCount).toBe(1);
+  });
+
+  it('does not count movement toward a losing loot race as endgame progress', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'diagnostics-contested-loot-stall',
+    });
+    const before: GameState = {
+      ...base,
+      phase: 'await_move',
+      activePlayerIndex: 0,
+      remainingSteps: 1,
+      tileStack: [],
+      tokenBag: [],
+      board: [
+        {
+          ...base.board[0],
+        },
+        {
+          tileInstanceId: 'tile-mid',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-loot',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 2,
+          boardY: 0,
+          discovered: true,
+          looseItems: [{ type: 'weapon', bonus: 3 }],
+        },
+      ],
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              position: { boardX: 0, boardY: 0 },
+              inventory: {
+                ...player.inventory,
+                weapons: [{ type: 'weapon', bonus: 1 }, { type: 'weapon', bonus: 1 }],
+              },
+            }
+          : {
+              ...player,
+              position: { boardX: 2, boardY: 0 },
+              inventory: {
+                ...player.inventory,
+                weapons: [{ type: 'weapon', bonus: 1 }, { type: 'weapon', bonus: 1 }],
+              },
+            },
+      ),
+    };
+    const action: GameAction = {
+      type: 'movePlayer',
+      target: { boardX: 1, boardY: 0 },
+    };
+    const after: GameState = {
+      ...before,
+      remainingSteps: 0,
+      lastMoveFrom: { boardX: 0, boardY: 0 },
+      players: before.players.map((player, index) =>
+        index === 0 ? { ...player, position: { boardX: 1, boardY: 0 } } : player,
+      ),
+    };
+    const tracker = createStaleActionTracker();
+
+    expect(isMeaningfulProgress(before, after, action)).toBe(false);
+
+    tracker.record(before, after, action);
+
+    expect(tracker.staleActionCount).toBe(1);
   });
 });

@@ -376,7 +376,13 @@ function runSingleSimulation(
       config,
       staleTracker.staleActionCount,
     );
-    const issues = detectSimulationIssues(current, action, legalActions, config);
+    const issues = detectSimulationIssues(
+      current,
+      action,
+      legalActions,
+      config,
+      staleTracker.staleActionCount,
+    );
     const playerDiagnostics =
       diagnosticsByPlayerId.get(activePlayer.id) ??
       createEmptySimulationDiagnostics();
