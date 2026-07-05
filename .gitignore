@@ -1,3 +1,5 @@
+scripts/template-input.csv
+scripts/stress-*.*
 # .gitignore — JavaScript/TypeScript-Projekt
 #
 # Zweck: typische umfangreiche oder generierte Verzeichnisse/Dateien ausschließen.
