@@ -559,7 +559,16 @@ function chooseCombatAction(
       monster.id === 'dragon' &&
       shouldForceDragonEndgame(state, activePlayer, config)
     ) {
-      return startCombatAction;
+      // Anti-shuttle guard: a wounded hero heads for a reachable healing tile
+      // first instead of re-attacking immediately after a lost fight. Without
+      // this the forced endgame turns into an attack/retreat/attack loop at
+      // critical hp. With no healing in reach the gamble is still taken.
+      const healingReachable =
+        distanceToNearestHealing(state, activePlayer.position) !== undefined;
+
+      if (!needsHealing(activePlayer, config) || !healingReachable) {
+        return startCombatAction;
+      }
     }
 
     if (winChance >= minimumWinChance) {
@@ -1954,8 +1963,12 @@ function getObjectiveTiles(
     return nonDragonObjectiveTiles;
   }
 
+  // A sub-threshold dragon never passes `isObjectiveTile`, so the forced
+  // endgame target has to be taken from the raw board — filtering
+  // `allObjectiveTiles` here would always yield an empty list and leave the
+  // hero without any endgame destination.
   return shouldForceDragonEndgame(state, player, config)
-    ? allObjectiveTiles.filter((tile) => tile.roomToken?.id === 'dragon')
+    ? state.board.filter((tile) => tile.roomToken?.id === 'dragon')
     : [];
 }
 
@@ -1986,6 +1999,14 @@ function objectivePriority(
   return tile.roomToken?.id === 'dragon' ? config.dragonObjectiveBonus : 0;
 }
 
+/**
+ * On a fully explored board with nothing left to do but the dragon, any hero
+ * with a non-zero win chance treats the final dragon fight as forced — even
+ * below the normal `minimumDragonWinChance`. Everyone converges on the dragon
+ * and competes for the kill instead of passively ending turns, which keeps the
+ * endgame alive and terminates games that would otherwise idle for hundreds of
+ * turns while a single "best" contender grinds the fight alone.
+ */
 export function shouldForceDragonEndgame(
   state: GameState,
   player: Player,
@@ -2017,16 +2038,7 @@ export function shouldForceDragonEndgame(
     return false;
   }
 
-  const bestDragonWinChance = Math.max(
-    ...state.players.map((candidate) =>
-      estimateCombatWinChance(candidate, dragonStrength),
-    ),
-  );
-
-  return (
-    playerWinChance >= bestDragonWinChance &&
-    playerWinChance < config.minimumDragonWinChance
-  );
+  return playerWinChance < config.minimumDragonWinChance;
 }
 
 function distanceToNearestTile(

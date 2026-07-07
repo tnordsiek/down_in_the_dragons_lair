@@ -797,6 +797,230 @@ describe('heuristic AI', () => {
     });
   });
 
+  it('starts the forced dragon combat even when another hero has the better win chance', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_valkyrie',
+      aiCount: 1,
+      seed: 'ai-force-dragon-not-best',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'optional_monster_combat',
+      activePlayerIndex: 0,
+      remainingSteps: 2,
+      tileStack: [],
+      tokenBag: [],
+      board: [
+        {
+          ...base.board[0],
+          blueprintId: 'tunnel_cross',
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-dragon',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'dragon', kind: 'monster' },
+        },
+      ],
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_valkyrie',
+              hp: 5,
+              position: { boardX: 1, boardY: 0 },
+              inventory: {
+                keyCount: 0,
+                // Bonus 4: non-zero dragon win chance, far below any threshold
+                // and clearly worse than the rival's bonus 6.
+                weapons: [
+                  { type: 'weapon', bonus: 2 },
+                  { type: 'weapon', bonus: 2 },
+                ],
+                spells: [],
+              },
+            }
+          : {
+              ...player,
+              heroId: 'hero_blade',
+              hp: 5,
+              position: { boardX: 0, boardY: 0 },
+              inventory: {
+                keyCount: 0,
+                weapons: [
+                  { type: 'weapon', bonus: 3 },
+                  { type: 'weapon', bonus: 3 },
+                ],
+                spells: [],
+              },
+            },
+      ),
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'dragon',
+        position: { boardX: 1, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: 0 },
+      },
+    };
+
+    // No stale-action count: the forced endgame must engage in normal play.
+    expect(chooseHeuristicAiAction(state)).toEqual({
+      type: 'startOptionalCombat',
+    });
+  });
+
+  it('moves a goalless hero toward the dragon in the fully explored endgame', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_valkyrie',
+      aiCount: 1,
+      seed: 'ai-endgame-converge-dragon',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'await_move',
+      activePlayerIndex: 0,
+      remainingSteps: 2,
+      tileStack: [],
+      tokenBag: [],
+      board: [
+        {
+          ...base.board[0],
+          blueprintId: 'tunnel_cross',
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-mid',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-dragon',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 2,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'dragon', kind: 'monster' },
+        },
+      ],
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_valkyrie',
+              hp: 5,
+              position: { boardX: 0, boardY: 0 },
+              inventory: {
+                keyCount: 0,
+                weapons: [
+                  { type: 'weapon', bonus: 2 },
+                  { type: 'weapon', bonus: 2 },
+                ],
+                spells: [],
+              },
+            }
+          : {
+              ...player,
+              heroId: 'hero_blade',
+              hp: 5,
+              position: { boardX: 0, boardY: 0 },
+              inventory: {
+                keyCount: 0,
+                weapons: [
+                  { type: 'weapon', bonus: 3 },
+                  { type: 'weapon', bonus: 3 },
+                ],
+                spells: [],
+              },
+            },
+      ),
+    };
+
+    // Previously this hero had zero objectives and simply ended the turn.
+    expect(chooseHeuristicAiAction(state)).toEqual({
+      type: 'movePlayer',
+      target: { boardX: 1, boardY: 0 },
+    });
+  });
+
+  it('delays the forced dragon attack to heal first when wounded and healing is reachable', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_valkyrie',
+      aiCount: 1,
+      seed: 'ai-force-dragon-heal-first',
+    });
+    const buildState = (startBlueprint: string): GameState => ({
+      ...base,
+      phase: 'optional_monster_combat',
+      activePlayerIndex: 0,
+      remainingSteps: 2,
+      tileStack: [],
+      tokenBag: [],
+      board: [
+        {
+          ...base.board[0],
+          blueprintId: startBlueprint as GameState['board'][number]['blueprintId'],
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-dragon',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'dragon', kind: 'monster' },
+        },
+      ],
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_valkyrie',
+              hp: 2,
+              position: { boardX: 1, boardY: 0 },
+              inventory: {
+                keyCount: 0,
+                weapons: [
+                  { type: 'weapon', bonus: 2 },
+                  { type: 'weapon', bonus: 2 },
+                ],
+                spells: [],
+              },
+            }
+          : { ...player, position: { boardX: 0, boardY: 0 } },
+      ),
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'dragon',
+        position: { boardX: 1, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: 0 },
+      },
+    });
+
+    // Healing tile reachable: retreat toward it instead of re-attacking at 2 hp.
+    const healableState = buildState('start_cross_healing');
+    const healableAction = chooseHeuristicAiAction(healableState);
+    expect(healableAction.type).not.toBe('startOptionalCombat');
+
+    // No healing anywhere: the forced gamble is still taken.
+    const noHealingState = buildState('tunnel_cross');
+    expect(chooseHeuristicAiAction(noHealingState)).toEqual({
+      type: 'startOptionalCombat',
+    });
+  });
+
   it('prefers taking useful loot and better swaps during loot resolution', () => {
     const base = createNewGame({
       humanHeroId: 'hero_mage',

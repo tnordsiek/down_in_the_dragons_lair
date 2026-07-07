@@ -39,7 +39,7 @@ The current decision flow is driven by a strict priority order:
 5. Resolve combat phases via `chooseCombatAction(...)`.
 6. Resolve `loot_resolution` via `chooseLootAction(...)`.
 7. Resolve room tokens automatically.
-8. In the Seeress room-token choice step, always choose option index `0`.
+8. In the Seeress room-token choice step, evaluate both revealed tokens and choose the better one (see `chooseSeeressTokenAction`).
 9. Choose pending-tile placement via `choosePlacementAction(...)`.
 10. If there is valuable ground loot on the current tile, use `chooseGroundLootAction(...)`.
 11. Select a strategic objective and, if possible, choose an action that advances it.
@@ -205,6 +205,7 @@ After objective handling, movement scoring still considers:
 - monster value on the target tile
 - healing-tile value when healing is needed
 - backtrack penalty when returning to `state.lastMoveFrom`
+- a graduated anti-cycle penalty for stepping onto a recently occupied tile (see below)
 
 Current config-driven values are:
 
@@ -217,7 +218,11 @@ Current config-driven values are:
 | `knownMonsterPenalty` | `-6` | penalty for low-value monster engagement |
 | `objectiveProgressBonus` | `6` | reward for moving closer to strategic targets |
 | `dragonObjectiveBonus` | `20` | extra objective priority for dragon routing |
-| `backtrackPenalty` | `-2` | discourages immediate move reversal |
+| `backtrackPenalty` | `-2` | discourages immediate move reversal and, scaled by recency, recent-tile revisits |
+
+### Anti-cycle penalty
+
+`state.lastMoveFrom` only catches an immediate reversal. To break the 3+ tile loops that a single-step check misses, the autoplay and batch layers feed the stale-action tracker's per-hero recent-vacated-tile window (`recentPositionKeysFor(playerId)`, oldest first) into the agent. The immediate reversal is already penalized above, so this adds only a small flat `backtrackPenalty` for stepping back onto a tile vacated two or more moves ago. The penalty lives in the local tactical layer, so it only breaks ties and wandering — genuine objective pursuit (scored ×100) still wins. Keeping it gentle matters: an overly strong penalty measurably hurt the strongest hero's win rate by forcing suboptimal exploration detours.
 
 ### Monster tiles during movement
 
@@ -262,10 +267,11 @@ If the fight is below threshold, the AI prefers movement if it has one, otherwis
 - the dragon is present
 - there are no better non-dragon objective tiles left
 - the active player has a non-zero dragon win chance
-- the active player's dragon win chance is at least as good as every other player's
 - that win chance is still below `minimumDragonWinChance`
 
-This prevents passive deadlocks where the best remaining contender should take the final gamble.
+Every hero that meets these conditions converges on the dragon and competes for the kill — not just the single best contender. An earlier "only the best win chance may attack" rule left all other heroes goalless: they passed their turns for hundreds of rounds while one hero ground out the fight alone. `getObjectiveTiles(...)` returns the dragon tile as the forced endgame destination, so goalless heroes actively move toward the dragon instead of ending their turn.
+
+One anti-shuttle guard applies: a hero standing on the dragon tile who needs healing (`needsHealing(...)`) and can reach a discovered healing tile retreats to heal first instead of re-attacking at critical hp. With no healing in reach, the gamble is still taken.
 
 ### Post-combat repeat decision
 
@@ -276,8 +282,10 @@ During `optional_post_combat`, the AI only continues if the win chance still mee
 During `combat_flame_spells`, the AI:
 
 - never uses flame spells if the hero is the Mage
-- never uses them against weak monsters with strength `<= 9`
+- against weak monsters (strength `<= 9`) spends flames only to rescue an outright defeat — never to upgrade a harmless draw — and only while keeping `flameSpellDragonReserve` flames back for a dragon that can still appear; once no dragon is reachable, flames are spent freely
 - otherwise chooses the smallest legal flame-spell count that converts the current dice result into a victory
+
+The dragon reserve is decided by `isDragonThreatRemaining(...)`: a dragon counts as still in play when one is on the board undefeated or the tile/token stacks are non-empty.
 
 ### Valkyrie reroll
 
@@ -349,11 +357,11 @@ The heuristic logic has dedicated handling for several hero powers:
 | Blade | always uses Blade reroll when offered |
 | Mage | pathfinding can ignore corridor walls; never spends flame spells in combat |
 | Rogue | optional combat is accepted only when the current threshold is met or special dragon logic applies |
-| Witch | may use `swapWitchPosition` when it advances a strategic target; uses sacrifice only when it can produce a win |
+| Witch | uses `swapWitchPosition` only when it meaningfully advances a healing, chest, or winning-dragon objective; uses sacrifice only when it can produce a win |
 | Valkyrie | usually rerolls, but can decline when the projected fight remains below threshold |
-| Seeress | still always chooses room-token option index `0` |
+| Seeress | evaluates both revealed room tokens and picks the better one (chest over monster, otherwise the more beatable monster) |
 
-The Witch swap is not just a fixed score bonus anymore. It is now evaluated as a legal action that can directly advance healing, chest, loot, monster, or dragon objectives when another player's position is strategically better.
+The Witch swap is a dedicated objective action, not a movement-scoring bonus. It is taken only when it shortens the route to a fixed objective (healing tile, chest, or the winning dragon) by at least `witchSwapMinimumDistanceGain` steps, or lands the Witch directly on that objective. Opportunistic swaps toward monsters or loot are left to ordinary movement, which prevents cosmetic low-value swaps.
 
 ---
 
@@ -379,6 +387,8 @@ The three shipped presets are:
 | `dragonObjectiveBonus` | `12` | `20` | `25` |
 | `backtrackPenalty` | `-1` | `-2` | `-3` |
 | `staleActionThreshold` | `40` | `40` | `40` |
+| `witchSwapMinimumDistanceGain` | `2` | `2` | `2` |
+| `flameSpellDragonReserve` | `1` | `2` | `2` |
 
 Behaviorally:
 
@@ -412,6 +422,10 @@ This makes the AI more willing to take medium-risk optional fights when passive 
 
 The autoplay layer passes the tracker's `staleActionCount` back into `chooseHeuristicAiAction(...)`, which is what enables desperation mode during long games.
 
+### Tracker wiring in the real game (UI)
+
+The batch simulation keeps one tracker alive for the whole game, but the UI used to consult the AI with a fresh default (`staleActionCount = 0`, empty position history) on every action — silently disabling both desperation mode and the anti-cycle movement penalty in real games. `useStaleActionTracker` in [`src/ui/hooks/useStaleActionTracker.ts`](../src/ui/hooks/useStaleActionTracker.ts) fixes this: it keeps a persistent tracker per game (keyed by `state.rng.seed`), records every dispatched action (human and AI alike, matching the batch semantics), and `GameScreen` feeds `staleActionCount` and the active player's recent-position history into `chooseDifficultyAwareHeuristicAiAction(...)`. After a page reload of a persisted game the tracker restarts at zero, which is acceptable because it only drives heuristic escalation.
+
 ---
 
 ## Simulation diagnostics
@@ -434,6 +448,16 @@ The current issue categories are:
 
 These checks are implemented in [`src/ai/simulationDiagnostics.ts`](../src/ai/simulationDiagnostics.ts) and exercised by [`src/ai/simulationDiagnostics.test.ts`](../src/ai/simulationDiagnostics.test.ts).
 
+### Diagnostics measure real mistakes, not intended behavior
+
+The diagnostics deliberately share their yardstick with the agent so they flag actual mistakes rather than the agent's own intentional choices:
+
+- `stalledTurns` ignores an `endTurn` that the agent chose on purpose — waiting for end-of-turn healing, or a fully explored board with no objective-advancing move. It reuses the agent's own `isIntentionalEndTurn(...)` predicate.
+- `avoidableRiskFights` excludes the deliberate sub-threshold dragon fight from `shouldForceDragonEndgame(...)`.
+- `missedExplorationProgress` uses the agent's `getMonsterMovementDesirabilityThreshold(...)` (a coin-flip in normal play, not the bare combat threshold) and is only raised when a legal exploration-advancing action was actually available and skipped.
+
+Note that `missedExplorationProgress` is reported as a per-game occurrence rate, which saturates toward `1.0` on long games; the per-action count is the more informative measure. Surfacing per-hero, per-action rates in the report is tracked as a separate improvement.
+
 The batch simulation and report pipeline lives in:
 
 - [`src/ai/batchSimulation.ts`](../src/ai/batchSimulation.ts)
@@ -447,20 +471,20 @@ The batch simulation and report pipeline lives in:
 
 The following limitations are still present in the current code:
 
-1. **Seeress token choice is still blind.**
-   - In `resolve_room_token_seeress_choice`, the AI still chooses `choiceIndex === 0` instead of evaluating both token options.
-
-2. **Healing spells are self-focused in normal play.**
+1. **Healing spells are self-focused in normal play.**
    - The normal healing-spell path only casts on the active player. Broader targeting appears only in the desperate fully explored fallback.
 
-3. **Valkyrie reroll behavior is no longer "always reroll".**
+2. **Valkyrie reroll behavior is no longer "always reroll".**
    - The old documentation was too simple. The current AI may decline when the projected fight is still below threshold, which is intentional but worth noting because it differs from a pure "always reroll" rule.
 
-4. **Witch swap quality remains heuristic, not globally optimal.**
-   - The swap is now objective-aware, but it still uses heuristic progress checks rather than deeper search.
+3. **Witch swap quality remains heuristic, not globally optimal.**
+   - The swap is now objective-aware and value-gated, but it still uses heuristic progress checks rather than deeper search, and it deliberately ignores monster/loot objectives.
 
-5. **The AI still reasons only shallowly about opponents outside a few specific checks.**
-   - Opponent-aware logic currently exists for loot races, dragon endgame forcing, score-securing dragon windows, and curse targeting. Most other movement and combat choices remain primarily self-focused.
+4. **The AI still reasons only shallowly about opponents outside a few specific checks.**
+   - Opponent-aware logic currently exists for loot races (including whether a rival can even use the item), dragon endgame forcing, score-securing dragon windows, and curse targeting. Most other movement and combat choices remain primarily self-focused.
+
+5. **Movement is greedy and single-step.**
+   - `chooseMovementAction` scores one step at a time; there is no bounded look-ahead over the full remaining movement budget yet.
 
 ---
 
