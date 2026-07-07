@@ -25,12 +25,19 @@ import type {
   HealingSpellSelectionState,
   WitchSwapSelectionState,
 } from '../selectionState';
+import { useStaleActionTracker } from '../hooks/useStaleActionTracker';
 
 export function GameScreen() {
   const t = useTranslation();
   const state = useSetupStore((store) => store.gameState);
   const lastError = useSetupStore((store) => store.lastError);
-  const dispatch = useSetupStore((store) => store.dispatch);
+  // All game actions dispatch through the tracked wrapper so the persistent
+  // stale-action tracker sees every applied action (see useStaleActionTracker).
+  const {
+    trackedDispatch: dispatch,
+    getStaleActionCount,
+    getRecentPositionKeysFor,
+  } = useStaleActionTracker();
   const resetGame = useSetupStore((store) => store.resetGame);
 
   // On mobile Chrome the document can accumulate a non-zero window.scrollY
@@ -157,11 +164,25 @@ export function GameScreen() {
     }
 
     const timeoutId = window.setTimeout(() => {
-      dispatch(chooseDifficultyAwareHeuristicAiAction(state));
+      dispatch(
+        chooseDifficultyAwareHeuristicAiAction(
+          state,
+          undefined,
+          getStaleActionCount(),
+          getRecentPositionKeysFor(activePlayer.id),
+        ),
+      );
     }, 200);
 
     return () => window.clearTimeout(timeoutId);
-  }, [dispatch, showStartPlayerOverlay, showHandoffOverlay, state]);
+  }, [
+    dispatch,
+    getStaleActionCount,
+    getRecentPositionKeysFor,
+    showStartPlayerOverlay,
+    showHandoffOverlay,
+    state,
+  ]);
 
   useEffect(() => {
     if (!state) {
