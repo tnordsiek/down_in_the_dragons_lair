@@ -28,6 +28,9 @@ export function playAiControlledTurn(
       current,
       getLegalAiActions(current),
       staleTracker.staleActionCount,
+      staleTracker.recentPositionKeysFor(
+        current.players[current.activePlayerIndex]?.id ?? '',
+      ),
     );
     const next = applyGameAction(current, action);
     staleTracker.record(current, next, action);
@@ -55,6 +58,9 @@ export function playAiGameToEnd(
       current,
       getLegalAiActions(current),
       staleTracker.staleActionCount,
+      staleTracker.recentPositionKeysFor(
+        current.players[current.activePlayerIndex]?.id ?? '',
+      ),
     );
     const next = applyGameAction(current, action);
     staleTracker.record(current, next, action);

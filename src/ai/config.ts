@@ -15,6 +15,16 @@ export interface AiHeuristicConfig {
   readonly backtrackPenalty: number;
   readonly mistakeRate: number;
   readonly staleActionThreshold: number;
+  /**
+   * Minimum strategic-distance improvement a Witch position swap must produce
+   * to be worth taking. Prevents cosmetic swaps that barely change position.
+   */
+  readonly witchSwapMinimumDistanceGain: number;
+  /**
+   * Flame spells kept in reserve for the dragon when spending them against a
+   * weaker monster, as long as a dragon can still be encountered.
+   */
+  readonly flameSpellDragonReserve: number;
 }
 
 export const aiHeuristicConfig: AiHeuristicConfig = {
@@ -32,6 +42,8 @@ export const aiHeuristicConfig: AiHeuristicConfig = {
   backtrackPenalty: -2,
   mistakeRate: 0,
   staleActionThreshold: 40,
+  witchSwapMinimumDistanceGain: 2,
+  flameSpellDragonReserve: 2,
 };
 
 export const easyAiConfig: AiHeuristicConfig = {
@@ -49,6 +61,8 @@ export const easyAiConfig: AiHeuristicConfig = {
   backtrackPenalty: -1,
   mistakeRate: 0.2,
   staleActionThreshold: 40,
+  witchSwapMinimumDistanceGain: 2,
+  flameSpellDragonReserve: 1,
 };
 
 export const normalAiConfig: AiHeuristicConfig = aiHeuristicConfig;
@@ -68,6 +82,8 @@ export const hardAiConfig: AiHeuristicConfig = {
   backtrackPenalty: -3,
   mistakeRate: 0,
   staleActionThreshold: 40,
+  witchSwapMinimumDistanceGain: 2,
+  flameSpellDragonReserve: 2,
 };
 
 export function getDifficultyConfig(difficulty: AiDifficulty): AiHeuristicConfig {

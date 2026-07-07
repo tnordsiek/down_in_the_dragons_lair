@@ -9,6 +9,7 @@ import type {
   MonsterId,
   Player,
   Rotation,
+  Token,
 } from '../engine/core/types';
 import { restoreSeededRng } from '../utils/rng';
 import {
@@ -98,6 +99,28 @@ function getMinimumCombatWinChance(
     : config.minimumRepeatCombatWinChance;
 }
 
+/**
+ * Win-chance threshold at or above which the agent treats walking onto a
+ * monster tile as desirable during movement scoring. In normal play the agent
+ * demands a genuine coin-flip (`>= 0.5`) even when the raw combat threshold is
+ * lower; only in desperation mode does it accept the bare combat threshold.
+ *
+ * Exported so simulation diagnostics measure "missed" monster targets with the
+ * exact same yardstick the agent uses — otherwise the 0.3–0.5 band produces
+ * systematic false positives (see `createExplorationOpportunity`).
+ */
+export function getMonsterMovementDesirabilityThreshold(
+  monsterId: MonsterId,
+  config: AiHeuristicConfig,
+  isDesperate: boolean,
+): number {
+  const minimumCombatWinChance = getMinimumCombatWinChance(monsterId, config);
+
+  return isDesperate
+    ? minimumCombatWinChance
+    : Math.max(0.5, minimumCombatWinChance);
+}
+
 export function estimateMonsterCombatWinChance(
   player: Player,
   monsterId: MonsterId,
@@ -117,6 +140,7 @@ export function chooseHeuristicAiAction(
   legalActions = getLegalAiActions(state),
   baseConfig: AiHeuristicConfig = aiHeuristicConfig,
   staleActionCount = 0,
+  recentPositionKeys: readonly string[] = [],
 ): GameAction {
   if (legalActions.length === 0) {
     throw new Error('AI has no legal actions');
@@ -149,7 +173,7 @@ export function chooseHeuristicAiAction(
     state.phase === 'combat_witch_sacrifice' ||
     state.phase === 'combat_flame_spells'
   ) {
-    return chooseCombatAction(state, legalActions, config);
+    return chooseCombatAction(state, legalActions, config, recentPositionKeys);
   }
 
   if (state.phase === 'loot_resolution') {
@@ -161,12 +185,7 @@ export function chooseHeuristicAiAction(
   }
 
   if (state.phase === 'resolve_room_token_seeress_choice') {
-    return (
-      legalActions.find(
-        (action) =>
-          action.type === 'chooseSeeressRoomToken' && action.choiceIndex === 0,
-      ) ?? requireAction(legalActions, 'chooseSeeressRoomToken')
-    );
+    return chooseSeeressTokenAction(state, legalActions);
   }
 
   if (state.phase === 'choose_pending_tile_rotation') {
@@ -234,6 +253,7 @@ export function chooseHeuristicAiAction(
     config,
     strategicObjective,
     isDesperate,
+    recentPositionKeys,
   );
 
   if (movementAction) {
@@ -369,6 +389,59 @@ function chooseStalledEndTurnAction(
   return endTurnAction;
 }
 
+/**
+ * The Seeress reveals both drawn room tokens and picks which one is placed.
+ * Rather than blindly taking option 0, evaluate the two tokens from the active
+ * player's perspective: a treasure chest is a controllable future reward and is
+ * always preferred over spawning a monster; between two monsters the more
+ * beatable one (higher win chance) is preferred. Ties fall back to the lower
+ * index to stay deterministic.
+ */
+function chooseSeeressTokenAction(
+  state: GameState,
+  legalActions: GameAction[],
+): GameAction {
+  const drawnTokens = state.pendingSeeressRoomChoice?.drawnTokens;
+  const activePlayer = state.players[state.activePlayerIndex];
+
+  // A chest scores above any monster (win chance is at most 1); between two
+  // monsters the higher win chance wins.
+  const chestScore = 2;
+  const scoreToken = (token: Token): number =>
+    token.kind === 'chest'
+      ? chestScore
+      : estimateMonsterCombatWinChance(activePlayer, token.id);
+
+  const preferredIndex =
+    drawnTokens && scoreToken(drawnTokens[1]) > scoreToken(drawnTokens[0]) ? 1 : 0;
+
+  return (
+    legalActions.find(
+      (action) =>
+        action.type === 'chooseSeeressRoomToken' &&
+        action.choiceIndex === preferredIndex,
+    ) ?? requireAction(legalActions, 'chooseSeeressRoomToken')
+  );
+}
+
+/**
+ * True when ending the turn here is a deliberate choice by the agent rather
+ * than giving up on available progress: either waiting for end-of-turn healing
+ * (on or en route to a healing tile) or a fully explored board with no
+ * objective-advancing move left. Exported so `isStalledTurn` in the
+ * diagnostics does not flag these intentional waits as stalls.
+ */
+export function isIntentionalEndTurn(
+  state: GameState,
+  legalActions: GameAction[],
+  config: AiHeuristicConfig,
+): boolean {
+  return (
+    chooseStalledEndTurnAction(state, legalActions, config) !== undefined ||
+    chooseHealingEndTurnAction(state, legalActions, config) !== undefined
+  );
+}
+
 function hasHealingProgressMove(
   state: GameState,
   legalActions: GameAction[],
@@ -431,6 +504,7 @@ function chooseCombatAction(
   state: GameState,
   legalActions: GameAction[],
   config: AiHeuristicConfig,
+  recentPositionKeys: readonly string[] = [],
 ): GameAction {
   if (state.phase === 'combat_valkyrie_reroll') {
     return chooseValkyrieRerollAction(state, legalActions, config);
@@ -445,7 +519,7 @@ function chooseCombatAction(
   }
 
   if (state.phase === 'combat_flame_spells') {
-    return chooseCombatFlameSpellAction(state, legalActions);
+    return chooseCombatFlameSpellAction(state, legalActions, config);
   }
 
   if (state.phase === 'combat_curse_target') {
@@ -497,6 +571,8 @@ function chooseCombatAction(
       legalActions,
       config,
       undefined,
+      false,
+      recentPositionKeys,
     );
 
     if (movementAction) {
@@ -626,6 +702,7 @@ function chooseWitchSacrificeAction(
 function chooseCombatFlameSpellAction(
   state: GameState,
   legalActions: GameAction[],
+  config: AiHeuristicConfig,
 ): GameAction {
   const activePlayer = state.players[state.activePlayerIndex];
   const monster = state.combat
@@ -643,13 +720,20 @@ function chooseCombatFlameSpellAction(
     return requireAction(legalActions, 'resolveCombatWithoutFlameSpells');
   }
 
-  if (monster.strength <= 9) {
-    return requireAction(legalActions, 'resolveCombatWithoutFlameSpells');
-  }
+  // Flame spells are the key to the dragon (strength 15). Against weaker
+  // monsters spend them only to rescue an outright defeat (never to upgrade a
+  // harmless draw) and only while keeping enough in reserve for a dragon that
+  // is still in play. Once no dragon can appear, hoarding is pointless.
+  const availableFlames = spellChoices[spellChoices.length - 1] ?? 0;
+  const isWeakMonster = monster.strength <= 9;
+  const flameReserve =
+    isWeakMonster && isDragonThreatRemaining(state)
+      ? config.flameSpellDragonReserve
+      : 0;
 
-  const winningChoice = spellChoices.find((flameSpellCount) => {
+  const outcomeWithFlames = (flameSpellCount: number): string | undefined => {
     if (!state.combat?.rolledDice) {
-      return false;
+      return undefined;
     }
 
     const total = calculateCombatTotal(
@@ -660,11 +744,19 @@ function chooseCombatFlameSpellAction(
         (state.combat.pendingSeeressBonus ?? 0),
     );
 
-    return (
-      getCombatOutcomeForPlayer(activePlayer, total, monster.strength) ===
-      'victory'
-    );
-  });
+    return getCombatOutcomeForPlayer(activePlayer, total, monster.strength);
+  };
+
+  // Weak monsters only warrant flames when the unaided result would be a loss.
+  if (isWeakMonster && outcomeWithFlames(0) !== 'defeat') {
+    return requireAction(legalActions, 'resolveCombatWithoutFlameSpells');
+  }
+
+  const winningChoice = spellChoices.find(
+    (flameSpellCount) =>
+      availableFlames - flameSpellCount >= flameReserve &&
+      outcomeWithFlames(flameSpellCount) === 'victory',
+  );
 
   return winningChoice
     ? {
@@ -672,6 +764,20 @@ function chooseCombatFlameSpellAction(
         flameSpellCount: winningChoice,
       }
     : requireAction(legalActions, 'resolveCombatWithoutFlameSpells');
+}
+
+/**
+ * A dragon is still worth hoarding flame spells for when one is present on the
+ * board undefeated, or the remaining tile/token stacks could still reveal it.
+ */
+function isDragonThreatRemaining(state: GameState): boolean {
+  const dragonOnBoard = state.board.some(
+    (tile) => tile.roomToken?.id === 'dragon',
+  );
+
+  return (
+    dragonOnBoard || state.tileStack.length > 0 || state.tokenBag.length > 0
+  );
 }
 
 function chooseCurseTargetPlayerId(
@@ -775,12 +881,16 @@ function chooseMovementAction(
   config: AiHeuristicConfig,
   objective: StrategicObjective | undefined,
   isDesperate = false,
+  recentPositionKeys: readonly string[] = [],
 ): GameAction | undefined {
+  // Witch swaps are handled purely as objective-driven actions in
+  // `chooseObjectiveSwapAction`. Excluding them here stops a swap from winning
+  // generic movement scoring on local tile bonuses without a real strategic
+  // gain (the source of low-value swaps).
   const movementActions = legalActions.filter(
     (action) =>
       action.type === 'movePlayer' ||
-      action.type === 'declareExplorationDirection' ||
-      action.type === 'swapWitchPosition',
+      action.type === 'declareExplorationDirection',
   );
 
   if (movementActions.length === 0) {
@@ -791,7 +901,14 @@ function chooseMovementAction(
   const sortedActions = movementActions
     .map((action) => ({
       action,
-      score: scoreMovementAction(state, action, config, objective, isDesperate),
+      score: scoreMovementAction(
+        state,
+        action,
+        config,
+        objective,
+        isDesperate,
+        recentPositionKeys,
+      ),
     }))
     .sort(
       (left, right) =>
@@ -999,17 +1116,17 @@ function chooseActionForObjective(
         return legalActions.find((action) => action.type === 'endTurn');
       }
 
-      return chooseObjectiveSwapAction(state, legalActions, objective);
+      return chooseObjectiveSwapAction(state, legalActions, objective, config);
     }
     case 'chest':
       return (
         legalActions.find((action) => action.type === 'openChest') ??
-        chooseObjectiveSwapAction(state, legalActions, objective)
+        chooseObjectiveSwapAction(state, legalActions, objective, config)
       );
     case 'upgradeLoot':
       return (
         chooseGroundLootAction(state, legalActions) ??
-        chooseObjectiveSwapAction(state, legalActions, objective)
+        chooseObjectiveSwapAction(state, legalActions, objective, config)
       );
     case 'winningDragon':
       if (
@@ -1019,7 +1136,7 @@ function chooseActionForObjective(
         return legalActions.find((action) => action.type === 'startOptionalCombat');
       }
 
-      return chooseObjectiveSwapAction(state, legalActions, objective);
+      return chooseObjectiveSwapAction(state, legalActions, objective, config);
     case 'monster':
       if (
         state.phase === 'optional_monster_combat' &&
@@ -1029,7 +1146,7 @@ function chooseActionForObjective(
         return legalActions.find((action) => action.type === 'startOptionalCombat');
       }
 
-      return chooseObjectiveSwapAction(state, legalActions, objective);
+      return chooseObjectiveSwapAction(state, legalActions, objective, config);
     case 'explore':
       return undefined;
   }
@@ -1129,7 +1246,7 @@ function createUpgradeLootObjective(
       return (
         !!item &&
         isMeaningfulUpgradeItem(activePlayer, item) &&
-        isLootRacePlausible(state, activePlayer, tile)
+        isLootRacePlausible(state, activePlayer, tile, item)
       );
     })
     .map((tile) => ({ boardX: tile.boardX, boardY: tile.boardY }));
@@ -1259,25 +1376,77 @@ function chooseObjectiveSwapAction(
   state: GameState,
   legalActions: GameAction[],
   objective: StrategicObjective,
+  config: AiHeuristicConfig,
 ): GameAction | undefined {
   if (!objective.targetPositions) {
+    return undefined;
+  }
+
+  // Only swap toward objectives that represent a fixed board destination and
+  // whose value the diagnostics also credit. Opportunistic swaps toward
+  // monsters or loot are handled (or skipped) by ordinary movement instead.
+  if (
+    objective.type !== 'heal' &&
+    objective.type !== 'chest' &&
+    objective.type !== 'winningDragon'
+  ) {
     return undefined;
   }
 
   const swapActions = legalActions.filter(
     (action) => action.type === 'swapWitchPosition',
   );
+  if (swapActions.length === 0) {
+    return undefined;
+  }
 
-  return swapActions.find((action) => {
+  const activePlayer = state.players[state.activePlayerIndex];
+  const targets = objective.targetPositions;
+  const distanceFrom = (from: BoardPosition): number | undefined => {
+    const distances = targets.flatMap((target) => {
+      const distance = shortestStrategicDistanceFromPosition(
+        state,
+        activePlayer,
+        from,
+        target,
+      );
+
+      return distance === undefined ? [] : [distance];
+    });
+
+    return distances.length > 0 ? Math.min(...distances) : undefined;
+  };
+
+  const currentDistance = distanceFrom(activePlayer.position) ?? Number.POSITIVE_INFINITY;
+
+  let bestAction: GameAction | undefined;
+  let bestGain = Number.NEGATIVE_INFINITY;
+
+  for (const action of swapActions) {
     const targetPosition = getActionTargetPosition(state, action);
+    if (!targetPosition) {
+      continue;
+    }
 
-    return (
-      !!targetPosition &&
-      objective.targetPositions!.some((position) =>
-        positionsEqual(position, targetPosition),
-      )
-    );
-  });
+    const swappedDistance = distanceFrom(targetPosition);
+    if (swappedDistance === undefined) {
+      continue;
+    }
+
+    const gain = currentDistance - swappedDistance;
+    // Accept the swap if it meaningfully shortens the route OR lands directly
+    // on the objective (reaching it this turn), which is worth it even when the
+    // raw distance gain is only one step.
+    const isWorthwhile =
+      swappedDistance === 0 || gain >= config.witchSwapMinimumDistanceGain;
+
+    if (isWorthwhile && gain > bestGain) {
+      bestGain = gain;
+      bestAction = action;
+    }
+  }
+
+  return bestAction;
 }
 
 function filterAdvancingObjectiveTargets(
@@ -1369,6 +1538,7 @@ function isLootRacePlausible(
   state: GameState,
   activePlayer: Player,
   targetPosition: BoardPosition,
+  item: Item,
 ): boolean {
   const activeArrival = estimateArrivalWindow(state, activePlayer, targetPosition);
   if (!activeArrival) {
@@ -1377,6 +1547,12 @@ function isLootRacePlausible(
 
   for (const player of state.players) {
     if (player.id === activePlayer.id) {
+      continue;
+    }
+
+    // A rival who cannot use the item will not race for it, so it does not
+    // make the pursuit implausible even if that rival happens to be closer.
+    if (!isMeaningfulUpgradeItem(player, item)) {
       continue;
     }
 
@@ -1495,6 +1671,7 @@ function scoreMovementAction(
   config: AiHeuristicConfig,
   objective: StrategicObjective | undefined,
   isDesperate: boolean,
+  recentPositionKeys: readonly string[] = [],
 ): number {
   const objectiveScore = scoreStrategicObjectiveAction(
     state,
@@ -1561,12 +1738,11 @@ function scoreMovementAction(
   if (targetTile?.roomToken?.kind === 'monster') {
     const monster = monsterDefinitions[targetTile.roomToken.id];
     const winChance = estimateMonsterCombatWinChance(activePlayer, monster.id);
-    const minimumDesirableWinChance = isDesperate
-      ? getMinimumCombatWinChance(monster.id, config)
-      : Math.max(
-          0.5,
-          getMinimumCombatWinChance(monster.id, config),
-        );
+    const minimumDesirableWinChance = getMonsterMovementDesirabilityThreshold(
+      monster.id,
+      config,
+      isDesperate,
+    );
 
     score +=
       winChance >= minimumDesirableWinChance
@@ -1584,6 +1760,21 @@ function scoreMovementAction(
     targetPosition.boardY === state.lastMoveFrom.boardY
   ) {
     score += config.backtrackPenalty;
+  }
+
+  // Gentle anti-cycle nudge for the 3+ tile loops the single-step backtrack
+  // check misses. The immediate reversal (`lastMoveFrom`) is already penalised
+  // above, so this adds only a small flat penalty for stepping back onto a tile
+  // vacated two or more moves ago. It stays a local tie-breaker and never
+  // outweighs a legitimate exploration step toward the frontier.
+  if (recentPositionKeys.length > 0) {
+    const targetKey = `${targetPosition.boardX},${targetPosition.boardY}`;
+    const recencyIndex = recentPositionKeys.indexOf(targetKey);
+    const stepsAgo = recentPositionKeys.length - recencyIndex; // 1 = most recent
+
+    if (recencyIndex >= 0 && stepsAgo >= 2) {
+      score += config.backtrackPenalty;
+    }
   }
 
   return objectiveScore * 100 + score;
@@ -1795,7 +1986,7 @@ function objectivePriority(
   return tile.roomToken?.id === 'dragon' ? config.dragonObjectiveBonus : 0;
 }
 
-function shouldForceDragonEndgame(
+export function shouldForceDragonEndgame(
   state: GameState,
   player: Player,
   config: AiHeuristicConfig,

@@ -8,6 +8,7 @@ import * as configModule from './config';
 import {
   estimateCombatWinChance,
   getEffectiveAiHeuristicConfig,
+  getMonsterMovementDesirabilityThreshold,
 } from './heuristicAgent';
 import {
   createStaleActionTracker,
@@ -505,6 +506,73 @@ describe('detectSimulationIssues priority goals', () => {
     ).toContain('missedUpgradeLoot');
   });
 
+  it('keeps upgrade loot contestable when a closer rival cannot use the item', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'diagnostics-loot-rival-no-need',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'turn_start',
+      activePlayerIndex: 0,
+      remainingSteps: 3,
+      players: base.players.map((player, index) => {
+        if (index === 0) {
+          // Active hero has weak weapons, so the bonus-2 weapon is an upgrade.
+          return {
+            ...player,
+            position: { boardX: 0, boardY: 0 },
+            inventory: {
+              ...player.inventory,
+              weapons: [{ type: 'weapon', bonus: 1 }, { type: 'weapon', bonus: 1 }],
+            },
+          };
+        }
+
+        // Rival is closer to the loot but already holds two stronger weapons,
+        // so the item is no upgrade for them and they will not race for it.
+        return {
+          ...player,
+          position: { boardX: 2, boardY: 0 },
+          inventory: {
+            ...player.inventory,
+            weapons: [{ type: 'weapon', bonus: 3 }, { type: 'weapon', bonus: 3 }],
+          },
+        };
+      }),
+      board: [
+        { ...base.board[0], boardX: 0, boardY: 0 },
+        {
+          tileInstanceId: 'tile-1',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 1,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-loot',
+          blueprintId: 'tunnel_cross',
+          rotation: 0,
+          boardX: 2,
+          boardY: 0,
+          discovered: true,
+          looseItems: [{ type: 'weapon', bonus: 2 }],
+        },
+      ],
+    };
+    const legalActions: GameAction[] = [
+      { type: 'movePlayer', target: { boardX: 1, boardY: 0 } },
+      { type: 'endTurn' },
+    ];
+
+    expect(
+      detectSimulationIssues(state, { type: 'endTurn' }, legalActions, aiHeuristicConfig),
+    ).toContain('missedUpgradeLoot');
+  });
+
   it('flags avoidableRiskFights for a normal low-win optional combat', () => {
     const base = createNewGame({
       humanHeroId: 'hero_mage',
@@ -735,6 +803,199 @@ describe('detectSimulationIssues priority goals', () => {
         },
       ),
     ).toContain('missedWinningDragonWindow');
+  });
+});
+
+describe('detectSimulationIssues stalledTurns', () => {
+  it('flags ending the turn while a productive move is available and nothing forces a wait', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'diagnostics-genuine-stall',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'turn_start',
+      activePlayerIndex: 0,
+      players: base.players.map((player, index) =>
+        index === 0 ? { ...player, hp: player.maxHp, isCursed: false } : player,
+      ),
+    };
+    const legalActions: GameAction[] = [
+      { type: 'movePlayer', target: { boardX: 1, boardY: 0 } },
+      { type: 'endTurn' },
+    ];
+
+    expect(
+      detectSimulationIssues(state, { type: 'endTurn' }, legalActions, aiHeuristicConfig),
+    ).toContain('stalledTurns');
+  });
+
+  it('does not flag ending the turn to wait for end-of-turn healing as a stall', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'diagnostics-heal-wait-not-stall',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'turn_start',
+      activePlayerIndex: 0,
+      players: base.players.map((player, index) =>
+        index === 0 ? { ...player, hp: 2, isCursed: false } : player,
+      ),
+      board: [
+        {
+          tileInstanceId: 'tile-healing',
+          blueprintId: 'start_cross_healing',
+          rotation: 0,
+          boardX: 0,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+      ],
+    };
+    const legalActions: GameAction[] = [
+      { type: 'endTurn' },
+      { type: 'movePlayer', target: { boardX: 1, boardY: 0 } },
+    ];
+
+    expect(
+      detectSimulationIssues(state, { type: 'endTurn' }, legalActions, aiHeuristicConfig),
+    ).not.toContain('stalledTurns');
+  });
+});
+
+describe('detectSimulationIssues avoidableRiskFights forced dragon endgame', () => {
+  it('does not flag the deliberate sub-threshold dragon fight when it is the best remaining option', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_rogue',
+      aiCount: 1,
+      seed: 'diagnostics-forced-dragon-endgame',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'optional_monster_combat',
+      activePlayerIndex: 0,
+      tileStack: [],
+      tokenBag: [],
+      board: [
+        {
+          ...base.board[0],
+          roomToken: { id: 'dragon', kind: 'monster' },
+        },
+      ],
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_rogue',
+              inventory: {
+                ...player.inventory,
+                // Total bonus 4 → only a double-six beats the dragon (str 15):
+                // a non-zero win chance that still sits below the 0.35 threshold.
+                weapons: [{ type: 'weapon', bonus: 2 }, { type: 'weapon', bonus: 2 }],
+              },
+            }
+          : {
+              ...player,
+              inventory: { ...player.inventory, weapons: [] },
+            },
+      ),
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'dragon',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: 0 },
+      },
+    };
+    const winChance = estimateCombatWinChance(
+      state.players[0],
+      monsterDefinitions.dragon.strength,
+    );
+
+    expect(winChance).toBeGreaterThan(0);
+    expect(winChance).toBeLessThan(aiHeuristicConfig.minimumDragonWinChance);
+    expect(
+      detectSimulationIssues(
+        state,
+        { type: 'startOptionalCombat' },
+        [{ type: 'startOptionalCombat' }, { type: 'endTurn' }],
+        aiHeuristicConfig,
+      ),
+    ).not.toContain('avoidableRiskFights');
+  });
+});
+
+describe('detectSimulationIssues missedExplorationProgress gate', () => {
+  function explorationState(): GameState {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'diagnostics-exploration-gate',
+    });
+
+    return {
+      ...base,
+      phase: 'await_move',
+      activePlayerIndex: 0,
+      remainingSteps: 4,
+      players: base.players.map((player, index) =>
+        index === 0 ? { ...player, hp: player.maxHp, isCursed: false } : player,
+      ),
+    };
+  }
+
+  it('flags a miss when a legal exploration declaration is available but the turn is ended', () => {
+    const state = explorationState();
+    const legalActions: GameAction[] = [
+      { type: 'declareExplorationDirection', direction: 'A' },
+      { type: 'endTurn' },
+    ];
+
+    expect(
+      detectSimulationIssues(state, { type: 'endTurn' }, legalActions, aiHeuristicConfig),
+    ).toContain('missedExplorationProgress');
+  });
+
+  it('does not flag a miss when the exploration declaration is actually made', () => {
+    const state = explorationState();
+    const explore: GameAction = { type: 'declareExplorationDirection', direction: 'A' };
+    const legalActions: GameAction[] = [explore, { type: 'endTurn' }];
+
+    expect(
+      detectSimulationIssues(state, explore, legalActions, aiHeuristicConfig),
+    ).not.toContain('missedExplorationProgress');
+  });
+
+  it('does not flag ending the turn when no legal action can advance exploration', () => {
+    const state = explorationState();
+    const legalActions: GameAction[] = [{ type: 'endTurn' }];
+
+    expect(
+      detectSimulationIssues(state, { type: 'endTurn' }, legalActions, aiHeuristicConfig),
+    ).not.toContain('missedExplorationProgress');
+  });
+});
+
+describe('getMonsterMovementDesirabilityThreshold', () => {
+  it('demands a coin-flip in normal play, matching the agent movement scoring', () => {
+    expect(
+      getMonsterMovementDesirabilityThreshold('skeleton_lord', aiHeuristicConfig, false),
+    ).toBe(0.5);
+    expect(
+      getMonsterMovementDesirabilityThreshold('dragon', aiHeuristicConfig, false),
+    ).toBe(Math.max(0.5, aiHeuristicConfig.minimumDragonWinChance));
+  });
+
+  it('drops to the bare combat threshold only under desperation', () => {
+    expect(
+      getMonsterMovementDesirabilityThreshold('skeleton_lord', aiHeuristicConfig, true),
+    ).toBe(aiHeuristicConfig.minimumRepeatCombatWinChance);
+    expect(
+      getMonsterMovementDesirabilityThreshold('dragon', aiHeuristicConfig, true),
+    ).toBe(aiHeuristicConfig.minimumDragonWinChance);
   });
 });
 

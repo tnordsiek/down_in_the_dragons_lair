@@ -66,6 +66,9 @@ export function traceAutoplay(
       legalActions,
       undefined,
       staleTracker.staleActionCount,
+      staleTracker.recentPositionKeysFor(
+        current.players[current.activePlayerIndex]?.id ?? '',
+      ),
     );
     const next = applyGameAction(current, action);
     staleTracker.record(current, next, action);

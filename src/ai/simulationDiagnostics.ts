@@ -26,6 +26,9 @@ import {
 import {
   getEffectiveAiHeuristicConfig,
   estimateMonsterCombatWinChance,
+  getMonsterMovementDesirabilityThreshold,
+  isIntentionalEndTurn,
+  shouldForceDragonEndgame,
 } from './heuristicAgent';
 
 export const simulationIssueTypes = [
@@ -213,8 +216,9 @@ export function detectSimulationIssues(
     config,
     staleActionCount,
   );
+  const isDesperate = staleActionCount >= config.staleActionThreshold;
 
-  if (isStalledTurn(action, legalActions)) {
+  if (isStalledTurn(state, action, legalActions, effectiveConfig)) {
     issues.push('stalledTurns');
   }
 
@@ -228,6 +232,7 @@ export function detectSimulationIssues(
     legalActions,
     activePlayer,
     effectiveConfig,
+    isDesperate,
   );
   if (priorityIssue) {
     issues.push(priorityIssue);
@@ -349,6 +354,11 @@ export function createStaleActionTracker(
   let recentPositionKeys: string[] = [];
   let lastTileStackSize: number | undefined;
   let actionsSinceTileStackShrink = 0;
+  // Independent of the stall counters above: a per-player rolling window of the
+  // tiles each hero recently vacated (oldest first). Unlike `recentPositionKeys`
+  // it is never reset on progress, so the agent can read a stable recent-history
+  // at decision time to steer out of multi-tile movement loops.
+  const vacatedTilesByPlayer = new Map<string, string[]>();
 
   return {
     get staleActionCount(): number {
@@ -359,7 +369,25 @@ export function createStaleActionTracker(
         ? Math.max(actionsSinceLastProgress, actionsSinceTileStackShrink)
         : actionsSinceLastProgress;
     },
+    // Tiles the given hero recently moved away from, oldest first. Returning to
+    // one of these is what the agent's anti-cycle penalty discourages.
+    recentPositionKeysFor(playerId: string): readonly string[] {
+      return vacatedTilesByPlayer.get(playerId) ?? [];
+    },
     record(before: GameState, after: GameState, action: GameAction): void {
+      if (action.type === 'movePlayer') {
+        const mover = before.players[before.activePlayerIndex];
+        if (mover) {
+          const vacatedKey = `${mover.position.boardX},${mover.position.boardY}`;
+          const history = vacatedTilesByPlayer.get(mover.id) ?? [];
+          history.push(vacatedKey);
+          if (history.length > recentPositionWindow) {
+            history.shift();
+          }
+          vacatedTilesByPlayer.set(mover.id, history);
+        }
+      }
+
       let progressed = isMeaningfulProgress(before, after, action);
 
       if (progressed && action.type === 'movePlayer') {
@@ -407,20 +435,31 @@ export function createStaleActionTracker(
 }
 
 function isStalledTurn(
+  state: GameState,
   action: GameAction,
   legalActions: readonly GameAction[],
+  config: AiHeuristicConfig,
 ): boolean {
   if (action.type !== 'endTurn') {
     return false;
   }
 
-  return legalActions.some(
+  const hasProductiveAlternative = legalActions.some(
     (candidate) =>
       candidate.type === 'movePlayer' ||
       candidate.type === 'declareExplorationDirection' ||
       candidate.type === 'openChest' ||
       candidate.type === 'beginLoot',
   );
+
+  if (!hasProductiveAlternative) {
+    return false;
+  }
+
+  // Ending the turn to wait for end-of-turn healing, or on a fully explored
+  // board with no objective-advancing move left, is a deliberate agent choice
+  // — not a stall. Reuse the agent's own predicate so the two never drift.
+  return !isIntentionalEndTurn(state, [...legalActions], config);
 }
 
 function isBacktrackMove(
@@ -458,6 +497,7 @@ function detectPriorityGoalIssue(
   legalActions: readonly GameAction[],
   activePlayer: Player,
   config: AiHeuristicConfig,
+  isDesperate: boolean,
 ): PriorityIssueType | undefined {
   const opportunity = getHighestPriorityOpportunity(
     state,
@@ -465,6 +505,7 @@ function detectPriorityGoalIssue(
     legalActions,
     activePlayer,
     config,
+    isDesperate,
   );
 
   if (!opportunity || opportunity.isSatisfied()) {
@@ -480,6 +521,7 @@ function getHighestPriorityOpportunity(
   legalActions: readonly GameAction[],
   activePlayer: Player,
   config: AiHeuristicConfig,
+  isDesperate: boolean,
 ): PriorityOpportunity | undefined {
   const fullyExplored = state.tileStack.length === 0;
 
@@ -526,7 +568,14 @@ function getHighestPriorityOpportunity(
     return undefined;
   }
 
-  return createExplorationOpportunity(state, action, activePlayer, config);
+  return createExplorationOpportunity(
+    state,
+    action,
+    legalActions,
+    activePlayer,
+    config,
+    isDesperate,
+  );
 }
 
 function createHealingOpportunity(
@@ -650,6 +699,7 @@ function collectEndgameObjectiveTargets(
           state,
           activePlayer,
           { boardX: tile.boardX, boardY: tile.boardY },
+          item,
         )
       );
     })
@@ -755,7 +805,7 @@ function createUpgradeLootOpportunity(
     return (
       !!item &&
       isMeaningfulUpgradeItem(activePlayer, item) &&
-      isLootRacePlausible(state, activePlayer, target.position)
+      isLootRacePlausible(state, activePlayer, target.position, item)
     );
   });
 
@@ -820,8 +870,10 @@ function createWinningDragonOpportunity(
 function createExplorationOpportunity(
   state: GameState,
   action: GameAction,
+  legalActions: readonly GameAction[],
   activePlayer: Player,
   config: AiHeuristicConfig,
+  isDesperate: boolean,
 ): PriorityOpportunity | undefined {
   const reachableMonsterTargets = collectReachableTargets(state).filter((target) => {
     const tile = getTileAt(state.board, target.position);
@@ -830,10 +882,15 @@ function createExplorationOpportunity(
     }
 
     const monster = monsterDefinitions[tile.roomToken.id];
-    const threshold =
-      monster.id === 'dragon'
-        ? config.minimumDragonWinChance
-        : config.minimumRepeatCombatWinChance;
+    // Measure "missed" monster targets with the agent's own movement
+    // desirability threshold. The raw combat threshold flagged the 0.3–0.5
+    // win-chance band as missed even though the agent deliberately avoids
+    // those fights in normal play.
+    const threshold = getMonsterMovementDesirabilityThreshold(
+      monster.id,
+      config,
+      isDesperate,
+    );
 
     return estimateMonsterCombatWinChance(activePlayer, monster.id) >= threshold;
   });
@@ -846,12 +903,22 @@ function createExplorationOpportunity(
     return undefined;
   }
 
+  const advancesExploration = (candidate: GameAction): boolean =>
+    actionAdvancesToAnyTarget(state, candidate, reachableMonsterTargets) ||
+    actionUsesWitchSwapToAnyTarget(state, candidate, reachableMonsterTargets) ||
+    actionAdvancesToAnyExplorationTarget(candidate, reachableExplorationTargets);
+
+  // Only a miss if the agent actually had a legal action that advances
+  // exploration and chose something else. When movement is exhausted (only
+  // `endTurn` remains), ending the turn is not a missed opportunity — otherwise
+  // every turn's closing `endTurn` would saturate this metric.
+  if (!legalActions.some(advancesExploration)) {
+    return undefined;
+  }
+
   return {
     issueType: 'missedExplorationProgress',
-    isSatisfied: () =>
-      actionAdvancesToAnyTarget(state, action, reachableMonsterTargets) ||
-      actionUsesWitchSwapToAnyTarget(state, action, reachableMonsterTargets) ||
-      actionAdvancesToAnyExplorationTarget(action, reachableExplorationTargets),
+    isSatisfied: () => advancesExploration(action),
   };
 }
 
@@ -972,6 +1039,7 @@ function isLootRacePlausible(
   state: GameState,
   activePlayer: Player,
   targetPosition: BoardPosition,
+  item: Item,
 ): boolean {
   const activeArrival = estimateArrivalWindow(state, activePlayer, targetPosition);
   if (!activeArrival) {
@@ -980,6 +1048,12 @@ function isLootRacePlausible(
 
   for (const player of state.players) {
     if (player.id === activePlayer.id) {
+      continue;
+    }
+
+    // A rival who cannot use the item will not race for it, so measure the
+    // race with the same rule the agent uses (see heuristicAgent.ts).
+    if (!isMeaningfulUpgradeItem(player, item)) {
       continue;
     }
 
@@ -1177,6 +1251,17 @@ function isAvoidableRiskFight(
   }
 
   const monster = monsterDefinitions[state.combat.monsterId];
+
+  // The forced dragon endgame deliberately takes a sub-threshold dragon fight
+  // when it is the best remaining contender and nothing else is left to do.
+  // That is intended behaviour, not an avoidable risk.
+  if (
+    monster.id === 'dragon' &&
+    shouldForceDragonEndgame(state, activePlayer, config)
+  ) {
+    return false;
+  }
+
   const winChance = estimateMonsterCombatWinChance(activePlayer, monster.id);
   const threshold =
     monster.id === 'dragon'

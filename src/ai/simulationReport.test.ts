@@ -45,6 +45,7 @@ describe('simulation report', () => {
     expect(html).toContain('Simulation Diagnostics Report');
     expect(html).toContain('duel_mage_rogue');
     expect(html).toContain('Heldinnen-Scorecard');
+    expect(html).toContain('Issue-Raten je Heldin');
     expect(html).toContain('Problems To Fix');
     expect(html).toContain('Partie terminiert nicht');
     expect(html).toContain('Seherin waehlt Token blind');

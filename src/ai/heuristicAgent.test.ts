@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { monsterDefinitions } from '../data/monsters';
 import { applyGameAction } from '../engine/core/actions';
-import type { GameState, PlacedTile } from '../engine/core/types';
+import type { GameState, PlacedTile, Token } from '../engine/core/types';
 import { createNewGame } from '../engine/setup/createGame';
 import { createSeededRng } from '../utils/rng';
 import { playAiGameToEnd } from './autoplay';
@@ -934,6 +934,101 @@ describe('heuristic AI', () => {
     });
   });
 
+  it('spends flames to rescue a losing weak fight only when the dragon reserve is kept', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-flame-weak-rescue',
+    });
+    const withFlames = (flameCount: number): GameState => ({
+      ...base,
+      phase: 'combat_flame_spells',
+      activePlayerIndex: 0,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_valkyrie',
+              inventory: {
+                ...player.inventory,
+                weapons: [{ type: 'weapon', bonus: 2 }],
+                spells: Array.from({ length: flameCount }, () => ({
+                  type: 'spell' as const,
+                  spellKind: 'flame' as const,
+                })),
+              },
+            }
+          : player,
+      ),
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'skeleton_soldier',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        rolledDice: [3, 3],
+        pendingBaseOutcome: 'defeat',
+      },
+    });
+
+    // Dragon still in play (unexplored stacks): must keep 2 flames in reserve,
+    // so with only 3 flames the winning count of 2 is not affordable.
+    expect(chooseHeuristicAiAction(withFlames(3))).toEqual({
+      type: 'resolveCombatWithoutFlameSpells',
+    });
+
+    // Enough flames that the reserve still holds after winning.
+    expect(chooseHeuristicAiAction(withFlames(4))).toEqual({
+      type: 'resolveCombatWithFlameSpells',
+      flameSpellCount: 2,
+    });
+  });
+
+  it('spends flames freely on a weak fight once no dragon can appear', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-flame-no-dragon',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'combat_flame_spells',
+      activePlayerIndex: 0,
+      tileStack: [],
+      tokenBag: [],
+      board: [{ ...base.board[0] }],
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_valkyrie',
+              inventory: {
+                ...player.inventory,
+                weapons: [{ type: 'weapon', bonus: 2 }],
+                spells: [
+                  { type: 'spell', spellKind: 'flame' },
+                  { type: 'spell', spellKind: 'flame' },
+                  { type: 'spell', spellKind: 'flame' },
+                ],
+              },
+            }
+          : player,
+      ),
+      combat: {
+        playerId: base.players[0].id,
+        monsterId: 'skeleton_soldier',
+        position: { boardX: 0, boardY: 0 },
+        enteredFrom: { boardX: 0, boardY: -1 },
+        rolledDice: [3, 3],
+        pendingBaseOutcome: 'defeat',
+      },
+    };
+
+    expect(chooseHeuristicAiAction(state)).toEqual({
+      type: 'resolveCombatWithFlameSpells',
+      flameSpellCount: 2,
+    });
+  });
+
   it('always takes the valkyrie reroll during the valkyrie reroll step', () => {
     const base = createNewGame({
       humanHeroId: 'hero_mage',
@@ -1300,6 +1395,52 @@ describe('heuristic AI', () => {
     });
   });
 
+  it('does not use the witch swap to chase a monster objective', () => {
+    const base = createNewGame({
+      humanHeroId: 'hero_mage',
+      aiCount: 1,
+      seed: 'ai-witch-swap-monster',
+    });
+    const state: GameState = {
+      ...base,
+      phase: 'turn_start',
+      activePlayerIndex: 0,
+      remainingSteps: 0,
+      players: base.players.map((player, index) =>
+        index === 0
+          ? {
+              ...player,
+              heroId: 'hero_witch',
+              position: { boardX: 0, boardY: 0 },
+            }
+          : { ...player, position: { boardX: 0, boardY: -1 } },
+      ),
+      board: [
+        {
+          tileInstanceId: 'tile-witch',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 0,
+          boardY: 0,
+          discovered: true,
+          looseItems: [],
+        },
+        {
+          tileInstanceId: 'tile-monster',
+          blueprintId: 'room_cross',
+          rotation: 0,
+          boardX: 0,
+          boardY: -1,
+          discovered: true,
+          looseItems: [],
+          roomToken: { id: 'kitchen_rat', kind: 'monster' },
+        },
+      ],
+    };
+
+    expect(chooseHeuristicAiAction(state).type).not.toBe('swapWitchPosition');
+  });
+
   it('uses witch sacrifice for a draw when a flame spell can convert it into a win', () => {
     const base = createNewGame({
       humanHeroId: 'hero_mage',
@@ -1389,6 +1530,78 @@ describe('heuristic AI', () => {
     };
 
     expect(chooseHeuristicAiAction(state)).toEqual({ type: 'beginLoot' });
+  });
+});
+
+describe('heuristic AI seeress token choice', () => {
+  function seeressState(drawnTokens: [Token, Token]): GameState {
+    const base = createNewGame({
+      humanHeroId: 'hero_seeress',
+      aiCount: 1,
+      seed: 'ai-seeress-choice',
+    });
+
+    return {
+      ...base,
+      phase: 'resolve_room_token_seeress_choice',
+      activePlayerIndex: 0,
+      pendingSeeressRoomChoice: {
+        drawnTokens,
+        position: base.players[0].position,
+      },
+    };
+  }
+
+  it('prefers a treasure chest over spawning a monster regardless of order', () => {
+    const chestFirst = seeressState([
+      { kind: 'chest', id: 'treasure_chest' },
+      { kind: 'monster', id: 'kitchen_rat' },
+    ]);
+    const chestSecond = seeressState([
+      { kind: 'monster', id: 'kitchen_rat' },
+      { kind: 'chest', id: 'treasure_chest' },
+    ]);
+
+    expect(chooseHeuristicAiAction(chestFirst)).toEqual({
+      type: 'chooseSeeressRoomToken',
+      choiceIndex: 0,
+    });
+    expect(chooseHeuristicAiAction(chestSecond)).toEqual({
+      type: 'chooseSeeressRoomToken',
+      choiceIndex: 1,
+    });
+  });
+
+  it('prefers the more beatable monster between two monsters', () => {
+    const weakSecond = seeressState([
+      { kind: 'monster', id: 'dragon' },
+      { kind: 'monster', id: 'kitchen_rat' },
+    ]);
+    const weakFirst = seeressState([
+      { kind: 'monster', id: 'kitchen_rat' },
+      { kind: 'monster', id: 'dragon' },
+    ]);
+
+    expect(chooseHeuristicAiAction(weakSecond)).toEqual({
+      type: 'chooseSeeressRoomToken',
+      choiceIndex: 1,
+    });
+    expect(chooseHeuristicAiAction(weakFirst)).toEqual({
+      type: 'chooseSeeressRoomToken',
+      choiceIndex: 0,
+    });
+  });
+
+  it('falls back to the lower index for two equivalent tokens', () => {
+    const twoChests = seeressState([
+      { kind: 'chest', id: 'treasure_chest' },
+      { kind: 'chest', id: 'treasure_chest' },
+    ]);
+
+    expect(chooseHeuristicAiAction(twoChests)).toEqual({
+      type: 'chooseSeeressRoomToken',
+      choiceIndex: 0,
+    });
   });
 });
 

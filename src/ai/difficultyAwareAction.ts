@@ -7,11 +7,13 @@ export function chooseDifficultyAwareHeuristicAiAction(
   state: GameState,
   legalActions = getLegalAiActions(state),
   staleActionCount = 0,
+  recentPositionKeys: readonly string[] = [],
 ): GameAction {
   return chooseHeuristicAiAction(
     state,
     legalActions,
     getDifficultyConfig(state.difficulty),
     staleActionCount,
+    recentPositionKeys,
   );
 }

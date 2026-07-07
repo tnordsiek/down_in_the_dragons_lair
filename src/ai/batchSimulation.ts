@@ -375,6 +375,7 @@ function runSingleSimulation(
       legalActions,
       config,
       staleTracker.staleActionCount,
+      staleTracker.recentPositionKeysFor(activePlayer.id),
     );
     const issues = detectSimulationIssues(
       current,

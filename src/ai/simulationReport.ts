@@ -421,6 +421,10 @@ function renderScenarioSection(
         ${renderSummary(heroRows, problemRows)}
       </div>
       <div class="panel" style="grid-column: 1 / -1;">
+        <h3>Issue-Raten je Heldin</h3>
+        ${renderIssueMatrix(heroRows)}
+      </div>
+      <div class="panel" style="grid-column: 1 / -1;">
         <h3>Problems To Fix</h3>
         ${renderProblems(problemRows)}
       </div>
@@ -460,6 +464,39 @@ function renderScorecard(rows: readonly AnalysisCsvRow[]): string {
             <td>${formatPercent(row.timeoutRate)}</td>
             <td>${formatNumber(row.avgTreasurePoints)}</td>
             <td>${formatPercent(row.lowHpRate)}</td>
+          </tr>`,
+        )
+        .join('')}
+    </tbody>
+  </table>`;
+}
+
+function renderIssueMatrix(rows: readonly AnalysisCsvRow[]): string {
+  const sorted = [...rows].sort((left, right) => left.heroSlot - right.heroSlot);
+  const columns: Array<{ label: string; value: (row: AnalysisCsvRow) => number }> = [
+    { label: 'Stalled', value: (row) => row.avgStalledTurns },
+    { label: 'Backtrack', value: (row) => row.avgBacktrackLoops },
+    { label: 'Heal-Miss', value: (row) => row.avgHealingMisses },
+    { label: 'Risk-Fight', value: (row) => row.avgAvoidableRiskFights },
+    { label: 'Seeress-Blind', value: (row) => row.avgSeeressChoiceBlind },
+    { label: 'Witch-Swap', value: (row) => row.avgWitchSwapLowValue },
+  ];
+
+  return `<table>
+    <thead>
+      <tr>
+        <th>Hero</th>
+        ${columns.map((column) => `<th>${column.label}</th>`).join('')}
+      </tr>
+    </thead>
+    <tbody>
+      ${sorted
+        .map(
+          (row) => `<tr>
+            <td>${escapeHtml(row.heroId)}</td>
+            ${columns
+              .map((column) => `<td>${formatNumber(column.value(row))}</td>`)
+              .join('')}
           </tr>`,
         )
         .join('')}
